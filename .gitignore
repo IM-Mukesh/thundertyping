@@ -37,7 +37,11 @@ yarn-error.log*
 .vercel
 
 # claude code (local/agent-managed, not shared project config)
+# also keeps Tailwind v4's automatic content detection from trying to read
+# these - it honours .gitignore, and some of them are unreadable special files
+# that otherwise fail the build with "Permission denied".
 /.claude/
+/.mcp.json
 
 # typescript
 *.tsbuildinfo

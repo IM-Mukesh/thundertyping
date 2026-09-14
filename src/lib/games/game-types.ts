@@ -20,6 +20,15 @@ export interface GameDefinition {
    * pattern the SEO roadmap warns against.
    */
   about: string[];
+  /**
+   * Optional path to real cover artwork under /public (e.g.
+   * "/games/falling-words.webp"). Left unset, the game falls back to the
+   * drawn, theme-aware SVG in `game-cover-art.tsx` — which is the default
+   * because it recolours per theme and costs nothing to load. Set this only
+   * if the artwork is genuinely better, and check it against the Light theme
+   * before committing.
+   */
+  coverImage?: string;
   /** Lives lost one per word that reaches the floor. */
   lives: number;
   /** Milliseconds between spawns at the start, and the floor it ramps toward. */

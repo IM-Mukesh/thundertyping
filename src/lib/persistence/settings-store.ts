@@ -80,7 +80,12 @@ export const useSettingsStore = create<SettingsState>()(
       quoteLength: "medium",
       punctuation: false,
       numbers: false,
-      soundEnabled: false,
+      // On by default for the games, which feel inert without it. Nothing can
+      // actually sound until the player clicks Start (browsers gate audio
+      // behind a gesture), so this never autoplays at someone, and the games
+      // HUD carries a mute toggle. The typing test itself stays silent — it
+      // has no sounds wired up.
+      soundEnabled: true,
       setTheme: (theme) => set({ theme }),
       setMode: (mode) => set({ mode }),
       setTimeDuration: (timeDuration) => set({ timeDuration }),

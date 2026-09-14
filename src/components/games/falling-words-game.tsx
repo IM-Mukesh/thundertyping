@@ -1,34 +1,68 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart, Play, RotateCcw, Trophy, Zap } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Crosshair, Heart, Play, RotateCcw, Target, Trophy, Volume2, VolumeX, Zap } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { LANE_COUNT, useFallingWords } from "@/lib/games/use-falling-words";
 import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { playSound } from "@/lib/games/game-audio";
+import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
-const BOARD_HEIGHT = 420;
+const BOARD_HEIGHT = 440;
 /** Keeps a word fully on-screen when it reaches the floor. */
-const FLOOR_INSET = 44;
+const FLOOR_INSET = 46;
+/** Words past this fraction are in the danger strip and get a warning colour. */
+const DANGER_FROM = 0.74;
 
 interface FallingWordsGameProps {
   definition: GameDefinition;
 }
 
 export function FallingWordsGame({ definition }: FallingWordsGameProps) {
-  const { state, start, reset, resume, setTyped } = useFallingWords(definition);
+  // `start` already rebuilds the initial state, so "Play again" needs it
+  // rather than a separate reset.
+  const { state, start, resume, setTyped } = useFallingWords(definition);
   const inputRef = useRef<HTMLInputElement>(null);
+
   // Lazy initialiser rather than a mount effect: this component only ever
   // renders client-side (its wrapper is next/dynamic with ssr:false), so
-  // localStorage is guaranteed available and there's no server/client pass to
-  // reconcile. One game per route, so re-reading on `definition.id` changes
-  // isn't a case that occurs.
+  // localStorage is guaranteed available and there's no server pass to
+  // reconcile. One game per route, so re-reading on id change isn't a case.
   const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
   const [isNewBest, setIsNewBest] = useState(false);
 
-  // Keep focus on the capture input whenever a run is live, including after
-  // clicking the board or dismissing an overlay.
+  // Reuses the existing persisted `soundEnabled` setting, which until now had
+  // nothing wired to it, so the preference carries across games and sessions.
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const toggleSound = useSettingsStore((s) => s.toggleSound);
+
+  // Sounds are driven off state transitions rather than fired inline from
+  // handlers, so every path that changes the game (a keystroke, a word landing
+  // on the tick, an auto game-over) gets audio without each one remembering to
+  // play it.
+  const prevRef = useRef({ correct: 0, incorrect: 0, cleared: 0, missed: 0, combo: 0 });
+  useEffect(() => {
+    const prev = prevRef.current;
+    const s = state;
+
+    if (s.correctKeystrokes > prev.correct) playSound("key", soundEnabled);
+    if (s.incorrectKeystrokes > prev.incorrect) playSound("typo", soundEnabled);
+    if (s.cleared > prev.cleared) playSound("clear", soundEnabled);
+    if (s.missed > prev.missed) playSound("miss", soundEnabled);
+    // Milestone only — a chime on every single clear would be exhausting.
+    if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) playSound("combo", soundEnabled);
+
+    prevRef.current = {
+      correct: s.correctKeystrokes,
+      incorrect: s.incorrectKeystrokes,
+      cleared: s.cleared,
+      missed: s.missed,
+      combo: s.combo,
+    };
+  }, [state, soundEnabled]);
+
   const focusInput = useCallback(() => inputRef.current?.focus(), []);
   useEffect(() => {
     if (state.status === "running") focusInput();
@@ -52,40 +86,56 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
     });
     setIsNewBest(newBest);
     setBest(stored);
-    // only settle the run once, on the transition into "over"
+    playSound("over", soundEnabled);
+    // settle the run once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
 
-  const handleStart = () => {
+  const handleStart = useCallback(() => {
     setIsNewBest(false);
+    // Also the user gesture that unlocks the audio context, so the first
+    // keystroke of a run is already audible.
+    playSound("start", soundEnabled);
     start();
     focusInput();
-  };
+  }, [start, focusInput, soundEnabled]);
 
   const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
   const seconds = Math.round(state.elapsedMs / 1000);
-  const headline = definition.scoreBy === "time" ? `${seconds}s` : state.score.toLocaleString();
-  const headlineLabel = definition.scoreBy === "time" ? "survived" : "score";
+  const headline = definition.scoreBy === "time" ? `${seconds}` : state.score.toLocaleString();
+  const isPlaying = state.status === "running";
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-sm">
-        <div className="flex items-center gap-5">
-          <Metric label={headlineLabel} value={headline} highlight />
-          {definition.scoreBy === "time" ? (
-            <Metric label="cleared" value={state.cleared} />
-          ) : (
-            <Metric label="cleared" value={state.cleared} />
-          )}
-          <Metric label="accuracy" value={`${accuracy}%`} />
-        </div>
-        <div className="flex items-center gap-4">
-          {state.combo > 1 && (
-            <span className="flex items-center gap-1 text-accent" aria-label={`Combo ${state.combo}`}>
-              <Zap size={14} />
-              {state.combo}x
-            </span>
-          )}
+    <div className="flex w-full max-w-3xl flex-col gap-3">
+      {/*
+        In-play chrome is numbers and icons only — no word labels. Everything
+        here is still announced to screen readers through aria-label, so
+        dropping the visible text costs nothing in accessibility.
+      */}
+      <div className="flex items-center justify-between gap-4 font-mono">
+        <span
+          className="text-3xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
+          aria-label={definition.scoreBy === "time" ? `${seconds} seconds survived` : `Score ${state.score}`}
+        >
+          {headline}
+          {definition.scoreBy === "time" && <span className="text-xl text-accent/70">s</span>}
+        </span>
+
+        <div className="flex items-center gap-4 text-sm text-sub">
+          <Stat icon={<Target size={13} />} value={state.cleared} label={`${state.cleared} words cleared`} />
+          <Stat icon={<Crosshair size={13} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
+
+          <span
+            className={cn(
+              "flex w-14 items-center justify-end gap-1 tabular-nums transition-opacity",
+              state.combo > 1 ? "text-accent opacity-100" : "opacity-0",
+            )}
+            aria-label={state.combo > 1 ? `Combo ${state.combo}` : undefined}
+          >
+            <Zap size={13} />
+            {state.combo}x
+          </span>
+
           <span
             className="flex items-center gap-1"
             aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
@@ -94,80 +144,110 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
               <Heart
                 key={i}
                 size={15}
-                className={i < state.lives ? "text-error" : "text-sub/30"}
+                className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
                 fill={i < state.lives ? "currentColor" : "none"}
               />
             ))}
           </span>
+
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
+            title={soundEnabled ? "Mute sound" : "Unmute sound"}
+            className="text-sub/60 transition-colors hover:text-foreground"
+          >
+            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+          </button>
         </div>
       </div>
 
       <div
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-xl border border-border bg-sub-alt/30"
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines"
         style={{ height: BOARD_HEIGHT }}
       >
+        <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
+        <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
+
+        {/* Danger strip: the closer a word gets, the more this reads as a threat. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 arcade-danger"
+          style={{ height: FLOOR_INSET + 34 }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 border-t border-dashed border-error/50"
+          style={{ top: BOARD_HEIGHT - FLOOR_INSET + 26 }}
+        />
+
         {state.words.map((word) => {
           const isTarget = word.id === state.lockedId;
           const matched = isTarget ? state.typed.length : 0;
+          const inDanger = word.progress >= DANGER_FROM;
           return (
             <span
               key={word.id}
               className={cn(
-                "absolute whitespace-nowrap font-mono text-lg transition-[top] ease-linear sm:text-xl",
-                isTarget ? "text-foreground" : "text-sub",
+                "absolute whitespace-nowrap font-mono text-xl tracking-tight transition-[top] ease-linear sm:text-2xl",
+                isTarget
+                  ? "text-foreground arcade-glow-soft"
+                  : inDanger
+                    ? "text-error/90"
+                    : "text-sub",
               )}
               style={{
-                // Matches the engine tick, so stepped position updates read as
-                // continuous motion without running the loop at frame rate.
+                // Matches the engine tick so stepped updates read as continuous
+                // motion without running the loop at frame rate.
                 transitionDuration: "50ms",
                 top: word.progress * (BOARD_HEIGHT - FLOOR_INSET),
                 left: `${(word.lane + 0.5) * (100 / LANE_COUNT)}%`,
                 transform: "translateX(-50%)",
               }}
             >
-              {matched > 0 && <span className="text-accent">{word.text.slice(0, matched)}</span>}
+              {matched > 0 && (
+                <span className="text-accent arcade-glow">{word.text.slice(0, matched)}</span>
+              )}
               {word.text.slice(matched)}
             </span>
           );
         })}
 
-        {/* The floor line: a word crossing this is what costs a life. */}
-        <div
-          className="pointer-events-none absolute inset-x-0 border-t border-dashed border-error/40"
-          style={{ top: BOARD_HEIGHT - FLOOR_INSET + 26 }}
-          aria-hidden="true"
-        />
-
-        {state.status !== "running" && (
-          <Overlay>
+        {!isPlaying && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
             {state.status === "idle" && (
               <StartCard definition={definition} best={best} onStart={handleStart} />
             )}
             {state.status === "paused" && (
               <div className="flex flex-col items-center gap-4 text-center">
-                <p className="text-lg font-semibold text-foreground">Paused</p>
-                <p className="max-w-xs text-sm text-sub">The run pauses when you switch tabs.</p>
-                <ActionButton onClick={() => { resume(); focusInput(); }}>
+                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">
+                  Paused
+                </p>
+                <ArcadeButton
+                  onClick={() => {
+                    resume();
+                    focusInput();
+                  }}
+                >
                   <Play size={15} />
                   Resume
-                </ActionButton>
+                </ArcadeButton>
               </div>
             )}
             {state.status === "over" && (
               <GameOverCard
                 definition={definition}
                 headline={headline}
-                headlineLabel={headlineLabel}
                 cleared={state.cleared}
                 bestCombo={state.bestCombo}
                 accuracy={accuracy}
                 isNewBest={isNewBest}
                 best={best}
-                onRestart={() => { reset(); handleStart(); }}
+                onRestart={handleStart}
               />
             )}
-          </Overlay>
+          </div>
         )}
 
         <input
@@ -181,11 +261,10 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
             if (e.key === " ") e.preventDefault();
             if (e.key === "Tab" && state.status === "over") {
               e.preventDefault();
-              reset();
               handleStart();
             }
           }}
-          disabled={state.status !== "running"}
+          disabled={!isPlaying}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -195,41 +274,27 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
           style={{ fontSize: 16 }}
         />
       </div>
-
-      <p className="text-center font-mono text-xs text-sub" aria-live="polite">
-        {state.status === "running"
-          ? state.typed
-            ? `typing: ${state.typed}`
-            : "type any falling word"
-          : " "}
-      </p>
     </div>
   );
 }
 
-function Metric({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
+function Stat({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
   return (
-    <span className="flex items-baseline gap-1.5">
-      <span className={cn("text-xl font-semibold", highlight ? "text-accent" : "text-foreground")}>{value}</span>
-      <span className="text-xs uppercase tracking-wide text-sub">{label}</span>
+    <span className="flex items-center gap-1.5 tabular-nums" aria-label={label}>
+      <span className="text-sub/60" aria-hidden="true">
+        {icon}
+      </span>
+      {value}
     </span>
   );
 }
 
-function Overlay({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
-      {children}
-    </div>
-  );
-}
-
-function ActionButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function ArcadeButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+      className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-mono text-sm font-semibold uppercase tracking-wider text-background transition-transform hover:scale-105"
     >
       {children}
     </button>
@@ -246,31 +311,35 @@ function StartCard({
   onStart: () => void;
 }) {
   return (
-    <div className="flex max-w-md flex-col items-center gap-4 text-center">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-foreground">{definition.name}</h2>
+    <div className="flex max-w-sm flex-col items-center gap-5 text-center">
+      <div className="flex flex-col gap-1.5">
+        <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground arcade-glow-soft">
+          {definition.name}
+        </h2>
         <p className="text-sm text-sub">{definition.tagline}</p>
       </div>
-      <ul className="flex flex-col gap-1.5 text-left text-xs text-sub">
-        {definition.rules.map((rule) => (
-          <li key={rule} className="flex gap-2">
-            <span aria-hidden="true" className="text-accent">
-              &bull;
-            </span>
-            {rule}
-          </li>
-        ))}
-      </ul>
-      {best && (
-        <p className="flex items-center gap-1.5 text-xs text-sub">
-          <Trophy size={13} className="text-accent" />
-          Best: {definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
-        </p>
-      )}
-      <ActionButton onClick={onStart}>
+
+      <div className="flex items-center gap-5 font-mono text-[11px] uppercase tracking-wider text-sub">
+        <span className="flex items-center gap-1.5">
+          <Heart size={12} className="text-error" />
+          {definition.lives} {definition.lives === 1 ? "life" : "lives"}
+        </span>
+        {best && (
+          <span className="flex items-center gap-1.5 text-accent">
+            <Trophy size={12} />
+            {definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
+          </span>
+        )}
+      </div>
+
+      <ArcadeButton onClick={onStart}>
         <Play size={15} />
         Start
-      </ActionButton>
+      </ArcadeButton>
+
+      <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
+        Type a falling word to clear it
+      </p>
     </div>
   );
 }
@@ -278,7 +347,6 @@ function StartCard({
 function GameOverCard({
   definition,
   headline,
-  headlineLabel,
   cleared,
   bestCombo,
   accuracy,
@@ -288,7 +356,6 @@ function GameOverCard({
 }: {
   definition: GameDefinition;
   headline: string;
-  headlineLabel: string;
   cleared: number;
   bestCombo: number;
   accuracy: number;
@@ -297,32 +364,52 @@ function GameOverCard({
   onRestart: () => void;
 }) {
   return (
-    <div className="flex max-w-md flex-col items-center gap-4 text-center" role="status" aria-live="polite">
-      <p className="text-sm uppercase tracking-wide text-sub">Run over</p>
-      {isNewBest && (
-        <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-          <Trophy size={13} />
+    <div
+      className="flex max-w-sm flex-col items-center gap-4 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      {isNewBest ? (
+        <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
+          <Trophy size={12} />
           New best
         </span>
+      ) : (
+        <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-sub">Run over</span>
       )}
-      <div className="flex flex-col gap-0.5">
-        <span className="text-4xl font-semibold text-accent">{headline}</span>
-        <span className="text-xs uppercase tracking-wide text-sub">{headlineLabel}</span>
+
+      <div className="flex flex-col">
+        <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
+          {headline}
+          {definition.scoreBy === "time" && <span className="text-2xl text-accent/70">s</span>}
+        </span>
       </div>
-      <div className="flex flex-wrap justify-center gap-5 font-mono text-xs text-sub">
-        <span>{cleared} cleared</span>
-        <span>{bestCombo}x best combo</span>
-        <span>{accuracy}% accuracy</span>
+
+      <div className="flex items-center gap-5 font-mono text-xs tabular-nums text-sub">
+        <span className="flex items-center gap-1.5">
+          <Target size={12} className="text-sub/60" />
+          {cleared}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Zap size={12} className="text-sub/60" />
+          {bestCombo}x
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Crosshair size={12} className="text-sub/60" />
+          {accuracy}%
+        </span>
         {best && !isNewBest && (
-          <span>
-            best {definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
+          <span className="flex items-center gap-1.5 text-accent/80">
+            <Trophy size={12} />
+            {definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
           </span>
         )}
       </div>
-      <ActionButton onClick={onRestart}>
+
+      <ArcadeButton onClick={onRestart}>
         <RotateCcw size={15} />
         Play again
-      </ActionButton>
+      </ArcadeButton>
     </div>
   );
 }

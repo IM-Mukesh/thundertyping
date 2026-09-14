@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
+import { getGameCover } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
 
 export function generateStaticParams() {
@@ -30,22 +32,49 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const game = getGame(gameId);
   if (!game) notFound();
 
+  const cover = getGameCover(game.id) ?? game.coverImage ?? null;
   const others = GAME_LIST.filter((g) => g.id !== game.id);
 
   return (
-    <div className="flex flex-1 flex-col items-center px-6 pb-12 pt-8 sm:px-10">
-      <div className="flex w-full max-w-3xl flex-col gap-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          {game.name}
-        </h1>
-        <p className="text-sm text-sub sm:text-base">{game.tagline}</p>
+    <div className="relative flex flex-1 flex-col items-center overflow-hidden px-6 pb-16 pt-6 sm:px-10">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        {cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
+            style={{
+              maskImage: "linear-gradient(to bottom, black 0%, transparent 70%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 70%)",
+            }}
+          />
+        )}
+        <div className="absolute inset-0 arcade-haze" />
       </div>
 
-      <div className="mt-8 flex w-full justify-center">
+      {/* Deliberately sparse above the board — the game itself is the page.
+          The heading stays an h1 for SEO but is sized as a label, and the
+          long-form copy lives far below, out of the way while playing. */}
+      <div className="flex w-full max-w-3xl items-center justify-between gap-4">
+        <Link
+          href="/games"
+          className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-sub transition-colors hover:text-foreground"
+        >
+          <ArrowLeft size={13} />
+          Arcade
+        </Link>
+        <h1 className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-foreground">
+          {game.name}
+        </h1>
+        <span aria-hidden="true" className="w-16" />
+      </div>
+
+      <div className="mt-5 flex w-full justify-center">
         <GameClient definition={game} />
       </div>
 
-      <div className="mt-12 flex w-full max-w-2xl flex-col gap-4 text-sm leading-relaxed text-sub">
+      <div className="mt-20 flex w-full max-w-2xl flex-col gap-4 border-t border-border pt-10 text-sm leading-relaxed text-sub">
         <h2 className="text-lg font-semibold text-foreground">How to play {game.name} well</h2>
         {game.about.map((paragraph) => (
           <p key={paragraph.slice(0, 40)}>{paragraph}</p>

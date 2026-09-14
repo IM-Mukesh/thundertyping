@@ -1,4 +1,14 @@
-@import "tailwindcss";
+/* `source(none)` disables Tailwind v4's automatic content detection, which
+   otherwise walks the whole project root. Two reasons to scope it by hand:
+   it's faster, and the root contains agent-managed special files (.mcp.json,
+   .claude/) that are unreadable to this process, which made the automatic
+   scan fail the build outright with "Permission denied". All real markup
+   lives under src/, so nothing is lost by listing the sources explicitly —
+   but if you add a new top-level source directory, add it here too. */
+@import "tailwindcss" source(none);
+@source "../app/**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
+@source "../lib/**/*.{ts,tsx}";
 
 :root {
   --background: #323437;
@@ -96,6 +106,100 @@ body {
 ::selection {
   background: var(--accent);
   color: var(--background);
+}
+
+/* ----------------------------------------------------------------------
+   Arcade layer — the futuristic look for /games.
+
+   Built from CSS + SVG rather than raster art on purpose: every colour here
+   derives from the active theme's CSS variables, so the same markup reads
+   correctly in all five themes. A fixed image would clash with Light/Forest
+   /Sunset, add real LCP weight to a page whose whole value is responsiveness,
+   and couldn't animate. `color-mix` does the tinting so themes stay the
+   single source of truth.
+
+   Everything below is decorative and sits behind `prefers-reduced-motion`,
+   which the global rule further down already neutralises.
+   ---------------------------------------------------------------------- */
+
+.arcade-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--accent) 13%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--accent) 13%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: arcade-grid-drift 7s linear infinite;
+}
+
+@keyframes arcade-grid-drift {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 44px,
+      0 44px;
+  }
+}
+
+/* Horizon wash behind a board or hero, brightest at the top. */
+.arcade-haze {
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 62%),
+    radial-gradient(90% 60% at 50% 100%, color-mix(in srgb, var(--error) 11%, transparent) 0%, transparent 70%);
+}
+
+/* The strip a falling word must not cross — intensity reads as danger. */
+.arcade-danger {
+  background: linear-gradient(to top, color-mix(in srgb, var(--error) 22%, transparent) 0%, transparent 100%);
+}
+
+.arcade-glow {
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.arcade-glow-soft {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+
+.arcade-edge {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 28px -6px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.arcade-edge-hover:hover {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 42px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* Faint CRT banding. Kept very low contrast so it never fights the words. */
+.arcade-scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    color-mix(in srgb, var(--foreground) 4%, transparent) 2px 3px
+  );
+}
+
+@keyframes arcade-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.arcade-pulse {
+  animation: arcade-pulse 2.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
