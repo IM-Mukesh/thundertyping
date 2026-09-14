@@ -36,6 +36,9 @@ export function SiteFooter() {
             <Link href="/about" className="transition-colors hover:text-foreground">
               About
             </Link>
+            <Link href="/games" className="transition-colors hover:text-foreground">
+              Games
+            </Link>
             <Link
               href="/guides/how-to-improve-typing-speed"
               className="transition-colors hover:text-foreground"

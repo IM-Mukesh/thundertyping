@@ -21,6 +21,14 @@ const routes: {
     changeFrequency: "monthly",
     lastModified: "2026-09-15",
   },
+  { path: "/games", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-15" },
+  {
+    path: "/games/falling-words",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-15",
+  },
+  { path: "/games/word-rain", priority: 0.7, changeFrequency: "monthly", lastModified: "2026-09-15" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

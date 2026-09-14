@@ -24,6 +24,12 @@ export function SiteHeader() {
       </Link>
       <nav className="flex items-center gap-2 sm:gap-4">
         <Link
+          href="/games"
+          className="px-2 text-sm text-sub transition-colors hover:text-foreground"
+        >
+          Games
+        </Link>
+        <Link
           href="/about"
           className="px-2 text-sm text-sub transition-colors hover:text-foreground"
         >
