@@ -1,6 +1,6 @@
 import { ENGLISH_WORDS } from "@/data/words/english-1k";
 
-const PUNCTUATION_MARKS = [",", ".", "!", "?", ";", ":"];
+export const PUNCTUATION_MARKS = [",", ".", "!", "?", ";", ":"];
 
 function randomInt(max: number): number {
   return Math.floor(Math.random() * max);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { CharState, CharTally, TestConfig, TestState, WordState } from "@/lib/typing-engine/engine-types";
-import { generateWords } from "@/lib/typing-engine/word-generator";
+import { generateWords, PUNCTUATION_MARKS } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
 import { calculateNetWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
 
@@ -71,14 +71,27 @@ function createInitialState(config: TestConfig): TestState {
 // wrong-looking-by-coincidence (this was a real, reported, reproduced bug).
 // "extra"/"missed" have no keystroke-history equivalent — they're inherently
 // about what's left over in the *final* submitted text — so they stay here.
+const PUNCTUATION_CHAR_SET = new Set(PUNCTUATION_MARKS);
+
+// Trailing target characters the user never typed before committing the
+// word with space. Punctuation marks (appended to the end of words by the
+// generator) are excluded on purpose — skipping punctuation is a deliberate,
+// requested non-penalty, not a mistake, so it should never show up as
+// "missed" in the results breakdown.
+function countPenalizedMissed(target: string, typed: string): number {
+  let end = target.length;
+  while (end > typed.length && PUNCTUATION_CHAR_SET.has(target[end - 1])) {
+    end -= 1;
+  }
+  return Math.max(0, end - typed.length);
+}
+
 function tallyWord(tally: CharTally, word: WordState): CharTally {
   const next = { ...tally };
   for (const c of word.chars) {
     if (c === "extra") next.extra += 1;
   }
-  if (word.typed.length < word.target.length) {
-    next.missed += word.target.length - word.typed.length;
-  }
+  next.missed += countPenalizedMissed(word.target, word.typed);
   return next;
 }
 
