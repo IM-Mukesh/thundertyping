@@ -1,17 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DEFAULT_THEME, type ThemeId } from "@/components/theme/themes";
-
-export type TestMode = "time" | "words" | "quote" | "custom";
-export type TimeDuration = 15 | 30 | 60 | 120;
-export type WordCount = 10 | 25 | 50 | 100;
-export type QuoteLength = "short" | "medium" | "long";
+import type { TestMode, TimeDuration, WordCountOption, QuoteLength } from "@/lib/typing-engine/engine-types";
 
 interface SettingsState {
   theme: ThemeId;
   mode: TestMode;
   timeDuration: TimeDuration;
-  wordCount: WordCount;
+  wordCount: WordCountOption;
   quoteLength: QuoteLength;
   punctuation: boolean;
   numbers: boolean;
@@ -19,7 +15,7 @@ interface SettingsState {
   setTheme: (theme: ThemeId) => void;
   setMode: (mode: TestMode) => void;
   setTimeDuration: (duration: TimeDuration) => void;
-  setWordCount: (count: WordCount) => void;
+  setWordCount: (count: WordCountOption) => void;
   setQuoteLength: (length: QuoteLength) => void;
   togglePunctuation: () => void;
   toggleNumbers: () => void;

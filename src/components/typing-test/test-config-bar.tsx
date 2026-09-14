@@ -1,0 +1,105 @@
+"use client";
+
+import { useSettingsStore } from "@/lib/persistence/settings-store";
+import type { QuoteLength, TestMode, TimeDuration, WordCountOption } from "@/lib/typing-engine/engine-types";
+import { cn } from "@/lib/utils/cn";
+
+const MODES: { id: TestMode; label: string }[] = [
+  { id: "time", label: "time" },
+  { id: "words", label: "words" },
+  { id: "quote", label: "quote" },
+  { id: "custom", label: "custom" },
+];
+
+const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
+const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
+const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
+
+interface TestConfigBarProps {
+  onOpenCustomText: () => void;
+}
+
+export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
+  const mode = useSettingsStore((s) => s.mode);
+  const timeDuration = useSettingsStore((s) => s.timeDuration);
+  const wordCount = useSettingsStore((s) => s.wordCount);
+  const quoteLength = useSettingsStore((s) => s.quoteLength);
+  const punctuation = useSettingsStore((s) => s.punctuation);
+  const numbers = useSettingsStore((s) => s.numbers);
+  const setMode = useSettingsStore((s) => s.setMode);
+  const setTimeDuration = useSettingsStore((s) => s.setTimeDuration);
+  const setWordCount = useSettingsStore((s) => s.setWordCount);
+  const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
+  const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
+  const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
+
+  const showTextToggles = mode === "time" || mode === "words";
+
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-sub-alt/50 px-4 py-3 text-sm">
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        {showTextToggles && (
+          <>
+            <Pill active={punctuation} onClick={togglePunctuation} label="punctuation" />
+            <Pill active={numbers} onClick={toggleNumbers} label="numbers" />
+            <span className="h-4 w-px bg-border" aria-hidden="true" />
+          </>
+        )}
+        {MODES.map((m) => (
+          <Pill
+            key={m.id}
+            active={mode === m.id}
+            onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
+            label={m.label}
+          />
+        ))}
+      </div>
+
+      {mode === "time" && (
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {TIME_DURATIONS.map((d) => (
+            <Pill key={d} active={timeDuration === d} onClick={() => setTimeDuration(d)} label={String(d)} />
+          ))}
+        </div>
+      )}
+
+      {mode === "words" && (
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {WORD_COUNTS.map((w) => (
+            <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} label={String(w)} />
+          ))}
+        </div>
+      )}
+
+      {mode === "quote" && (
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {QUOTE_LENGTHS.map((l) => (
+            <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} label={l} />
+          ))}
+        </div>
+      )}
+
+      {mode === "custom" && (
+        <button
+          type="button"
+          onClick={onOpenCustomText}
+          className="text-xs text-sub underline decoration-dotted hover:text-foreground"
+        >
+          Edit custom text
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Pill({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn("rounded px-2 py-1 transition-colors", active ? "text-accent" : "text-sub hover:text-foreground")}
+    >
+      {label}
+    </button>
+  );
+}
