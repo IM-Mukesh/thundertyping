@@ -2,6 +2,18 @@ import type { CharTally, WpmSample } from "@/lib/typing-engine/engine-types";
 
 const CHARS_PER_WORD = 5;
 
+// A WPM figure computed from a few keystrokes over a handful of milliseconds
+// is mathematically unstable (one correct char at 5ms elapsed implies a
+// ~12,000 WPM pace). Flooring the time denominator for *live* display keeps
+// the number sane during the first second, then converges to the real value
+// once enough time has actually passed. The final result always uses the
+// true elapsed time, never this floor.
+export const MIN_LIVE_WPM_WINDOW_MS = 1000;
+
+export function calculateLiveWpm(correct: number, elapsedMs: number): number {
+  return calculateNetWpm(correct, Math.max(elapsedMs, MIN_LIVE_WPM_WINDOW_MS));
+}
+
 export function calculateRawWpm(correct: number, incorrect: number, elapsedMs: number): number {
   const minutes = elapsedMs / 60000;
   if (minutes <= 0) return 0;

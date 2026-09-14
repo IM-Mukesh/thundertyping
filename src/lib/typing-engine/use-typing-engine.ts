@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { CharState, CharTally, TestConfig, TestState, WordState } from "@/lib/typing-engine/engine-types";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
-import { calculateNetWpm, emptyCharTally } from "@/lib/typing-engine/stats";
+import { calculateNetWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
 
 const TIME_MODE_BATCH = 40;
 const TIME_MODE_LOOKAHEAD = 15;
@@ -173,8 +173,13 @@ function reducer(state: TestState, action: EngineAction): TestState {
     case "TICK": {
       if (state.status !== "running" || state.startedAt === null) return state;
       const elapsedMs = action.now - state.startedAt;
-      const netWpm = calculateNetWpm(state.correctKeystrokes, elapsedMs);
-      const wpmSamples = [...state.wpmSamples, { t: elapsedMs, wpm: netWpm }];
+      // Samples from the first second are dropped rather than computed: a
+      // WPM figure from a handful of milliseconds is noise, and feeding it
+      // into the consistency calculation would just skew that score.
+      const wpmSamples =
+        elapsedMs >= MIN_LIVE_WPM_WINDOW_MS
+          ? [...state.wpmSamples, { t: elapsedMs, wpm: calculateNetWpm(state.correctKeystrokes, elapsedMs) }]
+          : state.wpmSamples;
 
       if (state.config.mode === "time" && elapsedMs >= state.config.timeDuration * 1000) {
         const activeWord = state.wordStates[state.activeWordIndex];

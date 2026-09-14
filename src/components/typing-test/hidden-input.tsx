@@ -53,7 +53,7 @@ export function HiddenInput({
       autoCorrect="off"
       spellCheck={false}
       aria-label="Typing test input"
-      className="absolute inset-0 h-full w-full cursor-text opacity-0"
+      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
       style={{ fontSize: 16 }}
     />
   );

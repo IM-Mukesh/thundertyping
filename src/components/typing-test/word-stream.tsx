@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
+import { cn } from "@/lib/utils/cn";
 
 const LINE_HEIGHT = 48;
 const VISIBLE_LINES = 3;
@@ -43,7 +44,7 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
     <div className="relative w-full overflow-hidden" style={{ height: LINE_HEIGHT * VISIBLE_LINES }}>
       <div
         ref={containerRef}
-        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl leading-none transition-transform duration-150 ease-out sm:text-3xl"
+        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"
         style={{ transform: `translateY(-${offset}px)` }}
       >
         {wordStates.map((word, index) => (
@@ -82,7 +83,7 @@ function Word({
     const state: CharState = word.chars[i] ?? "pending";
     const char = i < target.length ? target[i] : word.typed[i];
     nodes.push(
-      <span key={i} className={charClass(state)}>
+      <span key={i} className={cn("char-instant", charClass(state))}>
         {char}
       </span>,
     );

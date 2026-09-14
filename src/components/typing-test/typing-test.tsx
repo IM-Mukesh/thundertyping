@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { recordResult } from "@/lib/persistence/results-store";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
+import { cn } from "@/lib/utils/cn";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { LiveStatsBar } from "@/components/typing-test/live-stats-bar";
@@ -82,26 +82,30 @@ export function TypingTest() {
 
   const activeWord = engine.state.wordStates[engine.state.activeWordIndex];
 
+  const isRunning = engine.state.status === "running";
+
   return (
     <div className="flex w-full flex-col items-center gap-8">
-      <AnimatePresence mode="wait" initial={false}>
-        {engine.state.status !== "running" && (
-          <motion.div
-            key="config-bar"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-          >
-            <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {engine.state.status === "running" && <LiveStatsBar state={engine.state} />}
+      {/* Both children stay mounted and share this slot so its height never
+          changes — only their opacity crossfades. This keeps the word-stream
+          below permanently anchored instead of jumping when the config bar
+          hides during a run (see PROGRESS.md for the bug this replaced). */}
+      <div className="relative flex w-full items-center justify-center">
+        <div className={cn("transition-opacity duration-200", isRunning ? "pointer-events-none opacity-0" : "opacity-100")}>
+          <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
+        </div>
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center transition-opacity duration-200",
+            isRunning ? "opacity-100" : "pointer-events-none opacity-0",
+          )}
+        >
+          <LiveStatsBar state={engine.state} />
+        </div>
+      </div>
 
       {engine.state.status !== "finished" ? (
-        <div className="relative w-full max-w-4xl cursor-text" onClick={() => setFocusToken((t) => t + 1)}>
+        <div className="relative w-full max-w-4xl cursor-pointer" onClick={() => setFocusToken((t) => t + 1)}>
           <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
           <HiddenInput
             value={activeWord?.typed ?? ""}

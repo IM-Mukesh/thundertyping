@@ -1,5 +1,5 @@
 import type { TestState } from "@/lib/typing-engine/engine-types";
-import { calculateNetWpm, round } from "@/lib/typing-engine/stats";
+import { calculateLiveWpm, round } from "@/lib/typing-engine/stats";
 
 interface LiveStatsBarProps {
   state: TestState;
@@ -7,7 +7,7 @@ interface LiveStatsBarProps {
 
 export function LiveStatsBar({ state }: LiveStatsBarProps) {
   const { config, elapsedMs, correctKeystrokes, activeWordIndex, words } = state;
-  const liveWpm = round(calculateNetWpm(correctKeystrokes, Math.max(elapsedMs, 1)));
+  const liveWpm = round(calculateLiveWpm(correctKeystrokes, elapsedMs));
 
   const primary =
     config.mode === "time"

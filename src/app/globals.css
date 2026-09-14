@@ -1,27 +1,63 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0d;
+  --background: #1a1a1e;
   --foreground: #e4e4e7;
-  --sub: #6b7280;
-  --sub-alt: #16161a;
+  --sub: #71717a;
+  --sub-alt: #242428;
   --accent: #facc15;
   --caret: #facc15;
-  --correct: #4ade80;
+  --correct: #e4e4e7;
   --error: #f87171;
-  --border: #232329;
+  --border: #2f2f34;
 }
 
 [data-theme="light"] {
-  --background: #f7f7f5;
+  --background: #fafaf8;
   --foreground: #17171a;
   --sub: #9a9a94;
   --sub-alt: #ececea;
   --accent: #ca8a04;
   --caret: #ca8a04;
-  --correct: #16a34a;
+  --correct: #17171a;
   --error: #dc2626;
   --border: #e2e2df;
+}
+
+[data-theme="midnight"] {
+  --background: #12141c;
+  --foreground: #e2e5f1;
+  --sub: #5b6178;
+  --sub-alt: #1c1f2b;
+  --accent: #7dd3fc;
+  --caret: #7dd3fc;
+  --correct: #e2e5f1;
+  --error: #fb7185;
+  --border: #262a3a;
+}
+
+[data-theme="forest"] {
+  --background: #141a16;
+  --foreground: #e3ece6;
+  --sub: #62786a;
+  --sub-alt: #1d251f;
+  --accent: #4ade80;
+  --caret: #4ade80;
+  --correct: #e3ece6;
+  --error: #f87171;
+  --border: #283a2e;
+}
+
+[data-theme="sunset"] {
+  --background: #1c1614;
+  --foreground: #f0e6e0;
+  --sub: #7a6a63;
+  --sub-alt: #261e1b;
+  --accent: #fb923c;
+  --caret: #fb923c;
+  --correct: #f0e6e0;
+  --error: #f87171;
+  --border: #332723;
 }
 
 @theme inline {
@@ -40,14 +76,21 @@
 
 * {
   border-color: var(--border);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Per-character typing feedback must stay instant — themes should fade, but
+   correct/incorrect coloring reacting to a keystroke should not lag it. */
+.char-instant {
+  transition: none;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
 }
 
 ::selection {
