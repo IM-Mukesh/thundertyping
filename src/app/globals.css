@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0d;
+  --foreground: #e4e4e7;
+  --sub: #6b7280;
+  --sub-alt: #16161a;
+  --accent: #facc15;
+  --caret: #facc15;
+  --correct: #4ade80;
+  --error: #f87171;
+  --border: #232329;
+}
+
+[data-theme="light"] {
+  --background: #f7f7f5;
+  --foreground: #17171a;
+  --sub: #9a9a94;
+  --sub-alt: #ececea;
+  --accent: #ca8a04;
+  --caret: #ca8a04;
+  --correct: #16a34a;
+  --error: #dc2626;
+  --border: #e2e2df;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sub: var(--sub);
+  --color-sub-alt: var(--sub-alt);
+  --color-accent: var(--accent);
+  --color-caret: var(--caret);
+  --color-correct: var(--correct);
+  --color-error: var(--error);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--background);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
