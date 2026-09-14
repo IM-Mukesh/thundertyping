@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# claude code (local/agent-managed, not shared project config)
+/.claude/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

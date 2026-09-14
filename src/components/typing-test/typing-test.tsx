@@ -6,7 +6,11 @@ import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { recordResult } from "@/lib/persistence/results-store";
-import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
+import {
+  calculateAccuracy,
+  calculateNetWpm,
+  round,
+} from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
 import { WordStream } from "@/components/typing-test/word-stream";
@@ -16,6 +20,7 @@ import { TestConfigBar } from "@/components/typing-test/test-config-bar";
 import { CustomTextModal } from "@/components/typing-test/custom-text-modal";
 import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
+import { useTestStatusStore } from "@/lib/typing-engine/test-status-store";
 
 export function TypingTest() {
   const mode = useSettingsStore((s) => s.mode);
@@ -32,8 +37,24 @@ export function TypingTest() {
   const [isNewBest, setIsNewBest] = useState(false);
 
   const config = useMemo<TestConfig>(
-    () => ({ mode, timeDuration, wordCount, quoteLength, customText, punctuation, numbers }),
-    [mode, timeDuration, wordCount, quoteLength, customText, punctuation, numbers],
+    () => ({
+      mode,
+      timeDuration,
+      wordCount,
+      quoteLength,
+      customText,
+      punctuation,
+      numbers,
+    }),
+    [
+      mode,
+      timeDuration,
+      wordCount,
+      quoteLength,
+      customText,
+      punctuation,
+      numbers,
+    ],
   );
 
   const engine = useTypingEngine(config);
@@ -49,7 +70,20 @@ export function TypingTest() {
     setFocusToken((t) => t + 1);
     // config identity changes whenever any setting above changes; engine.applyConfig is stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, timeDuration, wordCount, quoteLength, customText, punctuation, numbers]);
+  }, [
+    mode,
+    timeDuration,
+    wordCount,
+    quoteLength,
+    customText,
+    punctuation,
+    numbers,
+  ]);
+
+  const setFinished = useTestStatusStore((s) => s.setFinished);
+  useEffect(() => {
+    setFinished(engine.state.status === "finished");
+  }, [engine.state.status, setFinished]);
 
   const recordedRef = useRef(false);
   useEffect(() => {
@@ -60,10 +94,25 @@ export function TypingTest() {
     if (recordedRef.current) return;
     recordedRef.current = true;
 
-    const wpm = round(calculateNetWpm(engine.state.correctKeystrokes, engine.state.elapsedMs));
-    const accuracy = round(calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes));
-    const param = config.mode === "time" ? config.timeDuration : config.wordCount;
-    const { isNewBest: newBest } = recordResult(config.mode, param, config.punctuation, config.numbers, wpm, accuracy);
+    const wpm = round(
+      calculateNetWpm(engine.state.correctKeystrokes, engine.state.elapsedMs),
+    );
+    const accuracy = round(
+      calculateAccuracy(
+        engine.state.correctKeystrokes,
+        engine.state.incorrectKeystrokes,
+      ),
+    );
+    const param =
+      config.mode === "time" ? config.timeDuration : config.wordCount;
+    const { isNewBest: newBest } = recordResult(
+      config.mode,
+      param,
+      config.punctuation,
+      config.numbers,
+      wpm,
+      accuracy,
+    );
     setIsNewBest(newBest);
     // intentionally narrow: only re-evaluate when the test transitions to "finished"
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,20 +137,26 @@ export function TypingTest() {
   const activeWord = engine.state.wordStates[engine.state.activeWordIndex];
 
   const isRunning = engine.state.status === "running";
+  const showIdleChrome = engine.state.status === "idle";
 
   return (
     <div className="flex w-full flex-col items-center gap-8">
-      {/* Both children stay mounted and share this slot so its height never
-          changes — only their opacity crossfades. This keeps the word-stream
-          below permanently anchored instead of jumping when the config bar
-          hides during a run (see PROGRESS.md for the bug this replaced). */}
-      <div className="relative flex w-full items-center justify-center">
-        <div className={cn("transition duration-200", isRunning ? "pointer-events-none opacity-0" : "opacity-100")}>
+      {/* Both children stay mounted and share this grid cell (both placed at
+          grid-area 1/1) so the slot always sizes to the taller of the two and
+          only their opacity crossfades — keeps the word-stream below from
+          jumping when this row's content swaps (see PROGRESS.md). */}
+      <div className="grid w-full place-items-center">
+        <div
+          className={cn(
+            "[grid-area:1/1] transition duration-200",
+            showIdleChrome ? "opacity-100" : "pointer-events-none opacity-0",
+          )}
+        >
           <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
         </div>
         <div
           className={cn(
-            "absolute inset-0 flex items-center justify-center transition-opacity duration-200",
+            "[grid-area:1/1] transition-opacity duration-200",
             isRunning ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         >
@@ -109,14 +164,25 @@ export function TypingTest() {
         </div>
       </div>
 
-      <div className={cn("transition duration-200", isRunning ? "pointer-events-none opacity-0" : "opacity-100")}>
+      <div
+        className={cn(
+          "transition duration-200",
+          showIdleChrome ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
         <LanguageSelector />
       </div>
 
       {engine.state.status !== "finished" ? (
-        <div className="flex w-full max-w-4xl flex-col items-center gap-6">
-          <div className="relative w-full cursor-pointer" onClick={() => setFocusToken((t) => t + 1)}>
-            <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
+        <div className="flex w-full flex-col items-center gap-6">
+          <div
+            className="relative w-full cursor-pointer"
+            onClick={() => setFocusToken((t) => t + 1)}
+          >
+            <WordStream
+              wordStates={engine.state.wordStates}
+              activeWordIndex={engine.state.activeWordIndex}
+            />
             <HiddenInput
               value={activeWord?.typed ?? ""}
               status={engine.state.status}
@@ -141,7 +207,11 @@ export function TypingTest() {
           </button>
         </div>
       ) : (
-        <ResultsPanel state={engine.state} isNewBest={isNewBest} onRestart={handleRestart} />
+        <ResultsPanel
+          state={engine.state}
+          isNewBest={isNewBest}
+          onRestart={handleRestart}
+        />
       )}
 
       {engine.state.quoteSource && engine.state.status !== "finished" && (
