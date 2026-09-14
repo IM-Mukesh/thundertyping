@@ -16,6 +16,16 @@ npm run build       # must be clean before you consider anything "done"
 
 Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now. There is no test suite yet (see QA backlog below), so "lint + build both clean" is the current bar, plus manual verification in a real browser for anything UI-observable.
 
+## Right now (orientation for a cold start — the rest of this file has the detail)
+
+As of 2026-09-15: a feature-complete MVP (all four typing modes, full stats/results, 5 themes, icon-based config bar, MonkeyType-matched visuals) plus the *first* piece of real SEO content (`/guides/how-to-improve-typing-speed`, internally linked from the homepage and footer). Not launched — no domain, no AdSense, no Search Console yet.
+
+**What's genuinely open right now, roughly by leverage:**
+1. Two items from the most recent round were built and confirmed correct by source review + a clean build, but never actually seen rendering (an unrelated wedged local dev-server cache blocked it both times, for two different reasons — see "Tech stack & conventions" and "Done and verified working" below for specifics). A fresh session with a normal dev server should spot-check those before touching them further.
+2. SEO content roadmap: guide #1 of 5 planned Tier-1 guides is done; #2–5 (`average-typing-speed`, `touch-typing-basics`, `wpm-vs-cpm`, `typing-accuracy-vs-speed`) are scoped and ready to write — see "Content architecture" below.
+3. Three "Awaiting human input" questions are genuinely blocked on the project owner, not on more engineering — don't guess at these, ask.
+4. Everything else is in "Prioritized backlog," roughly ordered within each category, but not urgent — check in on priority before grinding through it top-to-bottom.
+
 ## What this project is
 
 A typing-speed-test website (MonkeyType-style) aiming for large organic Google traffic, monetized via Google AdSense. Long-term ambition: "world's best typing platform," but development proceeds in deliberate phases — **do not jump ahead to multiplayer/accounts/backend/games until explicitly prioritized below.**
@@ -43,6 +53,7 @@ A typing-speed-test website (MonkeyType-style) aiming for large organic Google t
 ### Done and verified working
 Manually tested in a real browser (typed real words, confirmed char-by-char coloring, word advancement, caret positioning, timer countdown, auto-finish, personal-best recording, restart, mobile viewport layout, malformed-localStorage recovery, paste blocking, zero layout shift on test start, theme switching, punctuation-skip handling) — every bullet below was actually exercised, not just written and assumed correct. **Exception**: the two bullets marked "not live-verified this round" below were confirmed correct by source review + a clean `npm run build` (zero TypeScript errors) but not rendered live — the dev server left running from an earlier session had a wedged Turbopack HMR cache (confirmed stale/incorrect for at least two unrelated components) that this session couldn't get a fresh instance past (dev mode locks one instance per directory; the stale process wasn't visible to this session's sandbox to kill; navigating to a different port was blocked by this session's own sandbox network policy). If you're picking this up fresh, a normal dev-server restart almost certainly clears it — do a quick visual spot-check of those two items before trusting this note over your own eyes.
 
+**Core engine & features:**
 - Project scaffold, 5-theme system (`data-theme` attribute + CSS vars, picker in `theme-switcher.tsx`), header/footer, ad-slot placeholders (footer + post-results, not near the typing area).
 - Full typing engine (`src/lib/typing-engine/`): time mode (15/30/60/120s presets **plus a free-form custom duration**, infinite word regeneration), words mode (10/25/50/100), quote mode (curated public-domain quotes, short/medium/long), custom text mode (capped at 2000 chars), punctuation/numbers injection toggles.
 - Per-character correct/incorrect/extra/pending rendering, animated caret (via `motion` `layoutId` shared-element transition), smooth 3-line word-window scrolling that re-measures after web fonts finish loading.
@@ -51,6 +62,8 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 - **Restart icon**: a small always-present circular button below the word-stream (idle/running only — the results screen has its own explicit "Restart" button). Follows the "always mounted, opacity-only crossfade" pattern — no layout shift.
 - **Header logo resets the test** when clicked while already on `/` (a plain `<Link>` is a no-op in that case since there's no navigation) — via a tiny pub-sub, `reset-bus.ts`.
 - **Language selector**: a real (not decorative) popover showing "English" as the sole, checked option — same interaction pattern as the theme picker. Functionally honest (opens a real menu) rather than a fake button, so adding a second language later is one more row, not a rebuild.
+
+**Visual redesign (most recent round, matching MonkeyType's look):**
 - **Typography**: monospace font is JetBrains Mono (switched from Geist Mono site-wide). Word-stream size is currently `text-2xl sm:text-3xl`, `LINE_HEIGHT` re-measured to 38px to match — see the sizing/line-height cautionary notes below before changing this again.
 - **Config bar is icon-based** (`test-config-bar.tsx`): punctuation/numbers/time/words/quote/custom render as `lucide-react` icons, not text, each with an `aria-label` + `title` tooltip so meaning isn't lost. Container background removed so it blends with the page instead of sitting in a visibly distinct box.
 - **Custom time duration**: time-mode presets (15/30/60/120s) sit next to a real numeric input, clamped **1s–86400s / 24 hours**, tucked behind a pencil-icon trigger rather than a permanently-visible bare input. Durations over a minute format as "1m 13s" / "2h 3m 14s" (a local `formatDuration` helper) instead of a raw second count — applied to the preset pills too ("15s"/"30s"/"1m"/"2m"), not just the custom one. **Not yet applied to the live countdown while a test is running** — that still shows raw seconds; deliberately out of scope this round (a proper HH:MM:SS-style flip-clock treatment deserves its own design pass, see backlog).
@@ -64,8 +77,12 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 - Settings persisted via zustand with full validation on rehydration — every field falls back to a safe default if the stored value is out of range, wrong type, or (for `mode`) `"custom"` with no text behind it.
 - Paste is blocked in the typing input; keystroke counting loops over every newly-inserted character rather than assuming exactly one.
 - Supporting pages: `/about`, `/privacy`, `/terms`, a themed custom `/not-found` (404), a root `error.tsx` boundary, and a dynamically generated OG image (`app/opengraph-image.tsx`).
+
+**SEO & content:**
 - **First Tier 1 SEO guide is live**: `/guides/how-to-improve-typing-speed` (real, non-templated content — accuracy-before-speed, home-row finger placement, deliberate short practice sessions, consistency-over-peak-WPM, and common speed-capping habits), using the same `ContentPage` component as `/about`/`/privacy`/`/terms`. Has its own `Article` JSON-LD (`buildArticleSchema` in `src/lib/seo/json-ld.ts`), is in `sitemap.ts`, and is linked from both `PageIntro` ("Want to type faster?") and `SiteFooter` ("Guides") — the first real internal links this site has had beyond header/footer chrome nav. Verified via a clean `npm run build`'s prerendered static HTML (checked the actual `.next/server/app/guides/...html` output for the h1 and the JSON-LD script tag) and the generated `sitemap.xml.body` — **not live-verified in a running browser**: this was an unattended scheduled-task session and `preview_start`/dev-server launch is blocked for unattended runs (no one present to approve). A normal interactive session should do a quick visual pass (it's static content through a component already proven to render correctly for `/about`, so risk is low, but hasn't been literally seen).
 - **`sitemap.ts`'s `lastModified` bug is fixed**: it previously evaluated `new Date()` per request, so every crawl saw "modified right now" regardless of whether anything changed. Now each route has a hand-set date in a `routes` array; bump a route's date only when that page's content actually changes. This was Technical SEO gap #1 in the roadmap below — now resolved.
+
+**Accessibility & polish:**
 - Mobile layout (375×812) verified with no horizontal overflow. Hidden input has `font-size: 16px` to prevent iOS auto-zoom.
 - Custom-text modal has proper dialog semantics, closes on Escape or backdrop click, live character counter, returns focus on close.
 - Mode-selection and toggle pills expose `aria-pressed`.
