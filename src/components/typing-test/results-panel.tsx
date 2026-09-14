@@ -33,7 +33,7 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       transition={{ duration: 0.25 }}
       role="status"
       aria-live="polite"
-      className="flex w-full max-w-2xl flex-col items-center gap-5"
+      className="flex w-full max-w-2xl flex-col items-center gap-4"
     >
       <h2 className="sr-only">Results</h2>
 

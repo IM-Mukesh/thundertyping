@@ -20,7 +20,7 @@ import { TestConfigBar } from "@/components/typing-test/test-config-bar";
 import { CustomTextModal } from "@/components/typing-test/custom-text-modal";
 import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
-import { useTestStatusStore } from "@/lib/typing-engine/test-status-store";
+import { setTestFinished } from "@/lib/typing-engine/test-status-store";
 
 export function TypingTest() {
   const mode = useSettingsStore((s) => s.mode);
@@ -80,10 +80,15 @@ export function TypingTest() {
     numbers,
   ]);
 
-  const setFinished = useTestStatusStore((s) => s.setFinished);
   useEffect(() => {
-    setFinished(engine.state.status === "finished");
-  }, [engine.state.status, setFinished]);
+    setTestFinished(engine.state.status === "finished");
+  }, [engine.state.status]);
+
+  // Clears the signal when the whole test unmounts (e.g. navigating to
+  // /about after finishing a test) so the footer doesn't stay hidden on
+  // pages that have no typing test at all. Mount-only, so its cleanup runs
+  // at unmount rather than on every status change.
+  useEffect(() => () => setTestFinished(false), []);
 
   const recordedRef = useRef(false);
   useEffect(() => {

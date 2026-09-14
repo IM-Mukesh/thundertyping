@@ -95,8 +95,15 @@ function tallyWord(tally: CharTally, word: WordState): CharTally {
   return next;
 }
 
-function finalize(state: TestState, tally: CharTally, now: number): TestState {
-  const elapsedMs = state.startedAt !== null ? now - state.startedAt : state.elapsedMs;
+// `elapsedMsOverride` pins the recorded duration for a time-mode test that ran
+// to completion: the tick runs every TICK_INTERVAL_MS, so wall-clock elapsed
+// overshoots the nominal duration by up to that interval, and a 30s test would
+// otherwise record ~30.1s and report WPM a few tenths of a percent low. Every
+// other finish path (auto-finish on the last word, committing the last word)
+// omits it and uses true elapsed time, which is correct for those.
+function finalize(state: TestState, tally: CharTally, now: number, elapsedMsOverride?: number): TestState {
+  const elapsedMs =
+    elapsedMsOverride ?? (state.startedAt !== null ? now - state.startedAt : state.elapsedMs);
   return { ...state, status: "finished", charTally: tally, elapsedMs };
 }
 
@@ -211,7 +218,7 @@ function reducer(state: TestState, action: EngineAction): TestState {
       if (state.config.mode === "time" && elapsedMs >= state.config.timeDuration * 1000) {
         const activeWord = state.wordStates[state.activeWordIndex];
         const tally = activeWord ? tallyWord(state.charTally, activeWord) : state.charTally;
-        return finalize({ ...state, wpmSamples, elapsedMs: state.config.timeDuration * 1000 }, tally, action.now);
+        return finalize({ ...state, wpmSamples }, tally, action.now, state.config.timeDuration * 1000);
       }
 
       return { ...state, elapsedMs, wpmSamples };
