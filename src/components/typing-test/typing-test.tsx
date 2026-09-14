@@ -15,6 +15,7 @@ import { ResultsPanel } from "@/components/typing-test/results-panel";
 import { TestConfigBar } from "@/components/typing-test/test-config-bar";
 import { CustomTextModal } from "@/components/typing-test/custom-text-modal";
 import { LanguageSelector } from "@/components/typing-test/language-selector";
+import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
 
 export function TypingTest() {
   const mode = useSettingsStore((s) => s.mode);
@@ -73,6 +74,8 @@ export function TypingTest() {
     setIsNewBest(false);
     setFocusToken((t) => t + 1);
   }, [engine]);
+
+  useEffect(() => listenForTestReset(handleRestart), [handleRestart]);
 
   const handleCustomTextSubmit = useCallback(
     (text: string) => {

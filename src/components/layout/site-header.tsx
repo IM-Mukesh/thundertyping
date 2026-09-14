@@ -1,11 +1,23 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { emitTestReset } from "@/lib/typing-engine/reset-bus";
 
 export function SiteHeader() {
+  const pathname = usePathname();
+
   return (
     <header className="flex items-center justify-between px-6 py-5 sm:px-10">
       <Link
         href="/"
+        onClick={() => {
+          // Link alone is a no-op when already on "/" (no navigation occurs,
+          // so a finished/mid-test view never resets) - explicitly signal
+          // the typing test to restart in that case.
+          if (pathname === "/") emitTestReset();
+        }}
         className="flex items-center gap-1 text-lg font-semibold tracking-tight text-foreground"
       >
         <span className="text-accent">Thunder</span>Typing

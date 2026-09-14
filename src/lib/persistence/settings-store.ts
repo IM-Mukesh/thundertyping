@@ -2,9 +2,10 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DEFAULT_THEME, THEMES, type ThemeId } from "@/components/theme/themes";
 import {
-  TIME_DURATIONS,
   WORD_COUNTS,
   QUOTE_LENGTHS,
+  MIN_CUSTOM_TIME_DURATION,
+  MAX_CUSTOM_TIME_DURATION,
   type TestMode,
   type TimeDuration,
   type WordCountOption,
@@ -42,6 +43,15 @@ type PersistedSettings = Pick<
   "theme" | "mode" | "timeDuration" | "wordCount" | "quoteLength" | "punctuation" | "numbers" | "soundEnabled"
 >;
 
+function isValidTimeDuration(value: unknown): value is TimeDuration {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= MIN_CUSTOM_TIME_DURATION &&
+    value <= MAX_CUSTOM_TIME_DURATION
+  );
+}
+
 // Defends against corrupted/edited/stale-schema localStorage content: every
 // field is validated against its allowed values and falls back to the fresh
 // store's default rather than trusting whatever JSON.parse handed back.
@@ -51,7 +61,7 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
   return {
     theme: THEME_IDS.includes(p.theme as ThemeId) ? (p.theme as ThemeId) : fallback.theme,
     mode: RESTORABLE_MODES.includes(p.mode as TestMode) ? (p.mode as TestMode) : fallback.mode,
-    timeDuration: TIME_DURATIONS.includes(p.timeDuration as TimeDuration) ? (p.timeDuration as TimeDuration) : fallback.timeDuration,
+    timeDuration: isValidTimeDuration(p.timeDuration) ? p.timeDuration : fallback.timeDuration,
     wordCount: WORD_COUNTS.includes(p.wordCount as WordCountOption) ? (p.wordCount as WordCountOption) : fallback.wordCount,
     quoteLength: QUOTE_LENGTHS.includes(p.quoteLength as QuoteLength) ? (p.quoteLength as QuoteLength) : fallback.quoteLength,
     punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,

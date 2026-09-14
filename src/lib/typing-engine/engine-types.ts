@@ -1,11 +1,16 @@
 export type TestMode = "time" | "words" | "quote" | "custom";
-export type TimeDuration = 15 | 30 | 60 | 120;
+// Any positive integer is valid (see MIN/MAX_CUSTOM_TIME_DURATION below) -
+// the literal union of presets was widened to plain `number` so a
+// user-entered custom duration has somewhere to live without a second field.
+export type TimeDuration = number;
 export type WordCountOption = 10 | 25 | 50 | 100;
 export type QuoteLength = "short" | "medium" | "long";
 
 export const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
 export const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
 export const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
+export const MIN_CUSTOM_TIME_DURATION = 5;
+export const MAX_CUSTOM_TIME_DURATION = 600;
 
 export interface TestConfig {
   mode: TestMode;
