@@ -32,9 +32,10 @@ export interface WpmSample {
   wpm: number;
 }
 
+// "correct"/"incorrect" deliberately live on TestState directly
+// (correctKeystrokes/incorrectKeystrokes), not here — see the comment on
+// tallyWord in use-typing-engine.ts for why.
 export interface CharTally {
-  correct: number;
-  incorrect: number;
   extra: number;
   missed: number;
 }

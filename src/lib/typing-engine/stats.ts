@@ -44,7 +44,7 @@ export function calculateConsistency(samples: WpmSample[]): number {
 }
 
 export function emptyCharTally(): CharTally {
-  return { correct: 0, incorrect: 0, extra: 0, missed: 0 };
+  return { extra: 0, missed: 0 };
 }
 
 export function round(value: number): number {

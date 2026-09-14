@@ -49,8 +49,8 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       )}
 
       <div className="flex flex-wrap justify-center gap-6 font-mono text-sm text-sub">
-        <span className="text-correct">{charTally.correct} correct</span>
-        <span className="text-error">{charTally.incorrect} incorrect</span>
+        <span className="text-correct">{correctKeystrokes} correct</span>
+        <span className="text-error">{incorrectKeystrokes} incorrect</span>
         <span>{charTally.extra} extra</span>
         <span>{charTally.missed} missed</span>
       </div>

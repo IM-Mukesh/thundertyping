@@ -62,12 +62,19 @@ function createInitialState(config: TestConfig): TestState {
   };
 }
 
+// Deliberately does NOT tally "correct"/"incorrect" here — those come from
+// state.correctKeystrokes/incorrectKeystrokes (full keystroke history), so
+// the results screen's accuracy% and its correct/incorrect breakdown always
+// agree. A per-word tally would only reflect the *final* state of each word,
+// silently forgiving any backspaced-out mistake — accuracy would then say
+// e.g. 75% while the breakdown said "0 incorrect", which is confusing, not
+// wrong-looking-by-coincidence (this was a real, reported, reproduced bug).
+// "extra"/"missed" have no keystroke-history equivalent — they're inherently
+// about what's left over in the *final* submitted text — so they stay here.
 function tallyWord(tally: CharTally, word: WordState): CharTally {
   const next = { ...tally };
   for (const c of word.chars) {
-    if (c === "correct") next.correct += 1;
-    else if (c === "incorrect") next.incorrect += 1;
-    else if (c === "extra") next.extra += 1;
+    if (c === "extra") next.extra += 1;
   }
   if (word.typed.length < word.target.length) {
     next.missed += word.target.length - word.typed.length;
