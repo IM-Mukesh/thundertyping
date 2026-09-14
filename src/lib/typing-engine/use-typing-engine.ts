@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { CharState, CharTally, TestConfig, TestState, WordState } from "@/lib/typing-engine/engine-types";
 import { generateWords, PUNCTUATION_MARKS } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
-import { calculateNetWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
+import { calculateNetWpm, calculateRawWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
 
 const TIME_MODE_BATCH = 40;
 const TIME_MODE_LOOKAHEAD = 15;
@@ -198,7 +198,14 @@ function reducer(state: TestState, action: EngineAction): TestState {
       // into the consistency calculation would just skew that score.
       const wpmSamples =
         elapsedMs >= MIN_LIVE_WPM_WINDOW_MS
-          ? [...state.wpmSamples, { t: elapsedMs, wpm: calculateNetWpm(state.correctKeystrokes, elapsedMs) }]
+          ? [
+              ...state.wpmSamples,
+              {
+                t: elapsedMs,
+                wpm: calculateNetWpm(state.correctKeystrokes, elapsedMs),
+                rawWpm: calculateRawWpm(state.correctKeystrokes, state.incorrectKeystrokes, elapsedMs),
+              },
+            ]
           : state.wpmSamples;
 
       if (state.config.mode === "time" && elapsedMs >= state.config.timeDuration * 1000) {

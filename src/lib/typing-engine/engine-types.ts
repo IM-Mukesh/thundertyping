@@ -30,6 +30,7 @@ export type TestStatus = "idle" | "running" | "finished";
 export interface WpmSample {
   t: number;
   wpm: number;
+  rawWpm: number;
 }
 
 // "correct"/"incorrect" deliberately live on TestState directly

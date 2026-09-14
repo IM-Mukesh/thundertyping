@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
@@ -13,6 +14,7 @@ import { LiveStatsBar } from "@/components/typing-test/live-stats-bar";
 import { ResultsPanel } from "@/components/typing-test/results-panel";
 import { TestConfigBar } from "@/components/typing-test/test-config-bar";
 import { CustomTextModal } from "@/components/typing-test/custom-text-modal";
+import { LanguageSelector } from "@/components/typing-test/language-selector";
 
 export function TypingTest() {
   const mode = useSettingsStore((s) => s.mode);
@@ -91,7 +93,7 @@ export function TypingTest() {
           below permanently anchored instead of jumping when the config bar
           hides during a run (see PROGRESS.md for the bug this replaced). */}
       <div className="relative flex w-full items-center justify-center">
-        <div className={cn("transition-opacity duration-200", isRunning ? "pointer-events-none opacity-0" : "opacity-100")}>
+        <div className={cn("transition duration-200", isRunning ? "pointer-events-none opacity-0" : "opacity-100")}>
           <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
         </div>
         <div
@@ -104,18 +106,36 @@ export function TypingTest() {
         </div>
       </div>
 
+      <div className={cn("transition duration-200", isRunning ? "pointer-events-none opacity-0" : "opacity-100")}>
+        <LanguageSelector />
+      </div>
+
       {engine.state.status !== "finished" ? (
-        <div className="relative w-full max-w-4xl cursor-pointer" onClick={() => setFocusToken((t) => t + 1)}>
-          <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
-          <HiddenInput
-            value={activeWord?.typed ?? ""}
-            status={engine.state.status}
-            onChange={engine.setTyped}
-            onCommitWord={engine.commitWord}
-            onRestart={handleRestart}
-            onEscape={() => {}}
-            focusToken={focusToken}
-          />
+        <div className="flex w-full max-w-4xl flex-col items-center gap-6">
+          <div className="relative w-full cursor-pointer" onClick={() => setFocusToken((t) => t + 1)}>
+            <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
+            <HiddenInput
+              value={activeWord?.typed ?? ""}
+              status={engine.state.status}
+              onChange={engine.setTyped}
+              onCommitWord={engine.commitWord}
+              onRestart={handleRestart}
+              onEscape={() => {}}
+              focusToken={focusToken}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleRestart}
+            aria-label="Restart test"
+            title="Restart (Tab)"
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full text-sub transition-opacity duration-200 hover:bg-sub-alt hover:text-foreground",
+              isRunning ? "pointer-events-none opacity-0" : "opacity-100",
+            )}
+          >
+            <RotateCcw size={16} />
+          </button>
         </div>
       ) : (
         <ResultsPanel state={engine.state} isNewBest={isNewBest} onRestart={handleRestart} />

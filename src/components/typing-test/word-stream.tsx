@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
 
-const LINE_HEIGHT = 48;
+const LINE_HEIGHT = 40;
 const VISIBLE_LINES = 3;
 
 interface WordStreamProps {
@@ -44,7 +44,7 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
     <div className="relative w-full overflow-hidden" style={{ height: LINE_HEIGHT * VISIBLE_LINES }}>
       <div
         ref={containerRef}
-        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"
+        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-lg font-normal leading-none transition-transform duration-150 ease-out sm:text-xl"
         style={{ transform: `translateY(-${offset}px)` }}
       >
         {wordStates.map((word, index) => (

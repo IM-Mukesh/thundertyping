@@ -11,6 +11,7 @@ import {
   round,
 } from "@/lib/typing-engine/stats";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { ResultsGraph } from "@/components/typing-test/results-graph";
 
 interface ResultsPanelProps {
   state: TestState;
@@ -41,6 +42,8 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
         <Stat label="raw" value={rawWpm} />
         <Stat label="consistency" value={`${consistency}%`} />
       </div>
+
+      <ResultsGraph samples={wpmSamples} />
 
       {isNewBest && (
         <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
