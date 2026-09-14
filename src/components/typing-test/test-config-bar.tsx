@@ -147,7 +147,7 @@ function CustomDurationInput({
       }}
       placeholder="custom"
       aria-label="Custom time duration in seconds"
-      className="w-16 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none"
+      className="w-20 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none"
     />
   );
 }

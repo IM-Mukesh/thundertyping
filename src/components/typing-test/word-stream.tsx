@@ -5,7 +5,14 @@ import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
 
-const LINE_HEIGHT = 48;
+// Empirically measured (not calculated on paper) from consecutive wrapped
+// lines' offsetTop deltas at the sm:text-2xl breakpoint — font-metric-driven
+// line height doesn't reliably match font-size × line-height-multiplier
+// arithmetic, especially across a font change (this was miscalibrated at 48,
+// a leftover from Geist Mono at a larger size, causing 4 lines to render in
+// a "3-line" window). Re-measure this the same way if the font or size ever
+// changes again — don't just eyeball a new number.
+const LINE_HEIGHT = 32;
 const VISIBLE_LINES = 3;
 
 interface WordStreamProps {
@@ -44,7 +51,7 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
     <div className="relative w-full overflow-hidden" style={{ height: LINE_HEIGHT * VISIBLE_LINES }}>
       <div
         ref={containerRef}
-        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"
+        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-xl font-normal leading-none transition-transform duration-150 ease-out sm:text-2xl"
         style={{ transform: `translateY(-${offset}px)` }}
       >
         {wordStates.map((word, index) => (
