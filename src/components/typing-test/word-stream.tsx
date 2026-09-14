@@ -27,6 +27,11 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
     };
     recalc();
 
+    // Self-hosted fonts (next/font) resolve fast, but a late swap could still
+    // shift line height slightly before the observer below has anything to
+    // react to — re-measure once fonts are actually ready.
+    document.fonts?.ready?.then(recalc).catch(() => {});
+
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(recalc);
@@ -84,7 +89,7 @@ function Word({
   }
 
   return (
-    <span ref={registerRef} className="inline-flex">
+    <span ref={registerRef} className="inline-flex max-w-full flex-wrap break-all">
       {nodes}
     </span>
   );

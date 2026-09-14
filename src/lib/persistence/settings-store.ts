@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { DEFAULT_THEME, type ThemeId } from "@/components/theme/themes";
+import { DEFAULT_THEME, THEMES, type ThemeId } from "@/components/theme/themes";
 import type { TestMode, TimeDuration, WordCountOption, QuoteLength } from "@/lib/typing-engine/engine-types";
 
 interface SettingsState {
@@ -20,6 +20,39 @@ interface SettingsState {
   togglePunctuation: () => void;
   toggleNumbers: () => void;
   toggleSound: () => void;
+}
+
+const THEME_IDS: ThemeId[] = THEMES.map((t) => t.id);
+const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
+const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
+const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
+// "custom" is deliberately excluded — its content (customText) lives in
+// component state, not this persisted store, so restoring "custom" as the
+// mode on a fresh page load would leave the engine with no text to build a
+// test from. Treat a persisted "custom" as if it were never set.
+const RESTORABLE_MODES: TestMode[] = ["time", "words", "quote"];
+
+type PersistedSettings = Pick<
+  SettingsState,
+  "theme" | "mode" | "timeDuration" | "wordCount" | "quoteLength" | "punctuation" | "numbers" | "soundEnabled"
+>;
+
+// Defends against corrupted/edited/stale-schema localStorage content: every
+// field is validated against its allowed values and falls back to the fresh
+// store's default rather than trusting whatever JSON.parse handed back.
+function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettings): PersistedSettings {
+  const p = (typeof persisted === "object" && persisted !== null ? persisted : {}) as Partial<PersistedSettings>;
+
+  return {
+    theme: THEME_IDS.includes(p.theme as ThemeId) ? (p.theme as ThemeId) : fallback.theme,
+    mode: RESTORABLE_MODES.includes(p.mode as TestMode) ? (p.mode as TestMode) : fallback.mode,
+    timeDuration: TIME_DURATIONS.includes(p.timeDuration as TimeDuration) ? (p.timeDuration as TimeDuration) : fallback.timeDuration,
+    wordCount: WORD_COUNTS.includes(p.wordCount as WordCountOption) ? (p.wordCount as WordCountOption) : fallback.wordCount,
+    quoteLength: QUOTE_LENGTHS.includes(p.quoteLength as QuoteLength) ? (p.quoteLength as QuoteLength) : fallback.quoteLength,
+    punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,
+    numbers: typeof p.numbers === "boolean" ? p.numbers : fallback.numbers,
+    soundEnabled: typeof p.soundEnabled === "boolean" ? p.soundEnabled : fallback.soundEnabled,
+  };
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -45,6 +78,10 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: "thundertyping-settings",
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...sanitizePersistedSettings(persistedState, currentState),
+      }),
     },
   ),
 );

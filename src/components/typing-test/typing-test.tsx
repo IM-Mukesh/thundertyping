@@ -125,7 +125,10 @@ export function TypingTest() {
         open={isCustomModalOpen}
         initialValue={customText}
         onSubmit={handleCustomTextSubmit}
-        onClose={() => setCustomModalOpen(false)}
+        onClose={() => {
+          setCustomModalOpen(false);
+          setFocusToken((t) => t + 1);
+        }}
       />
     </div>
   );
