@@ -1,7 +1,7 @@
 "use client";
 
 import { useSettingsStore } from "@/lib/persistence/settings-store";
-import type { QuoteLength, TestMode, TimeDuration, WordCountOption } from "@/lib/typing-engine/engine-types";
+import { TIME_DURATIONS, WORD_COUNTS, QUOTE_LENGTHS, type TestMode } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
 
 const MODES: { id: TestMode; label: string }[] = [
@@ -10,10 +10,6 @@ const MODES: { id: TestMode; label: string }[] = [
   { id: "quote", label: "quote" },
   { id: "custom", label: "custom" },
 ];
-
-const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
-const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
-const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
 
 interface TestConfigBarProps {
   onOpenCustomText: () => void;
@@ -97,6 +93,7 @@ function Pill({ active, onClick, label }: { active: boolean; onClick: () => void
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn("rounded px-2 py-1 transition-colors", active ? "text-accent" : "text-sub hover:text-foreground")}
     >
       {label}

@@ -17,6 +17,12 @@ function isTrackableMode(mode: TestMode): mode is "time" | "words" {
   return mode === "time" || mode === "words";
 }
 
+function isValidPersonalBest(value: unknown): value is PersonalBest {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Partial<PersonalBest>;
+  return typeof v.wpm === "number" && typeof v.accuracy === "number" && typeof v.achievedAt === "number";
+}
+
 export function getPersonalBest(
   mode: TestMode,
   param: number | string,
@@ -27,7 +33,8 @@ export function getPersonalBest(
   const raw = getStorageItem(pbKey(mode, param, punctuation, numbers));
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as PersonalBest;
+    const parsed: unknown = JSON.parse(raw);
+    return isValidPersonalBest(parsed) ? parsed : null;
   } catch {
     return null;
   }

@@ -3,6 +3,10 @@ export type TimeDuration = 15 | 30 | 60 | 120;
 export type WordCountOption = 10 | 25 | 50 | 100;
 export type QuoteLength = "short" | "medium" | "long";
 
+export const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
+export const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
+export const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
+
 export interface TestConfig {
   mode: TestMode;
   timeDuration: TimeDuration;
@@ -50,13 +54,3 @@ export interface TestState {
   quoteSource: string | null;
 }
 
-export interface TestResult {
-  mode: TestMode;
-  config: TestConfig;
-  netWpm: number;
-  rawWpm: number;
-  accuracy: number;
-  consistency: number;
-  charTally: CharTally;
-  durationMs: number;
-}

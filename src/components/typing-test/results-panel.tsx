@@ -30,8 +30,11 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
+      role="status"
+      aria-live="polite"
       className="flex w-full max-w-2xl flex-col items-center gap-8"
     >
+      <h2 className="sr-only">Results</h2>
       <div className="grid w-full grid-cols-2 gap-6 sm:grid-cols-4">
         <Stat label="wpm" value={netWpm} highlight />
         <Stat label="accuracy" value={`${accuracy}%`} />

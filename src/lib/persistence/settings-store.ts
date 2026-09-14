@@ -1,7 +1,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DEFAULT_THEME, THEMES, type ThemeId } from "@/components/theme/themes";
-import type { TestMode, TimeDuration, WordCountOption, QuoteLength } from "@/lib/typing-engine/engine-types";
+import {
+  TIME_DURATIONS,
+  WORD_COUNTS,
+  QUOTE_LENGTHS,
+  type TestMode,
+  type TimeDuration,
+  type WordCountOption,
+  type QuoteLength,
+} from "@/lib/typing-engine/engine-types";
 
 interface SettingsState {
   theme: ThemeId;
@@ -23,9 +31,6 @@ interface SettingsState {
 }
 
 const THEME_IDS: ThemeId[] = THEMES.map((t) => t.id);
-const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
-const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
-const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
 // "custom" is deliberately excluded — its content (customText) lives in
 // component state, not this persisted store, so restoring "custom" as the
 // mode on a fresh page load would leave the engine with no text to build a

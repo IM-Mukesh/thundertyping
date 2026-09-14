@@ -34,6 +34,7 @@ export function HiddenInput({
       value={value}
       disabled={status === "finished"}
       onChange={(e) => onChange(e.target.value)}
+      onPaste={(e) => e.preventDefault()}
       onKeyDown={(e) => {
         if (e.key === " ") {
           e.preventDefault();

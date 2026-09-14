@@ -30,6 +30,8 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
   const options = { punctuation: config.punctuation, numbers: config.numbers };
   switch (config.mode) {
     case "time":
+      // Double the usual top-up batch so a fast typist doesn't hit the
+      // COMMIT_WORD lookahead check within the first few words of the test.
       return { words: generateWords(TIME_MODE_BATCH * 2, options), quoteSource: null };
     case "words":
       return { words: generateWords(config.wordCount, options), quoteSource: null };
@@ -97,11 +99,14 @@ function reducer(state: TestState, action: EngineAction): TestState {
       const newTyped = action.value;
       const chars = computeCharStates(target, newTyped);
 
+      // Loops rather than assuming a single new character so a multi-character
+      // insertion (IME composition, programmatic autofill — paste itself is
+      // blocked in HiddenInput) still credits/blames each character instead
+      // of silently under-counting keystrokes.
       let correctKeystrokes = state.correctKeystrokes;
       let incorrectKeystrokes = state.incorrectKeystrokes;
-      if (newTyped.length > prevTyped.length) {
-        const newCharIndex = prevTyped.length;
-        const isCorrect = newCharIndex < target.length && newTyped[newCharIndex] === target[newCharIndex];
+      for (let i = prevTyped.length; i < newTyped.length; i++) {
+        const isCorrect = i < target.length && newTyped[i] === target[i];
         if (isCorrect) correctKeystrokes += 1;
         else incorrectKeystrokes += 1;
       }
