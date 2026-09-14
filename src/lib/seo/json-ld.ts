@@ -16,3 +16,34 @@ export function buildWebApplicationSchema() {
     },
   };
 }
+
+interface ArticleSchemaInput {
+  headline: string;
+  description: string;
+  path: string;
+  datePublished: string;
+}
+
+export function buildArticleSchema({
+  headline,
+  description,
+  path,
+  datePublished,
+}: ArticleSchemaInput) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline,
+    description,
+    url: `${SITE_URL}${path}`,
+    datePublished,
+    author: {
+      "@type": "Organization",
+      name: SITE_NAME,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+    },
+  };
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useTestStatusStore } from "@/lib/typing-engine/test-status-store";
 
@@ -25,7 +26,13 @@ export function PageIntro() {
             Free Online Typing Speed Test
           </h1>
           <p className="text-sm text-sub sm:text-base">
-            Measure your words per minute and accuracy. No sign-up required.
+            Measure your words per minute and accuracy. No sign-up required.{" "}
+            <Link
+              href="/guides/how-to-improve-typing-speed"
+              className="underline underline-offset-2 transition-colors hover:text-foreground"
+            >
+              Want to type faster?
+            </Link>
           </p>
         </motion.div>
       )}
