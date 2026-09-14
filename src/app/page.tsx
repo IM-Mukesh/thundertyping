@@ -12,7 +12,7 @@ export default function Home() {
   const schema = buildWebApplicationSchema();
 
   return (
-    <div className="flex flex-1 flex-col items-center px-6 pb-16 pt-8 sm:px-10">
+    <div className="flex flex-1 flex-col items-center px-6 pb-10 pt-6 sm:px-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
@@ -20,7 +20,7 @@ export default function Home() {
 
       <PageIntro />
 
-      <div className="mt-12 w-full max-w-6xl">
+      <div className="mt-8 w-full max-w-6xl">
         <TypingTestClient />
       </div>
     </div>

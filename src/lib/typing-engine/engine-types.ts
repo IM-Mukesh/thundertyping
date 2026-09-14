@@ -10,7 +10,7 @@ export const TIME_DURATIONS: TimeDuration[] = [15, 30, 60, 120];
 export const WORD_COUNTS: WordCountOption[] = [10, 25, 50, 100];
 export const QUOTE_LENGTHS: QuoteLength[] = ["short", "medium", "long"];
 export const MIN_CUSTOM_TIME_DURATION = 1;
-export const MAX_CUSTOM_TIME_DURATION = 36000; // 10 hours
+export const MAX_CUSTOM_TIME_DURATION = 86400; // 24 hours
 
 export interface TestConfig {
   mode: TestMode;

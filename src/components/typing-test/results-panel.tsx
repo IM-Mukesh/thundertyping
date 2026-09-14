@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Sparkles } from "lucide-react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
 import {
   calculateAccuracy,
@@ -33,10 +33,18 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       transition={{ duration: 0.25 }}
       role="status"
       aria-live="polite"
-      className="flex w-full max-w-2xl flex-col items-center gap-8"
+      className="flex w-full max-w-2xl flex-col items-center gap-5"
     >
       <h2 className="sr-only">Results</h2>
-      <div className="grid w-full grid-cols-2 gap-6 sm:grid-cols-4">
+
+      {isNewBest && (
+        <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+          <Sparkles size={13} />
+          New personal best
+        </span>
+      )}
+
+      <div className="grid w-full grid-cols-2 gap-5 sm:grid-cols-4">
         <Stat label="wpm" value={netWpm} highlight />
         <Stat label="accuracy" value={`${accuracy}%`} />
         <Stat label="raw" value={rawWpm} />
@@ -45,13 +53,7 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
 
       <ResultsGraph samples={wpmSamples} />
 
-      {isNewBest && (
-        <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-          New personal best
-        </span>
-      )}
-
-      <div className="flex flex-wrap justify-center gap-6 font-mono text-sm text-sub">
+      <div className="flex w-full flex-wrap justify-center gap-6 border-t border-border pt-4 font-mono text-sm text-sub">
         <span className="text-correct">{correctKeystrokes} correct</span>
         <span className="text-error">{incorrectKeystrokes} incorrect</span>
         <span>{charTally.extra} extra</span>
@@ -61,7 +63,7 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       <button
         type="button"
         onClick={onRestart}
-        className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-sub transition-colors hover:text-foreground"
+        className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground"
       >
         <RotateCcw size={16} />
         Restart

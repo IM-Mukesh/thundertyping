@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
@@ -12,11 +13,11 @@ import {
 } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
 
-const MODES: { id: TestMode; label: string }[] = [
-  { id: "time", label: "time" },
-  { id: "words", label: "words" },
-  { id: "quote", label: "quote" },
-  { id: "custom", label: "custom" },
+const MODES: { id: TestMode; label: string; icon: ReactNode }[] = [
+  { id: "time", label: "Time", icon: <Clock size={16} /> },
+  { id: "words", label: "Words", icon: <Type size={16} /> },
+  { id: "quote", label: "Quote", icon: <QuoteIcon size={16} /> },
+  { id: "custom", label: "Custom text", icon: <Wrench size={16} /> },
 ];
 
 interface TestConfigBarProps {
@@ -40,12 +41,16 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const showTextToggles = mode === "time" || mode === "words";
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg bg-sub-alt/50 px-4 py-3 text-sm">
+    <div className="flex flex-col items-center gap-3 px-4 py-3 text-sm">
       <div className="flex flex-wrap items-center justify-center gap-4">
         {showTextToggles && (
           <>
-            <Pill active={punctuation} onClick={togglePunctuation} label="punctuation" />
-            <Pill active={numbers} onClick={toggleNumbers} label="numbers" />
+            <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation">
+              <AtSign size={16} />
+            </Pill>
+            <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers">
+              <Hash size={16} />
+            </Pill>
             <span className="h-4 w-px bg-border" aria-hidden="true" />
           </>
         )}
@@ -54,15 +59,19 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
             key={m.id}
             active={mode === m.id}
             onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
-            label={m.label}
-          />
+            ariaLabel={m.label}
+          >
+            {m.icon}
+          </Pill>
         ))}
       </div>
 
       {mode === "time" && (
         <div className="flex flex-wrap items-center justify-center gap-4">
           {TIME_DURATIONS.map((d) => (
-            <Pill key={d} active={timeDuration === d} onClick={() => setTimeDuration(d)} label={String(d)} />
+            <Pill key={d} active={timeDuration === d} onClick={() => setTimeDuration(d)} ariaLabel={formatDuration(d)}>
+              {formatDuration(d)}
+            </Pill>
           ))}
           <CustomDurationInput
             value={timeDuration}
@@ -75,7 +84,9 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
       {mode === "words" && (
         <div className="flex flex-wrap items-center justify-center gap-4">
           {WORD_COUNTS.map((w) => (
-            <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} label={String(w)} />
+            <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
+              {w}
+            </Pill>
           ))}
         </div>
       )}
@@ -83,7 +94,9 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
       {mode === "quote" && (
         <div className="flex flex-wrap items-center justify-center gap-4">
           {QUOTE_LENGTHS.map((l) => (
-            <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} label={l} />
+            <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
+              {l}
+            </Pill>
           ))}
         </div>
       )}
@@ -105,9 +118,28 @@ function clampDuration(n: number): number {
   return Math.min(MAX_CUSTOM_TIME_DURATION, Math.max(MIN_CUSTOM_TIME_DURATION, Math.round(n)));
 }
 
-// A pill-styled numeric input for a custom time duration, sitting alongside
-// the preset pills. Shows the active custom value once applied (as a Pill,
-// like the presets) instead of leaving a stale number in the input.
+// Durations over a minute render as "1m 13s" / "2h 3m 14s" rather than a raw
+// second count — the range now runs up to 24h, where e.g. "72540" would
+// otherwise be unreadable. Trailing zero units are dropped ("2m" not
+// "2m 0s"), but a zero unit sandwiched between two nonzero ones is kept
+// ("1h 0m 5s") so the magnitude of the middle unit stays unambiguous.
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) {
+    if (s > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${h}h ${m}m`;
+    return `${h}h`;
+  }
+  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  return `${s}s`;
+}
+
+// A custom time duration, tucked behind a pencil icon so it doesn't sit as a
+// permanently-visible bare input among the preset pills. Clicking it (or the
+// active-value pill, once a custom duration is set) reveals a real number
+// input; Enter/blur commits and clamps, Escape cancels back to the icon.
 function CustomDurationInput({
   value,
   isCustom,
@@ -117,50 +149,97 @@ function CustomDurationInput({
   isCustom: boolean;
   onApply: (seconds: number) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
   const commit = () => {
     const parsed = Number(draft);
     if (draft.trim() !== "" && Number.isFinite(parsed)) onApply(clampDuration(parsed));
     setDraft("");
+    setEditing(false);
   };
 
-  if (isCustom && draft === "") {
-    return <Pill active onClick={() => setDraft(String(value))} label={`${value}s`} />;
+  if (editing) {
+    return (
+      <input
+        type="number"
+        inputMode="numeric"
+        min={MIN_CUSTOM_TIME_DURATION}
+        max={MAX_CUSTOM_TIME_DURATION}
+        value={draft}
+        autoFocus
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+            (e.target as HTMLInputElement).blur();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            setDraft("");
+            setEditing(false);
+          }
+        }}
+        placeholder="sec"
+        aria-label="Custom time duration in seconds"
+        className="w-20 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none"
+      />
+    );
+  }
+
+  if (isCustom) {
+    return (
+      <Pill
+        active
+        onClick={() => {
+          setDraft(String(value));
+          setEditing(true);
+        }}
+        ariaLabel={`Custom duration: ${formatDuration(value)}`}
+      >
+        {formatDuration(value)}
+      </Pill>
+    );
   }
 
   return (
-    <input
-      type="number"
-      inputMode="numeric"
-      min={MIN_CUSTOM_TIME_DURATION}
-      max={MAX_CUSTOM_TIME_DURATION}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          commit();
-          (e.target as HTMLInputElement).blur();
-        }
-      }}
-      placeholder="custom"
-      aria-label="Custom time duration in seconds"
-      className="w-20 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none"
-    />
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      aria-label="Set a custom duration"
+      title="Set a custom duration"
+      className="flex items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground"
+    >
+      <Pencil size={16} />
+    </button>
   );
 }
 
-function Pill({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+function Pill({
+  active,
+  onClick,
+  children,
+  ariaLabel,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  ariaLabel: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={cn("rounded px-2 py-1 transition-colors", active ? "text-accent" : "text-sub hover:text-foreground")}
+      aria-label={ariaLabel}
+      title={ariaLabel}
+      className={cn(
+        "flex items-center justify-center rounded px-2 py-1 transition-colors",
+        active ? "text-accent" : "text-sub hover:text-foreground",
+      )}
     >
-      {label}
+      {children}
     </button>
   );
 }

@@ -9,8 +9,8 @@ interface ResultsGraphProps {
 }
 
 const WIDTH = 720;
-const HEIGHT = 220;
-const PADDING = { top: 12, right: 16, bottom: 24, left: 32 };
+const HEIGHT = 170;
+const PADDING = { top: 12, right: 16, bottom: 22, left: 32 };
 
 // Rounds a max value up to a "nice" axis ceiling (1/2/5/10 × a power of ten)
 // so gridlines land on clean numbers instead of e.g. "73 wpm".
