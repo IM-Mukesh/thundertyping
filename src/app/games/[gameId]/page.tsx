@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
@@ -39,16 +40,23 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
     <div className="relative flex flex-1 flex-col items-center overflow-hidden px-6 pb-16 pt-6 sm:px-10">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-20"
-            style={{
-              maskImage: "linear-gradient(to bottom, black 0%, transparent 70%)",
-              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 70%)",
-            }}
-          />
+          <>
+            <Image
+              src={cover}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover opacity-30"
+              style={{
+                maskImage: "linear-gradient(to bottom, black 0%, transparent 72%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 72%)",
+              }}
+            />
+            {/* The board sits on top of this, so the scrim keeps the falling
+                words readable no matter how busy the artwork behind them is. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
+          </>
         )}
         <div className="absolute inset-0 arcade-haze" />
       </div>

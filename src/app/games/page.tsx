@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Heart, Play, Timer, Zap } from "lucide-react";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { getGameCover, getGamesHero } from "@/lib/games/game-art-assets";
@@ -24,11 +25,17 @@ export default function GamesHubPage() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         {hero && (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            {/* next/image rather than a raw <img>: the source art is 1536px
+                wide but renders into far smaller boxes, so letting Next resize
+                and re-encode per viewport avoids shipping the full-size file.
+                `priority` because this is the page's LCP element. */}
+            <Image
               src={hero}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-55"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover opacity-55"
               style={{
                 maskImage: "linear-gradient(to bottom, black 0%, transparent 80%)",
                 WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 80%)",
@@ -77,11 +84,16 @@ export default function GamesHubPage() {
                   the whole card, which left roughly 1% of the artwork visible. */}
               <div className="relative h-[58%] overflow-hidden">
                 {cover ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={cover}
                     alt=""
-                    className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+                    fill
+                    // Eager, not next/image's default lazy: there are only two
+                    // cards and both sit above the fold, so deferring them just
+                    // means the page's main content pops in late.
+                    loading="eager"
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                   />
                 ) : (
                   <GameCoverArt
