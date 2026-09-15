@@ -9,6 +9,7 @@ import { getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
 import { GameCoverArt } from "@/components/games/game-cover-art";
 import { GameBestBadge } from "@/components/games/game-best-badge";
+import { GameInfoPanel } from "@/components/games/game-info-panel";
 import { AdSlot } from "@/components/layout/ad-slot";
 
 export function generateStaticParams() {
@@ -97,7 +98,10 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
           <ArrowLeft size={13} />
           Arcade
         </Link>
-        <GameBestBadge definition={game} />
+        <div className="flex items-center gap-3">
+          <GameBestBadge definition={game} />
+          <GameInfoPanel game={game} others={others} />
+        </div>
       </div>
 
       {/* MARQUEE — the artwork at full strength, with the character standing
@@ -171,46 +175,48 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
         <AdSlot id={`game-${game.id}-below-board`} format="horizontal" />
       </div>
 
-      <div className="mt-16 flex w-full max-w-2xl flex-col gap-4 border-t border-border pt-10 text-sm leading-relaxed text-sub">
-        <h2 className="text-lg font-semibold text-foreground">How to play {game.name} well</h2>
-        {game.about.map((paragraph) => (
-          <p key={paragraph.slice(0, 40)}>{paragraph}</p>
-        ))}
-        <p>
-          When you want a measured score instead of a run,{" "}
-          <Link href="/" className="text-accent underline underline-offset-2">
-            take the typing speed test
-          </Link>
-          . For technique rather than practice, read{" "}
-          <Link
-            href="/guides/how-to-improve-typing-speed"
-            className="text-accent underline underline-offset-2"
-          >
-            how to improve your typing speed
-          </Link>
-          .
-        </p>
-        {others.length > 0 && (
-          <p>
-            Other games:{" "}
-            {others.map((other, i) => (
-              <span key={other.id}>
-                {i > 0 && ", "}
-                <Link
-                  href={`/games/${other.id}`}
-                  className="text-accent underline underline-offset-2"
-                >
+      {/* Replaces the wall of prose that used to sit here. That copy now lives
+          behind the info button (still in the DOM, so it stays indexable);
+          this row keeps the page useful to scroll and gives the second ad slot
+          something to sit after. */}
+      <div className="mt-16 w-full max-w-4xl">
+        <h2 className="mb-5 text-center font-mono text-[11px] uppercase tracking-[0.25em] text-sub">
+          More games
+        </h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {others.map((other) => {
+            const art = getGameArt(other.id, "cover");
+            return (
+              <Link
+                key={other.id}
+                href={`/games/${other.id}`}
+                className="group relative flex h-32 flex-col justify-end overflow-hidden rounded-xl border border-border bg-background transition-all duration-300 hover:-translate-y-1 hover:border-accent/50"
+              >
+                <div aria-hidden="true" className="absolute inset-0">
+                  {art ? (
+                    <Image
+                      src={art}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 50vw, 20vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <GameCoverArt gameId={other.id} className="h-full w-full object-cover" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                </div>
+                <span className="relative p-3 font-mono text-xs font-semibold leading-tight text-foreground transition-colors group-hover:text-accent">
                   {other.name}
-                </Link>
-              </span>
-            ))}
-            .
-          </p>
-        )}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-14 w-full max-w-2xl">
-        <AdSlot id={`game-${game.id}-after-prose`} format="rectangle" />
+        <AdSlot id={`game-${game.id}-footer`} format="rectangle" />
       </div>
     </div>
   );
