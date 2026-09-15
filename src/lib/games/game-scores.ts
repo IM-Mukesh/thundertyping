@@ -20,6 +20,26 @@ function bestKey(gameId: GameId): string {
   return `${KEY_PREFIX}:${gameId}`;
 }
 
+/**
+ * Exposed so a component can subscribe to the raw stored string rather than a
+ * parsed object. `useSyncExternalStore` compares snapshots by identity, and
+ * `getGameBest` parses fresh JSON on every call — returning a new object each
+ * time would loop forever. A string is stable by value.
+ */
+export function gameBestKey(gameId: GameId): string {
+  return bestKey(gameId);
+}
+
+export function parseGameBest(raw: string | null): GameBest | null {
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isValidGameBest(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function isValidGameBest(value: unknown): value is GameBest {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Partial<GameBest>;
