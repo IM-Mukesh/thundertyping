@@ -1,0 +1,427 @@
+import { useCallback, useEffect, useReducer, useRef } from "react";
+import { generateWords } from "@/lib/typing-engine/word-generator";
+import type { GameDefinition, GameStatus } from "@/lib/games/game-types";
+
+// Word Blaster gets its own engine rather than another entry in
+// `use-falling-words.ts`'s tuning table, because the mechanic really is
+// different rather than differently tuned: threat is horizontal distance to a
+// single defended wall (not height), lanes behave as queues that words stack up
+// in (not as independent columns), a target has a firing solution the UI draws a
+// tracer along, and a kill has to report *where* it happened so the hit effect
+// can be drawn there. Per the games architecture note, tune-don't-fork applies
+// to variants of "words descend, you type them" — this isn't one.
+//
+// All the pacing/scoring knobs live in this file. game-types.ts holds only the
+// contract every game shares (name, rules, lives, how the score is formatted).
+
+export interface Enemy {
+  id: number;
+  text: string;
+  /** 0 = just entered at the right edge, 1 = reached the base wall. */
+  progress: number;
+  /** Milliseconds this particular enemy takes to cross, fixed at spawn. */
+  travelMs: number;
+  /** Vertical lane index, so enemies don't overlap each other. */
+  lane: number;
+}
+
+/**
+ * A kill worth drawing a tracer and an explosion for. The engine reports the
+ * firing solution (which lane, how far across the field) rather than pixels or
+ * percentages, so layout stays entirely the component's business.
+ *
+ * These live in engine state, expiring on the tick, rather than in component
+ * state driven by AnimatePresence — which has been observed in this project
+ * failing to unmount rapidly re-keyed children and leaking DOM nodes. Kills can
+ * land several times a second, so this is exactly that failure case. Ageing
+ * them off the same interval that moves the enemies means the list is
+ * structurally bounded, cleans itself up with no extra timers to leak, and
+ * freezes with the game when it pauses.
+ */
+export interface HitEffect {
+  seq: number;
+  lane: number;
+  progress: number;
+  /** `elapsedMs` at the moment of the kill, so the UI can age the effect. */
+  bornMs: number;
+}
+
+export interface WordBlasterState {
+  status: GameStatus;
+  definition: GameDefinition;
+  enemies: Enemy[];
+  /** What the player has typed toward the currently locked enemy. */
+  typed: string;
+  /** The enemy the current keystrokes are committed to, once one matches. */
+  lockedId: number | null;
+  lives: number;
+  score: number;
+  destroyed: number;
+  breached: number;
+  combo: number;
+  bestCombo: number;
+  correctKeystrokes: number;
+  incorrectKeystrokes: number;
+  elapsedMs: number;
+  hits: HitEffect[];
+  /** `elapsedMs` of the most recent breach, for the base's damage flash. */
+  lastBreachMs: number | null;
+}
+
+// ---------------------------------------------------------------------------
+// Tuning
+// ---------------------------------------------------------------------------
+
+/**
+ * The loop is a plain `setInterval` state tick, deliberately not
+ * `requestAnimationFrame`: rAF is throttled to nothing in a hidden tab (and in
+ * a preview pane that isn't displayed), which would both freeze the run in a
+ * way pausing can't reason about and break every visual driven off it. Enemies
+ * advance by a fixed fraction per tick instead of by comparing timestamps, so
+ * pausing is just "stop ticking" with no timestamps to rebase afterwards.
+ *
+ * 20 updates a second is far below frame rate; the UI transitions `left` over
+ * exactly this interval so the stepped positions read as continuous motion.
+ */
+export const TICK_MS = 50;
+
+/** Vertical lanes enemies fly down. Five keeps the board readable at 400px. */
+export const LANE_COUNT = 5;
+
+/** Milliseconds between spawns at the start, and the floor the ramp reaches. */
+const INITIAL_SPAWN_MS = 1600;
+const MIN_SPAWN_MS = 560;
+/** Shaved off the spawn gap per kill — reaches the floor at ~43 kills. */
+const SPAWN_RAMP_PER_KILL = 24;
+
+/** Milliseconds an enemy takes to cross at the start, and the ramp's floor. */
+const INITIAL_TRAVEL_MS = 8200;
+const MIN_TRAVEL_MS = 3300;
+/** Shaved off travel time per kill — reaches the floor at ~79 kills. */
+const TRAVEL_RAMP_PER_KILL = 62;
+
+/** Cap so a burst of spawns can never make the board unreadable. */
+const MAX_ACTIVE_ENEMIES = 6;
+
+/**
+ * How long a hit effect stays in state — a whole number of ticks, so it expires
+ * exactly when the UI's matching CSS animation ends. The cap is what bounds the
+ * effect DOM node count no matter how fast kills land.
+ */
+export const HIT_EFFECT_MS = 400;
+const MAX_HIT_EFFECTS = 6;
+
+/**
+ * A lane won't take a new enemy while its rearmost one is still this close to
+ * the right edge — otherwise two words spawn on top of each other and the pair
+ * is unreadable for the second or so it takes them to separate.
+ */
+const LANE_CLEARANCE = 0.2;
+
+/** 10 steps of +0.1 = 2x, the cap. */
+const MAX_COMBO_STEPS = 10;
+const POINTS_PER_CHAR = 10;
+
+/** Difficulty ramps with kills, so it tracks skill rather than the clock. */
+function currentSpawnMs(state: WordBlasterState): number {
+  return Math.max(MIN_SPAWN_MS, INITIAL_SPAWN_MS - state.destroyed * SPAWN_RAMP_PER_KILL);
+}
+
+function currentTravelMs(state: WordBlasterState): number {
+  return Math.max(MIN_TRAVEL_MS, INITIAL_TRAVEL_MS - state.destroyed * TRAVEL_RAMP_PER_KILL);
+}
+
+/**
+ * Caps at 2x. High enough that a clean run is worth chasing, low enough that
+ * the first twenty kills still count toward the final total.
+ */
+function comboMultiplier(combo: number): number {
+  return 1 + Math.min(combo, MAX_COMBO_STEPS) * 0.1;
+}
+
+function scoreForKill(text: string, combo: number): number {
+  return Math.round(text.length * POINTS_PER_CHAR * comboMultiplier(combo));
+}
+
+// ---------------------------------------------------------------------------
+// Reducer
+// ---------------------------------------------------------------------------
+
+type GameAction =
+  | { type: "START" }
+  | { type: "RESET" }
+  | { type: "PAUSE" }
+  | { type: "RESUME" }
+  | { type: "TICK" }
+  | { type: "SPAWN"; text: string; lane: number }
+  | { type: "SET_TYPED"; value: string };
+
+function createInitialState(definition: GameDefinition): WordBlasterState {
+  return {
+    status: "idle",
+    definition,
+    enemies: [],
+    typed: "",
+    lockedId: null,
+    lives: definition.lives,
+    score: 0,
+    destroyed: 0,
+    breached: 0,
+    combo: 0,
+    bestCombo: 0,
+    correctKeystrokes: 0,
+    incorrectKeystrokes: 0,
+    elapsedMs: 0,
+    hits: [],
+    lastBreachMs: null,
+  };
+}
+
+/** Drops hit effects the tick has aged out. Identity is preserved when nothing
+ *  expired, so a quiet board doesn't churn a new array every 50ms. */
+function expireHits(hits: HitEffect[], elapsedMs: number): HitEffect[] {
+  if (hits.length === 0) return hits;
+  const live = hits.filter((hit) => elapsedMs - hit.bornMs < HIT_EFFECT_MS);
+  return live.length === hits.length ? hits : live;
+}
+
+/**
+ * Picks which enemy the next keystrokes belong to. Once one is locked it stays
+ * locked even if another would also match the prefix — otherwise the turret
+ * would visibly swing mid-word. With nothing locked the enemy closest to the
+ * base wins: it's the one about to cost a life, so it's almost always the one
+ * the player meant.
+ */
+function findTarget(enemies: Enemy[], value: string, lockedId: number | null): Enemy | null {
+  if (lockedId !== null) {
+    const locked = enemies.find((e) => e.id === lockedId);
+    if (locked && locked.text.startsWith(value)) return locked;
+  }
+  const matches = enemies.filter((e) => e.text.startsWith(value));
+  if (matches.length === 0) return null;
+  return matches.reduce((a, b) => (b.progress > a.progress ? b : a));
+}
+
+let nextEnemyId = 0;
+/** React key for a hit effect — stable for the effect's whole short life. */
+let nextHitSeq = 0;
+
+function reducer(state: WordBlasterState, action: GameAction): WordBlasterState {
+  switch (action.type) {
+    case "START":
+      return { ...createInitialState(state.definition), status: "running" };
+
+    case "RESET":
+      return createInitialState(state.definition);
+
+    case "PAUSE":
+      return state.status === "running" ? { ...state, status: "paused" } : state;
+
+    case "RESUME":
+      return state.status === "paused" ? { ...state, status: "running" } : state;
+
+    case "SPAWN": {
+      if (state.status !== "running") return state;
+      if (state.enemies.length >= MAX_ACTIVE_ENEMIES) return state;
+      const enemy: Enemy = {
+        id: nextEnemyId++,
+        text: action.text,
+        progress: 0,
+        travelMs: currentTravelMs(state),
+        lane: action.lane,
+      };
+      return { ...state, enemies: [...state.enemies, enemy] };
+    }
+
+    case "TICK": {
+      if (state.status !== "running") return state;
+
+      const survivors: Enemy[] = [];
+      let breaches = 0;
+      for (const enemy of state.enemies) {
+        const progress = enemy.progress + TICK_MS / enemy.travelMs;
+        if (progress >= 1) breaches += 1;
+        else survivors.push({ ...enemy, progress });
+      }
+
+      const elapsedMs = state.elapsedMs + TICK_MS;
+      const hits = expireHits(state.hits, elapsedMs);
+      if (breaches === 0) return { ...state, enemies: survivors, elapsedMs, hits };
+
+      const lives = Math.max(0, state.lives - breaches);
+      // A breaching enemy may have been the one being typed — drop the lock so
+      // the next keystroke re-targets instead of matching a gone enemy.
+      const lockedStillAlive = survivors.some((e) => e.id === state.lockedId);
+      return {
+        ...state,
+        enemies: survivors,
+        elapsedMs,
+        hits,
+        lives,
+        breached: state.breached + breaches,
+        combo: 0,
+        typed: lockedStillAlive ? state.typed : "",
+        lockedId: lockedStillAlive ? state.lockedId : null,
+        lastBreachMs: elapsedMs,
+        status: lives === 0 ? "over" : state.status,
+      };
+    }
+
+    case "SET_TYPED": {
+      if (state.status !== "running") return state;
+      const value = action.value;
+
+      if (value.length < state.typed.length) {
+        // Backspace: allowed, and deliberately not counted as a mistake.
+        // Emptying the buffer releases the lock, which is the only way out of a
+        // target you committed to by mistake.
+        return { ...state, typed: value, lockedId: value === "" ? null : state.lockedId };
+      }
+      if (value === state.typed) return state;
+
+      const target = findTarget(state.enemies, value, state.lockedId);
+      const added = value.length - state.typed.length;
+
+      if (!target) {
+        // Nothing on screen starts with this — reject the character outright
+        // rather than letting the buffer drift into an unmatchable string.
+        return {
+          ...state,
+          incorrectKeystrokes: state.incorrectKeystrokes + added,
+          combo: 0,
+        };
+      }
+
+      const correctKeystrokes = state.correctKeystrokes + added;
+
+      if (target.text === value) {
+        const combo = state.combo + 1;
+        return {
+          ...state,
+          enemies: state.enemies.filter((e) => e.id !== target.id),
+          typed: "",
+          lockedId: null,
+          destroyed: state.destroyed + 1,
+          // Scored at the combo *before* this kill, so the first kill of a run
+          // is a plain 1x.
+          score: state.score + scoreForKill(target.text, state.combo),
+          combo,
+          bestCombo: Math.max(state.bestCombo, combo),
+          correctKeystrokes,
+          hits: [
+            ...state.hits,
+            {
+              seq: nextHitSeq++,
+              lane: target.lane,
+              progress: target.progress,
+              bornMs: state.elapsedMs,
+            },
+          ].slice(-MAX_HIT_EFFECTS),
+        };
+      }
+
+      return { ...state, typed: value, lockedId: target.id, correctKeystrokes };
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Spawn placement
+// ---------------------------------------------------------------------------
+
+/**
+ * Picks a lane with room at the right edge, or null if every lane is still
+ * busy — skipping a spawn is better than stacking two words on one another.
+ */
+function pickLane(enemies: Enemy[]): number | null {
+  const open: number[] = [];
+  for (let lane = 0; lane < LANE_COUNT; lane++) {
+    // The smallest progress in the lane is its rearmost enemy, i.e. the one
+    // nearest the right edge — the only one a new spawn could collide with.
+    let rearmost = 1;
+    for (const enemy of enemies) {
+      if (enemy.lane === lane && enemy.progress < rearmost) rearmost = enemy.progress;
+    }
+    if (rearmost >= LANE_CLEARANCE) open.push(lane);
+  }
+  if (open.length === 0) return null;
+  return open[Math.floor(Math.random() * open.length)];
+}
+
+/**
+ * Two identical words on screen are ambiguous to type against, so retry a few
+ * times — then give up rather than loop forever on a ~360-word list.
+ */
+function pickText(enemies: Enemy[]): string | null {
+  const active = new Set(enemies.map((e) => e.text));
+  let text = generateWords(1, { punctuation: false, numbers: false })[0];
+  for (let i = 0; i < 8 && active.has(text); i++) {
+    text = generateWords(1, { punctuation: false, numbers: false })[0];
+  }
+  return active.has(text) ? null : text;
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+export function useWordBlaster(definition: GameDefinition) {
+  const [state, dispatch] = useReducer(reducer, definition, createInitialState);
+
+  // Read by the spawn timer without making it a dependency, so a changing
+  // difficulty mid-run doesn't tear down and restart the timer chain. Synced in
+  // an effect rather than during render; this effect is declared first so it
+  // lands before the timers below re-run, and the first spawn is a full
+  // interval away regardless.
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    if (state.status !== "running") return;
+    const id = setInterval(() => dispatch({ type: "TICK" }), TICK_MS);
+    return () => clearInterval(id);
+  }, [state.status]);
+
+  // Self-rescheduling timeout rather than a fixed interval: the gap between
+  // spawns shrinks as the run goes on, and re-reading it each time is what makes
+  // the ramp continuous instead of stepped.
+  useEffect(() => {
+    if (state.status !== "running") return;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const schedule = () => {
+      timer = setTimeout(() => {
+        const current = stateRef.current;
+        if (current.status === "running" && current.enemies.length < MAX_ACTIVE_ENEMIES) {
+          const lane = pickLane(current.enemies);
+          const text = lane === null ? null : pickText(current.enemies);
+          if (lane !== null && text !== null) dispatch({ type: "SPAWN", text, lane });
+        }
+        schedule();
+      }, currentSpawnMs(stateRef.current));
+    };
+
+    schedule();
+    return () => clearTimeout(timer);
+  }, [state.status]);
+
+  // Pausing on tab-hide keeps a backgrounded run from silently losing every life
+  // at once the moment the player comes back.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") dispatch({ type: "PAUSE" });
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  const start = useCallback(() => dispatch({ type: "START" }), []);
+  const reset = useCallback(() => dispatch({ type: "RESET" }), []);
+  const pause = useCallback(() => dispatch({ type: "PAUSE" }), []);
+  const resume = useCallback(() => dispatch({ type: "RESUME" }), []);
+  const setTyped = useCallback((value: string) => dispatch({ type: "SET_TYPED", value }), []);
+
+  return { state, start, reset, pause, resume, setTyped };
+}

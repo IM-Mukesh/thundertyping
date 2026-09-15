@@ -43,6 +43,20 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
   "word-rain": lazyGame(() =>
     import("@/components/games/falling-words-game").then((m) => ({ default: m.FallingWordsGame })),
   ),
+  "word-blaster": lazyGame(() =>
+    import("@/components/games/word-blaster-game").then((m) => ({ default: m.WordBlasterGame })),
+  ),
+  "typing-grand-prix": lazyGame(() =>
+    import("@/components/games/typing-grand-prix-game").then((m) => ({
+      default: m.TypingGrandPrixGame,
+    })),
+  ),
+  "boss-battle": lazyGame(() =>
+    import("@/components/games/boss-battle-game").then((m) => ({ default: m.BossBattleGame })),
+  ),
+  "combo-rush": lazyGame(() =>
+    import("@/components/games/combo-rush-game").then((m) => ({ default: m.ComboRushGame })),
+  ),
 };
 
 export function GameClient({ definition }: { definition: GameDefinition }) {

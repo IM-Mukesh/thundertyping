@@ -13,7 +13,13 @@
 // the hub, the /games/[gameId] route, the sitemap and the best-score badge all
 // derive from GAME_LIST.
 
-export type GameId = "falling-words" | "word-rain";
+export type GameId =
+  | "falling-words"
+  | "word-rain"
+  | "word-blaster"
+  | "typing-grand-prix"
+  | "boss-battle"
+  | "combo-rush";
 
 export type GameStatus = "idle" | "running" | "paused" | "over";
 
@@ -90,9 +96,87 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     lives: 1,
     scoreBy: "time",
   },
+  "word-blaster": {
+    id: "word-blaster",
+    name: "Word Blaster",
+    tagline: "Hold the line. Type to shoot them down.",
+    rules: [
+      "Enemies fly in from the right, each carrying a word.",
+      "Type a word to lock the turret on and destroy it — no space needed.",
+      "Any enemy that reaches your base costs a life. Three lives.",
+      "Consecutive kills build a combo multiplier, up to double score.",
+    ],
+    about: [
+      "Word Blaster is a shooting gallery, and the shot you take is the first letter you press. One character commits the turret to a target, and every character after it is aimed at that same enemy even if a closer one appears — you can backspace all the way out to release the lock, but that costs time you rarely have. This makes the opening keystroke a decision rather than a reflex, and it is where most runs are lost: start a long word out at the back of the field while a short one is a second from the wall and there is no cheap way to change your mind. Read the board, choose the enemy, then type. A plain typing test trains the opposite order, because on a test there is only ever one next word.",
+      "Threat here is horizontal, so the only clock that matters is how much field an enemy still has to cross. Enemies arrive down five lanes, and a lane behaves like a queue: leave its leader alive too long and the next spawn stacks up behind it, turning one slow kill into a wall of words that all arrive together. The habit that prevents it is killing the leader of the most crowded lane early, while it is still out near the right edge. Destroying an enemy at distance costs exactly the same keystrokes as destroying it at the wall, so the seconds you buy are free — and those seconds are what you spend reading the next target instead of reacting to it.",
+      "The multiplier is most of your score. Kills in a row build it to a ceiling of double points, and it resets both on any character that matches nothing on screen and on any enemy that gets through, which means a single panicked keystroke costs more here than a mistyped word costs on a speed test. Because the ramp is driven by kills rather than by elapsed time, the game accelerates exactly as fast as you are good at it and never punishes a slow opening thirty seconds. The practical result is that a calm, accurate run scores far above a frantic one with the same number of kills, and your final number is an honest reading of how long you can stay accurate while the pressure keeps rising.",
+    ],
+    lives: 3,
+    scoreBy: "points",
+  },
+  "typing-grand-prix": {
+    id: "typing-grand-prix",
+    name: "Typing Grand Prix",
+    tagline: "Race three rivals over forty words.",
+    rules: [
+      "Type the stream one word at a time — space commits each word.",
+      "Your car moves the moment you type; mistyped letters are marked but never block you.",
+      "Three rivals hold roughly 35, 50 and 70 WPM. Beat the one you can.",
+      "Forty words to the flag. Your score is your speed, your accuracy and where you finish.",
+    ],
+    about: [
+      "Typing Grand Prix turns your words per minute into something you can see moving. Every car on the track, yours included, covers the same fixed distance of forty words, and the rivals hold pace at roughly 35, 50 and 70 WPM — not arbitrary numbers, but the speeds that matter: 35 is a fluent hunt-and-peck pace, 50 is where a competent touch typist sits, and 70 is the threshold most people are actually trying to reach. Finishing ahead of a particular car is therefore a concrete, repeatable claim about your speed, in a way a bare number on a results screen never quite is.",
+      "The decision the race keeps asking you is whether to fix a mistake. Wrong characters are marked in red but do not stop you — space commits the word however it looks, and your car keeps moving. Backspacing does not drag the car backwards either; it simply costs you the time you spend doing it, which is the whole point. Accuracy multiplies your final score, but the placement bonus is worth far more than a few percentage points of accuracy, so the honest rule is positional: when a rival is within a car length, take the error and drive on; when your place is safely yours, go back and clean it up. Players who reflexively fix everything lose podium positions they had already earned.",
+      "Because the distance is fixed and there is no difficulty ramp, this is a sprint rather than a survival test, and that makes it the most directly comparable of the three games — the same forty words, the same three rivals, run after run. Use it as a ladder: find the fastest car you can reliably beat, race that one until winning feels routine, then go after the next. It pairs naturally with the timed test, where you can confirm that the pace you just held for forty words is a pace you can hold for a full minute.",
+    ],
+    // No life mechanic — a race ends at the flag, not at a failure, so this is
+    // the "games with no lives use 1" case the field documents.
+    lives: 1,
+    scoreBy: "points",
+  },
+  "boss-battle": {
+    id: "boss-battle",
+    name: "Boss Battle",
+    tagline: "Out-type the boss before it out-damages you.",
+    rules: [
+      "Type the word to hit the boss — longer words do far more damage.",
+      "It charges an attack on a timer; clear two words before the bar fills to block it.",
+      "Every attack that lands costs a life. Three lives, and nothing heals them.",
+      "Break its health past each threshold and it changes phase: shorter fuse, longer words.",
+    ],
+    about: [
+      "Boss Battle is the only mode here that types against a deadline instead of against a clock. A normal typing test punishes a slow second by quietly lowering a number at the end; this one punishes it immediately, because the boss is charging an attack the whole time and the only thing that stops it is you finishing enough words before the bar fills. Two cleared words block the incoming hit, and every word you land in the same window is damage on top. That turns a typing run into a resource problem — time is the resource, and the fight is decided by how much of each window you convert into damage rather than spend recovering.",
+      "The single most valuable habit is front-loading. Each cleared word fills one shield pip regardless of how long it was, so the fastest safe pattern is to clear your two words at the start of a charge window and treat the remaining seconds as risk-free damage time. Word length is where the scoring is decided: damage rises with the square of the length, so an eight-letter word is worth more than two four-letter ones and a long word appearing late in a window is good news, not a threat. Typos never cost a life directly, but they break the combo multiplier that stacks up to 1.6x, so the run that deals the most damage is almost never the frantic one — it is the one that holds a clean, slightly conservative rhythm and never has to retype a word.",
+      "Phases are where runs are actually won and lost. Crossing 66% and 33% health shortens the charge and raises the minimum word length, and the final phase asks for roughly two five-to-eight letter words every four seconds — a sustained floor around 35 WPM with no mistakes. Two things make that survivable: the boss staggers for about a second after each phase break, which is free damage if you keep typing through the flash instead of watching it, and the victory bonus scales with the lives you have left, so protecting a life is usually worth more than the damage you would gain by gambling on one. If you lose here, the health percentage on the result card tells you exactly which phase beat you, and that is the pace worth practising at on the main typing test.",
+    ],
+    lives: 3,
+    scoreBy: "points",
+  },
+  "combo-rush": {
+    id: "combo-rush",
+    name: "Combo Rush",
+    tagline: "The clock is always running out. Type it back.",
+    rules: [
+      "A short clock drains without stopping. At zero the run ends.",
+      "Type the word to clear it — no space needed. Every clear buys time back, longer words buy more.",
+      "Consecutive clears raise a multiplier on both the time and the score a word pays.",
+      "One wrong letter, or one word skipped with space, drops the multiplier to nothing.",
+    ],
+    about: [
+      "Combo Rush is a trading game disguised as a typing test. Every word is a transaction: you spend real seconds typing it and you are paid in clock, and the exchange rate moves against you all run. The drain starts at normal speed and climbs with each word you clear, so the same word that bought you a comfortable surplus at the start is barely covering its own cost by the fiftieth clear. There is no way to outrun that curve with raw speed alone — the only thing that keeps the rate in your favour is the combo multiplier, which is why the game is named after it rather than after the clock.",
+      "That makes the cost of a mistake completely different from a normal typing test, where one wrong letter costs you one wrong letter. Here it resets the multiplier, and rebuilding takes twelve clean words — roughly ten seconds during which you are being paid the base rate while the drain keeps rising. Most runs do not end at the moment of the mistake; they end fifteen seconds later, when the clock that was already thin never recovers. The practical consequence is that the fastest way to play is slightly slower than your maximum: settle on the quickest pace you can hold without errors and stay there, because a broken combo costs more time than the extra speed ever earned.",
+      "Two details are worth knowing before you chase a high score. The clock is capped, so a long streak on a full clock is pure score and no banked time — when you see the bar pinned at the top, the right instinct is to protect the streak rather than relax, because the surplus you are generating is being thrown away. And the skip key exists as an escape hatch, not a tactic: space drops the current word for a flat time charge plus the combo, which is almost always worse than simply typing the word. Reach for it only when your hands have genuinely lost their place, and note that the time award is built to pay nearly the same rate per keystroke on a long word as on a short one, so there is no clever skipping strategy hiding in the numbers.",
+    ],
+    lives: 1,
+    scoreBy: "points",
+  },
 };
 
 export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["falling-words"],
   GAME_DEFINITIONS["word-rain"],
+  GAME_DEFINITIONS["word-blaster"],
+  GAME_DEFINITIONS["typing-grand-prix"],
+  GAME_DEFINITIONS["boss-battle"],
+  GAME_DEFINITIONS["combo-rush"],
 ];
