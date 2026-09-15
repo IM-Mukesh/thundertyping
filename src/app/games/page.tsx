@@ -23,16 +23,22 @@ export default function GamesHubPage() {
           text contrast. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         {hero && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={hero}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-30"
-            style={{
-              maskImage: "linear-gradient(to bottom, black 0%, transparent 72%)",
-              WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 72%)",
-            }}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={hero}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover opacity-55"
+              style={{
+                maskImage: "linear-gradient(to bottom, black 0%, transparent 80%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 80%)",
+              }}
+            />
+            {/* Guarantees heading contrast regardless of how bright or busy the
+                artwork is, so the art can be vivid without the copy on top of
+                it having to fight for legibility. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+          </>
         )}
         <div className="absolute inset-0 arcade-haze" />
         <div
