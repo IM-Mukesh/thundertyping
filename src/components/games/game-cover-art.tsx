@@ -21,11 +21,20 @@ const VIEW_H = 220;
 const HORIZON_Y = 92;
 
 export function GameCoverArt({ gameId, className }: GameCoverArtProps) {
-  return gameId === "falling-words" ? (
-    <FallingWordsArt className={className} />
-  ) : (
-    <WordRainArt className={className} />
-  );
+  switch (gameId) {
+    case "falling-words":
+      return <FallingWordsArt className={className} />;
+    case "word-rain":
+      return <WordRainArt className={className} />;
+    case "word-blaster":
+      return <WordBlasterArt className={className} />;
+    case "typing-grand-prix":
+      return <GrandPrixArt className={className} />;
+    case "boss-battle":
+      return <BossBattleArt className={className} />;
+    case "combo-rush":
+      return <ComboRushArt className={className} />;
+  }
 }
 
 /** Shared synthwave floor: lines converging to a vanishing point. */
@@ -181,6 +190,242 @@ function WordRainArt({ className }: { className?: string }) {
 
       <line x1={0} x2={VIEW_W} y1={198} y2={198} stroke="var(--error)" strokeOpacity={0.8} strokeWidth={2} strokeDasharray="6 6" />
       <rect x={0} y={198} width={VIEW_W} height={VIEW_H - 198} fill="var(--error)" opacity={0.12} />
+    </svg>
+  );
+}
+
+/** Tracer fire converging on a base at the left — the shooter read. */
+function WordBlasterArt({ className }: { className?: string }) {
+  const p = "wb";
+  const tracers = [
+    { y: 58, from: 392, to: 96, w: 2.6, o: 0.9 },
+    { y: 104, from: 358, to: 96, w: 2, o: 0.65 },
+    { y: 150, from: 380, to: 96, w: 1.5, o: 0.42 },
+    { y: 32, from: 300, to: 96, w: 1.2, o: 0.3 },
+  ];
+  const enemies = [
+    { x: 300, y: 52, r: 9 },
+    { x: 246, y: 98, r: 7 },
+    { x: 344, y: 144, r: 8 },
+    { x: 214, y: 26, r: 5 },
+  ];
+
+  return (
+    <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className={className} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id={`${p}-sky`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--sub-alt)" />
+          <stop offset="100%" stopColor="var(--background)" />
+        </linearGradient>
+        <radialGradient id={`${p}-muzzle`} cx="24%" cy="50%" r="34%">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.75" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${p}-floorfade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
+          <stop offset="40%" stopColor="var(--accent)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.1" />
+        </linearGradient>
+        <filter id={`${p}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="3.5" />
+        </filter>
+      </defs>
+
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-sky)`} />
+      <PerspectiveFloor idPrefix={p} />
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-muzzle)`} />
+
+      <g filter={`url(#${p}-bloom)`} opacity={0.85}>
+        {tracers.map((t, i) => (
+          <line key={i} x1={t.from} y1={t.y} x2={t.to} y2={t.y} stroke="var(--accent)" strokeOpacity={t.o} strokeWidth={t.w + 1.5} strokeLinecap="round" />
+        ))}
+      </g>
+      {tracers.map((t, i) => (
+        <line key={i} x1={t.from} y1={t.y} x2={t.to} y2={t.y} stroke="var(--accent)" strokeOpacity={t.o} strokeWidth={t.w} strokeLinecap="round" />
+      ))}
+
+      {enemies.map((e, i) => (
+        <circle key={i} cx={e.x} cy={e.y} r={e.r} fill="var(--error)" opacity={0.55 + i * 0.08} />
+      ))}
+
+      {/* the turret holding the left edge */}
+      <rect x={62} y={78} width={30} height={46} rx={5} fill="var(--accent)" opacity={0.9} />
+      <rect x={88} y={94} width={22} height={9} rx={4} fill="var(--accent)" />
+    </svg>
+  );
+}
+
+/** Four lanes streaking toward a finish line — the racing read. */
+function GrandPrixArt({ className }: { className?: string }) {
+  const p = "gp";
+  const lanes = [64, 100, 136, 172];
+  const cars = [
+    { lane: 0, x: 286, lead: true },
+    { lane: 1, x: 232 },
+    { lane: 2, x: 258 },
+    { lane: 3, x: 196 },
+  ];
+
+  return (
+    <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className={className} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id={`${p}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--background)" />
+          <stop offset="45%" stopColor="var(--sub-alt)" />
+          <stop offset="100%" stopColor="var(--background)" />
+        </linearGradient>
+        <linearGradient id={`${p}-streak`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.75" />
+        </linearGradient>
+        <linearGradient id={`${p}-floorfade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.22" />
+        </linearGradient>
+        <filter id={`${p}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
+
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-sky)`} />
+
+      {/* lane dividers */}
+      {lanes.map((y, i) => (
+        <line key={`l${i}`} x1={0} x2={VIEW_W} y1={y + 18} y2={y + 18} stroke="var(--border)" strokeOpacity={0.6} strokeWidth={1} strokeDasharray="14 12" />
+      ))}
+
+      {/* speed streaks behind each car */}
+      {cars.map((c, i) => (
+        <rect key={`s${i}`} x={c.x - 150} y={lanes[c.lane] - 3} width={150} height={7} rx={3.5} fill={`url(#${p}-streak)`} opacity={c.lead ? 0.9 : 0.45} />
+      ))}
+
+      <g filter={`url(#${p}-bloom)`} opacity={0.7}>
+        {cars.map((c, i) => (
+          <rect key={`g${i}`} x={c.x} y={lanes[c.lane] - 6} width={30} height={13} rx={6} fill={c.lead ? "var(--accent)" : "var(--sub)"} />
+        ))}
+      </g>
+      {cars.map((c, i) => (
+        <rect key={i} x={c.x} y={lanes[c.lane] - 6} width={30} height={13} rx={6} fill={c.lead ? "var(--accent)" : "var(--sub)"} opacity={c.lead ? 1 : 0.85} />
+      ))}
+
+      {/* chequered finish line */}
+      {Array.from({ length: 11 }, (_, r) =>
+        Array.from({ length: 2 }, (_, c) => (
+          <rect key={`${r}-${c}`} x={356 + c * 11} y={r * 20} width={11} height={20} fill={(r + c) % 2 === 0 ? "var(--foreground)" : "var(--background)"} opacity={0.85} />
+        )),
+      )}
+    </svg>
+  );
+}
+
+/** A looming silhouette over a drained health bar — the boss read. */
+function BossBattleArt({ className }: { className?: string }) {
+  const p = "bb";
+  return (
+    <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className={className} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id={`${p}-aura`} cx="50%" cy="42%" r="52%">
+          <stop offset="0%" stopColor="var(--error)" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="var(--error)" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${p}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--background)" />
+          <stop offset="60%" stopColor="var(--sub-alt)" />
+          <stop offset="100%" stopColor="var(--background)" />
+        </linearGradient>
+        <linearGradient id={`${p}-floorfade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--error)" stopOpacity="0" />
+          <stop offset="45%" stopColor="var(--error)" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="var(--error)" stopOpacity="0.1" />
+        </linearGradient>
+        <filter id={`${p}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+      </defs>
+
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-sky)`} />
+      <PerspectiveFloor idPrefix={p} />
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-aura)`} />
+
+      {/* hulking silhouette */}
+      <g opacity={0.92}>
+        <path d="M148 168 L162 78 L186 62 L214 62 L238 78 L252 168 Z" fill="var(--background)" stroke="var(--error)" strokeOpacity={0.75} strokeWidth={2} />
+        <path d="M162 78 L146 40 L176 64 Z" fill="var(--background)" stroke="var(--error)" strokeOpacity={0.7} strokeWidth={2} />
+        <path d="M238 78 L254 40 L224 64 Z" fill="var(--background)" stroke="var(--error)" strokeOpacity={0.7} strokeWidth={2} />
+      </g>
+      <g filter={`url(#${p}-bloom)`}>
+        <circle cx={184} cy={92} r={6} fill="var(--error)" />
+        <circle cx={216} cy={92} r={6} fill="var(--error)" />
+      </g>
+      <circle cx={184} cy={92} r={3.4} fill="var(--foreground)" />
+      <circle cx={216} cy={92} r={3.4} fill="var(--foreground)" />
+
+      {/* health bar, mostly spent */}
+      <rect x={96} y={190} width={208} height={9} rx={4.5} fill="var(--sub-alt)" stroke="var(--border)" strokeWidth={1} />
+      <rect x={96} y={190} width={74} height={9} rx={4.5} fill="var(--error)" opacity={0.95} />
+    </svg>
+  );
+}
+
+/** A nearly-drained timer ring with combo sparks — the time-attack read. */
+function ComboRushArt({ className }: { className?: string }) {
+  const p = "cr";
+  const R = 46;
+  const CX = 200;
+  const CY = 104;
+  const C = 2 * Math.PI * R;
+  const sparks = [
+    { x: 92, y: 54, r: 3.5, o: 0.8 },
+    { x: 310, y: 62, r: 2.6, o: 0.6 },
+    { x: 118, y: 156, r: 2.2, o: 0.5 },
+    { x: 296, y: 150, r: 3.2, o: 0.7 },
+    { x: 64, y: 108, r: 2, o: 0.42 },
+    { x: 338, y: 110, r: 2.4, o: 0.5 },
+  ];
+
+  return (
+    <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className={className} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id={`${p}-glow`} cx="50%" cy="48%" r="46%">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${p}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--background)" />
+          <stop offset="55%" stopColor="var(--sub-alt)" />
+          <stop offset="100%" stopColor="var(--background)" />
+        </linearGradient>
+        <linearGradient id={`${p}-floorfade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.2" />
+        </linearGradient>
+        <filter id={`${p}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="4" />
+        </filter>
+      </defs>
+
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-sky)`} />
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-glow)`} />
+
+      {/* track ring */}
+      <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--border)" strokeWidth={9} />
+      {/* remaining time — deliberately low, the mode is always nearly over */}
+      <g filter={`url(#${p}-bloom)`}>
+        <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--error)" strokeWidth={9} strokeLinecap="round" strokeDasharray={`${C * 0.17} ${C}`} transform={`rotate(-90 ${CX} ${CY})`} />
+      </g>
+      <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--error)" strokeWidth={9} strokeLinecap="round" strokeDasharray={`${C * 0.17} ${C}`} transform={`rotate(-90 ${CX} ${CY})`} />
+
+      {/* combo sparks flying outward */}
+      <g filter={`url(#${p}-bloom)`}>
+        {sparks.map((s, i) => (
+          <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="var(--accent)" opacity={s.o} />
+        ))}
+      </g>
+
+      {/* multiplier chevrons */}
+      {[0, 1, 2].map((i) => (
+        <path key={i} d={`M${170 + i * 22} ${168} l10 -11 l-10 -11`} fill="none" stroke="var(--accent)" strokeOpacity={0.35 + i * 0.25} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+      ))}
     </svg>
   );
 }

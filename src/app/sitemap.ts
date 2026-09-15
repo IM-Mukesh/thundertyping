@@ -35,6 +35,30 @@ const routes: {
     lastModified: "2026-09-15",
   },
   { path: "/games/word-rain", priority: 0.7, changeFrequency: "monthly", lastModified: "2026-09-15" },
+  {
+    path: "/games/word-blaster",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-15",
+  },
+  {
+    path: "/games/typing-grand-prix",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-15",
+  },
+  {
+    path: "/games/boss-battle",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-15",
+  },
+  {
+    path: "/games/combo-rush",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-15",
+  },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
