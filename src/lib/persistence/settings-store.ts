@@ -21,6 +21,8 @@ interface SettingsState {
   punctuation: boolean;
   numbers: boolean;
   soundEnabled: boolean;
+  /** Show a live WPM readout while a test is running. Off by default. */
+  liveSpeed: boolean;
   setTheme: (theme: ThemeId) => void;
   setMode: (mode: TestMode) => void;
   setTimeDuration: (duration: TimeDuration) => void;
@@ -29,6 +31,7 @@ interface SettingsState {
   togglePunctuation: () => void;
   toggleNumbers: () => void;
   toggleSound: () => void;
+  toggleLiveSpeed: () => void;
 }
 
 const THEME_IDS: ThemeId[] = THEMES.map((t) => t.id);
@@ -40,7 +43,15 @@ const RESTORABLE_MODES: TestMode[] = ["time", "words", "quote"];
 
 type PersistedSettings = Pick<
   SettingsState,
-  "theme" | "mode" | "timeDuration" | "wordCount" | "quoteLength" | "punctuation" | "numbers" | "soundEnabled"
+  | "theme"
+  | "mode"
+  | "timeDuration"
+  | "wordCount"
+  | "quoteLength"
+  | "punctuation"
+  | "numbers"
+  | "soundEnabled"
+  | "liveSpeed"
 >;
 
 function isValidTimeDuration(value: unknown): value is TimeDuration {
@@ -67,6 +78,7 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
     punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,
     numbers: typeof p.numbers === "boolean" ? p.numbers : fallback.numbers,
     soundEnabled: typeof p.soundEnabled === "boolean" ? p.soundEnabled : fallback.soundEnabled,
+    liveSpeed: typeof p.liveSpeed === "boolean" ? p.liveSpeed : fallback.liveSpeed,
   };
 }
 
@@ -86,6 +98,12 @@ export const useSettingsStore = create<SettingsState>()(
       // HUD carries a mute toggle. The typing test itself stays silent — it
       // has no sounds wired up.
       soundEnabled: true,
+      // Off by default, deliberately. A live WPM figure changes several times
+      // a second, sits right above the text being read, and can't be acted on
+      // mid-test — it reads as noise rather than feedback. The timer earns its
+      // place (it ticks once a second and you need it); this doesn't. Anyone
+      // who wants it can switch it on, and it renders small and static then.
+      liveSpeed: false,
       setTheme: (theme) => set({ theme }),
       setMode: (mode) => set({ mode }),
       setTimeDuration: (timeDuration) => set({ timeDuration }),
@@ -94,6 +112,7 @@ export const useSettingsStore = create<SettingsState>()(
       togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
       toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+      toggleLiveSpeed: () => set((s) => ({ liveSpeed: !s.liveSpeed })),
     }),
     {
       name: "thundertyping-settings",

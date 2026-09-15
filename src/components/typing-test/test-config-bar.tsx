@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil } from "lucide-react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, Gauge } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
@@ -37,6 +37,8 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
+  const liveSpeed = useSettingsStore((s) => s.liveSpeed);
+  const toggleLiveSpeed = useSettingsStore((s) => s.toggleLiveSpeed);
 
   const showTextToggles = mode === "time" || mode === "words";
 
@@ -54,6 +56,16 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
             <span className="h-4 w-px bg-border" aria-hidden="true" />
           </>
         )}
+        {/* Applies to every mode, so it sits outside the punctuation/numbers
+            group, which only makes sense for generated word lists. */}
+        <Pill
+          active={liveSpeed}
+          onClick={toggleLiveSpeed}
+          ariaLabel={liveSpeed ? "Hide live speed while typing" : "Show live speed while typing"}
+        >
+          <Gauge size={16} />
+        </Pill>
+        <span className="h-4 w-px bg-border" aria-hidden="true" />
         {MODES.map((m) => (
           <Pill
             key={m.id}
