@@ -21,6 +21,12 @@ const routes: {
     changeFrequency: "monthly",
     lastModified: "2026-09-15",
   },
+  {
+    path: "/guides/average-typing-speed",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-15",
+  },
   { path: "/games", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-15" },
   {
     path: "/games/falling-words",

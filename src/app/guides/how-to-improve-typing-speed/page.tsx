@@ -126,7 +126,9 @@ export default function HowToImproveTypingSpeedPage() {
           Start with a short test focused purely on accuracy, then check your consistency score
           before your WPM. <Link href="/">Open the typing test</Link> and try a words-mode test
           at a pace where you can stay near 100% accuracy — that&apos;s the pace worth building
-          speed from.
+          speed from. Curious where your result actually stands? See{" "}
+          <Link href="/guides/average-typing-speed">average typing speed by context</Link> for
+          honest benchmarks instead of a single made-up number.
         </p>
       </ContentPage>
     </>
