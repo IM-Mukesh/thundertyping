@@ -4,8 +4,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
-import { getGameCover } from "@/lib/games/game-art-assets";
+import { getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
+import { AdSlot } from "@/components/layout/ad-slot";
 
 export function generateStaticParams() {
   return GAME_LIST.map((game) => ({ gameId: game.id }));
@@ -33,16 +34,17 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const game = getGame(gameId);
   if (!game) notFound();
 
-  const cover = getGameCover(game.id) ?? game.coverImage ?? null;
+  const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
+  const characterArt = getGameArt(game.id, "character");
   const others = GAME_LIST.filter((g) => g.id !== game.id);
 
   return (
     <div className="relative flex flex-1 flex-col items-center overflow-hidden px-6 pb-16 pt-6 sm:px-10">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        {cover && (
+        {heroArt && (
           <>
             <Image
-              src={cover}
+              src={heroArt}
               alt=""
               fill
               priority
@@ -82,7 +84,32 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
         <GameClient definition={game} />
       </div>
 
-      <div className="mt-20 flex w-full max-w-2xl flex-col gap-4 border-t border-border pt-10 text-sm leading-relaxed text-sub">
+      {/* Below the board, never beside or above it — an ad next to an active
+          game area is both a distraction and an accidental-click risk. */}
+      <div className="mt-12 w-full max-w-3xl">
+        <AdSlot id={`game-${game.id}-below-board`} format="horizontal" />
+      </div>
+
+      {characterArt && (
+        <div className="mt-14 flex w-full max-w-3xl flex-col items-center gap-4 sm:flex-row sm:items-end">
+          <div className="relative h-56 w-full shrink-0 overflow-hidden rounded-2xl border border-border sm:h-64 sm:w-64">
+            <Image
+              src={characterArt}
+              alt={`${game.name} character art`}
+              fill
+              sizes="(max-width: 640px) 100vw, 256px"
+              className="object-cover"
+            />
+          </div>
+          <p className="text-sm leading-relaxed text-sub">
+            <span className="font-mono uppercase tracking-wider text-accent">{game.name}</span>
+            <br />
+            {game.tagline}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-16 flex w-full max-w-2xl flex-col gap-4 border-t border-border pt-10 text-sm leading-relaxed text-sub">
         <h2 className="text-lg font-semibold text-foreground">How to play {game.name} well</h2>
         {game.about.map((paragraph) => (
           <p key={paragraph.slice(0, 40)}>{paragraph}</p>
@@ -118,6 +145,10 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
             .
           </p>
         )}
+      </div>
+
+      <div className="mt-14 w-full max-w-2xl">
+        <AdSlot id={`game-${game.id}-after-prose`} format="rectangle" />
       </div>
     </div>
   );
