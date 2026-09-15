@@ -57,6 +57,18 @@ export interface GameDefinition {
    * inside their own HUD.
    */
   scoreBy: "points" | "time";
+  /**
+   * Signature colour, taken from the game's own artwork. The game page
+   * overrides `--accent` with this, so the board glow, grid, score and
+   * controls all pick it up automatically — everything already reads that
+   * variable.
+   *
+   * This exists because the site accent is a single colour across all five
+   * themes, and a yellow HUD wrapped around cyan crystal art read as a clash
+   * rather than a scheme. Scoping the override to the game page keeps the
+   * rest of the site on the user's chosen theme.
+   */
+  accent: string;
 }
 
 export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
@@ -77,6 +89,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     ],
     lives: 3,
     scoreBy: "points",
+    // icy cyan, matching the crystal shards
+    accent: "#5eead4",
   },
   "word-rain": {
     id: "word-rain",
@@ -95,6 +109,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     ],
     lives: 1,
     scoreBy: "time",
+    // violet, matching the storm and lightning
+    accent: "#a78bfa",
   },
   "word-blaster": {
     id: "word-blaster",
@@ -113,6 +129,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     ],
     lives: 3,
     scoreBy: "points",
+    // electric cyan, matching the tracer fire
+    accent: "#22d3ee",
   },
   "typing-grand-prix": {
     id: "typing-grand-prix",
@@ -133,6 +151,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     // the "games with no lives use 1" case the field documents.
     lives: 1,
     scoreBy: "points",
+    // hot magenta, matching the circuit neon
+    accent: "#f472b6",
   },
   "boss-battle": {
     id: "boss-battle",
@@ -151,6 +171,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     ],
     lives: 3,
     scoreBy: "points",
+    // crimson, matching the boss glow
+    accent: "#f87171",
   },
   "combo-rush": {
     id: "combo-rush",
@@ -169,6 +191,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     ],
     lives: 1,
     scoreBy: "points",
+    // gold, matching the light rings
+    accent: "#fbbf24",
   },
 };
 

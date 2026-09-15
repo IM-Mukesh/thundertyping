@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -41,19 +42,52 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const others = GAME_LIST.filter((g) => g.id !== game.id);
 
   return (
-    <div className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8">
-      {/* A single soft accent glow behind the cabinet. The artwork used to be
-          stretched across the whole page at low opacity, which muddied
-          everything it sat behind — cyan art under a yellow accent haze went
-          olive. The art now lives inside the marquee where it can be vivid. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]"
-        style={{
-          background:
-            "radial-gradient(70% 55% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 70%)",
-        }}
-      />
+    // Overriding the accent here re-skins everything downstream — board glow,
+    // grid, score, buttons — because they all read these variables. Scoped to
+    // this page so the rest of the site keeps the user's chosen theme.
+    //
+    // BOTH names are required. `--accent` is what this project's own CSS reads
+    // (the arcade classes, color-mix calls). `--color-accent` is what Tailwind
+    // utilities like `text-accent` compile against, and because globals.css
+    // defines it as `--color-accent: var(--accent)` on :root, it resolves there
+    // and is already a fixed colour by the time it reaches a descendant —
+    // overriding only `--accent` would leave every Tailwind accent utility
+    // still painting the site colour.
+    <div
+      className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8"
+      style={
+        {
+          "--accent": game.accent,
+          "--caret": game.accent,
+          "--color-accent": game.accent,
+          "--color-caret": game.accent,
+        } as CSSProperties
+      }
+    >
+      {/* Depth behind the cabinet: the game's own art, heavily blurred and
+          dimmed. Blurred specifically — at readable-detail strength it would
+          compete with falling words, which is the one thing this page cannot
+          afford. Blurred, it reads as atmosphere and colour instead. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[760px] overflow-hidden">
+        {heroArt && (
+          <Image
+            src={heroArt}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="scale-110 object-cover opacity-25 blur-2xl"
+          />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(75% 55% at 50% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 72%)",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+      </div>
 
       <div className="flex w-full max-w-4xl items-center justify-between gap-4 pb-4">
         <Link
