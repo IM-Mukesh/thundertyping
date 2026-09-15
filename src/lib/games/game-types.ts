@@ -1,7 +1,17 @@
-// Both launch games are the same core mechanic — words descend, you clear
-// them by typing them — tuned differently, so they share one engine
-// (`use-falling-words.ts`) and differ only by the numbers below. Adding a
-// third variant should mean adding a definition here, not a second engine.
+// The shared contract every game satisfies: enough for the hub card, the route
+// metadata, and the best-score badge to work without knowing anything about
+// how the game actually plays.
+//
+// Mechanic-specific tuning does NOT belong here. Falling Words and Word Rain
+// share one engine and keep their spawn/fall numbers in `use-falling-words.ts`;
+// a game with a different mechanic keeps its own tuning in its own module.
+// Putting every game's knobs in this one interface would make it a union of
+// unrelated concerns that every game has to ignore most of.
+//
+// To add a game: add its id here, add a definition below, and register its
+// component in `game-registry.ts`. Nothing else in the app needs to change —
+// the hub, the /games/[gameId] route, the sitemap and the best-score badge all
+// derive from GAME_LIST.
 
 export type GameId = "falling-words" | "word-rain";
 
@@ -29,24 +39,18 @@ export interface GameDefinition {
    * before committing.
    */
   coverImage?: string;
-  /** Lives lost one per word that reaches the floor. */
-  lives: number;
-  /** Milliseconds between spawns at the start, and the floor it ramps toward. */
-  initialSpawnMs: number;
-  minSpawnMs: number;
-  /** Milliseconds shaved off the spawn interval per cleared word. */
-  spawnRampPerClear: number;
-  /** Milliseconds a word takes to fall at the start, and the floor it ramps toward. */
-  initialFallMs: number;
-  minFallMs: number;
-  /** Milliseconds shaved off the fall time per cleared word. */
-  fallRampPerClear: number;
   /**
-   * Which number headlines the HUD and the score board. "words" rewards
-   * clearing volume; "time" rewards staying alive, which is why Word Rain
-   * gets a single life — surviving is the whole point of the mode.
+   * How many failures a run tolerates. Shown as hearts on the hub card and in
+   * the HUD. A game with no life concept should use 1.
    */
-  scoreBy: "words" | "time";
+  lives: number;
+  /**
+   * How the headline number is formatted wherever it's shown outside the game
+   * itself (hub card, best-score badge): "time" renders as seconds survived,
+   * "points" as a plain score. Games are free to display whatever they like
+   * inside their own HUD.
+   */
+  scoreBy: "points" | "time";
 }
 
 export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
@@ -66,13 +70,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
       "Difficulty ramps with words cleared rather than with elapsed time, so the game tracks how well you are actually doing instead of punishing you for a slow start. Clearing words without a miss builds a combo multiplier that caps at double score, which means a clean run is worth far more than a frantic one.",
     ],
     lives: 3,
-    initialSpawnMs: 1700,
-    minSpawnMs: 620,
-    spawnRampPerClear: 20,
-    initialFallMs: 9000,
-    minFallMs: 3600,
-    fallRampPerClear: 58,
-    scoreBy: "words",
+    scoreBy: "points",
   },
   "word-rain": {
     id: "word-rain",
@@ -90,12 +88,6 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
       "It is also the best mode for finding your real ceiling. The pace increases until it beats you, so the second the board becomes unmanageable you have located the exact speed where your accuracy breaks down — which is the speed worth practising at on the main test.",
     ],
     lives: 1,
-    initialSpawnMs: 1250,
-    minSpawnMs: 400,
-    spawnRampPerClear: 15,
-    initialFallMs: 7600,
-    minFallMs: 2700,
-    fallRampPerClear: 46,
     scoreBy: "time",
   },
 };
@@ -104,33 +96,3 @@ export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["falling-words"],
   GAME_DEFINITIONS["word-rain"],
 ];
-
-export interface FallingWord {
-  id: number;
-  text: string;
-  /** 0 = just spawned at the ceiling, 1 = reached the floor. */
-  progress: number;
-  /** Milliseconds this particular word takes to fall, fixed at spawn. */
-  fallMs: number;
-  /** Horizontal lane index, so words don't overlap each other. */
-  lane: number;
-}
-
-export interface GameState {
-  status: GameStatus;
-  definition: GameDefinition;
-  words: FallingWord[];
-  /** What the player has typed toward the currently targeted word. */
-  typed: string;
-  /** The word the current keystrokes are committed to, once one matches. */
-  lockedId: number | null;
-  lives: number;
-  score: number;
-  cleared: number;
-  missed: number;
-  combo: number;
-  bestCombo: number;
-  correctKeystrokes: number;
-  incorrectKeystrokes: number;
-  elapsedMs: number;
-}

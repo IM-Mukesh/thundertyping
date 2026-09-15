@@ -1,10 +1,81 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { generateWords } from "@/lib/typing-engine/word-generator";
-import type {
-  FallingWord,
-  GameDefinition,
-  GameState,
-} from "@/lib/games/game-types";
+import type { GameDefinition, GameId, GameStatus } from "@/lib/games/game-types";
+
+// Everything below is specific to the descending-words mechanic, so it lives
+// with the engine rather than in game-types.ts. That file holds only the
+// contract every game shares (name, rules, lives, how the score is formatted);
+// a game with a different mechanic keeps its own state shape and tuning in its
+// own module the same way.
+
+export interface FallingWord {
+  id: number;
+  text: string;
+  /** 0 = just spawned at the ceiling, 1 = reached the floor. */
+  progress: number;
+  /** Milliseconds this particular word takes to fall, fixed at spawn. */
+  fallMs: number;
+  /** Horizontal lane index, so words don't overlap each other. */
+  lane: number;
+}
+
+export interface GameState {
+  status: GameStatus;
+  definition: GameDefinition;
+  words: FallingWord[];
+  /** What the player has typed toward the currently targeted word. */
+  typed: string;
+  /** The word the current keystrokes are committed to, once one matches. */
+  lockedId: number | null;
+  lives: number;
+  score: number;
+  cleared: number;
+  missed: number;
+  combo: number;
+  bestCombo: number;
+  correctKeystrokes: number;
+  incorrectKeystrokes: number;
+  elapsedMs: number;
+}
+
+/** Pacing knobs — the only thing separating the two games on this engine. */
+interface FallingWordsTuning {
+  /** Milliseconds between spawns at the start, and the floor it ramps toward. */
+  initialSpawnMs: number;
+  minSpawnMs: number;
+  /** Milliseconds shaved off the spawn interval per cleared word. */
+  spawnRampPerClear: number;
+  /** Milliseconds a word takes to fall at the start, and the floor it ramps toward. */
+  initialFallMs: number;
+  minFallMs: number;
+  /** Milliseconds shaved off the fall time per cleared word. */
+  fallRampPerClear: number;
+}
+
+const TUNING: Record<"falling-words" | "word-rain", FallingWordsTuning> = {
+  "falling-words": {
+    initialSpawnMs: 1700,
+    minSpawnMs: 620,
+    spawnRampPerClear: 20,
+    initialFallMs: 9000,
+    minFallMs: 3600,
+    fallRampPerClear: 58,
+  },
+  // Faster from the first second and ramps harder — it's the endurance mode,
+  // and it only gives you one life.
+  "word-rain": {
+    initialSpawnMs: 1250,
+    minSpawnMs: 400,
+    spawnRampPerClear: 15,
+    initialFallMs: 7600,
+    minFallMs: 2700,
+    fallRampPerClear: 46,
+  },
+};
+
+function tuningFor(id: GameId): FallingWordsTuning {
+  return TUNING[id as keyof typeof TUNING] ?? TUNING["falling-words"];
+}
 
 // Words advance by a fixed fraction each tick rather than by comparing
 // timestamps. That keeps pausing trivial (just stop ticking — no timestamps
@@ -50,12 +121,12 @@ function createInitialState(definition: GameDefinition): GameState {
 
 /** Difficulty ramps with words cleared, so it tracks skill rather than the clock. */
 export function currentSpawnMs(state: GameState): number {
-  const { initialSpawnMs, minSpawnMs, spawnRampPerClear } = state.definition;
+  const { initialSpawnMs, minSpawnMs, spawnRampPerClear } = tuningFor(state.definition.id);
   return Math.max(minSpawnMs, initialSpawnMs - state.cleared * spawnRampPerClear);
 }
 
 function currentFallMs(state: GameState): number {
-  const { initialFallMs, minFallMs, fallRampPerClear } = state.definition;
+  const { initialFallMs, minFallMs, fallRampPerClear } = tuningFor(state.definition.id);
   return Math.max(minFallMs, initialFallMs - state.cleared * fallRampPerClear);
 }
 
