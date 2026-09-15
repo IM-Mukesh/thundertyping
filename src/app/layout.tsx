@@ -55,7 +55,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
           <SiteHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
+          {/* min-h-0 lets a page opt into filling exactly the remaining
+              viewport (see /games, which scrolls its own content instead of
+              the document). A flex item defaults to min-height:auto, which
+              refuses to shrink below its content and would push the body
+              taller than the viewport no matter what the child does. Pages
+              that simply grow are unaffected — they still expand the document
+              and scroll normally. */}
+          <main className="flex min-h-0 flex-1 flex-col">{children}</main>
           <SiteFooter />
         </ThemeProvider>
       </body>

@@ -18,7 +18,17 @@ export default function GamesHubPage() {
   const hero = getGamesHero();
 
   return (
-    <div className="relative flex flex-1 flex-col items-center overflow-hidden px-6 pb-20 pt-12 sm:px-10">
+    // An app-style screen: the document itself never scrolls, and the game
+    // list below scrolls inside its own region. `flex-1 min-h-0` rather than
+    // `h-full` — this is a flex child of <main>, and h-full would resolve to
+    // the full viewport height *underneath* the header, overflowing the page
+    // by exactly the header's height. The site footer is hidden on this route
+    // (see site-footer.tsx) so nothing sits beneath this to reintroduce a
+    // page scroll either.
+    <div
+      data-full-height
+      className="relative flex min-h-0 flex-1 flex-col items-center overflow-hidden px-6 pt-10 sm:px-10"
+    >
       {/* Backdrop: optional hero art beneath a horizon wash and drifting grid,
           each masked so it fades out well before the content and never costs
           text contrast. */}
@@ -57,21 +67,27 @@ export default function GamesHubPage() {
         />
       </div>
 
-      <header className="flex w-full max-w-5xl flex-col items-center gap-4 text-center">
+      <header className="flex w-full max-w-5xl shrink-0 flex-col items-center gap-3 text-center">
         <span className="flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
           <Zap size={12} />
           Arcade
         </span>
-        <h1 className="font-mono text-4xl font-bold tracking-tight text-foreground arcade-glow-soft sm:text-6xl">
+        <h1 className="font-mono text-3xl font-bold tracking-tight text-foreground arcade-glow-soft sm:text-5xl">
           Typing Games
         </h1>
-        <p className="max-w-lg text-sm leading-relaxed text-sub sm:text-base">
+        <p className="max-w-lg text-sm leading-relaxed text-sub">
           Practice that doesn&apos;t feel like practice. Same word list as the main test — the
           speed you build here is the speed you&apos;ll measure there.
         </p>
       </header>
 
-      <div className="mt-12 grid w-full max-w-5xl gap-6 sm:grid-cols-2">
+      {/* The only scrolling region on the page. `min-h-0` is what actually lets
+          a flex child shrink below its content height — without it the grid
+          would push the container taller instead of scrolling. The negative
+          margin + matching padding keep card hover glow from being clipped at
+          the scroll edges. */}
+      <div className="mt-8 min-h-0 w-full max-w-5xl flex-1 overflow-y-auto overflow-x-hidden px-1 pb-10">
+        <div className="grid w-full gap-6 sm:grid-cols-2">
         {GAME_LIST.map((game) => {
           const cover = getGameCover(game.id) ?? game.coverImage ?? null;
           return (
@@ -143,22 +159,25 @@ export default function GamesHubPage() {
             </Link>
           );
         })}
-      </div>
+        </div>
 
-      <p className="mt-14 max-w-xl text-center text-sm text-sub">
-        Prefer to measure rather than play?{" "}
-        <Link href="/" className="text-accent underline underline-offset-2">
-          Take the typing speed test
-        </Link>
-        , or read{" "}
-        <Link
-          href="/guides/how-to-improve-typing-speed"
-          className="text-accent underline underline-offset-2"
-        >
-          how to improve your typing speed
-        </Link>
-        .
-      </p>
+        {/* Inside the scroll region so it can't eat fixed vertical space that
+            the game list needs. */}
+        <p className="mx-auto mt-10 max-w-xl text-center text-sm text-sub">
+          Prefer to measure rather than play?{" "}
+          <Link href="/" className="text-accent underline underline-offset-2">
+            Take the typing speed test
+          </Link>
+          , or read{" "}
+          <Link
+            href="/guides/how-to-improve-typing-speed"
+            className="text-accent underline underline-offset-2"
+          >
+            how to improve your typing speed
+          </Link>
+          .
+        </p>
+      </div>
     </div>
   );
 }

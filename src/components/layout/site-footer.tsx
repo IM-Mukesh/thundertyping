@@ -1,10 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { SITE_NAME } from "@/lib/seo/constants";
 import { useIsTestFinished } from "@/lib/typing-engine/test-status-store";
 import { cn } from "@/lib/utils/cn";
+
+// The arcade hub is an app-style screen: it fills the viewport exactly and
+// scrolls its game list internally, so a page-level footer underneath would
+// reintroduce the document scroll the layout is specifically avoiding. Only
+// the hub itself — individual game pages keep the footer, since their
+// long-form copy scrolls normally.
+const FULL_HEIGHT_ROUTES = new Set(["/games"]);
 
 // Collapses once a test finishes so the results screen fits without a page
 // scroll — the footer's ad slot plus link row was the single biggest
@@ -16,6 +24,9 @@ import { cn } from "@/lib/utils/cn";
 // an AnimatePresence height animation — see the note there for why.
 export function SiteFooter() {
   const isFinished = useIsTestFinished();
+  const pathname = usePathname();
+
+  if (FULL_HEIGHT_ROUTES.has(pathname)) return null;
 
   return (
     <div

@@ -103,6 +103,20 @@ body {
   color: var(--foreground);
 }
 
+/* App-shell routes (currently only /games) opt in by marking their root with
+   `data-full-height`. Flexbox can only distribute space when the container has
+   a *definite* height, and `min-height` isn't definite — with `min-h-full`
+   alone, <main> sizes to its content and pushes the body past the viewport no
+   matter what its children do. Switching the body to a real height fixes that,
+   but only for these routes: doing it globally would constrain <main> on
+   ordinary pages and let long content overflow across the footer.
+   Falls back to normal page scrolling anywhere :has() isn't supported. */
+body:has([data-full-height]) {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Tailwind v4's preflight resets `button` (and `[role="button"]`) to
    `cursor: default`, a deliberate change from v3. The practical effect here
    was that every control on the site — the restart button, the mode pills,
