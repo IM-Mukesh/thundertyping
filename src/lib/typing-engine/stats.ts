@@ -26,8 +26,22 @@ export function calculateNetWpm(correct: number, elapsedMs: number): number {
   return correct / CHARS_PER_WORD / minutes;
 }
 
-export function calculateAccuracy(correct: number, incorrect: number): number {
-  const total = correct + incorrect;
+/**
+ * Skipped characters count against accuracy.
+ *
+ * `missed` is included because accuracy computed from keystrokes alone can
+ * only see characters the user actually pressed — so spacing past "Among;" or
+ * "98" produced a flawless 100% on a run with visible skips, which is the
+ * opposite of what the number is meant to communicate. Extra characters are
+ * already inside `incorrect` (a keystroke past the end of the word is counted
+ * as wrong when it happens), so they must not be added again here.
+ *
+ * `missed` defaults to 0 so callers without a character tally — the games,
+ * which track missed *words*, not characters — keep the keystroke-only
+ * meaning that's correct for them.
+ */
+export function calculateAccuracy(correct: number, incorrect: number, missed = 0): number {
+  const total = correct + incorrect + missed;
   if (total <= 0) return 100;
   return (correct / total) * 100;
 }

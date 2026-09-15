@@ -22,7 +22,12 @@ export interface TestConfig {
   numbers: boolean;
 }
 
-export type CharState = "pending" | "correct" | "incorrect" | "extra";
+// "missed" is a character the user skipped past by committing the word early.
+// It only ever appears on a word that's already been committed — the active
+// word's untyped characters stay "pending" (dim), because they aren't skipped
+// yet. Kept distinct from "incorrect" so the two can be told apart visually and
+// counted separately.
+export type CharState = "pending" | "correct" | "incorrect" | "extra" | "missed";
 
 export interface WordState {
   target: string;

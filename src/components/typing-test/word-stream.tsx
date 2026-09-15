@@ -122,6 +122,11 @@ function charClass(state: CharState): string {
       return "text-error underline decoration-error decoration-2 underline-offset-4";
     case "extra":
       return "text-error/70";
+    // Skipped: clearly red so it reads as a mistake, but dimmer than a
+    // mistyped character and underlined with a gap, so the two are still
+    // distinguishable at a glance.
+    case "missed":
+      return "text-error/75 underline decoration-error/60 decoration-dotted decoration-2 underline-offset-4";
     case "pending":
     default:
       return "text-sub";

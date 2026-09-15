@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { CharState, CharTally, TestConfig, TestState, WordState } from "@/lib/typing-engine/engine-types";
-import { generateWords, PUNCTUATION_MARKS } from "@/lib/typing-engine/word-generator";
+import { generateWords } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
 import { calculateNetWpm, calculateRawWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
 
@@ -71,28 +71,46 @@ function createInitialState(config: TestConfig): TestState {
 // wrong-looking-by-coincidence (this was a real, reported, reproduced bug).
 // "extra"/"missed" have no keystroke-history equivalent — they're inherently
 // about what's left over in the *final* submitted text — so they stay here.
-const PUNCTUATION_CHAR_SET = new Set(PUNCTUATION_MARKS);
 
-// Trailing target characters the user never typed before committing the
-// word with space. Punctuation marks (appended to the end of words by the
-// generator) are excluded on purpose — skipping punctuation is a deliberate,
-// requested non-penalty, not a mistake, so it should never show up as
-// "missed" in the results breakdown.
-function countPenalizedMissed(target: string, typed: string): number {
-  let end = target.length;
-  while (end > typed.length && PUNCTUATION_CHAR_SET.has(target[end - 1])) {
-    end -= 1;
-  }
-  return Math.max(0, end - typed.length);
+// Every target character the user never typed before committing the word.
+//
+// Punctuation used to be exempt here, so spacing past "Among;" or "98" cost
+// nothing. That was an explicit earlier request, and it was explicitly
+// reversed later: skipping a character is a mistake whatever the character
+// is. Treating punctuation and digits as free also made accuracy read 100%
+// on a run with visible skips, which is what surfaced it.
+function countMissed(target: string, typed: string): number {
+  return Math.max(0, target.length - typed.length);
 }
 
-function tallyWord(tally: CharTally, word: WordState): CharTally {
+function tallyWord(
+  tally: CharTally,
+  word: WordState,
+  // Time-mode expiry interrupts a word mid-typing. Those untyped characters
+  // weren't skipped — the clock simply ran out — so they must not be counted
+  // as misses or the last partial word silently inflates the error count.
+  { countMissedChars = true }: { countMissedChars?: boolean } = {},
+): CharTally {
   const next = { ...tally };
   for (const c of word.chars) {
     if (c === "extra") next.extra += 1;
   }
-  next.missed += countPenalizedMissed(word.target, word.typed);
+  if (countMissedChars) next.missed += countMissed(word.target, word.typed);
   return next;
+}
+
+// Re-labels the characters the user skipped so the word-stream can render them
+// as errors instead of leaving them dim like untyped text. Only applied once a
+// word is committed — while it's still active, untyped characters are simply
+// not typed yet, not mistakes.
+function markMissedChars(word: WordState): WordState {
+  if (word.typed.length >= word.target.length) return word;
+  return {
+    ...word,
+    chars: word.chars.map((c, i) =>
+      i >= word.typed.length && i < word.target.length ? "missed" : c,
+    ),
+  };
 }
 
 // `elapsedMsOverride` pins the recorded duration for a time-mode test that ran
@@ -177,12 +195,17 @@ function reducer(state: TestState, action: EngineAction): TestState {
       const tally = tallyWord(state.charTally, wordState);
       const isLastWord = activeIndex === state.words.length - 1;
 
+      // Committing is what turns "not typed yet" into "skipped", so this is
+      // where the skipped characters get marked for display.
+      const committedStates = [...state.wordStates];
+      committedStates[activeIndex] = markMissedChars(wordState);
+
       if (state.config.mode !== "time" && isLastWord) {
-        return finalize(state, tally, action.now);
+        return finalize({ ...state, wordStates: committedStates }, tally, action.now);
       }
 
       let words = state.words;
-      let wordStates = state.wordStates;
+      let wordStates = committedStates;
       const nextIndex = activeIndex + 1;
 
       if (state.config.mode === "time" && words.length - nextIndex < TIME_MODE_LOOKAHEAD) {
@@ -217,7 +240,9 @@ function reducer(state: TestState, action: EngineAction): TestState {
 
       if (state.config.mode === "time" && elapsedMs >= state.config.timeDuration * 1000) {
         const activeWord = state.wordStates[state.activeWordIndex];
-        const tally = activeWord ? tallyWord(state.charTally, activeWord) : state.charTally;
+        const tally = activeWord
+          ? tallyWord(state.charTally, activeWord, { countMissedChars: false })
+          : state.charTally;
         return finalize({ ...state, wpmSamples }, tally, action.now, state.config.timeDuration * 1000);
       }
 

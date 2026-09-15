@@ -23,7 +23,7 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
   const { correctKeystrokes, incorrectKeystrokes, elapsedMs, wpmSamples, charTally } = state;
   const netWpm = round(calculateNetWpm(correctKeystrokes, elapsedMs));
   const rawWpm = round(calculateRawWpm(correctKeystrokes, incorrectKeystrokes, elapsedMs));
-  const accuracy = round(calculateAccuracy(correctKeystrokes, incorrectKeystrokes));
+  const accuracy = round(calculateAccuracy(correctKeystrokes, incorrectKeystrokes, charTally.missed));
   const consistency = round(calculateConsistency(wpmSamples));
 
   return (

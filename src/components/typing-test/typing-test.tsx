@@ -106,6 +106,7 @@ export function TypingTest() {
       calculateAccuracy(
         engine.state.correctKeystrokes,
         engine.state.incorrectKeystrokes,
+        engine.state.charTally.missed,
       ),
     );
     const param =

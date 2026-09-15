@@ -103,6 +103,25 @@ body {
   color: var(--foreground);
 }
 
+/* Tailwind v4's preflight resets `button` (and `[role="button"]`) to
+   `cursor: default`, a deliberate change from v3. The practical effect here
+   was that every control on the site — the restart button, the mode pills,
+   the theme picker, the game buttons — showed a plain arrow, so nothing read
+   as clickable. Restore the pointer, and give genuinely disabled controls the
+   cursor that actually describes them. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary,
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--background);
