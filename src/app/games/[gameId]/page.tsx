@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Gamepad2, Heart } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
 import { getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
+import { GameCoverArt } from "@/components/games/game-cover-art";
+import { GameBestBadge } from "@/components/games/game-best-badge";
 import { AdSlot } from "@/components/layout/ad-slot";
 
 export function generateStaticParams() {
@@ -39,34 +41,21 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const others = GAME_LIST.filter((g) => g.id !== game.id);
 
   return (
-    <div className="relative flex flex-1 flex-col items-center overflow-hidden px-6 pb-16 pt-6 sm:px-10">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        {heroArt && (
-          <>
-            <Image
-              src={heroArt}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover opacity-30"
-              style={{
-                maskImage: "linear-gradient(to bottom, black 0%, transparent 72%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 72%)",
-              }}
-            />
-            {/* The board sits on top of this, so the scrim keeps the falling
-                words readable no matter how busy the artwork behind them is. */}
-            <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
-          </>
-        )}
-        <div className="absolute inset-0 arcade-haze" />
-      </div>
+    <div className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8">
+      {/* A single soft accent glow behind the cabinet. The artwork used to be
+          stretched across the whole page at low opacity, which muddied
+          everything it sat behind — cyan art under a yellow accent haze went
+          olive. The art now lives inside the marquee where it can be vivid. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]"
+        style={{
+          background:
+            "radial-gradient(70% 55% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 70%)",
+        }}
+      />
 
-      {/* Deliberately sparse above the board — the game itself is the page.
-          The heading stays an h1 for SEO but is sized as a label, and the
-          long-form copy lives far below, out of the way while playing. */}
-      <div className="flex w-full max-w-3xl items-center justify-between gap-4">
+      <div className="flex w-full max-w-4xl items-center justify-between gap-4 pb-4">
         <Link
           href="/games"
           className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-sub transition-colors hover:text-foreground"
@@ -74,40 +63,79 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
           <ArrowLeft size={13} />
           Arcade
         </Link>
-        <h1 className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-foreground">
-          {game.name}
-        </h1>
-        <span aria-hidden="true" className="w-16" />
+        <GameBestBadge definition={game} />
       </div>
 
-      <div className="mt-5 flex w-full justify-center">
+      {/* MARQUEE — the artwork at full strength, with the character standing
+          in it. This is where the game gets its personality; the board below
+          stays clean so falling words are never fighting a background. */}
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
+        <div className="absolute inset-0">
+          {heroArt ? (
+            <Image
+              src={heroArt}
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 896px) 100vw, 896px"
+              className="object-cover"
+            />
+          ) : (
+            <GameCoverArt gameId={game.id} className="h-full w-full object-cover" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/75 to-background/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        </div>
+
+        <span aria-hidden="true" className="absolute left-4 top-4 h-5 w-5 border-l-2 border-t-2 border-accent/60" />
+        <span aria-hidden="true" className="absolute right-4 top-4 h-5 w-5 border-r-2 border-t-2 border-accent/60" />
+
+        <div className="relative flex items-center gap-5 p-6 sm:gap-7 sm:p-8">
+          {characterArt && (
+            <div className="relative hidden h-32 w-24 shrink-0 overflow-hidden rounded-xl border border-accent/30 sm:block sm:h-40 sm:w-30">
+              <Image
+                src={characterArt}
+                alt={`${game.name} character art`}
+                fill
+                // Sits in the marquee, above the fold — lazy would make the
+                // character pop in after the page has already settled.
+                loading="eager"
+                sizes="120px"
+                className="object-cover object-top"
+              />
+            </div>
+          )}
+
+          <div className="flex min-w-0 flex-col gap-2">
+            <h1 className="font-mono text-2xl font-bold tracking-tight text-foreground arcade-glow-soft sm:text-4xl">
+              {game.name}
+            </h1>
+            <p className="text-sm leading-relaxed text-sub sm:text-base">{game.tagline}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-wider text-sub/80">
+              <span className="flex items-center gap-1.5">
+                <Heart size={12} className="text-error" />
+                {game.lives} {game.lives === 1 ? "life" : "lives"}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Gamepad2 size={12} />
+                {game.scoreBy === "time" ? "survival" : "score attack"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CABINET — the board sits flush under the marquee so the two read as
+          one unit rather than a banner with a stray panel beneath it. */}
+      <div className="flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-6 pt-6 sm:px-8">
         <GameClient definition={game} />
       </div>
 
-      {/* Below the board, never beside or above it — an ad next to an active
+      {/* Below the cabinet, never beside or above it — an ad next to an active
           game area is both a distraction and an accidental-click risk. */}
       <div className="mt-12 w-full max-w-3xl">
         <AdSlot id={`game-${game.id}-below-board`} format="horizontal" />
       </div>
-
-      {characterArt && (
-        <div className="mt-14 flex w-full max-w-3xl flex-col items-center gap-4 sm:flex-row sm:items-end">
-          <div className="relative h-56 w-full shrink-0 overflow-hidden rounded-2xl border border-border sm:h-64 sm:w-64">
-            <Image
-              src={characterArt}
-              alt={`${game.name} character art`}
-              fill
-              sizes="(max-width: 640px) 100vw, 256px"
-              className="object-cover"
-            />
-          </div>
-          <p className="text-sm leading-relaxed text-sub">
-            <span className="font-mono uppercase tracking-wider text-accent">{game.name}</span>
-            <br />
-            {game.tagline}
-          </p>
-        </div>
-      )}
 
       <div className="mt-16 flex w-full max-w-2xl flex-col gap-4 border-t border-border pt-10 text-sm leading-relaxed text-sub">
         <h2 className="text-lg font-semibold text-foreground">How to play {game.name} well</h2>
