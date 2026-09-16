@@ -30,9 +30,12 @@ const TABS: { id: Filter; label: string; icon: React.ReactNode }[] = [
 export function GameHubFilters({
   games,
   art,
+  characters,
 }: {
   games: GameDefinition[];
   art: Record<string, string | null>;
+  /** Cut-out foreground sprites, keyed by game id. Absent for the older six. */
+  characters: Record<string, string | null>;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("featured");
@@ -108,12 +111,13 @@ export function GameHubFilters({
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visible.map((game, i) => (
           <GameHubCard
             key={game.id}
             game={game}
             art={art[game.id] ?? null}
+            character={characters[game.id] ?? null}
             priority={i < 4}
           />
         ))}

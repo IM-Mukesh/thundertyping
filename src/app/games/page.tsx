@@ -31,6 +31,11 @@ export default function GamesHubPage() {
   const art: Record<string, string | null> = Object.fromEntries(
     GAME_LIST.map((g) => [g.id, getGameArt(g.id, "cover") ?? getGameArt(g.id, "hero")]),
   );
+  // Only the four new games have a cut-out sprite; the older six render
+  // without the character layer rather than with a placeholder.
+  const characters: Record<string, string | null> = Object.fromEntries(
+    GAME_LIST.map((g) => [g.id, getArt(g.id, "char-fg")]),
+  );
 
   return (
     <div className="relative flex flex-1 flex-col items-center pb-16">
@@ -52,7 +57,7 @@ export default function GamesHubPage() {
           <div className="absolute inset-0 arcade-grid opacity-25" />
         </div>
 
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-14 sm:px-10 sm:py-20">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-6 py-14 sm:px-10 sm:py-20">
           <span className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/5 px-3.5 py-1.5 font-display text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             <Zap size={12} aria-hidden="true" />
             Welcome to
@@ -102,13 +107,13 @@ export default function GamesHubPage() {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-6xl px-6 sm:px-10">
+      <div className="mx-auto w-full max-w-[1440px] px-6 sm:px-10">
         <div className="mb-10 mt-2">
           <AdSlot id="games-hub-leaderboard" format="horizontal" />
         </div>
 
         <h2 className="sr-only">All typing games</h2>
-        <GameHubFilters games={[...GAME_LIST]} art={art} />
+        <GameHubFilters games={[...GAME_LIST]} art={art} characters={characters} />
 
         <section className="mt-16 rounded-2xl border border-border bg-sub-alt/20 p-6 sm:p-8">
           <h2 className="mb-3 flex items-center gap-2 font-mono text-lg font-bold tracking-tight text-foreground">
