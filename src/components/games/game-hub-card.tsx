@@ -3,25 +3,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
-import { ArrowRight, BarChart3, Clock, Play, Sparkles, Trophy } from "lucide-react";
+import { BarChart3, Clock, Play, Trophy } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { gameBestKey, parseGameBest } from "@/lib/games/game-scores";
 import { getStorageItem } from "@/lib/persistence/storage";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * A game card on the hub.
+ * A game card on the hub, built to the reference design.
  *
- * Expands on hover to show the pitch, feature list and the player's own best —
- * the card is the whole pitch, so the hub does not need a wall of prose beneath
- * it. On touch there is no hover, so the expanded content is always present in
- * the DOM and simply laid out differently; this also keeps it indexable rather
- * than hidden behind an interaction a crawler never performs.
+ * Each card owns its own `--accent`, so the neon frame, title glow and play
+ * button are that game's colour with no per-game styling. Hover state is scoped
+ * to `group/card` on the article itself and nothing is keyed off the grid, so
+ * hovering one card leaves the other nine completely untouched.
  *
- * Deliberately shows the player's OWN numbers and never invented global ones.
- * There is no backend behind this site yet, so a "12.4K players" figure would
- * be fabricated — and a fake player count is exactly the sort of thing that
- * sinks an AdSense review.
+ * No player counts. There is no backend and no accounts behind this site, so a
+ * "12.4K players" figure would be invented; the card shows the player's own
+ * best instead, which is real.
  */
 
 /** Cross-tab only: same-tab writes happen on a different route entirely. */
@@ -38,10 +36,6 @@ interface GameHubCardProps {
 }
 
 export function GameHubCard({ game, art, priority }: GameHubCardProps) {
-  // localStorage is client-only, so the card renders its "not played" state on
-  // the server and fills in after mount; reading during render desyncs
-  // hydration. The snapshot is the raw string because a parsed record would be
-  // a new object every call and loop the store forever.
   const raw = useSyncExternalStore(
     subscribeStorage,
     () => getStorageItem(gameBestKey(game.id)),
@@ -49,41 +43,39 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
   );
   const best = useMemo(() => parseGameBest(raw), [raw]);
 
-  const scoreLabel = best
+  const bestLabel = best
     ? game.scoreBy === "time"
-      ? `${best.score}s best`
-      : `${best.score.toLocaleString()} best`
-    : "Not played yet";
+      ? `${best.score}s`
+      : best.score.toLocaleString()
+    : "—";
 
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300",
-        // The accent edge is on at rest, not only on hover. In the reference
-        // design each card is lit in its own colour -- that is what makes the
-        // grid read as four worlds rather than four grey boxes -- and the
-        // utility is built on color-mix against --accent, so it stays correct
-        // in all five site themes.
-        "arcade-edge arcade-edge-hover hover:-translate-y-1.5 focus-within:-translate-y-1.5",
+        "group/card relative isolate flex flex-col overflow-hidden rounded-2xl bg-background",
+        "neon-frame transition-[transform,box-shadow] duration-300 ease-out",
+        "hover:-translate-y-1.5 hover:neon-frame-strong",
+        "focus-within:-translate-y-1.5 focus-within:neon-frame-strong",
+        "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
       )}
       style={
         {
           "--accent": game.accent,
           "--color-accent": game.accent,
-          // A whisper of the accent in the card surface. Flat --background made
-          // every card identical below the artwork.
           background:
-            "linear-gradient(160deg, color-mix(in srgb, var(--accent) 7%, var(--background)) 0%, var(--background) 55%)",
+            "linear-gradient(170deg, color-mix(in srgb, var(--accent) 10%, var(--background)) 0%, var(--background) 60%)",
         } as React.CSSProperties
       }
     >
       {game.featured && (
-        <span className="absolute left-3 top-3 z-20 rounded-md bg-accent px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-background">
+        <span className="absolute left-3 top-3 z-30 rounded bg-accent px-2 py-0.5 font-display text-[9px] font-bold uppercase tracking-[0.12em] text-background">
           Featured
         </span>
       )}
 
-      <div className="relative aspect-[16/11] w-full overflow-hidden">
+      {/* ART — 16:10 keeps the card short. A taller crop was the main reason
+          the previous version towered over the reference. */}
+      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden">
         {art ? (
           <Image
             src={art}
@@ -91,73 +83,63 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
             fill
             priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] motion-reduce:transform-none"
           />
         ) : (
           <div className="h-full w-full bg-sub-alt" />
         )}
-        {/* Only enough scrim to seat the title; the reference art is bright and
-            a heavy gradient was washing it out. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/25 to-transparent" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-px"
+          style={{ background: "color-mix(in srgb, var(--accent) 70%, transparent)" }}
+        />
       </div>
 
-      <div className="relative flex flex-1 flex-col gap-2.5 p-4">
+      <div className="relative flex flex-1 flex-col gap-2 p-3.5">
         <div>
-          <h3 className="font-mono text-xl font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-accent group-hover:arcade-glow sm:text-2xl">
+          <h3 className="font-display text-base font-extrabold uppercase leading-none tracking-tight text-foreground transition-colors duration-300 group-hover/card:text-accent group-hover/card:text-glow sm:text-lg">
             {game.name}
           </h3>
-          <p className="font-mono text-[11px] uppercase tracking-wider text-accent/90">
+          <p className="mt-1 font-display text-[10px] font-medium uppercase tracking-[0.18em] text-accent">
             {game.tagline}
           </p>
         </div>
 
-        <p className="text-[13px] leading-snug text-sub">{game.pitch}</p>
+        <p className="line-clamp-2 text-[12px] leading-snug text-sub">{game.pitch}</p>
 
-        <ul className="flex flex-wrap gap-1.5">
-          {game.tags.map((tag) => (
+        <ul className="flex flex-wrap gap-1">
+          {game.tags.slice(0, 3).map((tag) => (
             <li
               key={tag}
-              className="rounded-md bg-sub-alt px-2 py-0.5 font-mono text-[10px] text-sub"
+              className="rounded bg-sub-alt px-1.5 py-0.5 font-display text-[9px] uppercase tracking-wider text-sub"
             >
               {tag}
             </li>
           ))}
         </ul>
 
-        <dl className="grid grid-cols-3 gap-2 border-t border-border/70 pt-3">
-          {[
-            { Icon: Trophy, label: "Your best", value: scoreLabel },
-            { Icon: Clock, label: "Per run", value: game.duration },
-            { Icon: BarChart3, label: "Replay", value: game.replayability },
-          ].map(({ Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <Icon size={13} className="shrink-0 text-accent" aria-hidden="true" />
-              <div className="min-w-0">
-                <dd className="truncate font-mono text-[11px] font-semibold text-foreground">
-                  {value}
-                </dd>
-                <dt className="truncate font-mono text-[9px] uppercase tracking-wide text-sub">
-                  {label}
-                </dt>
-              </div>
-            </div>
-          ))}
+        {/* Two real numbers plus the player's own best. No invented totals. */}
+        <dl className="grid grid-cols-3 gap-1.5 border-t border-border/60 pt-2">
+          <Metric icon={<Clock size={11} />} label="Per run" value={game.duration} />
+          <Metric icon={<BarChart3 size={11} />} label="Replay" value={game.replayability} />
+          <Metric icon={<Trophy size={11} />} label="Your best" value={bestLabel} />
         </dl>
 
-        {/* Expanded detail. Uses a grid-rows collapse rather than height
-            animation so it needs no JS measurement and no rAF -- animations
-            driven by rAF do not run when the pane is not being painted, which
-            has bitten this project before. */}
-        <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr] motion-reduce:transition-none">
+        {/* Expands on hover, for this card only. grid-rows rather than a height
+            animation, so it needs no measurement and no rAF. */}
+        <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out group-hover/card:grid-rows-[1fr] group-focus-within/card:grid-rows-[1fr] motion-reduce:transition-none">
           <div className="min-h-0 overflow-hidden">
             {game.highlights && (
-              <ul className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1">
-                {game.highlights.map((h) => (
+              <ul className="grid grid-cols-2 gap-x-2 gap-y-0.5 pt-1">
+                {game.highlights.slice(0, 6).map((h) => (
                   <li
                     key={h}
-                    className="flex items-center gap-1.5 font-mono text-[10px] text-sub"
+                    className="flex items-center gap-1 font-display text-[9px] uppercase tracking-wide text-sub"
                   >
-                    <Sparkles size={10} className="shrink-0 text-accent" aria-hidden="true" />
+                    <span aria-hidden="true" className="text-accent">
+                      ▸
+                    </span>
                     <span className="truncate">{h}</span>
                   </li>
                 ))}
@@ -168,17 +150,45 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
 
         <Link
           href={`/games/${game.id}`}
-          className="mt-auto flex min-h-12 items-center justify-center gap-2 rounded-lg bg-accent font-mono text-sm font-bold uppercase tracking-wider text-background transition-all hover:scale-[1.02]"
+          className={cn(
+            "btn-chevron mt-auto flex h-11 items-center justify-center gap-2",
+            "bg-accent font-display text-[11px] font-bold uppercase tracking-[0.16em] text-background",
+            "transition-[filter,transform] duration-200 hover:brightness-110 motion-reduce:transition-none",
+          )}
           style={{
-            boxShadow:
-              "0 0 22px -4px color-mix(in srgb, var(--accent) 75%, transparent)",
+            filter:
+              "drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 70%, transparent))",
           }}
         >
-          <Play size={14} aria-hidden="true" />
+          <Play size={12} aria-hidden="true" />
           Play now
-          <ArrowRight size={14} aria-hidden="true" />
+          <span aria-hidden="true">→</span>
         </Link>
       </div>
     </article>
+  );
+}
+
+function Metric({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="shrink-0 text-accent">{icon}</span>
+      <div className="min-w-0">
+        <dd className="truncate font-display text-[10px] font-bold text-foreground">
+          {value}
+        </dd>
+        <dt className="truncate font-display text-[8px] uppercase tracking-wider text-sub">
+          {label}
+        </dt>
+      </div>
+    </div>
   );
 }

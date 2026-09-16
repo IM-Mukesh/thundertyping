@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono, Orbitron } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
@@ -15,6 +15,16 @@ const geistSans = Geist({
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+});
+
+// Display face for the arcade: logo, headings, card titles, buttons. Orbitron
+// is wide and geometric, which is what gives the hub its game-poster feel --
+// the body text stays on Geist because Orbitron is unreadable in paragraphs.
+const orbitron = Orbitron({
+  variable: "--font-orbitron",
+  subsets: ["latin"],
+  weight: ["500", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -48,7 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       data-theme="dark"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${jetbrainsMono.variable} h-full antialiased ${orbitron.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
