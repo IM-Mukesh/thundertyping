@@ -46,3 +46,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw AI-image output before processing
+# Flow originals are large PNGs that get watermark-stripped and converted to
+# WebP into public/games by scripts/process-flow-batch.sh. Only the processed
+# WebP is committed: git stores binaries as whole new blobs forever, so
+# committing raw art means every regenerated character stays in history at
+# full size for good. Tailwind v4's content detection also honours this file,
+# so keeping the folder ignored keeps it out of the build scan.
+/assets-raw/
