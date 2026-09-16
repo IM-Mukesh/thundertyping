@@ -57,6 +57,10 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
   "combo-rush": lazyGame(() =>
     import("@/components/games/combo-rush-game").then((m) => ({ default: m.ComboRushGame })),
   ),
+  spellbound: lazyGame(() => import("@/components/games/spellbound-game")),
+  "typing-survivor": lazyGame(() => import("@/components/games/typing-survivor-game")),
+  "ghost-racer": lazyGame(() => import("@/components/games/ghost-racer-game")),
+  "card-battle": lazyGame(() => import("@/components/games/card-battle-game")),
 };
 
 export function GameClient({ definition }: { definition: GameDefinition }) {

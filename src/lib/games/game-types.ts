@@ -19,7 +19,11 @@ export type GameId =
   | "word-blaster"
   | "typing-grand-prix"
   | "boss-battle"
-  | "combo-rush";
+  | "combo-rush"
+  | "spellbound"
+  | "typing-survivor"
+  | "ghost-racer"
+  | "card-battle";
 
 export type GameStatus = "idle" | "running" | "paused" | "over";
 
@@ -194,6 +198,82 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     // gold, matching the light rings
     accent: "#fbbf24",
   },
+  spellbound: {
+    id: "spellbound",
+    name: "Spellbound",
+    tagline: "Words are spells. Choose which one to cast while the enemy acts.",
+    rules: [
+      "Several spells are on screen at once — type one to cast it.",
+      "Word length is cast time: short words are fast and weak, long words slow and devastating.",
+      "Enemies act in real time. A long cast can be interrupted.",
+      "Between floors, pick relics that change how your spells behave.",
+    ],
+    about: [
+      "Spellbound is built on the one mapping typing games have always had available and rarely used: how long a word takes to type is how long a spell takes to cast. A four-letter jab lands almost immediately for very little damage. An eleven-letter nuke takes real seconds during which the enemy is still moving, still winding up, still able to punish you. Every moment of combat is a decision about whether you can afford the big word.",
+      "That makes it a genuinely different skill from a typing test. Raw speed helps, but the player who wins is the one reading the board — tracking enemy wind-up timers, noticing that a heal is available but costs as much time as an attack, deciding to chip safely rather than gamble on a long cast. Accuracy matters more than in any other mode here, because a mistyped long word is time you will not get back.",
+      "Runs are procedurally generated and last roughly ten minutes. Relics found along the way change the maths rather than nudging it: one makes short words cast faster, another makes long words hit harder, a third gives every spell a chance to fire twice. Two runs with different relics want genuinely different typing from you.",
+    ],
+    lives: 3,
+    scoreBy: "points",
+    accent: "#a855f7",
+  },
+  "typing-survivor": {
+    id: "typing-survivor",
+    name: "Typing Survivor",
+    tagline: "Endless horde. Every enemy carries a word. Survive the waves.",
+    rules: [
+      "Enemies stream in from all sides, each labelled with a word.",
+      "Type an enemy's word to strike it. Longer words hit harder.",
+      "Killing enemies earns XP; every level up offers a choice of upgrade.",
+      "Survive long enough and a boss arrives.",
+    ],
+    about: [
+      "Typing Survivor is the most immediately playable game here: there is no cast time to weigh and no deck to build, only a rising tide of enemies and your hands. What gives it depth is the upgrade draft. Every level up offers three choices, and the ones you take gradually turn your typing into a particular kind of weapon.",
+      "Take the short-word upgrades and you become a machine gun, shredding the swarm but struggling against anything with real health. Take the long-word upgrades and each strike is an execution, which feels magnificent until six fast enemies arrive at once. Accuracy builds reward never making a mistake; combo builds reward never stopping. None of these is the correct answer, and the enemies you happen to face push you toward different ones.",
+      "Because the pressure is continuous rather than turn-based, this is the mode that most directly trains sustained typing under stress. There is no moment to reset your hands and no natural pause, which is exactly the condition a typing test never reproduces and real work often does.",
+    ],
+    lives: 3,
+    scoreBy: "time",
+    accent: "#f97316",
+  },
+  "ghost-racer": {
+    id: "ghost-racer",
+    name: "Ghost Racer",
+    tagline: "Race the recorded keystrokes of a real player.",
+    rules: [
+      "You and a ghost type the same text, side by side.",
+      "The ghost is a real recorded run, replayed keystroke by keystroke.",
+      "Cross the line first to win and become the next ghost.",
+      "A daily race gives everyone the same text.",
+    ],
+    about: [
+      "Ghost Racer replays a real run rather than simulating an opponent. The ghost beside you is somebody's actual keystrokes with their actual timing, including the half-second they hesitated on a hard word and the burst where they found their rhythm. Racing that feels nothing like racing a number, because it is uneven in the specific way people are uneven.",
+      "The tactical layer is pacing. A ghost that starts fast is not necessarily beating you — it may be the run where they stumbled at the end. Learning to hold your own rhythm while somebody pulls ahead, rather than panicking into a mistake, is the skill the mode trains, and it transfers directly to any timed test.",
+      "Every run you finish is recorded and can become the ghost somebody else races. Beating a ghost puts yours in its place, which means the pool of opponents is made of real attempts rather than difficulty tiers, and the daily race gives everybody the same text so the comparison is exact.",
+    ],
+    lives: 1,
+    scoreBy: "time",
+    accent: "#22d3ee",
+  },
+  "card-battle": {
+    id: "card-battle",
+    name: "Card Battle",
+    tagline: "A deck of cards you play by typing their names.",
+    rules: [
+      "Each card has a word. Type it to play the card.",
+      "Cards cost energy; your turn ends when energy runs out.",
+      "Defeat an enemy to add, upgrade or remove a card.",
+      "Cards combine — poison, then a multiplier, then an execute.",
+    ],
+    about: [
+      "Card Battle is the most deliberate game in the set. Combat is turn-based, so there is no clock forcing your hand, and the interesting decision is which cards to play and in what order rather than how fast you can move. Typing is how you commit to a choice, which makes a misfire feel like a genuine mistake rather than lost milliseconds.",
+      "The depth comes from cards that are weak alone and strong together. A poison card does very little on its own. A multiplier card does nothing at all on its own. Played in sequence against an enemy that is about to take a turn, they win the fight. Building a deck means noticing those pairs and then deliberately removing the cards that dilute them — a deck that does one thing well beats a deck of individually strong cards.",
+      "Because it is turn-based, this is the mode that rewards accuracy over speed more than any other. There is time to type each card name correctly, and no reward at all for typing it fast, so it is the gentlest entry point for a slower typist who wants the strategy without the pressure.",
+    ],
+    lives: 1,
+    scoreBy: "points",
+    accent: "#dc2626",
+  },
 };
 
 export const GAME_LIST: GameDefinition[] = [
@@ -203,4 +283,8 @@ export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["typing-grand-prix"],
   GAME_DEFINITIONS["boss-battle"],
   GAME_DEFINITIONS["combo-rush"],
+  GAME_DEFINITIONS["spellbound"],
+  GAME_DEFINITIONS["typing-survivor"],
+  GAME_DEFINITIONS["ghost-racer"],
+  GAME_DEFINITIONS["card-battle"],
 ];
