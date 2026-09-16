@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SITE_NAME, SITE_URL, SITE_TAGLINE, SITE_DESCRIPTION } from "@/lib/seo/constants";
@@ -54,6 +55,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
+          {/* Carries stored volume settings into the audio mixer, which is a
+              plain module rather than React state. Mounted once here so the
+              slider reaches every game rather than only the one that set it. */}
+          <AudioVolumeBridge />
           <SiteHeader />
           {/* min-h-0 lets a page opt into filling exactly the remaining
               viewport (see /games, which scrolls its own content instead of

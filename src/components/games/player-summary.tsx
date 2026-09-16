@@ -5,7 +5,7 @@ import { Flame, Gamepad2, Star, Trophy } from "lucide-react";
 import {
   levelProgress,
   profileServerSnapshot,
-  readProfile,
+  parseProfile,
   readProfileRaw,
   subscribeProfile,
 } from "@/lib/profile/player-profile";
@@ -35,7 +35,7 @@ export function PlayerSummary() {
     readProfileRaw,
     profileServerSnapshot,
   );
-  const profile = useMemo(() => (raw === null ? null : readProfile()), [raw]);
+  const profile = useMemo(() => (raw === null ? null : parseProfile(raw)), [raw]);
 
   const xp = profile?.xp ?? 0;
   const { level, into, needed, fraction } = levelProgress(xp);

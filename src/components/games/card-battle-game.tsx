@@ -29,12 +29,14 @@ import type { GameComponentProps } from "@/components/games/game-client";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { sound } from "@/lib/audio/game-sounds";
 import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
-import { awardXp, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
+import { awardXp,
+  checkSiteAchievements, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
 import { STARTER_DECKS } from "@/lib/games/cards/cards";
 import { STATUS_META, STATUS_ORDER, faceOf, type CardDef, type Statuses } from "@/lib/games/cards/model";
 import { useCardBattle, type EnemyState } from "@/lib/games/cards/use-card-battle";
 import { CardSigil } from "@/components/games/ui/card-sigil";
 import { GameStage, RuleCard, StartButton, StatTile } from "@/components/games/ui/game-chrome";
+import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#dc2626";
@@ -100,6 +102,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
       bumpStat("card-battle", "wins");
     }
     awardXp(Math.round(state.score / 5) + state.node * 30);
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
   }, [state.phase, state.node, state.score, state.deck.length]);
 
   const handleStart = useCallback(

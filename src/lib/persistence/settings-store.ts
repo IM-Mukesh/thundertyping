@@ -21,6 +21,10 @@ interface SettingsState {
   punctuation: boolean;
   numbers: boolean;
   soundEnabled: boolean;
+  /** 0-1. Applied to the music bus in audio-bus.ts. */
+  musicVolume: number;
+  /** 0-1. Applied to the sfx bus. */
+  sfxVolume: number;
   /** Show a live WPM readout while a test is running. Off by default. */
   liveSpeed: boolean;
   setTheme: (theme: ThemeId) => void;
@@ -31,6 +35,8 @@ interface SettingsState {
   togglePunctuation: () => void;
   toggleNumbers: () => void;
   toggleSound: () => void;
+  setMusicVolume: (v: number) => void;
+  setSfxVolume: (v: number) => void;
   toggleLiveSpeed: () => void;
 }
 
@@ -51,6 +57,8 @@ type PersistedSettings = Pick<
   | "punctuation"
   | "numbers"
   | "soundEnabled"
+  | "musicVolume"
+  | "sfxVolume"
   | "liveSpeed"
 >;
 
@@ -78,6 +86,16 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
     punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,
     numbers: typeof p.numbers === "boolean" ? p.numbers : fallback.numbers,
     soundEnabled: typeof p.soundEnabled === "boolean" ? p.soundEnabled : fallback.soundEnabled,
+    // Clamped on read as well as write: a hand-edited or partially-written
+    // value must not leave the mixer at an impossible gain.
+    musicVolume:
+      typeof p.musicVolume === "number" && p.musicVolume >= 0 && p.musicVolume <= 1
+        ? p.musicVolume
+        : fallback.musicVolume,
+    sfxVolume:
+      typeof p.sfxVolume === "number" && p.sfxVolume >= 0 && p.sfxVolume <= 1
+        ? p.sfxVolume
+        : fallback.sfxVolume,
     liveSpeed: typeof p.liveSpeed === "boolean" ? p.liveSpeed : fallback.liveSpeed,
   };
 }
@@ -98,6 +116,10 @@ export const useSettingsStore = create<SettingsState>()(
       // HUD carries a mute toggle. The typing test itself stays silent — it
       // has no sounds wired up.
       soundEnabled: true,
+      // Music sits under effects by default: it plays continuously while the
+      // effects are the ones carrying feedback.
+      musicVolume: 0.45,
+      sfxVolume: 0.8,
       // Off by default, deliberately. A live WPM figure changes several times
       // a second, sits right above the text being read, and can't be acted on
       // mid-test — it reads as noise rather than feedback. The timer earns its
@@ -112,6 +134,8 @@ export const useSettingsStore = create<SettingsState>()(
       togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
       toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+      setMusicVolume: (v) => set({ musicVolume: Math.max(0, Math.min(1, v)) }),
+      setSfxVolume: (v) => set({ sfxVolume: Math.max(0, Math.min(1, v)) }),
       toggleLiveSpeed: () => set((s) => ({ liveSpeed: !s.liveSpeed })),
     }),
     {

@@ -30,8 +30,20 @@ export function SiteHeader() {
           Games
         </Link>
         <Link
-          href="/about"
+          href="/achievements"
+          className="hidden min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:flex sm:min-h-0"
+        >
+          Achievements
+        </Link>
+        <Link
+          href="/profile"
           className="flex min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:min-h-0"
+        >
+          Profile
+        </Link>
+        <Link
+          href="/about"
+          className="hidden min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:flex sm:min-h-0"
         >
           About
         </Link>

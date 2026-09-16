@@ -31,7 +31,8 @@ import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { sound } from "@/lib/audio/game-sounds";
 import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
 import { FxSystem } from "@/lib/fx/particles";
-import { awardXp, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
+import { awardXp,
+  checkSiteAchievements, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
 import { CHARACTERS } from "@/lib/games/survivor/content";
 import { useSurvivor, type Enemy } from "@/lib/games/survivor/use-survivor";
 import {
@@ -40,6 +41,7 @@ import {
   StartButton,
   StatTile,
 } from "@/components/games/ui/game-chrome";
+import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#f97316";
@@ -194,6 +196,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
       bumpStat("typing-survivor", "wins");
     }
     awardXp(Math.round(state.score / 10) + state.wave * 15);
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
   }, [state.phase, state.wave, state.score, state.bestCombo]);
 
   const handleStart = (id: string) => {

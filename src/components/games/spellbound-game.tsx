@@ -21,6 +21,7 @@ import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/au
 import { FxSystem } from "@/lib/fx/particles";
 import {
   awardXp,
+  checkSiteAchievements,
   bumpStat,
   grantAchievement,
   grantUnlock,
@@ -39,6 +40,7 @@ import {
   useSpellbound,
   type EnemyState,
 } from "@/lib/games/spellbound/use-spellbound";
+import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#a855f7";
@@ -190,6 +192,7 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
       bumpStat("spellbound", "wins");
     }
     awardXp(Math.round(state.score / 8) + state.floor * 25);
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
 
     // Unlocks are earned by depth, so a new character is a visible reward for
     // getting further rather than an arbitrary grind.

@@ -30,7 +30,8 @@ import type { GameComponentProps } from "@/components/games/game-client";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { sound } from "@/lib/audio/game-sounds";
 import { playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
-import { awardXp, bumpStat, grantAchievement, recordDaily } from "@/lib/profile/player-profile";
+import { awardXp,
+  checkSiteAchievements, bumpStat, grantAchievement, recordDaily } from "@/lib/profile/player-profile";
 import { createRng, dailySeed, dailySeedFor, msUntilNextDaily } from "@/lib/rng/seeded-rng";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
@@ -50,6 +51,7 @@ import {
   StatTile,
   WordDisplay,
 } from "@/components/games/ui/game-chrome";
+import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#22d3ee";
@@ -189,9 +191,14 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
         record = !bestRun || run.durationMs < bestRun.durationMs;
         void localGhostStore.save(run);
 
+        // "runs" as well as "races": the profile totals runs across games, and
+        // a race that did not count there read as a bug rather than a naming
+        // detail.
+        bumpStat("ghost-racer", "runs");
         bumpStat("ghost-racer", "races");
         if (won) bumpStat("ghost-racer", "wins");
         awardXp(Math.round(finalWpm) + (won ? 40 : 10));
+        checkSiteAchievements(GAME_LIST.map((g) => g.id));
         grantAchievement("ghost-racer:first-race");
         if (won) grantAchievement("ghost-racer:first-win");
         if (finalAcc === 100) grantAchievement("ghost-racer:flawless");

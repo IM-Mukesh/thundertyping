@@ -88,7 +88,19 @@ function isRecord(v: unknown): v is Record<string, unknown> {
  * every render -- corrupted local state is a normal condition, not an error.
  */
 export function readProfile(): PlayerProfile {
-  const raw = getStorageItem(KEY);
+  return parseProfile(getStorageItem(KEY));
+}
+
+/**
+ * Parse a stored profile string.
+ *
+ * Exported so a component holding a useSyncExternalStore snapshot can derive
+ * from that exact string rather than re-reading storage. Deriving from the
+ * snapshot is what makes the memo honest -- calling readProfile() inside a memo
+ * keyed on the snapshot works only by coincidence, because the value it reads
+ * is not the value it depends on.
+ */
+export function parseProfile(raw: string | null): PlayerProfile {
   if (!raw) return { ...EMPTY };
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -234,6 +246,38 @@ export function recordDaily(dateKey: string, score: number): {
 
   write(profile);
   return { streak: profile.streak.count, isBest };
+}
+
+/**
+ * Grant the cross-game achievements.
+ *
+ * Kept here rather than in each game so a rule like "play every game" has one
+ * definition instead of four partial ones, and so adding a game does not mean
+ * remembering to update four call sites. Safe to call often: every grant is
+ * already idempotent.
+ */
+export function checkSiteAchievements(allGameIds: readonly string[]): string[] {
+  const profile = readProfile();
+  const granted: string[] = [];
+
+  const playedAll =
+    allGameIds.length > 0 &&
+    allGameIds.every((id) => (profile.stats[id]?.runs ?? 0) > 0);
+  if (playedAll && grantAchievement("site:all-games")) granted.push("site:all-games");
+
+  if (levelForXp(profile.xp) >= 10 && grantAchievement("site:level-10")) {
+    granted.push("site:level-10");
+  }
+  if (profile.streak.count >= 7 && grantAchievement("site:streak-7")) {
+    granted.push("site:streak-7");
+  }
+  if (
+    Object.keys(profile.dailies).length > 0 &&
+    grantAchievement("site:daily")
+  ) {
+    granted.push("site:daily");
+  }
+  return granted;
 }
 
 /** Wipes the profile. Only ever called from an explicit settings action. */
