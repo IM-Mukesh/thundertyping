@@ -29,7 +29,6 @@ import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
 /** Fixed so the board never resizes as words of different lengths come up. */
-const BOARD_HEIGHT = 340;
 
 /**
  * Component-local keyframes. Two reasons they live here rather than in
@@ -201,7 +200,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
             onClick={toggleSound}
             aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
             title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="text-sub/60 transition-colors hover:text-foreground"
+            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
@@ -210,8 +209,8 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
 
       <div
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines"
-        style={{ height: BOARD_HEIGHT }}
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:320px] sm:[--board-h:400px]"
+        style={{ height: "var(--board-h)" }}
       >
         <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
         <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />

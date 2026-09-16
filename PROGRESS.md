@@ -18,7 +18,7 @@ Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll p
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of 2026-09-15: a feature-complete MVP (all four typing modes, full stats/results, 5 themes, icon-based config bar, MonkeyType-matched visuals), **two typing games** under `/games`, and the first piece of real SEO content (`/guides/how-to-improve-typing-speed`), all internally linked. Not launched — no domain, no AdSense, no Search Console yet.
+As of 2026-09-16: a feature-complete MVP, **fully mobile-responsive** (see the mobile pass section below) (all four typing modes, full stats/results, 5 themes, icon-based config bar, MonkeyType-matched visuals), **two typing games** under `/games`, and the first piece of real SEO content (`/guides/how-to-improve-typing-speed`), all internally linked. Not launched — no domain, no AdSense, no Search Console yet.
 
 **What's genuinely open right now, roughly by leverage:**
 1. **Six typing games shipped** (2026-09-15): `falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush` — all live-verified. Adding another means a new `GameId`, a `GAME_DEFINITIONS` entry and one line in the `game-client.tsx` registry; nothing else. Read "Games architecture" below first. Three more were picked but not built: **Turret Defense, Ghost Racer, Accuracy Sniper**.
@@ -143,6 +143,54 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 - Screen-reader typing experience is fundamentally limited (industry-wide issue with this app category — a real, visually-hidden `<input>` drives a custom visual rendering, so there's no real-time spoken feedback while typing — not something a small patch fixes).
 - Unicode edge case: character comparison indexes by UTF-16 code unit, not grapheme cluster — emoji in custom text render oddly but don't crash anything. Low priority.
 - **No SEO beyond the technical baseline** — see the SEO section below, which is a current top priority.
+
+## Mobile responsiveness pass (2026-09-16) — live-verified at 320px and 375px
+
+The site is now usable on phones. Verified by measuring the running app at
+375x812 and 320x640, not by reading the source.
+
+**What was actually broken (all fixed):**
+1. **Touch targets below 44px site-wide.** Config-bar pills were a 32x24 hit area
+   around a 16px icon; the five game mute buttons were bare 15x15 icons with no
+   padding; the game info button was 36x36 and its close button 32x32. All now
+   clear 44px on touch screens and revert to the compact size from `sm:` up,
+   where a pointer makes the padding unnecessary. The mute fix uses a negative
+   margin (`-m-2` + `p-2`) so the larger hit area grows outward instead of
+   reflowing the HUD.
+2. **Falling-words clipped its words on narrow screens.** Lane positions were
+   computed in *pixels* against a fixed 440px board, so on a 309px board the
+   outer lanes pushed text past the edge. Now percentage-based
+   (`LANE_INSET_PCT`, `FLOOR_INSET_PCT`) against a fluid
+   `[--board-h:340px] sm:[--board-h:440px]` board. Proven by computing the
+   longest word in the list (`together`, 8 chars) against all 6 lane centres at
+   a 254px board: every lane fits with 7.3px to spare.
+3. **Word Blaster clipped every long word at spawn — and this was never
+   mobile-specific.** Enemies were left-edge-anchored at `SPAWN_X = 94%`, so the
+   text ran off the board's `overflow-hidden` clip: the longest word overhung a
+   320px board by 52px and stayed partly unreadable for roughly the first
+   quarter of its approach. Since you cannot type a word you cannot read, this
+   was a real difficulty bug that also affected desktop (spawn 722px + ~96px of
+   text on a 768px board). Fixed by interpolating the horizontal anchor from the
+   word's right edge at spawn to its left edge at the wall, which gets both ends
+   right without needing the text width in JS. Verified over 89 live samples at
+   a 254px board: zero clipped, worst case 16px *inside* the edge.
+
+**Checked and found already correct — do not "fix" these:**
+- The Grand Prix word strip is 645px wide inside a 309px container *by design*:
+  it is a masked ticker, active word pinned left, upcoming words fading out at
+  72%. Measured the active word ending at 91px against a fade starting at 222px.
+- The Grand Prix board keeps a fixed derived height (`LANE_COUNT * LANE_HEIGHT
+  + TRACK_PAD_Y * 2`) rather than the fluid `var(--board-h)` the other games
+  use, because a fluid container would desync the fixed-height track lanes.
+- The guides table is fluid (327px at 375, 272px at 320) — it needs no
+  `overflow-x` scroll wrapper.
+- The hidden typing input is 16px, so iOS will not auto-zoom on focus.
+
+**Coverage:** every route measured for document-level horizontal overflow at
+375px — `/`, `/games`, all six `/games/[gameId]`, `/guides/*`. All clean.
+Desktop was re-verified for regression after the falling-words geometry change
+(768x440 board, 44px/s fall rate, no clipping) since that change touched
+gameplay math, and a life-loss run confirmed the floor detection still fires.
 
 ## Architecture notes (read before modifying the typing engine)
 

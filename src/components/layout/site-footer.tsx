@@ -33,22 +33,22 @@ export function SiteFooter() {
             <span>
               &copy; {new Date().getFullYear()} {SITE_NAME}
             </span>
-            <Link href="/about" className="transition-colors hover:text-foreground">
+            <Link href="/about" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
               About
             </Link>
-            <Link href="/games" className="transition-colors hover:text-foreground">
+            <Link href="/games" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
               Games
             </Link>
             <Link
               href="/guides/how-to-improve-typing-speed"
-              className="transition-colors hover:text-foreground"
+              className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0"
             >
               Guides
             </Link>
-            <Link href="/privacy" className="transition-colors hover:text-foreground">
+            <Link href="/privacy" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
               Privacy
             </Link>
-            <Link href="/terms" className="transition-colors hover:text-foreground">
+            <Link href="/terms" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
               Terms
             </Link>
           </div>

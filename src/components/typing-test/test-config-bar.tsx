@@ -221,7 +221,7 @@ function CustomDurationInput({
       onClick={() => setEditing(true)}
       aria-label="Set a custom duration"
       title="Set a custom duration"
-      className="flex items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground"
+      className="flex min-h-11 min-w-11 items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground sm:min-h-0 sm:min-w-0"
     >
       <Pencil size={16} />
     </button>
@@ -247,7 +247,10 @@ function Pill({
       aria-label={ariaLabel}
       title={ariaLabel}
       className={cn(
-        "flex items-center justify-center rounded px-2 py-1 transition-colors",
+        // 44px minimum on touch screens — the icons are only 16px, which gave
+        // a 32x24 hit area that's genuinely hard to tap accurately. Reverts to
+        // the compact size from sm: up, where a pointer makes it unnecessary.
+        "flex min-h-11 min-w-11 items-center justify-center rounded px-2 py-1 transition-colors sm:min-h-0 sm:min-w-0",
         active ? "text-accent" : "text-sub hover:text-foreground",
       )}
     >

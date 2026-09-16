@@ -35,7 +35,6 @@ import { cn } from "@/lib/utils/cn";
 
 // Matches the board height the other games use, so the route's reserved space
 // and the loading placeholder stay right.
-const BOARD_HEIGHT = 440;
 /** Charge fraction past which the telegraph reads as imminent. */
 const DANGER_FROM = 0.72;
 
@@ -191,7 +190,7 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
             onClick={toggleSound}
             aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
             title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="text-sub/60 transition-colors hover:text-foreground"
+            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
@@ -200,8 +199,8 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
 
       <div
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines"
-        style={{ height: BOARD_HEIGHT }}
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:340px] sm:[--board-h:440px]"
+        style={{ height: "var(--board-h)" }}
       >
         <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
         <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />

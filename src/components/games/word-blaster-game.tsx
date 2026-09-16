@@ -31,7 +31,7 @@ const BOARD_HEIGHT = 400;
  * the turret's aim angle, and that is cosmetic if the measurement is stale.
  */
 const BASE_X = 13;
-const SPAWN_X = 100;
+const SPAWN_X = 94;
 /** The barrel pivot sits just right of the wall it defends. */
 const MUZZLE_X = BASE_X + 2.5;
 
@@ -253,7 +253,7 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
             onClick={toggleSound}
             aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
             title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="text-sub/60 transition-colors hover:text-foreground"
+            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
@@ -263,8 +263,8 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
       <div
         ref={boardRef}
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines"
-        style={{ height: BOARD_HEIGHT }}
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:320px] sm:[--board-h:400px]"
+        style={{ height: "var(--board-h)" }}
       >
         <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
         <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
@@ -312,7 +312,7 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
             <span
               key={enemy.id}
               className={cn(
-                "absolute flex items-center gap-1.5 whitespace-nowrap font-mono text-lg tracking-tight transition-[left] ease-linear sm:text-xl",
+                "absolute flex items-center gap-1.5 whitespace-nowrap font-mono text-sm tracking-tight transition-[left,transform] ease-linear sm:text-xl",
                 isTarget
                   ? "text-foreground arcade-glow-soft"
                   : inDanger
@@ -325,7 +325,19 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
                 transitionDuration: `${TICK_MS}ms`,
                 left: `${enemyX(enemy.progress)}%`,
                 top: `${laneY(enemy.lane)}%`,
-                transform: "translateY(-50%)",
+                // The horizontal anchor interpolates from the word's right edge
+                // at spawn to its left edge at the wall, which is the only way
+                // to get both ends right without knowing the text width here.
+                //
+                // Anchoring the left edge throughout (the original) parked the
+                // text's left edge at SPAWN_X and let the rest run past the
+                // board's overflow-hidden clip: the longest word overhung a
+                // 320px-wide board by 52px and stayed partly cut off for the
+                // first quarter of its approach. You cannot type a word you
+                // cannot read, so that was a real difficulty bug, not cosmetic.
+                // Right-anchoring throughout would fix spawn but push the text
+                // through the wall before the breach registers.
+                transform: `translate(${-100 * (1 - enemy.progress)}%, -50%)`,
               }}
             >
               {/* The nose of the craft, and the point that crosses the wall. */}

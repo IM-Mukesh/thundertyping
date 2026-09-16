@@ -160,7 +160,7 @@ export function TypingGrandPrixGame({ definition }: TypingGrandPrixGameProps) {
             onClick={toggleSound}
             aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
             title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="text-sub/60 transition-colors hover:text-foreground"
+            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>

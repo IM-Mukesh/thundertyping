@@ -29,7 +29,7 @@ export function LanguageSelector() {
         aria-label="Language: English"
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-sub transition-colors hover:text-foreground"
+        className="flex min-h-11 items-center gap-1.5 rounded-md px-2 py-1 text-xs text-sub transition-colors hover:text-foreground sm:min-h-0"
       >
         <Globe size={13} />
         English

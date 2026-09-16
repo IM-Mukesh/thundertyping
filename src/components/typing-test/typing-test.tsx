@@ -205,7 +205,7 @@ export function TypingTest() {
             aria-label="Restart test"
             title="Restart (Tab)"
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-full text-sub transition-opacity duration-200 hover:bg-sub-alt hover:text-foreground",
+              "flex h-11 w-11 items-center justify-center rounded-full text-sub transition-opacity duration-200 hover:bg-sub-alt hover:text-foreground sm:h-9 sm:w-9",
               isRunning ? "pointer-events-none opacity-0" : "opacity-100",
             )}
           >

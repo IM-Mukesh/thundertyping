@@ -10,11 +10,20 @@ import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
-const BOARD_HEIGHT = 440;
-/** Keeps a word fully on-screen when it reaches the floor. */
-const FLOOR_INSET = 46;
+// Board height is set in CSS (shorter on phones, where a keyboard eats half
+// the screen) and every position below is a PERCENTAGE of it. Pixel maths tied
+// the word positions to one fixed height, so the board could never be
+// responsive without the words drifting away from the floor line.
+const FLOOR_INSET_PCT = 10.5;
+
 /** Words past this fraction are in the danger strip and get a warning colour. */
 const DANGER_FROM = 0.74;
+/**
+ * How far in from each edge the outermost lane centres sit, as a percentage of
+ * board width. Words are centred on their lane and can be wider than the lane
+ * itself, so without this the first and last lanes clip on narrow screens.
+ */
+const LANE_INSET_PCT = 13;
 
 interface FallingWordsGameProps {
   definition: GameDefinition;
@@ -155,7 +164,7 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
             onClick={toggleSound}
             aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
             title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="text-sub/60 transition-colors hover:text-foreground"
+            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
@@ -164,8 +173,8 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
 
       <div
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines"
-        style={{ height: BOARD_HEIGHT }}
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:340px] sm:[--board-h:440px]"
+        style={{ height: "var(--board-h)" }}
       >
         <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
         <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
@@ -174,12 +183,12 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 bottom-0 arcade-danger"
-          style={{ height: FLOOR_INSET + 34 }}
+          style={{ height: `${FLOOR_INSET_PCT + 7}%` }}
         />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 border-t border-dashed border-error/50"
-          style={{ top: BOARD_HEIGHT - FLOOR_INSET + 26 }}
+          style={{ top: `${100 - FLOOR_INSET_PCT + 5.5}%` }}
         />
 
         {state.words.map((word) => {
@@ -190,7 +199,7 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
             <span
               key={word.id}
               className={cn(
-                "absolute whitespace-nowrap font-mono text-xl tracking-tight transition-[top] ease-linear sm:text-2xl",
+                "absolute whitespace-nowrap font-mono text-lg tracking-tight transition-[top] ease-linear sm:text-2xl",
                 isTarget
                   ? "text-foreground arcade-glow-soft"
                   : inDanger
@@ -201,8 +210,13 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
                 // Matches the engine tick so stepped updates read as continuous
                 // motion without running the loop at frame rate.
                 transitionDuration: "50ms",
-                top: word.progress * (BOARD_HEIGHT - FLOOR_INSET),
-                left: `${(word.lane + 0.5) * (100 / LANE_COUNT)}%`,
+                top: `${word.progress * (100 - FLOOR_INSET_PCT)}%`,
+                // Lanes are inset rather than spanning the full width. Words
+                // are centred on their lane, so an outer-lane word used to
+                // extend past the board edge and get clipped — a 58px word in
+                // a 52px lane on a 309px phone board. Keeping lane centres
+                // away from the edges leaves room for the widest words.
+                left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / LANE_COUNT)}%`,
                 transform: "translateX(-50%)",
               }}
             >

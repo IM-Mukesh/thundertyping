@@ -29,7 +29,7 @@ export function ThemeSwitcher() {
         aria-label="Change theme"
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex h-9 w-9 items-center justify-center rounded-md text-sub transition-colors hover:bg-sub-alt hover:text-foreground"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-sub transition-colors hover:bg-sub-alt hover:text-foreground sm:h-9 sm:w-9"
       >
         <Palette size={18} />
       </button>

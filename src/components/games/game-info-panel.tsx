@@ -44,7 +44,7 @@ export function GameInfoPanel({ game, others }: GameInfoPanelProps) {
         aria-controls={panelId}
         aria-label={`How to play ${game.name}`}
         title={`How to play ${game.name}`}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/40 text-accent transition-colors hover:bg-accent hover:text-background"
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-accent/40 text-accent transition-colors hover:bg-accent hover:text-background sm:h-9 sm:w-9"
       >
         <Info size={16} />
       </button>
@@ -79,7 +79,7 @@ export function GameInfoPanel({ game, others }: GameInfoPanelProps) {
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close"
-            className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sub transition-colors hover:bg-sub-alt hover:text-foreground"
+            className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sub transition-colors hover:bg-sub-alt hover:text-foreground sm:-mr-1 sm:-mt-1 sm:h-8 sm:w-8"
           >
             <X size={16} />
           </button>
