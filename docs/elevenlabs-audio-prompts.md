@@ -16,36 +16,27 @@ important tracks already exist.
 
 ---
 
-## ✅ 01 — DONE
-
-**FILE:** `music-hub-menu` · **2 min** · Music tab
-*(Already generated at 1 min. Good enough — only redo it if credits are plentiful.)*
-
-> Dark synth ambient with a slow analog arpeggio, warm low pads, sparse bell tones, restrained and confident, unhurried, 80 BPM, minor key, spacious reverb, a sense of a quiet arcade at night. Not epic, not sad — inviting and slightly mysterious. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
-
----
-
 # PRIORITY 1 — Combat tracks (most-heard audio in the project)
 
-## 02
+## 01
 
 **FILE:** `music-spellbound-combat` · **4 min** · Music tab
 
 > Driving dark fantasy orchestral with an electronic pulse: staccato low strings on a repeating ostinato, taiko-style low percussion, tense sustained high violins, a subtle synth arpeggio underneath, 128 BPM, minor key, urgent and focused but never chaotic — a player must be able to concentrate over it. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-## 03
+## 02
 
 **FILE:** `music-survivor-combat` · **4 min** · Music tab
 
 > Relentless percussive action music: driving tribal war drums, aggressive distorted bass pulse, short brass stabs, fast shaker rhythm, 140 BPM, minor key, propulsive and unending, wave after wave with no let-up. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-## 04
+## 03
 
 **FILE:** `music-racer-combat` · **4 min** · Music tab
 
 > High-energy synthwave and darksynth race music: driving four-on-the-floor kick, aggressive arpeggiated analog bassline, bright lead synth, gated reverb snare, 150 BPM, minor key, pure forward momentum and speed. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-## 05
+## 04
 
 **FILE:** `music-cards-combat` · **4 min** · Music tab
 
@@ -55,25 +46,25 @@ important tracks already exist.
 
 # PRIORITY 2 — Boss tracks
 
-## 06
+## 05
 
 **FILE:** `music-spellbound-boss` · **2 min** · Music tab
 
 > Epic dark fantasy boss music: full low brass, pounding timpani and war drums, aggressive string ostinato, wordless choir swells, distorted synth bass underneath, 140 BPM, minor key, enormous and threatening, high stakes. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-## 07
+## 06
 
 **FILE:** `music-survivor-boss` · **2 min** · Music tab
 
 > Heavy hybrid orchestral boss music: enormous drum ensemble, snarling low brass, industrial metal hits, screaming high strings, distorted synth bass, 150 BPM, minor key, brutal and overwhelming. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-## 08
+## 07
 
 **FILE:** `music-racer-boss` · **2 min** · Music tab
 
 > Peak-intensity darksynth final-lap music: pounding kick, distorted acid bassline, soaring lead synth, rising tension riser textures, 160 BPM, minor key, exhilarating and dangerous. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-## 09
+## 08
 
 **FILE:** `music-cards-boss` · **2 min** · Music tab
 
@@ -82,6 +73,12 @@ important tracks already exist.
 ---
 
 # PRIORITY 3 — Menu tracks
+
+## 09
+
+**FILE:** `music-hub-menu` · **2 min** · Music tab
+
+> Dark synth ambient with a slow analog arpeggio, warm low pads, sparse bell tones, restrained and confident, unhurried, 80 BPM, minor key, spacious reverb, a sense of a quiet arcade at night. Not epic, not sad — inviting and slightly mysterious. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
 ## 10
 
@@ -101,7 +98,7 @@ important tracks already exist.
 
 > Cool synthwave ambient: slow analog pad, gated reverb snare set far back in the mix, clean chorus guitar single notes, a neon night atmosphere, 90 BPM, minor key, confident and cold, waiting on the starting grid. Seamless loop, constant tempo throughout, no intro, no outro, no fade in, no fade out, no vocals, no speech, instrumental only, consistent instrumentation from start to finish.
 
-*(Card Battle reuses `music-hub-menu` — the moods match and it saves a generation.)*
+*(Card Battle reuses `music-hub-menu` above — the moods match and it saves a generation.)*
 
 ---
 
