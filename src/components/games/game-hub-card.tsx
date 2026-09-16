@@ -211,7 +211,14 @@ export function GameHubCard({
       {character && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-[188px] left-1/2 z-20 h-[132px] -translate-x-1/2"
+          className={cn(
+            "pointer-events-none absolute bottom-[188px] left-1/2 z-20 -translate-x-1/2",
+            // Touch devices never fire hover, so the sprite would sit at its
+            // small resting size permanently with no way to reveal it. It is
+            // shown larger from the start there and the hover growth only
+            // applies from sm: up, where a pointer exists to trigger it.
+            "h-[190px] sm:h-[132px]",
+          )}
         >
           <motion.div
             className="h-full"
@@ -221,8 +228,8 @@ export function GameHubCard({
               className={cn(
                 "h-full origin-bottom opacity-95 transition-[transform,opacity] duration-500",
                 "[transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
-                "group-hover/card:scale-[2.5] group-hover/card:opacity-100",
-                "group-focus-within/card:scale-[2.5] group-focus-within/card:opacity-100",
+                "sm:group-hover/card:scale-[2.5] sm:group-hover/card:opacity-100",
+                "sm:group-focus-within/card:scale-[2.5] sm:group-focus-within/card:opacity-100",
                 "motion-reduce:!scale-100 motion-reduce:transition-none",
               )}
             >

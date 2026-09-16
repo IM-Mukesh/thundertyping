@@ -115,12 +115,34 @@ export default function GamesHubPage() {
         <h2 className="sr-only">All typing games</h2>
         <GameHubFilters games={[...GAME_LIST]} art={art} characters={characters} />
 
-        <section className="mt-16 rounded-2xl border border-border bg-sub-alt/20 p-6 sm:p-8">
-          <h2 className="mb-3 flex items-center gap-2 font-mono text-lg font-bold tracking-tight text-foreground">
-            <Sparkles size={16} className="text-accent" aria-hidden="true" />
+        {/* Mission briefing rather than an article box: corner ticks, a rule
+            under the heading and a HUD label, so it reads as part of the same
+            interface as the cards instead of a essay pasted underneath them. */}
+        <section className="neon-corners relative mt-20 overflow-hidden rounded-2xl border border-accent/25 bg-sub-alt/15 p-6 sm:p-9">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(90deg, var(--accent) 0 1px, transparent 1px 64px)",
+            }}
+          />
+          <p className="relative mb-2 font-display text-[10px] uppercase tracking-[0.35em] text-accent">
+            Briefing
+          </p>
+          <h2 className="relative mb-4 flex items-center gap-2 font-display text-xl font-extrabold uppercase tracking-tight text-foreground sm:text-2xl">
+            <Sparkles size={17} className="text-accent" aria-hidden="true" />
             Why these are not just typing tests
           </h2>
-          <div className="grid gap-4 text-sm leading-relaxed text-sub sm:grid-cols-2">
+          <div
+            aria-hidden="true"
+            className="relative mb-5 h-px w-full"
+            style={{
+              background:
+                "linear-gradient(to right, color-mix(in srgb, var(--accent) 70%, transparent), transparent)",
+            }}
+          />
+          <div className="relative grid gap-5 text-sm leading-relaxed text-sub sm:grid-cols-2">
             <p>
               A typing test measures you. A game asks you to decide. In
               Spellbound the length of a word is how long the spell takes to

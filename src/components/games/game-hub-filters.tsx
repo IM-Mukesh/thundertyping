@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Gamepad2, Grid3x3, Swords, Flag, Brain } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { GameHubCard } from "@/components/games/game-hub-card";
+import { SortControl } from "@/components/games/sort-control";
 import { cn } from "@/lib/utils/cn";
 
 type Category = GameDefinition["category"];
@@ -65,7 +66,7 @@ export function GameHubFilters({
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+      <div className="mb-8 flex flex-wrap items-center gap-2">
         <div
           role="tablist"
           aria-label="Filter games by category"
@@ -81,34 +82,47 @@ export function GameHubFilters({
                 aria-selected={active}
                 onClick={() => setFilter(tab.id)}
                 className={cn(
-                  "flex min-h-11 items-center gap-1.5 rounded-lg px-3 font-mono text-xs transition-colors sm:min-h-9",
+                  "group/tab relative flex min-h-11 items-center gap-1.5 rounded-lg border px-3",
+                  "font-display text-[11px] uppercase tracking-wider transition-all duration-200 sm:min-h-9",
                   active
-                    ? "bg-accent text-background"
-                    : "bg-sub-alt text-sub hover:text-foreground",
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-border/60 bg-sub-alt/40 text-sub hover:border-accent/50 hover:text-foreground",
                 )}
+                style={
+                  active
+                    ? {
+                        boxShadow:
+                          "0 0 18px -6px color-mix(in srgb, var(--accent) 70%, transparent)",
+                      }
+                    : undefined
+                }
               >
                 {tab.icon}
                 {tab.label}
-                <span className={cn("tabular-nums", active ? "opacity-80" : "opacity-60")}>
-                  ({counts[tab.id] ?? 0})
+                <span
+                  className={cn(
+                    "rounded px-1 font-display text-[10px] tabular-nums",
+                    active ? "bg-accent/25 text-accent" : "bg-border/40 text-sub",
+                  )}
+                >
+                  {counts[tab.id] ?? 0}
                 </span>
               </button>
             );
           })}
         </div>
 
-        <label className="ml-auto flex items-center gap-2 font-mono text-xs text-sub">
-          <span>Sort by</span>
-          <select
+        <div className="ml-auto">
+          <SortControl
             value={sort}
-            onChange={(e) => setSort(e.target.value as Sort)}
-            className="min-h-11 rounded-lg border border-border bg-sub-alt px-2 font-mono text-xs text-foreground sm:min-h-9"
-          >
-            <option value="featured">Featured</option>
-            <option value="name">Name</option>
-            <option value="shortest">Shortest run</option>
-          </select>
-        </label>
+            onChange={setSort}
+            options={[
+              { id: "featured", label: "Featured" },
+              { id: "name", label: "Name" },
+              { id: "shortest", label: "Shortest run" },
+            ]}
+          />
+        </div>
       </div>
 
       <div className={cn(
@@ -117,7 +131,9 @@ export function GameHubFilters({
           // hover the character stands ~330px tall against a 232px art box, so
           // roughly 100px of it rises above the card. The row gap is what keeps
           // that from landing on the card above.
-          "gap-x-6 gap-y-28",
+          // The big row gap only earns its space where a character can rise
+          // into it. Touch has no hover, so on one column it is dead space.
+          "gap-x-6 gap-y-6 sm:gap-y-28",
         )}>
         {visible.map((game, i) => (
           <GameHubCard
