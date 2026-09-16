@@ -73,6 +73,29 @@ export interface GameDefinition {
    * rest of the site on the user's chosen theme.
    */
   accent: string;
+
+  /**
+   * Which filter tab the game appears under on the hub. One category per game
+   * on purpose -- a game in three tabs makes the counts meaningless and the
+   * filter useless.
+   */
+  category: "RPG" | "Action" | "Racing" | "Strategy" | "Arcade";
+  /** Short descriptive labels on the hub card. Three at most; the card clips. */
+  tags: string[];
+  /** Human-readable run length, e.g. "5-15 min". Shown on the card. */
+  duration: string;
+  /**
+   * How much a game rewards repeat play. Deliberately a judgement, not a
+   * measured number: there is no telemetry behind it and inventing one would
+   * be dishonest.
+   */
+  replayability: "Medium" | "High" | "Very High";
+  /** One game carries the hub's featured slot. */
+  featured?: boolean;
+  /** Longer pitch for the expanded hover card. */
+  pitch?: string;
+  /** Bullet features shown when the hub card expands. */
+  highlights?: string[];
 }
 
 export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
@@ -95,7 +118,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     scoreBy: "points",
     // icy cyan, matching the crystal shards
     accent: "#5eead4",
-  },
+    category: "Arcade",
+    tags: ["Arcade", "Reflex", "Single Player"],
+    duration: "1-3 min",
+    replayability: "High",
+    pitch:
+      "Words fall, you clear them. The purest test of reading the board and picking the right target under time pressure.",
+    highlights: ["Six lanes", "Combo multiplier", "Escalating speed", "Instant restart"],  },
   "word-rain": {
     id: "word-rain",
     name: "Word Rain",
@@ -115,7 +144,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     scoreBy: "time",
     // violet, matching the storm and lightning
     accent: "#a78bfa",
-  },
+    category: "Arcade",
+    tags: ["Arcade", "Hardcore", "Single Player"],
+    duration: "1-2 min",
+    replayability: "High",
+    pitch:
+      "Falling Words with one life. Every word that lands ends the run.",
+    highlights: ["One life", "Faster fall", "Pure focus", "Leaderboard-ready"],  },
   "word-blaster": {
     id: "word-blaster",
     name: "Word Blaster",
@@ -135,7 +170,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     scoreBy: "points",
     // electric cyan, matching the tracer fire
     accent: "#22d3ee",
-  },
+    category: "Action",
+    tags: ["Shooter", "Action", "Single Player"],
+    duration: "2-4 min",
+    replayability: "High",
+    pitch:
+      "Enemies fly at your wall. Type to shoot them down before they breach it.",
+    highlights: ["Five lanes", "Turret targeting", "Wave pressure", "Breach defence"],  },
   "typing-grand-prix": {
     id: "typing-grand-prix",
     name: "Typing Grand Prix",
@@ -157,7 +198,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     scoreBy: "points",
     // hot magenta, matching the circuit neon
     accent: "#f472b6",
-  },
+    category: "Racing",
+    tags: ["Racing", "Arcade", "Single Player"],
+    duration: "1-2 min",
+    replayability: "Medium",
+    pitch:
+      "A flat-out sprint. The active word is pinned and the track never stops moving.",
+    highlights: ["Pinned reading position", "Speed feedback", "Lap pacing", "Personal bests"],  },
   "boss-battle": {
     id: "boss-battle",
     name: "Boss Battle",
@@ -177,7 +224,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     scoreBy: "points",
     // crimson, matching the boss glow
     accent: "#f87171",
-  },
+    category: "RPG",
+    tags: ["Boss Fight", "RPG", "Single Player"],
+    duration: "3-6 min",
+    replayability: "Medium",
+    pitch:
+      "One enemy, one long health bar, and your accuracy as the only weapon.",
+    highlights: ["Single boss", "Phase changes", "Damage scaling", "Focus test"],  },
   "combo-rush": {
     id: "combo-rush",
     name: "Combo Rush",
@@ -197,7 +250,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     scoreBy: "points",
     // gold, matching the light rings
     accent: "#fbbf24",
-  },
+    category: "Arcade",
+    tags: ["Arcade", "Combo", "Single Player"],
+    duration: "2-4 min",
+    replayability: "High",
+    pitch:
+      "Never stop typing. The multiplier is everything and a single miss resets it.",
+    highlights: ["Combo multiplier", "No-miss pressure", "Score attack", "Quick runs"],  },
   spellbound: {
     id: "spellbound",
     name: "Spellbound",
@@ -216,7 +275,14 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     lives: 3,
     scoreBy: "points",
     accent: "#a855f7",
-  },
+    category: "RPG",
+    tags: ["Roguelite", "RPG", "Single Player"],
+    duration: "5-15 min",
+    replayability: "High",
+    featured: true,
+    pitch:
+      "Cast spells, defeat enemies, collect relics and build your ultimate typing mage. Every run is unique.",
+    highlights: ["5 unique characters", "16 spells", "15 relics", "Procedural floors", "4 boss fights", "Endless replayability"],  },
   "typing-survivor": {
     id: "typing-survivor",
     name: "Typing Survivor",
@@ -235,7 +301,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     lives: 3,
     scoreBy: "time",
     accent: "#f97316",
-  },
+    category: "Action",
+    tags: ["Action", "Horde", "Single Player"],
+    duration: "10-30 min",
+    replayability: "Very High",
+    pitch:
+      "Endless enemies. Powerful upgrades. How long can you survive?",
+    highlights: ["4 characters", "Upgrade drafts", "Six enemy types", "Elites and bosses", "Build variety", "Wave escalation"],  },
   "ghost-racer": {
     id: "ghost-racer",
     name: "Ghost Racer",
@@ -254,7 +326,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     lives: 1,
     scoreBy: "time",
     accent: "#22d3ee",
-  },
+    category: "Racing",
+    tags: ["Racing", "Competitive", "Single Player"],
+    duration: "2-5 min",
+    replayability: "High",
+    pitch:
+      "Go head-to-head with real player ghosts. Beat their time, set new records, climb the ranks.",
+    highlights: ["Real recorded runs", "Daily race", "Personal bests", "Rank progression", "Revenge matches"],  },
   "card-battle": {
     id: "card-battle",
     name: "Card Battle",
@@ -273,7 +351,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     lives: 1,
     scoreBy: "points",
     accent: "#dc2626",
-  },
+    category: "Strategy",
+    tags: ["Strategy", "Deckbuilding", "Single Player"],
+    duration: "10-25 min",
+    replayability: "High",
+    pitch:
+      "Build your deck, type to play cards, defeat mighty foes and discover powerful combos.",
+    highlights: ["3 characters", "40+ cards", "Deck archetypes", "Card combos", "3 bosses", "Turn-based"],  },
 };
 
 export const GAME_LIST: GameDefinition[] = [

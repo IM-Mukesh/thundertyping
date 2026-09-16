@@ -125,6 +125,23 @@ function write(profile: PlayerProfile): void {
   }
 }
 
+/**
+ * The stored profile as its raw string, for useSyncExternalStore.
+ *
+ * The snapshot a store returns must be referentially stable between changes.
+ * `readProfile()` parses into a fresh object every call, so using it directly
+ * as a snapshot re-renders forever. Callers take this string and parse it in a
+ * useMemo instead -- the same shape the test-status store settled on after
+ * exactly this bug.
+ */
+export function readProfileRaw(): string | null {
+  return getStorageItem(KEY);
+}
+
+export function profileServerSnapshot(): string | null {
+  return null;
+}
+
 export function subscribeProfile(listener: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   window.addEventListener(CHANGE_EVENT, listener);
