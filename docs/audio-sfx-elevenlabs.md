@@ -5,10 +5,20 @@ Text to Speech, not Music).
 
 ## Settings for every one
 
-- **Duration: 2 seconds.** If the tab offers "automatic", set it manually
-  instead — automatic tends to pad with silence or stretch a hit into a texture.
+- **Duration: per-effect, see the table.** Leave the clock control on Auto for
+  the short punchy ones; set it manually only where the brief describes a swell
+  or a resonant tail.
+
+  Shorter is better for game sound effects. A 1-second critical hit reads as
+  punchier than a 2-second one, and long tails overlap when effects fire in
+  quick succession, which turns a busy fight into mud. Auto tends to land near
+  1 second, which is correct for most of this list.
 - **Prompt influence: high.** These prompts are literal descriptions and you
   want literal results, not creative interpretation.
+- **Turn off Explore sharing.** Generations are published to the public Explore
+  page by default; there is a Disable link beside that notice.
+- **Cost:** 200 credits per generation, 4 variations each. Twelve effects is
+  well inside a 10,000 credit allowance even with re-rolls.
 - **Download: WAV / PCM**, highest sample rate offered. If the plan only exposes
   MP3, take the highest bitrate available.
 
@@ -31,20 +41,20 @@ and the easiest to judge. If that one lands, the rest will.
 
 ---
 
-| # | FILE | Prompt to paste |
-|---|---|---|
-| S01 | `sfx-boss-spawn` | Deep bass impact with rising metallic drone, huge and ominous |
-| S02 | `sfx-level-up` | Bright magical chime, three ascending notes, sparkling tail |
-| S03 | `sfx-relic-acquire` | Singing bowl struck once, warm resonant tone with magical sparkle |
-| S04 | `sfx-chest-open` | Wooden chest creaking open, metal latch clicks, faint shimmer |
-| S05 | `sfx-card-play` | Playing card flicks through air and lands flat on felt table |
-| S06 | `sfx-shield-up` | Crystalline energy shield powers up, glassy hum, solid snap |
-| S07 | `sfx-heal` | Soft warm healing glow, gentle bell, rising breath |
-| S08 | `sfx-crit-hit` | Sharp metallic sword crack with heavy bass punch, brutal impact |
-| S09 | `sfx-enemy-death` | Monster collapses with wet crunch, fading into dust |
-| S10 | `sfx-player-death` | Heavy descending impact, reverse reverb swell, hollow drone |
-| S11 | `sfx-race-start` | Electronic countdown beep, then engine launches away fast |
-| S12 | `sfx-new-record` | Short triumphant electronic fanfare, rising, bright sparkle burst |
+| # | FILE | Duration | Prompt to paste |
+|---|---|---|---|
+| S01 | `sfx-boss-spawn` | 3s | Deep bass impact with rising metallic drone, huge and ominous |
+| S02 | `sfx-level-up` | 1.5s | Bright magical chime, three ascending notes, sparkling tail |
+| S03 | `sfx-relic-acquire` | 2s | Singing bowl struck once, warm resonant tone with magical sparkle |
+| S04 | `sfx-chest-open` | 1.5s | Wooden chest creaking open, metal latch clicks, faint shimmer |
+| S05 | `sfx-card-play` | Auto | Playing card flicks through air and lands flat on felt table |
+| S06 | `sfx-shield-up` | 1.5s | Crystalline energy shield powers up, glassy hum, solid snap |
+| S07 | `sfx-heal` | 2s | Soft warm healing glow, gentle bell, rising breath |
+| S08 | `sfx-crit-hit` | Auto | Sharp metallic sword crack with heavy bass punch, brutal impact |
+| S09 | `sfx-enemy-death` | Auto | Monster collapses with wet crunch, fading into dust |
+| S10 | `sfx-player-death` | 3s | Heavy descending impact, reverse reverb swell, hollow drone |
+| S11 | `sfx-race-start` | 2s | Electronic countdown beep, then engine launches away fast |
+| S12 | `sfx-new-record` | 1.5s | Short triumphant electronic fanfare, rising, bright sparkle burst |
 
 ---
 
