@@ -2,14 +2,35 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { Gamepad2, Info, Trophy, User, Zap } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
+import { LevelBadge } from "@/components/layout/level-badge";
+import { cn } from "@/lib/utils/cn";
+
+/**
+ * Site header, built to the reference design: a wordmark, pill navigation with
+ * icons, and a level badge on the right.
+ *
+ * Deliberately absent: Leaderboard and Shop. Both appear in the reference, and
+ * both would need a backend that does not exist — a nav entry leading to a
+ * placeholder is worse than one that is not there.
+ */
+
+const NAV = [
+  { href: "/games", label: "Games", icon: Gamepad2, always: true },
+  { href: "/achievements", label: "Achievements", icon: Trophy, always: true },
+  { href: "/profile", label: "Profile", icon: User, always: true },
+  // About is reachable from the footer on every page, so it is the one that
+  // gives way when four icons plus the wordmark will not fit 375px.
+  { href: "/about", label: "About", icon: Info, always: false },
+];
 
 export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="flex items-center justify-between px-6 py-5 sm:px-10">
+    <header className="flex items-center justify-between gap-1.5 px-2 py-4 sm:gap-3 sm:px-8">
       <Link
         href="/"
         onClick={() => {
@@ -18,36 +39,50 @@ export function SiteHeader() {
           // the typing test to restart in that case.
           if (pathname === "/") emitTestReset();
         }}
-        className="flex items-center gap-1 text-lg font-semibold tracking-tight text-foreground"
+        className="flex shrink-0 items-center gap-2"
       >
-        <span className="text-accent">Thunder</span>Typing
+        <span
+          aria-hidden="true"
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-background sm:h-8 sm:w-8"
+        >
+          <Zap size={17} strokeWidth={2.5} />
+        </span>
+        <span className="flex flex-col leading-none">
+          <span className="font-display text-sm font-extrabold uppercase tracking-tight text-foreground sm:text-lg">
+            Thunder<span className="text-accent">typing</span>
+          </span>
+          <span className="hidden font-display text-[8px] uppercase tracking-[0.3em] text-sub sm:block">
+            Type · Play · Improve
+          </span>
+        </span>
       </Link>
-      <nav className="flex items-center gap-2 sm:gap-4">
-        <Link
-          href="/games"
-          className="flex min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:min-h-0"
-        >
-          Games
-        </Link>
-        <Link
-          href="/achievements"
-          className="hidden min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:flex sm:min-h-0"
-        >
-          Achievements
-        </Link>
-        <Link
-          href="/profile"
-          className="flex min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:min-h-0"
-        >
-          Profile
-        </Link>
-        <Link
-          href="/about"
-          className="hidden min-h-11 items-center px-2 text-sm text-sub transition-colors hover:text-foreground sm:flex sm:min-h-0"
-        >
-          About
-        </Link>
+
+      <nav className="flex min-w-0 items-center gap-0.5 sm:gap-1">
+        {NAV.map(({ href, label, icon: Icon, always }) => {
+          const active = pathname === href || pathname.startsWith(`${href}/`);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg font-display text-[11px] font-medium uppercase tracking-wider transition-colors sm:min-h-9 sm:min-w-0 sm:px-3",
+                always ? "flex" : "hidden sm:flex",
+                active
+                  ? "bg-accent/15 text-accent"
+                  : "text-sub hover:bg-sub-alt hover:text-foreground",
+              )}
+            >
+              <Icon size={15} aria-hidden="true" />
+              {/* One label element, not two. It is visually hidden on narrow
+                  screens -- where four labels will not fit beside the wordmark
+                  -- but stays in the accessibility tree at every size. */}
+              <span className="sr-only sm:not-sr-only">{label}</span>
+            </Link>
+          );
+        })}
         <ThemeSwitcher />
+        <LevelBadge />
       </nav>
     </header>
   );

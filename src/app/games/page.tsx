@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Keyboard, Sparkles, Zap } from "lucide-react";
 import { GAME_LIST } from "@/lib/games/game-types";
-import { getGameArt, getHubHeroArt } from "@/lib/games/game-art-assets";
+import { getArt, getGameArt, getHubHeroArt } from "@/lib/games/game-art-assets";
 import { GameHubFilters } from "@/components/games/game-hub-filters";
 import { PlayerSummary } from "@/components/games/player-summary";
 import { AdSlot } from "@/components/layout/ad-slot";
@@ -21,6 +21,9 @@ export const metadata: Metadata = {
 
 export default function GamesHubPage() {
   const hubHero = getHubHeroArt();
+  // getArt takes plain strings, unlike getGameArt which is keyed to GameId.
+  // Resolves public/games/hub-footer.webp when it exists.
+  const footerArt = getArt("hub", "footer");
   const featured = GAME_LIST.find((g) => g.featured) ?? GAME_LIST[0];
 
   // Art is resolved on the server -- getGameArt reads the filesystem at build
@@ -41,27 +44,28 @@ export default function GamesHubPage() {
               fill
               priority
               sizes="100vw"
-              className="object-cover object-center opacity-50"
+              className="object-cover object-center opacity-70"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60" />
           <div className="absolute inset-0 arcade-grid opacity-25" />
         </div>
 
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-14 sm:px-10 sm:py-20">
-          <span className="flex w-fit items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+          <span className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/5 px-3.5 py-1.5 font-display text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             <Zap size={12} aria-hidden="true" />
             Welcome to
           </span>
 
-          <h1 className="max-w-2xl font-mono text-4xl font-bold uppercase leading-[1.05] tracking-tight text-foreground arcade-glow-soft sm:text-6xl">
-            A universe of{" "}
-            <span className="text-accent">typing games</span>
+          <h1 className="max-w-3xl font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+            A universe of
+            <br />
+            <span className="text-accent text-glow">typing games</span>
           </h1>
 
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-sub">
-            Type · Play · Level up
+          <p className="font-display text-[11px] font-medium uppercase tracking-[0.35em] text-sub sm:text-xs">
+            Type · Play · Level up · Be legendary
           </p>
 
           <p className="max-w-xl text-sm leading-relaxed text-sub sm:text-base">
@@ -73,14 +77,18 @@ export default function GamesHubPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/games/${featured.id}`}
-              className="flex min-h-11 items-center gap-2 rounded-lg bg-accent px-5 font-mono text-xs font-bold uppercase tracking-wider text-background transition-transform hover:scale-[1.03]"
+              className="btn-chevron flex h-12 items-center gap-2 bg-accent px-8 font-display text-xs font-bold uppercase tracking-[0.16em] text-background transition-[filter] duration-200 hover:brightness-110"
+              style={{
+                filter:
+                  "drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 70%, transparent))",
+              }}
             >
               Play {featured.name}
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
             <Link
               href="/"
-              className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-5 font-mono text-xs uppercase tracking-wider text-sub transition-colors hover:border-accent hover:text-foreground"
+              className="flex h-12 items-center gap-2 rounded-lg border border-border px-6 font-display text-xs uppercase tracking-[0.14em] text-sub transition-colors hover:border-accent hover:text-foreground"
             >
               <Keyboard size={14} aria-hidden="true" />
               Take the speed test
@@ -137,6 +145,20 @@ export default function GamesHubPage() {
         <div className="mt-14">
           <AdSlot id="games-hub-footer" format="horizontal" />
         </div>
+      </div>
+
+      {/* Footer band. Falls back to a plain rule when the art is absent, so a
+          missing file is a quieter page rather than a broken one. */}
+      <div className="relative mt-16 w-full overflow-hidden">
+        {footerArt && (
+          <div aria-hidden="true" className="relative h-32 w-full sm:h-44">
+            <Image src={footerArt} alt="" fill sizes="100vw" className="object-cover object-bottom opacity-60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
+          </div>
+        )}
+        <p className="mx-auto max-w-3xl px-6 pb-2 text-center font-display text-[10px] uppercase tracking-[0.3em] text-sub">
+          Improve · Have fun · Be legendary
+        </p>
       </div>
     </div>
   );
