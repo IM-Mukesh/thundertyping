@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
    * The ranges are the RFC 1918 private ones, so it cannot expose the dev
    * server to a public origin.
    */
-  allowedDevOrigins: ["10.254.181.*", "192.168.0.*", "192.168.1.*"],
+  allowedDevOrigins: ["10.254.181.*", "192.168.*.*", "172.16.*.*"],
 
   /**
    * Keeps the build's file tracer out of directories it has no business in.
