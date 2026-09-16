@@ -9,8 +9,16 @@ Text to Speech, not Music).
   instead — automatic tends to pad with silence or stretch a hit into a texture.
 - **Prompt influence: high.** These prompts are literal descriptions and you
   want literal results, not creative interpretation.
-- **Download:** highest quality offered. MP3 is acceptable here — unlike music,
-  these are sub-second sounds where re-encoding artefacts are inaudible.
+- **Download: WAV / PCM**, highest sample rate offered. If the plan only exposes
+  MP3, take the highest bitrate available.
+
+  SFX are the *worst* case for lossy encoding, not the best. Every one of these
+  is transient-heavy — impacts, cracks, clicks, snaps — and sharp transients are
+  where lossy codecs produce pre-echo, a faint smear arriving just before the
+  hit. On a sustained pad it is inaudible; on a critical-hit crack it softens
+  precisely the thing that makes it feel punchy. A 2-second stereo WAV is about
+  384KB, so all twelve cost roughly 4.6MB at source — nothing next to the 45MB
+  music takes. They ship as Opus at a few tens of KB each regardless.
 - **Save into** `assets-raw/audio/sfx/`.
 
 Prompts are deliberately short and concrete. ElevenLabs' SFX model responds to
