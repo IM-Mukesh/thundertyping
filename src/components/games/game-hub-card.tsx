@@ -122,9 +122,15 @@ export function GameHubCard({
         // purpose: the brief asks for depth, not a zoom.
         "hover:scale-[1.015] focus-within:scale-[1.015] active:scale-[0.99]",
         "motion-reduce:transform-none motion-reduce:transition-none",
+        // The card sets `isolate`, so the character's z-index is confined to
+        // this card's stacking context. Without lifting the CARD above its
+        // siblings, a later card in DOM order paints straight over the risen
+        // figure. Done in CSS rather than from React state so the stacking is
+        // correct on the very first frame of the hover, not one render later.
+        "z-0 hover:z-30 focus-within:z-30",
         // Raised only while hovered, so the glow is never clipped by a
         // neighbour and nothing is permanently stacked above the grid.
-        active ? "z-10 neon-frame-strong" : "z-0",
+        active && "neon-frame-strong",
       )}
       style={
         {
