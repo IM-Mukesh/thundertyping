@@ -117,7 +117,7 @@ export function GameHubCard({
         // NOT overflow-hidden: the character rises out of the top of the card
         // on hover, so only the artwork box clips. The card keeps its rounded
         // corners through the background gradient and the neon frame.
-        "neon-frame transition-[box-shadow,transform] duration-300 ease-out",
+        "neon-frame",
         // Transform-driven, so the document never reflows. Scale is tiny on
         // purpose: the brief asks for depth, not a zoom.
         "hover:scale-[1.015] focus-within:scale-[1.015] active:scale-[0.99]",
@@ -138,6 +138,15 @@ export function GameHubCard({
           "--color-accent": game.accent,
           background:
             "linear-gradient(170deg, color-mix(in srgb, var(--accent) 12%, var(--background)) 0%, var(--background) 62%)",
+          // Inline for the same reason as the character's: the arbitrary
+          // `transition-[box-shadow,transform]` utility does not compile
+          // because of the comma, and the card silently fell back to a 0.2s
+          // colour transition. The frame answers the pointer faster than the
+          // figure rises -- the card acknowledges you immediately, the
+          // character takes its time.
+          transition: reduced
+            ? "none"
+            : "box-shadow 500ms cubic-bezier(0.4, 0, 0.2, 1), scale 500ms cubic-bezier(0.4, 0, 0.2, 1)",
         } as React.CSSProperties
       }
     >
@@ -152,7 +161,15 @@ export function GameHubCard({
             className="absolute inset-0"
             style={reduced ? undefined : { x: bgX }}
           >
-            <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover/card:scale-[1.04] group-focus-within/card:scale-[1.04] motion-reduce:transform-none">
+            <div
+              className="absolute inset-0 group-hover/card:scale-[1.04] group-focus-within/card:scale-[1.04] motion-reduce:transform-none"
+              // Trails the character slightly, which is what reads as depth.
+              style={{
+                transition: reduced
+                  ? "none"
+                  : "scale 1200ms cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
               <Image
                 src={art}
                 alt=""
@@ -171,7 +188,7 @@ export function GameHubCard({
         {/* L3 accent atmosphere */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-400 group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover/card:opacity-100 group-focus-within/card:opacity-100"
           style={{
             background:
               "radial-gradient(70% 60% at 50% 100%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%)",
@@ -226,12 +243,36 @@ export function GameHubCard({
           >
             <div
               className={cn(
-                "h-full origin-bottom opacity-95 transition-[transform,opacity] duration-500",
-                "[transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
+                "h-full origin-bottom opacity-95",
                 "sm:group-hover/card:scale-[2.5] sm:group-hover/card:opacity-100",
                 "sm:group-focus-within/card:scale-[2.5] sm:group-focus-within/card:opacity-100",
-                "motion-reduce:!scale-100 motion-reduce:transition-none",
+                "motion-reduce:!scale-100",
               )}
+              // Transitions `scale`, NOT `transform`. Tailwind v4 emits
+              // `scale: 2.5` as its own CSS property rather than as a
+              // transform function, and the two are independent -- naming
+              // `transform` here transitions nothing, so the sprite snapped to
+              // full size instantly no matter what duration was set. That was
+              // the "scales too quickly" problem.
+              //
+              // `transform` is still listed because motion writes the pointer
+              // parallax through it on the parent.
+              //
+              // Set inline rather than through a utility class.
+              // `transition-[transform,opacity]` does not compile -- the comma
+              // in the arbitrary value fails to parse, and the element silently
+              // falls back to Tailwind's default 0.2s colour transition, which
+              // is why the scale looked instant.
+              //
+              // The curve matters as much as the duration here. An ease-out
+              // quint dumps nearly all the movement into the first fifth of the
+              // time, which over a full second reads as a snap followed by a
+              // crawl; this one spreads the motion across the whole beat.
+              style={{
+                transition: reduced
+                  ? "none"
+                  : "scale 1000ms cubic-bezier(0.4, 0, 0.2, 1), translate 1000ms cubic-bezier(0.4, 0, 0.2, 1), opacity 700ms cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
             >
               <Image
                 src={character}
@@ -263,7 +304,7 @@ export function GameHubCard({
         <div className="relative h-[52px]">
           <p
             className={cn(
-              "absolute inset-0 line-clamp-3 text-[12px] leading-snug text-sub transition-opacity duration-300",
+              "absolute inset-0 line-clamp-3 text-[12px] leading-snug text-sub transition-opacity duration-700",
               active ? "opacity-0" : "opacity-100",
             )}
           >
@@ -272,7 +313,7 @@ export function GameHubCard({
           <ul
             aria-hidden={!active}
             className={cn(
-              "absolute inset-0 grid grid-cols-2 gap-x-2 gap-y-0.5 transition-opacity duration-300",
+              "absolute inset-0 grid grid-cols-2 gap-x-2 gap-y-0.5 transition-opacity duration-700",
               active ? "opacity-100" : "opacity-0",
             )}
           >
