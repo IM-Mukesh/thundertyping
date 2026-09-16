@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
-import { BarChart3, Clock, Play, Sparkles, Trophy } from "lucide-react";
+import { ArrowRight, BarChart3, Clock, Play, Sparkles, Trophy } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { gameBestKey, parseGameBest } from "@/lib/games/game-scores";
 import { getStorageItem } from "@/lib/persistence/storage";
@@ -58,29 +58,32 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border bg-background transition-all duration-300",
-        "border-border hover:-translate-y-1 hover:shadow-2xl focus-within:-translate-y-1",
+        "group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300",
+        // The accent edge is on at rest, not only on hover. In the reference
+        // design each card is lit in its own colour -- that is what makes the
+        // grid read as four worlds rather than four grey boxes -- and the
+        // utility is built on color-mix against --accent, so it stays correct
+        // in all five site themes.
+        "arcade-edge arcade-edge-hover hover:-translate-y-1.5 focus-within:-translate-y-1.5",
       )}
       style={
         {
           "--accent": game.accent,
           "--color-accent": game.accent,
+          // A whisper of the accent in the card surface. Flat --background made
+          // every card identical below the artwork.
+          background:
+            "linear-gradient(160deg, color-mix(in srgb, var(--accent) 7%, var(--background)) 0%, var(--background) 55%)",
         } as React.CSSProperties
       }
     >
-      {/* Accent edge that lights up on hover. Sits behind content. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl border border-transparent transition-colors duration-300 group-hover:border-accent/70 group-focus-within:border-accent/70"
-      />
-
       {game.featured && (
         <span className="absolute left-3 top-3 z-20 rounded-md bg-accent px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-background">
           Featured
         </span>
       )}
 
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
+      <div className="relative aspect-[16/11] w-full overflow-hidden">
         {art ? (
           <Image
             src={art}
@@ -93,12 +96,14 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
         ) : (
           <div className="h-full w-full bg-sub-alt" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />
+        {/* Only enough scrim to seat the title; the reference art is bright and
+            a heavy gradient was washing it out. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
       </div>
 
       <div className="relative flex flex-1 flex-col gap-2.5 p-4">
         <div>
-          <h3 className="font-mono text-lg font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-accent">
+          <h3 className="font-mono text-xl font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-accent group-hover:arcade-glow sm:text-2xl">
             {game.name}
           </h3>
           <p className="font-mono text-[11px] uppercase tracking-wider text-accent/90">
@@ -119,22 +124,24 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
           ))}
         </ul>
 
-        <dl className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-2.5 font-mono text-[11px]">
-          <div className="flex items-center gap-1.5">
-            <Trophy size={12} className="text-accent" aria-hidden="true" />
-            <dt className="sr-only">Your best</dt>
-            <dd className="text-sub">{scoreLabel}</dd>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock size={12} className="text-accent" aria-hidden="true" />
-            <dt className="sr-only">Run length</dt>
-            <dd className="text-sub">{game.duration}</dd>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <BarChart3 size={12} className="text-accent" aria-hidden="true" />
-            <dt className="sr-only">Replayability</dt>
-            <dd className="text-sub">{game.replayability}</dd>
-          </div>
+        <dl className="grid grid-cols-3 gap-2 border-t border-border/70 pt-3">
+          {[
+            { Icon: Trophy, label: "Your best", value: scoreLabel },
+            { Icon: Clock, label: "Per run", value: game.duration },
+            { Icon: BarChart3, label: "Replay", value: game.replayability },
+          ].map(({ Icon, label, value }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <Icon size={13} className="shrink-0 text-accent" aria-hidden="true" />
+              <div className="min-w-0">
+                <dd className="truncate font-mono text-[11px] font-semibold text-foreground">
+                  {value}
+                </dd>
+                <dt className="truncate font-mono text-[9px] uppercase tracking-wide text-sub">
+                  {label}
+                </dt>
+              </div>
+            </div>
+          ))}
         </dl>
 
         {/* Expanded detail. Uses a grid-rows collapse rather than height
@@ -161,10 +168,15 @@ export function GameHubCard({ game, art, priority }: GameHubCardProps) {
 
         <Link
           href={`/games/${game.id}`}
-          className="mt-auto flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent font-mono text-xs font-bold uppercase tracking-wider text-background transition-transform hover:scale-[1.02]"
+          className="mt-auto flex min-h-12 items-center justify-center gap-2 rounded-lg bg-accent font-mono text-sm font-bold uppercase tracking-wider text-background transition-all hover:scale-[1.02]"
+          style={{
+            boxShadow:
+              "0 0 22px -4px color-mix(in srgb, var(--accent) 75%, transparent)",
+          }}
         >
-          <Play size={13} aria-hidden="true" />
-          Play {game.name}
+          <Play size={14} aria-hidden="true" />
+          Play now
+          <ArrowRight size={14} aria-hidden="true" />
         </Link>
       </div>
     </article>
