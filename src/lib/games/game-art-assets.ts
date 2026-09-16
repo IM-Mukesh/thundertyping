@@ -64,17 +64,6 @@ export function getArt(gameId: string, role: string): string | null {
   return findNested(gameId, role) ?? findAsset(`${gameId}-${role}`);
 }
 
-/** Every role name a game has art for. Useful for preloading a game's set. */
-export function listArtRoles(gameId: string): string[] {
-  const dir = path.join(PUBLIC_GAMES_DIR, gameId);
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => EXTENSIONS.some((e) => f.endsWith(`.${e}`)))
-    .map((f) => f.replace(/\.[^.]+$/, ""))
-    .sort();
-}
-
 /**
  * Art for one game in one role.
  *

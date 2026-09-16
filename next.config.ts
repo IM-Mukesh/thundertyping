@@ -20,6 +20,24 @@ const nextConfig: NextConfig = {
    * server to a public origin.
    */
   allowedDevOrigins: ["10.254.181.*", "192.168.0.*", "192.168.1.*"],
+
+  /**
+   * Keeps the build's file tracer out of directories it has no business in.
+   *
+   * `next build` runs @vercel/nft over the project to work out which files a
+   * deployment needs. `assets-raw/` holds the uncompressed source art and audio
+   * -- several hundred megabytes that are deliberately gitignored and never
+   * imported -- so tracing it is pure wasted IO. The tooling directories are
+   * listed for the same reason.
+   *
+   * Note this is NOT the fix for a "Permission denied .../.claude/workflows"
+   * build failure. That one is the sandbox denying reads under `.claude/`, not
+   * the tracer misbehaving, and it does not reproduce outside a sandbox or on
+   * Vercel, where the directory does not exist at all.
+   */
+  outputFileTracingExcludes: {
+    "*": [".claude/**/*", ".mcp.json", "assets-raw/**/*"],
+  },
 };
 
 export default nextConfig;
