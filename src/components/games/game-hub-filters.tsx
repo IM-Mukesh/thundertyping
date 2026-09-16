@@ -111,7 +111,14 @@ export function GameHubFilters({
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+          // Row gap is deliberately much larger than the column gap. At full
+          // hover the character stands ~330px tall against a 232px art box, so
+          // roughly 100px of it rises above the card. The row gap is what keeps
+          // that from landing on the card above.
+          "gap-x-6 gap-y-28",
+        )}>
         {visible.map((game, i) => (
           <GameHubCard
             key={game.id}

@@ -113,7 +113,10 @@ export function GameHubCard({
       onFocusCapture={() => setHovered(true)}
       onBlurCapture={reset}
       className={cn(
-        "group/card relative isolate flex h-[420px] flex-col overflow-hidden rounded-2xl",
+        "group/card relative isolate flex h-[420px] flex-col rounded-2xl",
+        // NOT overflow-hidden: the character rises out of the top of the card
+        // on hover, so only the artwork box clips. The card keeps its rounded
+        // corners through the background gradient and the neon frame.
         "neon-frame transition-[box-shadow,transform] duration-300 ease-out",
         // Transform-driven, so the document never reflows. Scale is tiny on
         // purpose: the brief asks for depth, not a zoom.
@@ -133,7 +136,7 @@ export function GameHubCard({
       }
     >
       {/* ---------------------------------------------------------- ART BOX */}
-      <div className="relative h-[232px] w-full shrink-0 overflow-hidden">
+      <div className="relative h-[232px] w-full shrink-0 overflow-hidden rounded-t-2xl">
         {/* L1 background. Parallax and scale live on separate elements:
             motion silently drops animated transform keys when the same element
             also sets a transform through `style`, so one element cannot own
@@ -169,50 +172,6 @@ export function GameHubCard({
           }}
         />
 
-        {/* L4 character — anchored to the art's bottom edge so it can break
-            the frame line slightly, which is what sells the depth.
-
-            Three nested elements, each owning exactly one transform. Centring
-            is plain CSS on the outer div, parallax owns the middle, the hover
-            lift owns the inner. Collapsing these onto one element makes motion
-            drop the animated scale entirely -- measured: the character rendered
-            but its transform never changed on hover. */}
-        {character && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-1/2 h-[112%] -translate-x-1/2"
-          >
-            <motion.div
-              className="h-full"
-              style={reduced ? undefined : { x: charX, y: charY }}
-            >
-              <div
-                className={cn(
-                  "h-full origin-bottom opacity-90 transition-[transform,opacity] duration-500",
-                  "[transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
-                  "group-hover/card:scale-110 group-hover/card:-translate-y-2.5 group-hover/card:opacity-100",
-                  "group-focus-within/card:scale-110 group-focus-within/card:-translate-y-2.5",
-                  "motion-reduce:transform-none motion-reduce:transition-none",
-                )}
-              >
-                <Image
-                  src={character}
-                  alt=""
-                  width={430}
-                  height={430}
-                  sizes="260px"
-                  className="h-full w-auto object-contain object-bottom"
-                  style={{
-                    filter: active
-                      ? "drop-shadow(0 12px 26px color-mix(in srgb, var(--accent) 55%, transparent))"
-                      : "drop-shadow(0 6px 14px rgba(0,0,0,0.5))",
-                    transition: "filter 300ms ease",
-                  }}
-                />
-              </div>
-            </motion.div>
-          </div>
-        )}
 
         {/* L5 bottom scrim, above the character so the title is never lost
             behind a raised arm. */}
@@ -229,6 +188,56 @@ export function GameHubCard({
           </span>
         )}
       </div>
+
+      {/* L4 character — a SIBLING of the art box, not a child of it.
+
+          Anchored so its feet rest on the art box's bottom edge, then scaled
+          from that same origin. Because the card no longer clips, roughly a
+          third of the figure rises above the frame on hover, which is what
+          makes it read as stepping out of the scene rather than zooming inside
+          a window.
+
+          Three nested elements, each owning exactly one transform: centring on
+          the outer div, parallax in the middle, the hover lift on the inner.
+          Collapsing them onto one element makes motion drop the animated
+          transform entirely -- measured, the character rendered and never
+          moved. */}
+      {character && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-[188px] left-1/2 z-20 h-[132px] -translate-x-1/2"
+        >
+          <motion.div
+            className="h-full"
+            style={reduced ? undefined : { x: charX, y: charY }}
+          >
+            <div
+              className={cn(
+                "h-full origin-bottom opacity-95 transition-[transform,opacity] duration-500",
+                "[transition-timing-function:cubic-bezier(0.22,1,0.36,1)]",
+                "group-hover/card:scale-[2.5] group-hover/card:opacity-100",
+                "group-focus-within/card:scale-[2.5] group-focus-within/card:opacity-100",
+                "motion-reduce:!scale-100 motion-reduce:transition-none",
+              )}
+            >
+              <Image
+                src={character}
+                alt=""
+                width={520}
+                height={1200}
+                sizes="(max-width: 640px) 200px, 340px"
+                className="h-full w-auto object-contain object-bottom"
+                style={{
+                  filter: active
+                    ? "drop-shadow(0 18px 34px color-mix(in srgb, var(--accent) 55%, transparent))"
+                    : "drop-shadow(0 6px 14px rgba(0,0,0,0.55))",
+                  transition: "filter 350ms ease",
+                }}
+              />
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* ------------------------------------------------------ L6 CONTENT */}
       <div className="relative flex flex-1 flex-col gap-2 px-3.5 pb-3.5 pt-2.5">
