@@ -418,6 +418,19 @@ function Combat({ game }: { game: Game }) {
           ))}
       </div>
 
+      {/* Mechanic banner. A Void King rule change or a sealed spell has to be
+          readable before the player types into it, so it sits over the board
+          with a live region rather than only tinting something. */}
+      {state.telegraph && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none absolute inset-x-3 top-3 z-30 rounded-lg border border-accent/60 bg-background/90 px-3 py-2 text-center font-mono text-[11px] uppercase tracking-wider text-accent backdrop-blur-sm"
+        >
+          {state.telegraph}
+        </div>
+      )}
+
       {game.paused && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 font-mono text-sm text-sub">
           paused
@@ -428,14 +441,17 @@ function Combat({ game }: { game: Game }) {
       <div className="grid grid-cols-2 gap-2">
         {state.slots.map((slot, i) => {
           const spell = SPELLS[slot.spellId];
-          const locked = slot.cooldown > 0;
+          const sealed = slot.sealed > 0;
+          const locked = slot.cooldown > 0 || sealed;
           const matches = !locked && slot.word.startsWith(state.typed) && state.typed.length > 0;
           return (
             <div
               key={`${slot.spellId}-${i}`}
               className={cn(
                 "relative overflow-hidden rounded-lg border px-2 py-1.5 transition-colors",
-                locked
+                sealed
+                  ? "border-error/50 bg-error/5 opacity-70"
+                  : locked
                   ? "border-border/50 bg-sub-alt/30 opacity-50"
                   : matches
                     ? "border-accent bg-accent/10"
@@ -444,10 +460,12 @@ function Combat({ game }: { game: Game }) {
             >
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate font-mono text-[10px] uppercase tracking-wide text-sub">
-                  {spell.name}
+                  {/* Sealed is labelled, not merely dimmed: a greyed card alone
+                      does not say why it cannot be used. */}
+                  {sealed ? "sealed" : spell.name}
                 </span>
                 <span className="shrink-0 font-mono text-[10px] text-accent">
-                  {spell.mana}
+                  {sealed ? `${Math.ceil(slot.sealed / 1000)}s` : spell.mana}
                 </span>
               </div>
               <p className="font-mono text-base tracking-tight sm:text-lg">

@@ -67,6 +67,8 @@ export interface SpellSlot {
   cooldown: number;
   /** Set while the Word Eater is corrupting this slot. */
   corrupted: boolean;
+  /** Sealed by the Archivist: unusable until this counts down. */
+  sealed: number;
 }
 
 export interface EnemyState {
@@ -125,6 +127,12 @@ export interface SpellboundState {
   /** Floor cleared without taking damage, for the flawless achievement. */
   cleanFloor: boolean;
   message: string | null;
+  /** Banner text for a mechanic that just fired, e.g. a Void King rule change. */
+  telegraph: string | null;
+  /** Last spell cast, for Twin Catalyst and the Mirror Mage. */
+  lastSpellId: string | null;
+  /** Consecutive casts of lastSpellId. */
+  repeatCount: number;
 }
 
 export interface CastResult {
@@ -151,6 +159,7 @@ function makeSlot(rng: Rng, spellId: string): SpellSlot {
     word: pickWord(rng, SPELLS[spellId]),
     cooldown: 0,
     corrupted: false,
+    sealed: 0,
   };
 }
 
@@ -257,6 +266,9 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
       voidRule: null,
       cleanFloor: true,
       message: null,
+      telegraph: null,
+      lastSpellId: null,
+      repeatCount: 0,
     };
   }
 
@@ -386,17 +398,28 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         const s: SpellboundState = { ...prev };
         const char = characterById(s.characterId);
         s.elapsedMs += TICK_MS;
+        // Banners are transient: hold one for ~2.5s, then clear, so a stale
+        // rule change cannot sit over the board for the rest of the fight.
+        if (s.telegraph && s.elapsedMs % 2500 < TICK_MS) s.telegraph = null;
 
         // mana regen, modified by relics
         const regenMult = s.relics.includes("mana-engine") ? 1.6 : 1;
         s.mana = Math.min(s.maxMana, s.mana + char.regen * (TICK_MS / 1000) * regenMult);
 
-        // cooldowns
-        s.slots = s.slots.map((slot) =>
-          slot.cooldown > 0
-            ? { ...slot, cooldown: Math.max(0, slot.cooldown - TICK_MS) }
-            : slot,
-        );
+        // cooldowns and seals
+        s.slots = s.slots.map((slot) => {
+          if (slot.cooldown <= 0 && slot.sealed <= 0) return slot;
+          return {
+            ...slot,
+            cooldown: Math.max(0, slot.cooldown - TICK_MS),
+            sealed: Math.max(0, slot.sealed - TICK_MS),
+          };
+        });
+
+        // Warden's Knot stops shield bleeding away between hits.
+        if (s.shield > 0 && !s.relics.includes("wardens-knot")) {
+          s.shield = Math.max(0, s.shield - TICK_MS / 1000);
+        }
 
         // enemies
         let incoming = 0;
@@ -419,7 +442,12 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         if (incoming > 0) {
           const absorbed = Math.min(s.shield, incoming);
           s.shield -= absorbed;
-          const through = incoming - absorbed;
+          // Sleight's cost: the Rogue Mage trades durability for burst.
+          const scaled =
+            s.characterId === "rogue-mage"
+              ? Math.round((incoming - absorbed) * 1.25)
+              : incoming - absorbed;
+          const through = scaled;
           if (through > 0) {
             s.hp = Math.max(0, s.hp - through);
             s.combo = 0;
@@ -437,17 +465,67 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           return s;
         }
 
-        // Word Eater corrupts a random slot periodically.
-        const boss = s.enemies.find((e) => e.hp > 0 && e.def.mechanic === "word-eater");
-        if (boss && s.elapsedMs % 3000 < TICK_MS) {
-          const rng = internal.current.rng;
-          const i = rng.int(0, s.slots.length - 1);
+        // --- boss mechanics -------------------------------------------
+        const rngTick = internal.current.rng;
+        const living = s.enemies.filter((e) => e.hp > 0);
+        const fired = (period: number) => s.elapsedMs % period < TICK_MS;
+
+        // Word Eater scrambles a slot's word until it is cast.
+        if (living.some((e) => e.def.mechanic === "word-eater") && fired(3000)) {
+          const i = rngTick.int(0, s.slots.length - 1);
           s.slots = s.slots.map((slot, j) =>
             j === i
-              ? { ...slot, corrupted: true, word: pickWord(rng, SPELLS[slot.spellId]) }
+              ? { ...slot, corrupted: true, word: pickWord(rngTick, SPELLS[slot.spellId]) }
               : slot,
           );
           s.typed = "";
+          s.telegraph = "A word is eaten";
+        }
+
+        // The Archivist seals a spell outright for eight seconds.
+        if (living.some((e) => e.def.mechanic === "seal") && fired(7000)) {
+          const open = s.slots
+            .map((sl, i) => ({ sl, i }))
+            .filter(({ sl }) => sl.sealed <= 0);
+          if (open.length > 1) {
+            const target = rngTick.pick(open).i;
+            s.slots = s.slots.map((sl, j) =>
+              j === target ? { ...sl, sealed: 8000 } : sl,
+            );
+            s.typed = "";
+            s.telegraph = "A spell is sealed";
+          }
+        }
+
+        // Mirror Mage throws your own last spell back at you, so repeating
+        // the same one is punished and varying is rewarded.
+        if (living.some((e) => e.def.mechanic === "mirror") && fired(5000)) {
+          const copied = s.lastSpellId ? SPELLS[s.lastSpellId] : null;
+          if (copied && copied.type !== "heal" && copied.type !== "shield") {
+            const bite = Math.round(copied.base + copied.perLetter * 6);
+            const absorbed = Math.min(s.shield, bite);
+            s.shield -= absorbed;
+            s.hp = Math.max(0, s.hp - (bite - absorbed));
+            pushEvent(s, "damage", `mirrored ${bite}`, 0.65);
+            s.telegraph = `Mirrored: ${copied.name}`;
+          }
+        }
+
+        // Void King rewrites one rule of combat on a timer.
+        if (living.some((e) => e.def.mechanic === "void-king") && fired(12000)) {
+          const rule = rngTick.pick(VOID_RULES);
+          s.voidRule = rule.id;
+          s.telegraph = `${rule.name}: ${rule.text}`;
+        }
+
+        // Elites that mend the room keep their allies standing.
+        if (living.some((e) => e.def.mechanic === "mend-allies") && fired(4000)) {
+          s.enemies = s.enemies.map((e) =>
+            e.hp > 0 && e.def.mechanic !== "mend-allies"
+              ? { ...e, hp: Math.min(e.maxHp, e.hp + Math.round(e.maxHp * 0.06)) }
+              : e,
+          );
+          s.telegraph = "The room is mended";
         }
 
         return s;
@@ -464,27 +542,48 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         if (prev.phase !== "combat") return prev;
         const s: SpellboundState = { ...prev };
         const slot = s.slots[slotIndex];
-        if (!slot || slot.cooldown > 0) return prev;
+        if (!slot || slot.cooldown > 0 || slot.sealed > 0) return prev;
 
         const spell = SPELLS[slot.spellId];
-        if (s.mana < spell.mana) {
+        const costCheck = s.relics.includes("silent-sigil")
+          ? spell.mana * 0.65
+          : spell.mana;
+        if (s.mana < costCheck) {
           pushEvent(s, "info", "no mana", 0.5);
           return s;
         }
 
         const rng = internal.current.rng;
         const len = slot.word.length;
-        s.mana -= spell.mana;
+        const manaCost = s.relics.includes("silent-sigil")
+          ? spell.mana * 0.65
+          : spell.mana;
+        s.mana -= manaCost;
         s.castCount += 1;
 
-        // Relics that change the maths rather than nudging a stat.
+        // Relics and passives that change the maths rather than nudging a stat.
         let power = spell.base + spell.perLetter * len;
         if (s.relics.includes("heavy-tome") && len >= 8) power *= 1.35;
         if (s.relics.includes("scholar")) power += s.combo * 0.6;
 
+        // Sleight: short words hit far harder, at the cost of taking more.
+        if (s.characterId === "rogue-mage" && len <= 5) power *= 1.7;
+
+        // Twin Catalyst rewards committing to one spell twice running.
+        const repeat = s.lastSpellId === slot.spellId ? s.repeatCount + 1 : 1;
+        if (s.relics.includes("twin") && repeat >= 2) power *= 1.8;
+
+        // Overflow converts mana held above 80% into damage, spent on the cast.
+        if (s.relics.includes("overflow")) {
+          const pctOver = (s.mana / Math.max(1, s.maxMana)) * 100 - 80;
+          if (pctOver > 0) power *= 1 + pctOver / 100;
+        }
+
         let critChance = 0.05 + (spell.crit ?? 0);
         if (s.relics.includes("prism")) critChance += 0.15;
-        const crit = rng.chance(critChance);
+        // Silent Sigil trades crits away entirely for cheaper casting.
+        const canCrit = !s.relics.includes("silent-sigil");
+        const crit = canCrit && rng.chance(critChance);
         if (crit) power *= 2;
         if (s.voidRule === "inversion") power *= 0.75;
 
@@ -503,19 +602,46 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
             spell.type === "aoe"
               ? alive
               : alive.slice(0, Math.max(1, spell.targets ?? 1));
+          // Chain Sigil splashes onto one enemy the spell did not target.
+          const splashTo =
+            s.relics.includes("chain-sigil") && spell.type === "damage"
+              ? alive.find((e) => !targets.some((t) => t.uid === e.uid))
+              : undefined;
+
           s.enemies = s.enemies.map((e) => {
-            if (!targets.some((t) => t.uid === e.uid) || e.hp <= 0) return e;
-            let dealt = Math.max(1, damage - (e.def.armor ?? 0));
+            const isTarget = targets.some((t) => t.uid === e.uid);
+            const isSplash = splashTo?.uid === e.uid;
+            if ((!isTarget && !isSplash) || e.hp <= 0) return e;
+
+            let dealt = Math.max(
+              1,
+              (isSplash ? damage * 0.35 : damage) - (e.def.armor ?? 0),
+            );
             if (
               spell.type === "execute" &&
               e.hp / e.maxHp <= (spell.threshold ?? 0.25)
             ) {
               dealt = Math.round(dealt * (spell.executeMult ?? 3));
             }
-            const hp = Math.max(0, e.hp - dealt);
+            // Oblivion: the Void Mage finishes anything already nearly dead,
+            // whatever the spell was.
+            if (s.characterId === "void-mage" && e.hp / e.maxHp <= 0.18) {
+              dealt = e.hp;
+            }
+            const hp = Math.max(0, e.hp - Math.round(dealt));
             if (hp === 0 && e.hp > 0) killed.push(e.def.name);
             return { ...e, hp, hitFlash: 220 };
           });
+
+          // The Cipher reflects a quarter of what it takes.
+          const reflector = targets.find((t) => t.def.mechanic === "reflect");
+          if (reflector) {
+            const back = Math.round(damage * 0.25);
+            const absorbed = Math.min(s.shield, back);
+            s.shield -= absorbed;
+            s.hp = Math.max(0, s.hp - (back - absorbed));
+            pushEvent(s, "damage", `reflect ${back}`, 0.7);
+          }
           pushEvent(s, crit ? "crit" : "damage", `${damage}`, 0.35);
 
           const lifesteal = spell.lifesteal ?? (s.relics.includes("vampiric") ? 0.12 : 0);
@@ -525,6 +651,30 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           }
         }
 
+        // Warded: every completed cast builds shield, to a cap.
+        if (s.characterId === "battlemage") {
+          const cap = s.relics.includes("wardens-knot") ? 60 : 30;
+          s.shield = Math.min(cap, s.shield + 4);
+        }
+
+        // Dilation: a long word buys real time against every wind-up.
+        if (s.characterId === "chronomancer") {
+          const stall = len * 80;
+          s.enemies = s.enemies.map((e) =>
+            e.hp > 0 ? { ...e, windup: e.windup + stall } : e,
+          );
+        }
+
+        // Fractured Hourglass stalls the whole room every fifth cast.
+        if (s.relics.includes("hourglass") && s.castCount % 5 === 0) {
+          s.enemies = s.enemies.map((e) =>
+            e.hp > 0 ? { ...e, windup: e.windup + 1500 } : e,
+          );
+          pushEvent(s, "info", "time fractures", 0.5);
+        }
+
+        s.lastSpellId = slot.spellId;
+        s.repeatCount = repeat;
         s.combo += 1;
         s.bestCombo = Math.max(s.bestCombo, s.combo);
         s.score += damage + s.combo * 2;
@@ -580,7 +730,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         if (prev.phase !== "combat") return prev;
         const lower = value.toLowerCase();
         const match = prev.slots.findIndex(
-          (sl) => sl.cooldown <= 0 && sl.word === lower,
+          (sl) => sl.cooldown <= 0 && sl.sealed <= 0 && sl.word === lower,
         );
         if (match >= 0) {
           // defer the cast so this setState stays pure
@@ -588,8 +738,20 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           return { ...prev, typed: "" };
         }
         const viable = prev.slots.some(
-          (sl) => sl.cooldown <= 0 && sl.word.startsWith(lower),
+          (sl) => sl.cooldown <= 0 && sl.sealed <= 0 && sl.word.startsWith(lower),
         );
+        // Arcane Focus: the Apprentice is paid for keeping the streak alive.
+        if (
+          viable &&
+          prev.characterId === "apprentice" &&
+          lower.length > prev.typed.length
+        ) {
+          return {
+            ...prev,
+            typed: lower,
+            mana: Math.min(prev.maxMana, prev.mana + 0.5),
+          };
+        }
         if (!viable && lower.length > 0) {
           cbRef.current.onMiss?.();
           return { ...prev, typed: "", combo: 0 };
