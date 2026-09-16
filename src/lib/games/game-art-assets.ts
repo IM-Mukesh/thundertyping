@@ -35,6 +35,47 @@ function findAsset(basename: string): string | null {
 }
 
 /**
+ * Art for the newer games, which keep their files in a per-game folder rather
+ * than as `<game-id>-<role>` in one flat directory.
+ *
+ * The flat scheme was fine for six games with five roles each. These four carry
+ * 24 images apiece -- characters, enemies, elites, bosses, backgrounds, screens
+ * -- so a flat directory would be 127 files deep and impossible to scan. Both
+ * layouts are supported because the original six still use the flat one and
+ * renaming them would break nothing but gain nothing either.
+ */
+function findNested(gameId: string, role: string): string | null {
+  for (const ext of EXTENSIONS) {
+    const rel = path.join(gameId, `${role}.${ext}`);
+    if (fs.existsSync(path.join(PUBLIC_GAMES_DIR, rel))) {
+      return `/games/${gameId}/${role}.${ext}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Any art file for a game by its role name, e.g. "boss-iron-golem",
+ * "bg-dungeon", "char-apprentice". Returns null when absent, which callers
+ * must treat as a normal state and fall back from -- a missing file is never
+ * a broken image.
+ */
+export function getArt(gameId: string, role: string): string | null {
+  return findNested(gameId, role) ?? findAsset(`${gameId}-${role}`);
+}
+
+/** Every role name a game has art for. Useful for preloading a game's set. */
+export function listArtRoles(gameId: string): string[] {
+  const dir = path.join(PUBLIC_GAMES_DIR, gameId);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => EXTENSIONS.some((e) => f.endsWith(`.${e}`)))
+    .map((f) => f.replace(/\.[^.]+$/, ""))
+    .sort();
+}
+
+/**
  * Art for one game in one role.
  *
  * `cover` falls back to the bare `<game-id>` name so the original two images
@@ -43,6 +84,8 @@ function findAsset(basename: string): string | null {
  * backdrop genuinely wants to differ from the card.
  */
 export function getGameArt(gameId: GameId, role: GameArtRole): string | null {
+  const nested = findNested(gameId, role);
+  if (nested) return nested;
   const direct = findAsset(`${gameId}-${role}`);
   if (direct) return direct;
   if (role === "cover") return findAsset(gameId);
