@@ -24,10 +24,44 @@ const EXTENSIONS = ["webp", "avif", "jpg", "jpeg", "png"];
  */
 export type GameArtRole = "cover" | "hero" | "character" | "victory" | "defeat";
 
+/**
+ * Every art file under public/games, listed once at module load.
+ *
+ * This used to probe with `fs.existsSync(path.join(DIR, someTemplateString))`
+ * per candidate file. Turbopack cannot statically scope a path built from a
+ * template, so it gave up and traced the ENTIRE project into the server
+ * bundle -- every source file and the whole public folder -- and warned that
+ * this "can slow down deployments or lead to failures when size limits are
+ * exceeded". One read of a constant directory is statically scopeable, so the
+ * tracer knows exactly what it is looking at.
+ *
+ * It is also simply less work: one directory read replaces up to five
+ * existsSync syscalls per lookup, and there are hundreds of lookups across a
+ * build.
+ *
+ * Read once, at build time. A newly dropped-in file needs a restart to be
+ * seen, which matches what this module already promised -- artwork is picked
+ * up by "the next build", not live.
+ */
+const ART_FILES: ReadonlySet<string> = (() => {
+  try {
+    const entries = fs.readdirSync(PUBLIC_GAMES_DIR, {
+      recursive: true,
+      encoding: "utf8",
+    });
+    // Normalise to forward slashes so lookups are platform-independent.
+    return new Set(entries.map((entry) => entry.split(path.sep).join("/")));
+  } catch {
+    // No art directory at all is a normal state: every caller falls back to
+    // the drawn SVG, so an empty set is the correct answer, not a crash.
+    return new Set<string>();
+  }
+})();
+
 function findAsset(basename: string): string | null {
   for (const ext of EXTENSIONS) {
     const file = `${basename}.${ext}`;
-    if (fs.existsSync(path.join(PUBLIC_GAMES_DIR, file))) {
+    if (ART_FILES.has(file)) {
       return `/games/${file}`;
     }
   }
@@ -46,9 +80,9 @@ function findAsset(basename: string): string | null {
  */
 function findNested(gameId: string, role: string): string | null {
   for (const ext of EXTENSIONS) {
-    const rel = path.join(gameId, `${role}.${ext}`);
-    if (fs.existsSync(path.join(PUBLIC_GAMES_DIR, rel))) {
-      return `/games/${gameId}/${role}.${ext}`;
+    const rel = `${gameId}/${role}.${ext}`;
+    if (ART_FILES.has(rel)) {
+      return `/games/${rel}`;
     }
   }
   return null;
