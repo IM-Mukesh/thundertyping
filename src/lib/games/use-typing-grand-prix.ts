@@ -130,7 +130,8 @@ function createOpponents(): Racer[] {
   }));
 }
 
-function createInitialState(definition: GameDefinition): GrandPrixState {
+// Exported for tests: progress accounting is the anti-exploit surface here.
+export function createInitialState(definition: GameDefinition): GrandPrixState {
   const words = generateWords(RACE_WORD_COUNT, { punctuation: false, numbers: false });
   return {
     status: "idle",
@@ -176,22 +177,47 @@ function advanceOpponent(racer: Racer, totalChars: number, elapsedMs: number): R
 }
 
 /**
- * Where the player's car sits. Committed words count their *full* length even
- * if characters were skipped — distance on the track is distance, and skipping
- * is already paid for in accuracy (and therefore in score). Clamped to never
- * decrease, so backspacing costs you time without visibly reversing the car.
+ * Where the player's car sits: as far along the track as the characters they
+ * have actually typed correctly.
+ *
+ * Distance is NOT raw keystrokes. Banking the target's length for whatever the
+ * player happened to press meant a rival could be beaten by holding one letter
+ * and space -- the car advanced a full word per press, and accuracy alone does
+ * not stop you crossing the line first. Tying distance to correct characters
+ * keeps it consistent with the WPM numerator: the car has gone exactly as far
+ * as the score says it has.
+ *
+ * Clamped to never decrease, so backspacing costs time without visibly
+ * reversing the car.
  */
-function playerProgressFor(state: GrandPrixState, bankedChars: number, typedLength: number): number {
+function correctCharsIn(typed: string, target: string): number {
+  let n = 0;
+  for (let i = 0; i < typed.length && i < target.length; i++) {
+    if (typed[i] === target[i]) n += 1;
+  }
+  return n;
+}
+
+function playerProgressFor(state: GrandPrixState, bankedChars: number, typed: string): number {
   if (state.totalChars <= 0) return 0;
   const target = state.words[state.wordIndex] ?? "";
-  const reached = (bankedChars + Math.min(typedLength, target.length)) / state.totalChars;
+  const reached = (bankedChars + correctCharsIn(typed, target)) / state.totalChars;
   return Math.min(1, Math.max(state.playerProgress, reached));
 }
 
 function finishRace(state: GrandPrixState): GrandPrixState {
-  // Every opponent already across the line beat the player, by definition —
-  // the race ends the instant the player finishes.
-  const place = 1 + state.opponents.filter((o) => o.finishedAtMs !== null).length;
+  // Where the car actually ended up. Running out of words ends the race, but
+  // it does not mean the player drove the distance: spacing through all forty
+  // words used to pin the car to the finish line and hand it first place,
+  // because progress was forced to 1 here and placing only counted opponents
+  // who had already finished. Finishing position is now read off the real
+  // distance travelled, so a player who typed nothing places last.
+  const progress =
+    state.totalChars > 0 ? Math.min(1, state.bankedChars / state.totalChars) : 0;
+  const place =
+    1 +
+    state.opponents.filter((o) => o.finishedAtMs !== null || o.progress > progress)
+      .length;
   const wpm = calculateNetWpm(state.correctKeystrokes, state.elapsedMs);
   const accuracy = calculateAccuracy(
     state.correctKeystrokes,
@@ -206,13 +232,13 @@ function finishRace(state: GrandPrixState): GrandPrixState {
     status: "over",
     typed: "",
     wordIndex: state.words.length,
-    playerProgress: 1,
+    playerProgress: progress,
     place,
     score,
   };
 }
 
-function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPrixState {
+export function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPrixState {
   switch (action.type) {
     case "START":
       // A fresh word list every race, so re-running isn't re-typing.
@@ -273,14 +299,14 @@ function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPrixState
         typed: value,
         correctKeystrokes,
         incorrectKeystrokes,
-        playerProgress: playerProgressFor(state, state.bankedChars, value.length),
+        playerProgress: playerProgressFor(state, state.bankedChars, value),
       };
 
       // Completing the final word crosses the line — the same auto-finish the
       // main typing test does, so nobody has to press space at a finish line.
       const isLastWord = state.wordIndex === state.words.length - 1;
       if (isLastWord && value === target) {
-        return finishRace({ ...next, bankedChars: state.bankedChars + target.length });
+        return finishRace({ ...next, bankedChars: state.bankedChars + correctCharsIn(value, target) });
       }
       return next;
     }
@@ -292,7 +318,7 @@ function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPrixState
       // A space before typing anything is a no-op, not an empty word.
       if (state.typed.length === 0) return state;
 
-      const bankedChars = state.bankedChars + target.length;
+      const bankedChars = state.bankedChars + correctCharsIn(state.typed, target);
       const committed: GrandPrixState = {
         ...state,
         bankedChars,

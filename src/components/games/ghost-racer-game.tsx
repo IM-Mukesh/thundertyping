@@ -53,6 +53,7 @@ import {
 } from "@/components/games/ui/game-chrome";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
+import { racePositionOf, wordStartAt } from "@/lib/games/racer/progress";
 
 const ACCENT = "#22d3ee";
 const TICK_MS = 50;
@@ -116,8 +117,10 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
     return n;
   }, [typed, text]);
 
+  const racePosition = useMemo(() => racePositionOf(typed, text), [typed, text]);
+
   const ghostIndex = ghost && phase === "racing" ? ghostIndexAt(ghost, elapsed) : 0;
-  const playerPct = (typed.length / totalChars) * 100;
+  const playerPct = (racePosition / totalChars) * 100;
   const ghostPct = (ghostIndex / totalChars) * 100;
 
   const wpm = elapsed > 0 ? round(calculateNetWpm(correctChars, elapsed)) : 0;
@@ -216,14 +219,18 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
   // End conditions, checked off the same state the clock updates.
   useEffect(() => {
     if (phase !== "racing") return;
-    if (typed.length >= totalChars) finish(true);
+    if (racePosition >= totalChars) finish(true);
     else if (ghost && elapsed >= ghost.durationMs) finish(false);
-  }, [phase, typed.length, totalChars, elapsed, ghost, finish]);
+  }, [phase, racePosition, totalChars, elapsed, ghost, finish]);
 
   const handleInput = (value: string) => {
     if (phase !== "racing") return;
-    // Count a newly-wrong character once, as it is typed.
     if (value.length > typed.length) {
+      // One wrong character is accepted so the player can see it in red; input
+      // is then held until it is removed. Without this the buffer keeps
+      // growing while the car stays stalled, and the word on screen drifts
+      // away from where the car actually is.
+      if (racePosition < typed.length) return;
       const i = value.length - 1;
       if (value[i] !== text[i]) {
         setErrors((e) => e + 1);
@@ -234,7 +241,10 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
     }
     const clipped = value.slice(0, totalChars);
     setTyped(clipped);
-    recorder.current.mark(clipped.length);
+    // Record the honest position, not the keystroke count -- a ghost is
+    // replayed as a position in this text, so a recording of raw length would
+    // replay a mash as though it were a fast, accurate run.
+    recorder.current.mark(racePositionOf(clipped, text));
   };
 
   const begin = () => {
@@ -248,9 +258,11 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
   };
 
   const rank = rankFor(bestRun?.wpm ?? 0);
-  const activeWordIndex = typed.split(" ").length - 1;
-  const currentWord = words[activeWordIndex] ?? "";
-  const typedInWord = typed.slice(typed.lastIndexOf(" ") + 1);
+  // Anchored to the car's position rather than the buffer's spaces, so the
+  // word on screen is always the word the car is standing on.
+  const wordStart = wordStartAt(text, racePosition);
+  const currentWord = text.slice(wordStart).split(" ")[0] ?? "";
+  const typedInWord = typed.slice(wordStart);
 
   return (
     <div

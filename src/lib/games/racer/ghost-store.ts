@@ -33,7 +33,12 @@ export interface GhostRun {
   recordedAt: string;
 }
 
-const KEY_PREFIX = "thundertyping:ghost:v1";
+// v2 abandons every ghost recorded before race position was tied to correct
+// characters. Those recordings stored raw keystroke counts, so a run that
+// mashed the spacebar was saved as a fast, accurate opponent -- replaying one
+// would put an unbeatable phantom on the track. The old entries are left in
+// place rather than deleted; they are simply never read again.
+const KEY_PREFIX = "thundertyping:ghost:v2";
 const INDEX_KEY = `${KEY_PREFIX}:index`;
 /** Ghosts are small but not free; keep the most recent per text. */
 const MAX_PER_TEXT = 5;
