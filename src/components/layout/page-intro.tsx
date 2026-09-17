@@ -32,7 +32,14 @@ export function PageIntro() {
       {/* min-h-0 + overflow-hidden is what lets the 1fr -> 0fr row actually
           clip its content instead of overflowing at its natural height. */}
       <div className="min-h-0 overflow-hidden">
-        <div className="flex flex-col items-center gap-3 text-center">
+        {/* Hidden on phones, not deleted.
+            A phone screen is mostly keyboard once typing starts, and this
+            block pushed the words down into what little was left. But the h1
+            is the page's main ranking signal and organic search is the point
+            of the site, so it stays in the HTML and stays available to screen
+            readers -- `sr-only` costs no layout space, while `display: none`
+            would cost the SEO. It returns as a normal heading from sm: up. */}
+        <div className="sr-only flex flex-col items-center gap-3 text-center sm:not-sr-only">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Free Online Typing Speed Test
           </h1>

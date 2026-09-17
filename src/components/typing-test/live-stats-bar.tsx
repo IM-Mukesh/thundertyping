@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
-import { useSettingsStore } from "@/lib/persistence/settings-store";
-import { calculateLiveWpm, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
 interface LiveStatsBarProps {
@@ -12,9 +10,7 @@ interface LiveStatsBarProps {
 }
 
 export function LiveStatsBar({ state }: LiveStatsBarProps) {
-  const { config, elapsedMs, correctKeystrokes, activeWordIndex, words } = state;
-  const liveSpeed = useSettingsStore((s) => s.liveSpeed);
-  const liveWpm = round(calculateLiveWpm(correctKeystrokes, elapsedMs));
+  const { config, elapsedMs, activeWordIndex, words } = state;
 
   const primary =
     config.mode === "time"
@@ -28,16 +24,6 @@ export function LiveStatsBar({ state }: LiveStatsBarProps) {
           rather than as flicker, and it's information you act on. */}
       <FlipNumber value={primary} className="text-4xl text-accent sm:text-5xl" />
 
-      {/* Live WPM is opt-in and deliberately understated when shown — small,
-          dim, and NOT flipped. The flip animation is what makes a
-          several-times-a-second number steal attention from the words being
-          read, so the opt-in version drops it entirely. */}
-      {liveSpeed && (
-        <span className="flex items-baseline gap-1 text-sm tabular-nums text-sub" aria-label={`${liveWpm} words per minute`}>
-          {liveWpm}
-          <span className="text-xs">wpm</span>
-        </span>
-      )}
     </div>
   );
 }

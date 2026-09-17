@@ -113,7 +113,7 @@ export function GameHubCard({
       onFocusCapture={() => setHovered(true)}
       onBlurCapture={reset}
       className={cn(
-        "group/card relative isolate flex h-[420px] flex-col rounded-2xl",
+        "group/card relative isolate flex h-[420px] cursor-pointer flex-col rounded-2xl",
         // NOT overflow-hidden: the character rises out of the top of the card
         // on hover, so only the artwork box clips. The card keeps its rounded
         // corners through the background gradient and the neon frame.
@@ -146,7 +146,7 @@ export function GameHubCard({
           // character takes its time.
           transition: reduced
             ? "none"
-            : "box-shadow 500ms cubic-bezier(0.4, 0, 0.2, 1), scale 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+            : "box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), scale 300ms cubic-bezier(0.4, 0, 0.2, 1)",
         } as React.CSSProperties
       }
     >
@@ -167,7 +167,7 @@ export function GameHubCard({
               style={{
                 transition: reduced
                   ? "none"
-                  : "scale 1200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  : "scale 600ms cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
               <Image
@@ -271,7 +271,7 @@ export function GameHubCard({
               style={{
                 transition: reduced
                   ? "none"
-                  : "scale 1000ms cubic-bezier(0.4, 0, 0.2, 1), translate 1000ms cubic-bezier(0.4, 0, 0.2, 1), opacity 700ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  : "scale 500ms cubic-bezier(0.4, 0, 0.2, 1), translate 500ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
               <Image
@@ -285,7 +285,7 @@ export function GameHubCard({
                   filter: active
                     ? "drop-shadow(0 18px 34px color-mix(in srgb, var(--accent) 55%, transparent))"
                     : "drop-shadow(0 6px 14px rgba(0,0,0,0.55))",
-                  transition: "filter 350ms ease",
+                  transition: "filter 200ms ease",
                 }}
               />
             </div>
@@ -294,7 +294,7 @@ export function GameHubCard({
       )}
 
       {/* ------------------------------------------------------ L6 CONTENT */}
-      <div className="relative flex flex-1 flex-col gap-2 px-3.5 pb-3.5 pt-2.5">
+      <div className="relative flex flex-1 flex-col gap-2 px-3.5 pb-5 pt-2">
         <h3 className="font-display text-base font-extrabold uppercase leading-none tracking-tight text-foreground transition-colors duration-300 group-hover/card:text-accent">
           {game.name}
         </h3>

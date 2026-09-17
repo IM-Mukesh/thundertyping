@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, Gauge } from "lucide-react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
@@ -14,10 +14,10 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 const MODES: { id: TestMode; label: string; icon: ReactNode }[] = [
-  { id: "time", label: "Time", icon: <Clock size={16} /> },
-  { id: "words", label: "Words", icon: <Type size={16} /> },
-  { id: "quote", label: "Quote", icon: <QuoteIcon size={16} /> },
-  { id: "custom", label: "Custom text", icon: <Wrench size={16} /> },
+  { id: "time", label: "Time", icon: <Clock size={14} /> },
+  { id: "words", label: "Words", icon: <Type size={14} /> },
+  { id: "quote", label: "Quote", icon: <QuoteIcon size={14} /> },
+  { id: "custom", label: "Custom", icon: <Wrench size={14} /> },
 ];
 
 interface TestConfigBarProps {
@@ -37,35 +37,25 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
-  const liveSpeed = useSettingsStore((s) => s.liveSpeed);
-  const toggleLiveSpeed = useSettingsStore((s) => s.toggleLiveSpeed);
 
   const showTextToggles = mode === "time" || mode === "words";
 
   return (
-    <div className="flex flex-col items-center gap-3 px-4 py-3 text-sm">
-      <div className="flex flex-wrap items-center justify-center gap-4">
+    <div className="flex flex-col items-center gap-2 px-2 py-2 text-sm sm:gap-3 sm:px-4 sm:py-3">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
         {showTextToggles && (
           <>
             <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation">
-              <AtSign size={16} />
+              <AtSign size={14} />
+              punctuation
             </Pill>
             <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers">
-              <Hash size={16} />
+              <Hash size={14} />
+              numbers
             </Pill>
             <span className="h-4 w-px bg-border" aria-hidden="true" />
           </>
         )}
-        {/* Applies to every mode, so it sits outside the punctuation/numbers
-            group, which only makes sense for generated word lists. */}
-        <Pill
-          active={liveSpeed}
-          onClick={toggleLiveSpeed}
-          ariaLabel={liveSpeed ? "Hide live speed while typing" : "Show live speed while typing"}
-        >
-          <Gauge size={16} />
-        </Pill>
-        <span className="h-4 w-px bg-border" aria-hidden="true" />
         {MODES.map((m) => (
           <Pill
             key={m.id}
@@ -74,12 +64,13 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
             ariaLabel={m.label}
           >
             {m.icon}
+            {m.label.toLowerCase()}
           </Pill>
         ))}
       </div>
 
       {mode === "time" && (
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
           {TIME_DURATIONS.map((d) => (
             <Pill key={d} active={timeDuration === d} onClick={() => setTimeDuration(d)} ariaLabel={formatDuration(d)}>
               {formatDuration(d)}
@@ -94,7 +85,7 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
       )}
 
       {mode === "words" && (
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
           {WORD_COUNTS.map((w) => (
             <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
               {w}
@@ -104,7 +95,7 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
       )}
 
       {mode === "quote" && (
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
           {QUOTE_LENGTHS.map((l) => (
             <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
               {l}
@@ -247,10 +238,19 @@ function Pill({
       aria-label={ariaLabel}
       title={ariaLabel}
       className={cn(
-        // 44px minimum on touch screens — the icons are only 16px, which gave
-        // a 32x24 hit area that's genuinely hard to tap accurately. Reverts to
-        // the compact size from sm: up, where a pointer makes it unnecessary.
-        "flex min-h-11 min-w-11 items-center justify-center rounded px-2 py-1 transition-colors sm:min-h-0 sm:min-w-0",
+        // Touch-sized by default; compact only for a fine pointer.
+        //
+        // This used to shrink at `sm:`, which asks about viewport width when
+        // the real question is what is doing the pointing. A tablet is wide
+        // AND touch, so it got 24px targets -- barely half the 44px minimum,
+        // on a device driven entirely by fingers. `pointer-fine` asks the
+        // right question and leaves phones and tablets alike at 44px.
+        //
+        // gap-1 rather than gap-2 because the label sits tight to its icon:
+        // the pair has to read as one control, not an icon next to a word.
+        "flex min-h-11 items-center justify-center gap-1 rounded px-1.5 py-1 sm:gap-1.5 sm:px-2.5",
+        "font-mono text-[11px] lowercase tracking-wide transition-colors",
+        "pointer-fine:min-h-9",
         active ? "text-accent" : "text-sub hover:text-foreground",
       )}
     >

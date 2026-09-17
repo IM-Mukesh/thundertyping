@@ -5,15 +5,47 @@ import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
 
-// Empirically measured (not calculated on paper) from consecutive wrapped
-// lines' offsetTop deltas at the sm:text-3xl breakpoint — font-metric-driven
-// line height doesn't reliably match font-size × line-height-multiplier
-// arithmetic, especially across a font change (this was miscalibrated at 48,
-// then 32, both stale leftovers from earlier font/size combos, causing extra
-// lines to render inside a clipped "3-line" window). Re-measure this the same
-// way if the font or size ever changes again — don't just eyeball a number.
-const LINE_HEIGHT = 38;
+// Starting guess only. The real pitch is measured from the laid-out words on
+// every recalc, because a hardcoded one cannot be right at more than one
+// breakpoint: the stream is text-2xl on phones and text-3xl from sm: up, which
+// are 32px and 38px apart respectively.
+//
+// This constant has been wrong three times now (48, then 32, then 38, each a
+// leftover from an earlier font/size combo). The last of those was correct on
+// desktop and 6px too large on every phone, so `round(offsetTop / 38)` picked
+// the wrong line as the test went on and scrolled the active word out of the
+// visible window -- the typing surface silently stopped following the typist.
+// Measuring instead of guessing ends that class of bug for good.
+const LINE_HEIGHT_FALLBACK = 38;
 const VISIBLE_LINES = 3;
+
+/**
+ * The real distance between wrapped lines, read off the DOM.
+ *
+ * Uses the median gap between distinct row offsets rather than the first gap,
+ * because the caret is 1.2em tall and inflates whichever line it is sitting on.
+ */
+function measureLinePitch(container: HTMLElement): number {
+  const tops = [...new Set(Array.from(container.children, (c) => (c as HTMLElement).offsetTop))].sort(
+    (a, b) => a - b,
+  );
+  if (tops.length < 3) return LINE_HEIGHT_FALLBACK;
+  const deltas = tops.slice(1).map((t, i) => t - tops[i]).filter((d) => d > 0);
+  if (deltas.length === 0) return LINE_HEIGHT_FALLBACK;
+  deltas.sort((a, b) => a - b);
+  const pitch = deltas[Math.floor(deltas.length / 2)];
+
+  // A measurement is only trustworthy if the container has a sane layout.
+  // Measured in a zero-width container -- mid-mount, inside a hidden tab, or a
+  // display:none ancestor -- every word wraps onto its own line and the gaps
+  // come back several times too large, which would size the typing window at
+  // hundreds of pixels. Anything outside one to three times the font size is
+  // not a line gap, so fall back rather than trust it.
+  const fontSize = parseFloat(getComputedStyle(container).fontSize) || 0;
+  if (fontSize <= 0) return LINE_HEIGHT_FALLBACK;
+  if (pitch < fontSize || pitch > fontSize * 3) return LINE_HEIGHT_FALLBACK;
+  return pitch;
+}
 
 interface WordStreamProps {
   wordStates: WordState[];
@@ -24,14 +56,18 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeWordElRef = useRef<HTMLSpanElement | null>(null);
   const [offset, setOffset] = useState(0);
+  const [linePitch, setLinePitch] = useState(LINE_HEIGHT_FALLBACK);
 
   useLayoutEffect(() => {
     const recalc = () => {
       const el = activeWordElRef.current;
-      if (!el) return;
-      const currentLine = Math.round(el.offsetTop / LINE_HEIGHT);
+      const container = containerRef.current;
+      if (!el || !container) return;
+      const pitch = measureLinePitch(container);
+      setLinePitch(pitch);
+      const currentLine = Math.round(el.offsetTop / pitch);
       const targetLine = Math.max(0, currentLine - 1);
-      setOffset(targetLine * LINE_HEIGHT);
+      setOffset(targetLine * pitch);
     };
     recalc();
 
@@ -48,7 +84,7 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
   }, [activeWordIndex]);
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: LINE_HEIGHT * VISIBLE_LINES }}>
+    <div className="relative w-full overflow-hidden" style={{ height: linePitch * VISIBLE_LINES }}>
       <div
         ref={containerRef}
         className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"

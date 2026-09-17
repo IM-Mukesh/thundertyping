@@ -9,7 +9,6 @@ import { recordResult } from "@/lib/persistence/results-store";
 import {
   calculateAccuracy,
   calculateNetWpm,
-  round,
 } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
@@ -35,6 +34,10 @@ export function TypingTest() {
   const [isCustomModalOpen, setCustomModalOpen] = useState(false);
   const [focusToken, setFocusToken] = useState(0);
   const [isNewBest, setIsNewBest] = useState(false);
+  const [isFocused, setIsFocused] = useState(true);
+  // Diagnostic only -- never subtracted from the test duration. See
+  // docs/typing-engine.md for why the clock deliberately keeps running.
+  const focusLossCountRef = useRef(0);
 
   const config = useMemo<TestConfig>(
     () => ({
@@ -99,15 +102,17 @@ export function TypingTest() {
     if (recordedRef.current) return;
     recordedRef.current = true;
 
-    const wpm = round(
-      calculateNetWpm(engine.state.correctKeystrokes, engine.state.elapsedMs),
+    // Unrounded on purpose: the personal-best comparison happens on these
+    // values, and rounding first turns a real 65.6 -> 66.4 improvement into a
+    // tie at 66. The results screen rounds them again for display.
+    const wpm = calculateNetWpm(
+      engine.state.correctKeystrokes,
+      engine.state.elapsedMs,
     );
-    const accuracy = round(
-      calculateAccuracy(
-        engine.state.correctKeystrokes,
-        engine.state.incorrectKeystrokes,
-        engine.state.charTally.missed,
-      ),
+    const accuracy = calculateAccuracy(
+      engine.state.correctKeystrokes,
+      engine.state.incorrectKeystrokes,
+      engine.state.charTally.missed,
     );
     const param =
       config.mode === "time" ? config.timeDuration : config.wordCount;
@@ -124,10 +129,29 @@ export function TypingTest() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine.state.status]);
 
+  const handleFocusChange = useCallback((focused: boolean) => {
+    setIsFocused(focused);
+    if (!focused) focusLossCountRef.current += 1;
+  }, []);
+
+  // A backgrounded tab throttles timers, but the engine measures elapsed time
+  // from performance.now() deltas rather than counting ticks, so a late tick
+  // still finalises at the correct duration. Recorded only for diagnostics.
+  const visibilityChangesRef = useRef(0);
+  useEffect(() => {
+    const onVisibility = () => {
+      visibilityChangesRef.current += 1;
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   const handleRestart = useCallback(() => {
     engine.restart();
     setIsNewBest(false);
     setFocusToken((t) => t + 1);
+    focusLossCountRef.current = 0;
+    visibilityChangesRef.current = 0;
   }, [engine]);
 
   useEffect(() => listenForTestReset(handleRestart), [handleRestart]);
@@ -146,7 +170,7 @@ export function TypingTest() {
   const showIdleChrome = engine.state.status === "idle";
 
   return (
-    <div className="flex w-full flex-col items-center gap-8">
+    <div className="flex w-full flex-col items-center gap-4 sm:gap-8">
       {/* Both children stay mounted and share this grid cell (both placed at
           grid-area 1/1) so the slot always sizes to the taller of the two and
           only their opacity crossfades — keeps the word-stream below from
@@ -196,8 +220,30 @@ export function TypingTest() {
               onCommitWord={engine.commitWord}
               onRestart={handleRestart}
               onEscape={() => {}}
+              onFocusChange={handleFocusChange}
               focusToken={focusToken}
             />
+
+            {/*
+              Typing into a blurred input is the one failure that corrupts a
+              score silently: the clock keeps running while nothing is
+              recorded, and the result just looks like a bad run.
+
+              The clock is deliberately NOT paused. Pausing on blur would hand
+              anyone an untimed thinking break, which is a scoring exploit. So
+              the run stays honest and the state is simply made obvious and
+              recoverable in one click or keystroke.
+            */}
+            {isRunning && !isFocused && (
+              <div
+                role="status"
+                className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-[2px]"
+              >
+                <span className="font-display text-sm uppercase tracking-wider text-sub">
+                  Click or press a key to resume &mdash; the clock is still running
+                </span>
+              </div>
+            )}
           </div>
           <button
             type="button"

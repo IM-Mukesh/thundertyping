@@ -24,9 +24,15 @@ declare global {
 }
 
 /**
- * Reserves ad space now (fixed min-height avoids future CLS) and renders a
- * placeholder until NEXT_PUBLIC_ADSENSE_CLIENT_ID is configured, at which
- * point it swaps in a real AdSense unit with no call-site changes.
+ * Renders a real AdSense unit once NEXT_PUBLIC_ADSENSE_CLIENT_ID is set, and
+ * nothing at all until then.
+ *
+ * Every placement stays in the tree at its call site, so switching the whole
+ * site on is one environment variable and no code change. Until the account is
+ * approved there is nothing to show, and a dashed "Ad space" box on every page
+ * makes a finished product look unfinished -- which is worse than the layout
+ * shift it was there to prevent. When ads do turn on, the slots reserve their
+ * height again via the `style` below.
  */
 export function AdSlot({ id, format, className }: AdSlotProps) {
   const { width, height } = DIMENSIONS[format];
@@ -41,21 +47,7 @@ export function AdSlot({ id, format, className }: AdSlotProps) {
     }
   }, [adsenseClientId]);
 
-  if (!adsenseClientId) {
-    return (
-      <div
-        aria-hidden="true"
-        data-ad-placeholder={id}
-        className={cn(
-          "mx-auto flex w-full items-center justify-center rounded-md border border-dashed border-border text-xs text-sub",
-          className,
-        )}
-        style={{ maxWidth: width, minHeight: height }}
-      >
-        Ad space
-      </div>
-    );
-  }
+  if (!adsenseClientId) return null;
 
   return (
     <ins
