@@ -46,7 +46,7 @@ export const ENGLISH_WORDS: string[] = [
   "test", "record", "boat", "common", "gold", "possible", "plane", "dry", "wonder", "laugh",
   "thousand", "ago", "ran", "check", "game", "shape", "hot", "miss", "brought", "heat",
   "snow", "tire", "bring", "yes", "distant", "fill", "east", "paint", "language", "among",
-  "shall", "wish", "circle", "wait", "gone", "sky", "board", "joy", "winter", "sat",
+  "shall", "wish", "circle", "gone", "sky", "board", "joy", "winter", "sat",
   "wall", "beside", "guess", "arm", "chief", "grand", "ball", "instant", "clean", "rich",
   "brother", "shoe", "bear", "wide", "captain", "fight", "quiet", "brown", "salt", "chair",
 ];

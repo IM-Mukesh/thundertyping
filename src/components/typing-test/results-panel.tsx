@@ -20,7 +20,15 @@ interface ResultsPanelProps {
 }
 
 export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps) {
-  const { correctKeystrokes, incorrectKeystrokes, elapsedMs, wpmSamples, charTally } = state;
+  const {
+    correctKeystrokes,
+    incorrectKeystrokes,
+    elapsedMs,
+    wpmSamples,
+    charTally,
+    totalTyped,
+    correctedErrors,
+  } = state;
   const netWpm = round(calculateNetWpm(correctKeystrokes, elapsedMs));
   const rawWpm = round(calculateRawWpm(correctKeystrokes, incorrectKeystrokes, elapsedMs));
   const accuracy = round(calculateAccuracy(correctKeystrokes, incorrectKeystrokes, charTally.missed));
@@ -53,11 +61,30 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
 
       <ResultsGraph samples={wpmSamples} />
 
-      <div className="flex w-full flex-wrap justify-center gap-6 border-t border-border pt-4 font-mono text-sm text-sub">
-        <span className="text-correct">{correctKeystrokes} correct</span>
-        <span className="text-error">{incorrectKeystrokes} incorrect</span>
-        <span>{charTally.extra} extra</span>
-        <span>{charTally.missed} missed</span>
+      {/*
+        The character breakdown is the audit trail for the WPM above it: correct
+        is the number the score is computed from, and the rest account for every
+        other key that was pressed. If these do not add up, the score is wrong.
+      */}
+      <div className="w-full border-t border-border pt-4">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 font-mono text-sm text-sub">
+          <span className="text-correct">{correctKeystrokes} correct</span>
+          <span className="text-error">{incorrectKeystrokes} incorrect</span>
+          <span>{charTally.extra} extra</span>
+          <span>{charTally.missed} missed</span>
+          <span title="Correct plus incorrect. Spaces between words count; backspace does not.">
+            {totalTyped} typed
+          </span>
+          {correctedErrors > 0 && (
+            <span title="Mistakes you deleted. They still count against accuracy.">
+              {correctedErrors} corrected
+            </span>
+          )}
+        </div>
+        <p className="mt-2 text-center text-xs text-sub/70">
+          {round(elapsedMs / 100) / 10}s elapsed &middot; the space between two
+          words counts as a character
+        </p>
       </div>
 
       <button

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test --import ./scripts/test-setup.mjs \"src/**/*.test.ts\""
   },
   "dependencies": {
     "clsx": "^2.1.1",

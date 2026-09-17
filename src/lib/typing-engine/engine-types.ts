@@ -39,8 +39,19 @@ export type TestStatus = "idle" | "running" | "finished";
 
 export interface WpmSample {
   t: number;
+  /** Cumulative net WPM at time `t`. Drives the results graph. */
   wpm: number;
+  /** Cumulative raw WPM at time `t`. Drives the results graph. */
   rawWpm: number;
+  /**
+   * Cumulative character counts at time `t`.
+   *
+   * Stored raw so consistency can reconstruct *instantaneous* speed per
+   * interval. Deriving it back out of the WPM figures above would work
+   * arithmetically but accumulates float error at 100ms resolution.
+   */
+  correct: number;
+  typed: number;
 }
 
 // "correct"/"incorrect" deliberately live on TestState directly
@@ -61,6 +72,22 @@ export interface TestState {
   elapsedMs: number;
   correctKeystrokes: number;
   incorrectKeystrokes: number;
+  /**
+   * Every printable character attempt, including the spaces between words.
+   *
+   * Kept alongside correct/incorrect because those two are what the WPM
+   * formulas consume, while this is what the results screen reports as
+   * "total typed" -- and a reader should be able to check that the breakdown
+   * adds up without doing arithmetic in their head.
+   */
+  totalTyped: number;
+  /**
+   * Physical key events the engine accepted, including Backspace. Diagnostic
+   * only: it is deliberately NOT a character count and never feeds a score.
+   */
+  totalKeypresses: number;
+  /** Wrong characters the user backspaced away and retyped correctly. */
+  correctedErrors: number;
   wpmSamples: WpmSample[];
   charTally: CharTally;
   quoteSource: string | null;

@@ -44,7 +44,7 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
   }
 }
 
-function createInitialState(config: TestConfig): TestState {
+export function createInitialState(config: TestConfig): TestState {
   const { words, quoteSource } = buildWords(config);
   return {
     status: "idle",
@@ -56,6 +56,9 @@ function createInitialState(config: TestConfig): TestState {
     elapsedMs: 0,
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
+    totalTyped: 0,
+    totalKeypresses: 0,
+    correctedErrors: 0,
     wpmSamples: [],
     charTally: emptyCharTally(),
     quoteSource,
@@ -125,7 +128,16 @@ function finalize(state: TestState, tally: CharTally, now: number, elapsedMsOver
   return { ...state, status: "finished", charTally: tally, elapsedMs };
 }
 
-function reducer(state: TestState, action: EngineAction): TestState {
+/**
+ * Exported for tests.
+ *
+ * The reducer is the whole scoring engine and is already pure: given a state
+ * and an action it returns the next state, with no reference to the DOM, to
+ * React, or to a clock it owns. Exporting it lets the counters be driven and
+ * asserted directly -- through a rendered component, a dropped keystroke and a
+ * missed render are indistinguishable.
+ */
+export function reducer(state: TestState, action: EngineAction): TestState {
   switch (action.type) {
     case "APPLY_CONFIG":
       return createInitialState(action.config);
@@ -150,10 +162,25 @@ function reducer(state: TestState, action: EngineAction): TestState {
       // of silently under-counting keystrokes.
       let correctKeystrokes = state.correctKeystrokes;
       let incorrectKeystrokes = state.incorrectKeystrokes;
-      for (let i = prevTyped.length; i < newTyped.length; i++) {
-        const isCorrect = i < target.length && newTyped[i] === target[i];
-        if (isCorrect) correctKeystrokes += 1;
-        else incorrectKeystrokes += 1;
+      let totalTyped = state.totalTyped;
+      let correctedErrors = state.correctedErrors;
+
+      if (newTyped.length < prevTyped.length) {
+        // Backspace. The removed characters keep their place in the keystroke
+        // history -- deleting a mistake does not un-make it -- but a wrong
+        // character that gets deleted is recorded as corrected, so the results
+        // screen can distinguish "typed badly" from "typed badly and fixed it".
+        for (let i = newTyped.length; i < prevTyped.length; i++) {
+          const wasWrong = i >= target.length || prevTyped[i] !== target[i];
+          if (wasWrong) correctedErrors += 1;
+        }
+      } else {
+        for (let i = prevTyped.length; i < newTyped.length; i++) {
+          const isCorrect = i < target.length && newTyped[i] === target[i];
+          if (isCorrect) correctKeystrokes += 1;
+          else incorrectKeystrokes += 1;
+          totalTyped += 1;
+        }
       }
 
       const nextWordStates = [...state.wordStates];
@@ -175,6 +202,9 @@ function reducer(state: TestState, action: EngineAction): TestState {
         wordStates: nextWordStates,
         correctKeystrokes,
         incorrectKeystrokes,
+        totalTyped,
+        correctedErrors,
+        totalKeypresses: state.totalKeypresses + 1,
         status,
         startedAt,
       };
@@ -195,13 +225,40 @@ function reducer(state: TestState, action: EngineAction): TestState {
       const tally = tallyWord(state.charTally, wordState);
       const isLastWord = activeIndex === state.words.length - 1;
 
+      // THE SPACE IS A CHARACTER.
+      //
+      // This was the engine's single biggest measurement error. Pressing space
+      // only ever advanced the word cursor -- it was never counted as a
+      // keystroke -- so on a 15s run of ~18 words, ~18 characters vanished
+      // from both correctKeystrokes and incorrectKeystrokes. Net and raw WPM
+      // were therefore understated by roughly the space ratio of English
+      // prose, about 18%.
+      //
+      // It also explains why the symptom looked so strange: accuracy is
+      // correct/(correct+incorrect+missed), and a space is almost always
+      // correct, so dropping it from numerator and denominator alike barely
+      // moved that ratio. Accuracy read a truthful 100% while WPM read ~18%
+      // low, which made the two figures look like they disagreed.
+      //
+      // The separator between two words is part of the target text, so typing
+      // it is a correct character attempt. The final word has no trailing
+      // separator and so is not credited one.
+      const typedSeparator = !isLastWord;
+      const correctKeystrokes = state.correctKeystrokes + (typedSeparator ? 1 : 0);
+      const totalTyped = state.totalTyped + (typedSeparator ? 1 : 0);
+      const totalKeypresses = state.totalKeypresses + 1;
+
       // Committing is what turns "not typed yet" into "skipped", so this is
       // where the skipped characters get marked for display.
       const committedStates = [...state.wordStates];
       committedStates[activeIndex] = markMissedChars(wordState);
 
       if (state.config.mode !== "time" && isLastWord) {
-        return finalize({ ...state, wordStates: committedStates }, tally, action.now);
+        return finalize(
+          { ...state, wordStates: committedStates, correctKeystrokes, totalTyped, totalKeypresses },
+          tally,
+          action.now,
+        );
       }
 
       let words = state.words;
@@ -217,7 +274,16 @@ function reducer(state: TestState, action: EngineAction): TestState {
         wordStates = [...wordStates, ...more.map((w) => ({ target: w, typed: "", chars: [] as CharState[] }))];
       }
 
-      return { ...state, words, wordStates, activeWordIndex: nextIndex, charTally: tally };
+      return {
+        ...state,
+        words,
+        wordStates,
+        activeWordIndex: nextIndex,
+        charTally: tally,
+        correctKeystrokes,
+        totalTyped,
+        totalKeypresses,
+      };
     }
 
     case "TICK": {
@@ -234,6 +300,8 @@ function reducer(state: TestState, action: EngineAction): TestState {
                 t: elapsedMs,
                 wpm: calculateNetWpm(state.correctKeystrokes, elapsedMs),
                 rawWpm: calculateRawWpm(state.correctKeystrokes, state.incorrectKeystrokes, elapsedMs),
+                correct: state.correctKeystrokes,
+                typed: state.totalTyped,
               },
             ]
           : state.wpmSamples;
@@ -251,20 +319,35 @@ function reducer(state: TestState, action: EngineAction): TestState {
   }
 }
 
+/**
+ * Monotonic clock for every timestamp the engine records.
+ *
+ * Date.now() is wall-clock: an NTP correction, a manual clock change or a
+ * daylight-saving jump during a test would move it, and a long test could
+ * record a duration that never happened. performance.now() only ever moves
+ * forward at a steady rate, which is the guarantee a stopwatch needs.
+ *
+ * Falls back on the server, where the value is never read -- the engine only
+ * timestamps in response to real input.
+ */
+function now(): number {
+  return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+
 export function useTypingEngine(initialConfig: TestConfig) {
   const [state, dispatch] = useReducer(reducer, initialConfig, createInitialState);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (state.status !== "running") return;
-    intervalRef.current = setInterval(() => dispatch({ type: "TICK", now: Date.now() }), TICK_INTERVAL_MS);
+    intervalRef.current = setInterval(() => dispatch({ type: "TICK", now: now() }), TICK_INTERVAL_MS);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [state.status]);
 
-  const setTyped = useCallback((value: string) => dispatch({ type: "SET_TYPED", value, now: Date.now() }), []);
-  const commitWord = useCallback(() => dispatch({ type: "COMMIT_WORD", now: Date.now() }), []);
+  const setTyped = useCallback((value: string) => dispatch({ type: "SET_TYPED", value, now: now() }), []);
+  const commitWord = useCallback(() => dispatch({ type: "COMMIT_WORD", now: now() }), []);
   const restart = useCallback(() => dispatch({ type: "RESTART" }), []);
   const applyConfig = useCallback((config: TestConfig) => dispatch({ type: "APPLY_CONFIG", config }), []);
 

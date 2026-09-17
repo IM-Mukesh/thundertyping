@@ -8,6 +8,12 @@ function pbKey(mode: TestMode, param: number | string, punctuation: boolean, num
 }
 
 export interface PersonalBest {
+  /**
+   * Unrounded. Beating a best is decided on the real number, not the one on
+   * screen -- rounding first makes 65.6 and 66.4 both "66", so a genuine
+   * improvement of nearly a word per minute silently reads as a tie. Round at
+   * the point of display, never before the comparison.
+   */
   wpm: number;
   accuracy: number;
   achievedAt: number;
@@ -45,7 +51,9 @@ export function recordResult(
   param: number | string,
   punctuation: boolean,
   numbers: boolean,
+  /** Unrounded net WPM. */
   wpm: number,
+  /** Unrounded accuracy percentage. */
   accuracy: number,
 ): { isNewBest: boolean; best: PersonalBest | null } {
   if (!isTrackableMode(mode)) return { isNewBest: false, best: null };
