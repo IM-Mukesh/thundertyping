@@ -49,6 +49,10 @@ export default function GamesHubPage() {
               fill
               priority
               sizes="100vw"
+              // Decorative: 70% opacity under two gradient overlays, so the
+              // artefacts are invisible and this stops being the heaviest
+              // asset on the page.
+              quality={45}
               className="object-cover object-center opacity-70"
             />
           )}
@@ -179,7 +183,7 @@ export default function GamesHubPage() {
       <div className="relative mt-16 w-full overflow-hidden">
         {footerArt && (
           <div aria-hidden="true" className="relative h-32 w-full sm:h-44">
-            <Image src={footerArt} alt="" fill sizes="100vw" className="object-cover object-bottom opacity-60" />
+            <Image src={footerArt} alt="" fill sizes="100vw" quality={45} className="object-cover object-bottom opacity-60" />
             <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
           </div>
         )}

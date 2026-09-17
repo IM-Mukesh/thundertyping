@@ -38,6 +38,19 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "*": [".claude/**/*", ".mcp.json", "assets-raw/**/*"],
   },
+
+  images: {
+    /**
+     * Allowed `quality` values for next/image. Next only generates variants at
+     * qualities named here, so an unlisted value is rejected at build time.
+     *
+     * 75 is the default and covers everything the reader actually looks at. 45
+     * exists for decorative backdrops -- art sitting at 60-70% opacity under
+     * two gradient overlays, where the compression artefacts are invisible and
+     * the file is otherwise the single heaviest thing on the page.
+     */
+    qualities: [45, 75],
+  },
 };
 
 export default nextConfig;

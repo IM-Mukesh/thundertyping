@@ -76,7 +76,13 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
             alt=""
             fill
             priority
-            sizes="100vw"
+            // Deliberately identical to the marquee's sizes and quality
+            // below, because both render the same file. Matching them makes
+            // the two <Image>s resolve to one optimizer URL, so this backdrop
+            // is served from cache and costs nothing. Asking for its own
+            // cheaper variant sounds thriftier but is strictly worse: it
+            // downloads a second copy.
+            sizes="(max-width: 896px) 100vw, 896px"
             className="scale-110 object-cover opacity-25 blur-2xl"
           />
         )}

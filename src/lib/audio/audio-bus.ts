@@ -26,6 +26,17 @@ interface AudioState {
   pending: Map<string, Promise<AudioBuffer | null>>;
   nowPlaying: { src: AudioBufferSourceNode; gain: GainNode; url: string } | null;
   duckDepth: number;
+  /**
+   * Increments on every playMusic call, including stopMusic.
+   *
+   * playMusic has to await the file decode, and during that gap `nowPlaying`
+   * is still null -- so an unmount calling stopMusic found nothing to stop and
+   * returned, then the pending decode resolved and started a track with no
+   * component left to stop it. That is how music kept playing after leaving a
+   * game. Any call that finds the epoch moved on while it was awaiting has
+   * been superseded and must not start anything.
+   */
+  musicEpoch: number;
 }
 
 type WindowWithAudio = Window & { [STATE_KEY]?: AudioState };
@@ -63,6 +74,7 @@ function state(): AudioState | null {
     pending: new Map(),
     nowPlaying: null,
     duckDepth: 0,
+    musicEpoch: 0,
   };
   return w[STATE_KEY]!;
 }
@@ -161,6 +173,9 @@ export async function playMusic(url: string | null): Promise<void> {
   if (!s) return;
   if (s.nowPlaying?.url === url) return;
 
+  // Claim this call as the current intent before anything can await.
+  const epoch = ++s.musicEpoch;
+
   const previous = s.nowPlaying;
   if (previous) {
     const end = s.ctx.currentTime + MUSIC_FADE;
@@ -171,7 +186,10 @@ export async function playMusic(url: string | null): Promise<void> {
   if (!url) return;
 
   const buf = await load(url);
-  if (!buf) return;
+  // Superseded while the file was decoding -- by a track swap, or by the
+  // stopMusic that runs when the game unmounts. Starting now would leave an
+  // orphan source playing that nothing holds a reference to.
+  if (!buf || epoch !== s.musicEpoch) return;
 
   const src = s.ctx.createBufferSource();
   src.buffer = buf;

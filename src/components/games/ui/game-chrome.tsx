@@ -51,6 +51,8 @@ export function GameStage({
           fill
           priority
           sizes="(max-width: 768px) 100vw, 768px"
+          // Decorative board backdrop at 40% opacity under a gradient.
+          quality={45}
           className="object-cover opacity-40"
         />
       )}
