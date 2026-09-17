@@ -10,22 +10,33 @@
 cd path/to/thundertyping
 npm install       # only needed if node_modules isn't already present
 npm run dev        # starts Next.js on http://localhost:3000 by default
+npm test            # 55 unit tests (Node's built-in runner, no extra dependency)
 npm run lint        # must be clean before you consider anything "done"
 npm run build       # must be clean before you consider anything "done"
+npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
 ```
 
-Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now. There is no test suite yet (see QA backlog below), so "lint + build both clean" is the current bar, plus manual verification in a real browser for anything UI-observable.
+Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now.
+
+**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, 55 cases) covering the scoring engine, the mobile input path and the game anti-exploit rules — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
+
+**Write a test for anything scoring-related.** Every scoring bug found so far was invisible through the UI — a dropped keystroke and a missed render look identical on screen. The tests drive the pure reducer directly for that reason.
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of 2026-09-16: a feature-complete MVP, **fully mobile-responsive** (see the mobile pass section below) (all four typing modes, full stats/results, 5 themes, icon-based config bar, MonkeyType-matched visuals), **two typing games** under `/games`, and the first piece of real SEO content (`/guides/how-to-improve-typing-speed`), all internally linked. Not launched — no domain, no AdSense, no Search Console yet.
+As of **2026-09-17**: a feature-complete MVP, fully mobile-responsive, with **ten typing games** under `/games`, two SEO guides, and a **55-test suite** guarding the scoring engine. Not launched — no domain, no AdSense, no Search Console yet.
+
+**The last session was an audit-and-repair pass, not a feature pass.** Four real defect classes were found and fixed; read "Session 2026-09-17" below before touching the typing engine, the games' scoring, the audio bus or the image pipeline, because several of those fixes look like things you might "simplify" back into bugs.
 
 **What's genuinely open right now, roughly by leverage:**
-1. **Six typing games shipped** (2026-09-15): `falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush` — all live-verified. Adding another means a new `GameId`, a `GAME_DEFINITIONS` entry and one line in the `game-client.tsx` registry; nothing else. Read "Games architecture" below first. Three more were picked but not built: **Turret Defense, Ghost Racer, Accuracy Sniper**.
+1. **`NEXT_PUBLIC_SITE_URL` is unset**, so canonicals, `sitemap.xml` and `robots.txt` all emit `https://thundertyping.com`. Set it before deploying anywhere else, or search engines get pointed at a domain that may not be yours yet. This is the single highest-risk item for launch.
 2. SEO content roadmap: guides #1 and #2 of 5 planned Tier-1 guides are done; #3–5 (`touch-typing-basics`, `wpm-vs-cpm`, `typing-accuracy-vs-speed`) are scoped and ready to write — see "Content architecture" below.
-3. Three "Awaiting human input" questions are genuinely blocked on the project owner, not on more engineering — don't guess at these, ask.
-4. The live countdown still shows raw seconds for long custom durations (a 24h test reads `86400`) — see Frontend/UX backlog item 6.
-5. Everything else is in "Prioritized backlog," roughly ordered within each category, but not urgent — check in on priority before grinding through it top-to-bottom.
+3. **Ten games shipped**: `falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush`, `spellbound`, `typing-survivor`, `ghost-racer`, `card-battle`. Adding another means a new `GameId`, a `GAME_DEFINITIONS` entry and one line in the `game-client.tsx` registry. Read "Games architecture" below first.
+4. Two "Awaiting human input" questions are genuinely blocked on the project owner — don't guess, ask.
+5. The live countdown still shows raw seconds for long custom durations (a 24h test reads `86400`) — see Frontend/UX backlog item 6.
+6. Everything else is in "Prioritized backlog," roughly ordered within each category but not urgent.
+
+**Corpus note, deliberately left alone:** the word generator samples uniformly from a 489-word frequency-ordered list (mean word length 4.45), while MonkeyType's default draws from the ~200 most common words. Ours therefore runs slightly harder and scores slightly lower on a typical run. That is a product decision, not a bug — narrowing the corpus would raise the displayed WPM without the typist improving, which was explicitly ruled out. Change it only on instruction.
 
 ## What this project is
 
@@ -53,17 +64,19 @@ A typing-speed-test website (MonkeyType-style) aiming for large organic Google t
 - **If a running dev server's error overlay disagrees with a fresh `npm run build`, trust the build.** Turbopack's dev server here has served misleading overlay errors for code that no longer exists on disk. Restarting clears it. Don't "fix" code a clean build already proves is fine.
 - **`requestAnimationFrame` never fires when the preview pane isn't displayed** (`document.hidden === true`; `setTimeout` still works normally). This is not an app bug, but it has a big consequence: **every `motion` / `AnimatePresence` animation is rAF-driven, so in that environment exit animations never start, never complete, and `AnimatePresence` therefore never unmounts its child** — the element just sits there at full size, which looks exactly like a broken state signal. Screenshots also fail with "the Browser pane is not displayed." When verifying anything animated, check `requestAnimationFrame` actually fires before concluding the feature is broken, and prefer asserting on a non-animated signal (a `data-` attribute, a CSS class) rather than on animated geometry.
 
-## Current status (as of 2026-09-15)
+## Current status (core through 2026-09-16; see "Session 2026-09-17" below for the latest pass)
 
 ### Done and verified working
 Manually tested in a real browser (typed real words, confirmed char-by-char coloring, word advancement, caret positioning, timer countdown, auto-finish, personal-best recording, restart, mobile viewport layout, malformed-localStorage recovery, paste blocking, zero layout shift on test start, theme switching, punctuation-skip handling) — every bullet below was actually exercised, not just written and assumed correct.
 
 **Verification backlog is now clear** (2026-09-15): the three items previously carried as "built but never seen rendering" — the chrome collapse, the flip-clock stats bar, and the `/guides` page — have all been live-verified against a clean dev server. Two of them turned out to be genuinely broken and were fixed (see Known issues fixed); that is exactly why the "confirmed by clean build" standard is not a substitute for looking at the running app.
 
-*Testing note for whoever is next:* synthetic space keypresses from browser-automation tooling often arrive with an empty `key`, so `HiddenInput`'s `onKeyDown` space handler never matches and words never commit — the whole test text piles into word 0. Dispatch a properly-formed event instead: `new KeyboardEvent("keydown", { key: " ", code: "Space", keyCode: 32, which: 32, bubbles: true, cancelable: true })`. Also note each dev-server port is its own origin, so `localStorage` settings (mode, duration) reset whenever the port changes.
+*Testing note for whoever is next:* synthetic space keypresses from browser-automation tooling often arrive with an empty `key`, so the `onKeyDown` space handler never matches. **Since 2026-09-17 there is an easier path**: append the space to the input's value and dispatch a plain `input` event — `splitOnCommit` treats a space in the buffer as a commit, which is exactly the mobile-keyboard path, so automation and real phones exercise the same code. The old approach still works: `new KeyboardEvent("keydown", { key: " ", code: "Space", keyCode: 32, which: 32, bubbles: true, cancelable: true })`.
+
+Two more automation gotchas worth knowing: each dev-server port is its own origin, so `localStorage` settings (mode, duration) reset whenever the port changes — and **`document.body.innerText` returns empty in a headless/non-compositing pane** because it is layout-dependent. Use `textContent` or `querySelector`; an `innerText` check once made a working focus overlay look broken four times in a row.
 
 **Core engine & features:**
-- Project scaffold, 5-theme system (`data-theme` attribute + CSS vars, picker in `theme-switcher.tsx`), header/footer, ad-slot placeholders (footer + post-results, not near the typing area).
+- Project scaffold, 5-theme system (`data-theme` attribute + CSS vars, picker in `theme-switcher.tsx`), header/footer, ad slots (footer + post-results, not near the typing area). **As of 2026-09-17 `AdSlot` renders `null` until `NEXT_PUBLIC_ADSENSE_CLIENT_ID` is set** — the dashed "Ad space" placeholders made a finished product look unfinished pre-approval. All nine placements stay in the tree, so switching ads on is one env var and no code change.
 - Full typing engine (`src/lib/typing-engine/`): time mode (15/30/60/120s presets **plus a free-form custom duration**, infinite word regeneration), words mode (10/25/50/100), quote mode (curated public-domain quotes, short/medium/long), custom text mode (capped at 2000 chars), punctuation/numbers injection toggles.
 - Per-character correct/incorrect/extra/pending rendering, animated caret (via `motion` `layoutId` shared-element transition), smooth 3-line word-window scrolling that re-measures after web fonts finish loading.
 - Live stats while running (countdown or word progress + live WPM, stabilized against early-test noise), results screen (net WPM, raw WPM, accuracy, consistency, char breakdown, personal-best badge) — **accuracy and the correct/incorrect breakdown are mathematically guaranteed to agree** (see Known issues fixed).
@@ -73,15 +86,15 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 - **Language selector**: a real (not decorative) popover showing "English" as the sole, checked option — same interaction pattern as the theme picker. Functionally honest (opens a real menu) rather than a fake button, so adding a second language later is one more row, not a rebuild.
 
 **Visual redesign (most recent round, matching MonkeyType's look):**
-- **Typography**: monospace font is JetBrains Mono (switched from Geist Mono site-wide). Word-stream size is currently `text-2xl sm:text-3xl`, `LINE_HEIGHT` re-measured to 38px to match — see the sizing/line-height cautionary notes below before changing this again.
-- **Config bar is icon-based** (`test-config-bar.tsx`): punctuation/numbers/time/words/quote/custom render as `lucide-react` icons, not text, each with an `aria-label` + `title` tooltip so meaning isn't lost. Container background removed so it blends with the page instead of sitting in a visibly distinct box.
+- **Typography**: monospace font is JetBrains Mono (switched from Geist Mono site-wide). Word-stream size is currently `text-2xl sm:text-3xl`. **The line height is no longer a constant** — as of 2026-09-17 `word-stream.tsx` measures the real gap between wrapped rows at runtime, because a single hardcoded value cannot be right at two breakpoints (32px on phones, 38px from `sm:` up) and had been stale three times. You can change the font/size freely now without re-measuring anything.
+- **Config bar is icon + label** (`test-config-bar.tsx`): punctuation/numbers/time/words/quote/custom render as a `lucide-react` icon *and* its lowercase word. It was icon-only until 2026-09-17, when that was reported as unreadable — every control was a guess. Pills keep their `aria-label`/`title`. Spacing is tightened below `sm:` so the labels still fit three rows on a 375px phone, and sizing is `pointer-fine:min-h-9` (touch stays 44px) rather than a width breakpoint. Container background removed so it blends with the page instead of sitting in a visibly distinct box.
 - **Custom time duration**: time-mode presets (15/30/60/120s) sit next to a real numeric input, clamped **1s–86400s / 24 hours**, tucked behind a pencil-icon trigger rather than a permanently-visible bare input. Durations over a minute format as "1m 13s" / "2h 3m 14s" (a local `formatDuration` helper) instead of a raw second count — applied to the preset pills too ("15s"/"30s"/"1m"/"2m"), not just the custom one. **Not yet applied to the live countdown while a test is running** — that still shows raw seconds; deliberately out of scope this round (a proper HH:MM:SS-style flip-clock treatment deserves its own design pass, see backlog).
 - **Default (Dark) theme now matches MonkeyType's Serika Dark palette** (`#323437` background, `#d1d0c5` foreground, `#646669` sub, `#e2b714` accent) — the other 4 themes are unchanged/independent of this.
 - **Typing area widened** to `max-w-6xl` (was `max-w-4xl`), matching MonkeyType's proportions more closely.
 - **Page intro (h1/subtitle), the config-bar/language-selector, and the site footer all collapse once a test finishes** — the results screen shows only the results, not leftover chrome. All four key off `test-status-store.ts`; `PageIntro` and `SiteFooter` are client components still SSR'd for SEO (no random content, so no hydration-mismatch risk — see Architecture notes). `PageIntro`/`SiteFooter` collapse via a **pure-CSS `grid-template-rows: 1fr → 0fr`** transition, deliberately not `AnimatePresence` (see the rAF note under Tech stack — a JS-animated collapse silently does nothing in a pane with no animation frames). The flag is cleared when the typing island unmounts, so the footer comes back on `/about` etc. **Live-verified 2026-09-15**: both collapse to `0px` on finish, and the footer returns to 210px after navigating away.
 - **Results screen fits above the fold.** Live-measured at a 720×1280 viewport with the WPM graph rendered: the core results — stats row, graph, correct/incorrect/extra/missed breakdown, and the Restart button — end at **706px**, inside the 720px fold. The 300×250 post-results ad slot sits just below it by design; shrinking or dropping that unit to win the last ~250px would cost the site's single best-performing ad placement, so it stays below the fold. On a typical laptop viewport (800–950px) there's considerably more headroom.
 - **Results panel tightened and polished**: smaller gaps, a shorter graph (170px, was 220px), a border-top divider above the correct/incorrect/extra/missed row, and the "new personal best" badge (now with a sparkle icon) moved above the stats instead of after the graph.
-- **Live stats bar** (`live-stats-bar.tsx`): the countdown / word-progress figure renders large (48px) with a flip-clock/split-flap digit animation. **Live WPM is hidden by default** behind a persisted `liveSpeed` setting, toggled by the gauge icon in the config bar. Reported as genuinely distracting, and the reasoning holds generally: the countdown steps once a second and you act on it, whereas a WPM figure changing several times a second directly above the text you're reading is noise you can't use mid-test (MonkeyType ships live speed off by default too). When switched on it renders small, dim and **static** — the flip animation is specifically what made it steal focus, so the opt-in version drops it. **Don't "restore" the big animated WPM** without new instruction. **Live-verified 2026-09-15**: renders at 48px and holds at a maximum of **2 DOM nodes per digit slot** under live ticking, confirming the ghost-stacking fix below genuinely holds.
+- **Live stats bar** (`live-stats-bar.tsx`): the countdown / word-progress figure renders large (48px) with a flip-clock/split-flap digit animation, and is **the only thing it shows**. The opt-in live-WPM readout and its `liveSpeed` setting were **removed entirely on 2026-09-17** by request — the setting, its toggle, its store field, its persistence and its validation are all gone. Don't reintroduce a live WPM figure without new instruction. The flip animation still holds at a maximum of **2 DOM nodes per digit slot** under live ticking (see the `AnimatePresence` note in Known issues fixed).
 - **Every skipped character counts as a mistake**, punctuation and digits included — spacing past `Among;` or typing `9` of `98` is penalised the same as skipping a letter. Skipped characters are tallied into `charTally.missed`, subtracted from accuracy, and rendered in red in the word-stream. *(This reverses an earlier exemption for punctuation; the reversal was explicitly requested — see Known issues fixed.)*
 - Personal bests persisted per mode+config in `localStorage` (time/words modes only), with type-validated rehydration so corrupted storage can't inject garbage into the UI.
 - Settings persisted via zustand with full validation on rehydration — every field falls back to a safe default if the stored value is out of range, wrong type, or (for `mode`) `"custom"` with no text behind it.
@@ -93,8 +106,8 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 - **Second Tier 1 SEO guide is live** (2026-09-15): `/guides/average-typing-speed` — a benchmark table by context (casual/office/programmer/transcriptionist/competitive), sourced honestly as "commonly cited bands" rather than inventing a false-precision citation, plus a section explaining *why* WPM figures vary so much between sources (test length, text difficulty, net vs. raw). Cross-links with guide #1 in both directions (guide #1's closing section now points here; this guide points back to guide #1 for the "how to actually improve" follow-up) and links to `/`. Same `ContentPage`/`buildArticleSchema`/`sitemap.ts` pattern as guide #1. Verified the same way as guide #1 — clean `npm run build`, inspected the prerendered `.next/server/app/guides/average-typing-speed.html` for the h1, JSON-LD, and table content, and confirmed the URL in `sitemap.xml.body` — **not live-verified in a running browser**, same unattended-session constraint as guide #1. One thing worth a human/interactive-session glance: the table borrows the existing `border-border` Tailwind token (used elsewhere for `AdSlot`'s dashed border) rather than inventing new styling, so it should theme correctly across all 5 themes, but a visual table hasn't existed on this site before now and hasn't been literally seen rendered.
 - **`sitemap.ts`'s `lastModified` bug is fixed**: it previously evaluated `new Date()` per request, so every crawl saw "modified right now" regardless of whether anything changed. Now each route has a hand-set date in a `routes` array; bump a route's date only when that page's content actually changes. This was Technical SEO gap #1 in the roadmap below — now resolved.
 
-**Typing games** (new 2026-09-15):
-- **Six games live under `/games`**: a hub page plus `falling-words` (3 lives, combo-multiplied score), `word-rain` (one life, faster ramp, scored by seconds survived), `word-blaster` (shooter — enemies cross lanes toward a base, first keystroke commits the turret to a target), `typing-grand-prix` (racer — sequential typing drives your car against three AI opponents over 40 words), `boss-battle` (multi-phase boss, longer words hit harder, a telegraphed attack costs a life if the current word isn't finished in time) and `combo-rush` (a draining clock each cleared word tops back up). Both are statically prerendered via `generateStaticParams`, linked from the header, footer and the games hub, and listed in `sitemap.ts`. Each game route carries its own long-form "how to play well" copy — genuinely mode-specific advice, not one template with the name swapped (see the thin-content guardrail in the SEO section).
+**Typing games** (six shipped 2026-09-15, four more since — ten total):
+- **Ten games live under `/games`**: the six below, plus `spellbound` (roguelike spell-casting), `typing-survivor` (endless waves + upgrades), `ghost-racer` (race a recorded run) and `card-battle` (deck-builder). The original six: a hub page plus `falling-words` (3 lives, combo-multiplied score), `word-rain` (one life, faster ramp, scored by seconds survived), `word-blaster` (shooter — enemies cross lanes toward a base, first keystroke commits the turret to a target), `typing-grand-prix` (racer — sequential typing drives your car against three AI opponents over 40 words), `boss-battle` (multi-phase boss, longer words hit harder, a telegraphed attack costs a life if the current word isn't finished in time) and `combo-rush` (a draining clock each cleared word tops back up). Both are statically prerendered via `generateStaticParams`, linked from the header, footer and the games hub, and listed in `sitemap.ts`. Each game route carries its own long-form "how to play well" copy — genuinely mode-specific advice, not one template with the name swapped (see the thin-content guardrail in the SEO section).
 - **Live-verified 2026-09-15**: words spawn and fall at the expected rate (measured 41.8px/s against a 9s fall across 376px), typing clears the targeted word, score/combo/accuracy all track, one word reaching the floor costs exactly one life, game over records a high score to `localStorage`, and Word Rain correctly runs with a single life and a "survived" headline.
 - **Arcade visual layer** (`globals.css`, `game-cover-art.tsx`): drifting perspective grid, horizon haze, danger gradient, faint scanlines, neon glow and corner brackets. All of it is CSS + hand-drawn SVG deriving from theme CSS variables via `color-mix`, **not raster art** — verified recolouring correctly across dark/light/forest/sunset. That's the reason to keep it: a fixed image would clash with the light themes, add real LCP weight, and couldn't animate.
 - **Real artwork is now in place** (2026-09-15): `public/games/falling-words.webp`, `word-rain.webp` and `hero.webp` — AI-generated neon scenes, vivid and each with its own palette (cyan/violet, indigo/magenta, full synthwave sunset). The drawn SVG in `game-cover-art.tsx` is still the automatic fallback for any game without a file, so deleting an image restores it instantly. `game-art-assets.ts` finds files by convention at build time; `public/games/README.txt` documents the names.
@@ -108,6 +121,76 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 - Custom-text modal has proper dialog semantics, closes on Escape or backdrop click, live character counter, returns focus on close.
 - Mode-selection and toggle pills expose `aria-pressed`.
 - `npm run build` and `npm run lint` both pass clean as of the latest commit.
+
+## Session 2026-09-17 — audit & repair pass (READ BEFORE TOUCHING SCORING, AUDIO OR IMAGES)
+
+Four separate audits, each triggered by a real user-visible symptom. Every fix below is verified by mutation testing where possible: the bug was deliberately reintroduced to prove the test/fix actually catches it, then restored. **Several of these look like over-engineering until you know the failure they prevent — the reasoning is in the code comments; read them before simplifying.**
+
+Full write-ups: `docs/typing-engine.md` (the engine spec the tests enforce), `docs/typing-engine-audit.md`, `docs/games-integrity-audit.md`, `docs/audio-and-asset-audit.md`.
+
+### 1. The typing engine was under-reporting WPM by ~20%
+
+**Symptom:** the same typist scored 66 WPM here and 86 on MonkeyType, at 100% accuracy in both.
+
+**Root cause: spaces were never counted as characters.** `hidden-input.tsx` intercepts the space key and dispatches `COMMIT_WORD`; that reducer case tallied the finished word's letters and advanced the cursor but never touched `correctKeystrokes`. Every inter-word space vanished.
+
+**Why it hid for so long, and the lesson:** WPM is defined on five-character units *including the trailing space*, so dropping them loses ~1 character in 6. But accuracy is `correct / (correct + incorrect + missed)`, and a space is almost always struck correctly — removing it from numerator *and* denominator barely moves the ratio. One bug, and only one of the two numbers on screen reacted. **When one metric looks wrong and a related one looks fine, that is evidence about the shape of the bug, not evidence that the first metric is fine.**
+
+Also fixed in the same pass:
+- **`Date.now()` → `performance.now()`** everywhere in the engine. Wall-clock steps under NTP correction and can yield a negative elapsed time mid-test.
+- **Backspace now records `correctedErrors`.** Deleting a mistake does not un-make it; the incorrect keystroke stays counted. This is what stops someone farming a perfect score by delete-and-retype.
+- **Consistency was measuring a running average** — each sample was cumulative WPM, which converges by construction, so the score mostly measured test length and read high for everyone. It now differences the samples into one-second buckets and takes the coefficient of variation of *per-second* speed. Measured effect: a typist alternating full-speed and dead stops scored **78%** under the old formula and **0%** under the new one.
+- **Personal bests were compared on rounded values**, so a genuine 65.6 → 66.4 improvement read as a tie at 66. Now compared unrounded, rounded only for display.
+- Results screen gained **Total Typed** and corrected-errors, so the breakdown visibly reconciles with the WPM above it.
+
+**Verified end to end** on MonkeyType's own prompt via the new `/debug/typing-engine` page (dev-only, 404s in production): 20 words typed → predicted 86 letters + 20 separators = 106, recorded exactly 106. On identical text the two engines agree.
+
+### 2. Two games could be won without typing
+
+**Ghost Racer** computed race position as `typed.length` — the raw count of keys pressed, never compared against the text. Proven by attack: **400 spaces and nothing else produced "You win", "New personal best", 39 WPM at 19% accuracy** — and saved itself as the personal-best ghost, so every later race on that text would run against a mash.
+
+**Typing Grand Prix** banked `target.length` for whatever was in the buffer, so one letter plus space advanced a full word. This one had the exploit in **three** places; after fixing the two obvious ones, `finishRace` still hardcoded `playerProgress: 1` and computed placement from opponents who had *already finished*, so spacing through all forty words still crossed the line in **first place**. That third site was only caught because a test failed. **Do not assume one fix covers a scoring exploit — enumerate every write to the progress variable.**
+
+Both now tie distance to correctly-typed characters, which keeps it consistent with the WPM numerator. Ghost store bumped `v1` → `v2` to abandon pre-fix recordings, which hold inflated positions.
+
+The other eight games were audited and are sound: all require an exact match before anything clears. Combo Rush maps space to "skip" but charges time and resets the combo; Spellbound and Survivor treat a space as a miss; Card Battle strips non-letters.
+
+### 3. Music kept playing after leaving a game
+
+**Not a missing cleanup** — all four music games already had `return () => stopMusic()`. The race was in the bus: `playMusic` awaits the file decode, and `nowPlaying` is only assigned *after* it resolves. Leave during that gap and `stopMusic()` finds `nowPlaying === null`, concludes there is nothing to stop, and returns; then the decode finishes and starts a track nothing holds a reference to.
+
+Fixed with an epoch claimed on the shared state *before* any await. The counter lives on the `window`-anchored singleton, **not module scope** — `next/dynamic` gives each game its own chunk and a module-level counter would be duplicated (this codebase has been bitten by that exact thing twice now; see the `test-status-store` note).
+
+Every game clock and animation loop was also audited for cleanup — all clean.
+
+### 4. Images were already optimized; two real wins found anyway
+
+The suspicion was that images had never been compressed. They had: 141 WebP files at a median **0.097 bytes/pixel**, every `<Image>` already carrying a correct `sizes`, nothing bypassing the optimizer. Re-encoding the fifteen largest was tested and **rejected** — it recovers 5–30% while compounding artefacts on an already-lossy source (28–31 dB PSNR on the alpha cut-outs, which is visible). **Don't re-encode these again without measuring; the obvious win isn't one.**
+
+What was actually wrong:
+- **Decorative backdrops served at full quality.** Art sitting at 25–70% opacity under gradient overlays now uses `quality={45}` (Next 16 requires the value be allowlisted in `images.qualities`, which `next.config.ts` now does). Everything a reader actually looks at stays at 75.
+- **One image downloaded twice.** On a game page the blurred backdrop and the marquee render the *same* hero file but asked for different variants. Giving the backdrop the marquee's exact `sizes` collapses them to one URL and the backdrop becomes free. **The obvious move here is wrong:** asking for a smaller cheaper variant for a blurred backdrop sounds thriftier and is strictly worse, because it downloads a second copy.
+
+Measured on a production build: `/games` 209 KB → **171 KB**, `/games/spellbound` 100 KB → **79 KB**. The typing-test home page loads **no images and no audio at all** (16 KB total transfer).
+
+Audio was checked and deliberately left alone: 13 MB across 26 files, already Opus at ~64 kbps, and no game loads more than its own two or three tracks. `assets-raw/` is 596 MB on disk but is gitignored and excluded from build tracing, so it never deploys.
+
+### 5. Mobile typing was broken, and the build had a deploy hazard
+
+- **You could not get past the first word on a phone.** Android's GBoard (and every IME-backed keyboard) reports composing input as `keydown` with `keyCode 229` / `key: "Unidentified"`, so the `e.key === " "` test **never fires on mobile**. The space landed in the input value and was scored as a wrong character against the target word. Fixed via `splitOnCommit` (`src/lib/typing-engine/input-commit.ts`) — a generated word never contains a space, so a space in the buffer can only mean "commit". Typing Grand Prix already had this fallback; the main test didn't. **Any new typing surface needs it too.**
+- **Word-stream `LINE_HEIGHT` is now measured at runtime, not hardcoded.** The constant had been wrong three times (48, 32, 38); the last was right on desktop and 6px too large on every phone, since the stream is `text-2xl` there and `text-3xl` from `sm:` up. It now reads the median gap between wrapped rows, with a guard rejecting implausible values (a zero-width container once produced a 312px window). **This kills that recurring trap for good — don't reintroduce a constant.**
+- **Touch targets were 24px on tablets.** The config bar shrank at `sm:`, which asks about viewport width when the real question is what is doing the pointing — a tablet is wide *and* touch. Now `pointer-fine:min-h-9`: phones and tablets stay 44px, mice get 36px.
+- **Build warning fixed:** `game-art-assets.ts` probed for art with `fs.existsSync(path.join(DIR, templateString))`. Turbopack cannot statically scope a templated path, so it traced **the entire project** into the server bundle and warned it "can lead to failures when size limits are exceeded". Replaced with one statically-scoped directory read into a `Set`. **The build is now 0 warnings — keep it that way.** Note the trade-off: art is listed once at module load, so a newly dropped-in file needs a restart to appear (which matches what this module already promised).
+
+### What a cold start should verify first
+
+The fixes above are the kind that regress silently. Before trusting the app:
+
+```bash
+npm test && npm run lint && npx tsc --noEmit && npm run build   # all clean, build must emit 0 warnings
+```
+
+Then in a browser: take a 15s test and confirm the results breakdown reconciles (`Total Typed` == correct + incorrect), and confirm a space cannot win Ghost Racer.
 
 ### Known issues fixed (context for why the code looks the way it does — read before "fixing" these back)
 - **Results screen's accuracy % and its "correct/incorrect" breakdown could contradict each other.** Reproduced precisely: custom text "cat" typed with one backspaced-out mistake showed "3 correct, 0 incorrect" but 75% accuracy — impossible for both to be right. Root cause: the breakdown was tallied from each word's *final* character state, while accuracy came from full keystroke history (including corrected mistakes). Fixed by removing correct/incorrect from `CharTally` entirely; the breakdown now reads `correctKeystrokes`/`incorrectKeystrokes` directly — the same numbers accuracy is computed from — so they can never disagree again.
@@ -138,7 +221,7 @@ Manually tested in a real browser (typed real words, confirmed char-by-char colo
 ### Not built yet (by design, not oversight)
 - No settings modal (Escape currently just blurs the input); no sound effects (`soundEnabled` exists in settings but nothing plays).
 - No custom favicon (still Next.js default); no `manifest.json`. OG image *is* handled.
-- No real AdSense integration — `AdSlot` renders placeholders until `NEXT_PUBLIC_ADSENSE_CLIENT_ID` is set; creating/approving the account requires the human, not an AI agent.
+- No real AdSense integration — `AdSlot` renders **nothing** until `NEXT_PUBLIC_ADSENSE_CLIENT_ID` is set; creating/approving the account requires the human, not an AI agent.
 - No focus-trap in the custom-text modal — low risk (one textarea, two buttons), worth doing if a more complex modal is added later.
 - Screen-reader typing experience is fundamentally limited (industry-wide issue with this app category — a real, visually-hidden `<input>` drives a custom visual rendering, so there's no real-time spoken feedback while typing — not something a small patch fixes).
 - Unicode edge case: character comparison indexes by UTF-16 code unit, not grapheme cluster — emoji in custom text render oddly but don't crash anything. Low priority.
@@ -191,6 +274,33 @@ The site is now usable on phones. Verified by measuring the running app at
 Desktop was re-verified for regression after the falling-words geometry change
 (768x440 board, 44px/s fall rate, no clipping) since that change touched
 gameplay math, and a life-loss run confirmed the floor detection still fires.
+
+## File map — where the load-bearing logic lives
+
+Everything else is presentation. These are the files where a careless edit changes a score, breaks a build, or reintroduces a fixed bug.
+
+| File | What it owns | Don't |
+|---|---|---|
+| `src/lib/typing-engine/use-typing-engine.ts` | The reducer: every keystroke, the clock, all counters. `reducer` and `createInitialState` are exported **for tests** | Move timing back to `Date.now()`; drop the separator credit in `COMMIT_WORD` |
+| `src/lib/typing-engine/stats.ts` | WPM / raw / accuracy / consistency — the single source of these formulas | Duplicate a formula into a component |
+| `src/lib/typing-engine/input-commit.ts` | `splitOnCommit` — the mobile-keyboard space path | Assume `keydown` sees the space; it doesn't on Android |
+| `src/components/typing-test/word-stream.tsx` | The 3-line window and its **runtime-measured** line pitch | Reintroduce a hardcoded `LINE_HEIGHT` |
+| `src/lib/games/use-typing-grand-prix.ts` | Race distance + placement. Reducer exported for tests | Bank `target.length`; hardcode `playerProgress: 1` |
+| `src/lib/games/racer/progress.ts` | Ghost Racer's position rule | Use `typed.length` as position |
+| `src/lib/audio/audio-bus.ts` | One AudioContext, buses, the `musicEpoch` race guard | Put the epoch in module scope (chunk duplication) |
+| `src/lib/games/game-art-assets.ts` | Build-time art resolution via one scoped directory read | Go back to `existsSync` on a templated path — it traces the whole project into the bundle |
+| `src/lib/persistence/settings-store.ts` | Persisted settings **with validation on rehydrate** | Trust `JSON.parse` output |
+| `src/components/layout/ad-slot.tsx` | Renders nothing until AdSense is configured | Re-add visible placeholders |
+| `next.config.ts` | `images.qualities` allowlist, tracing excludes, dev origins | Remove `qualities` — `quality={45}` then fails the build |
+
+## Before deploying (prerequisites, in order)
+
+1. **Set `NEXT_PUBLIC_SITE_URL`** to the real origin. Unset, everything SEO-facing emits `https://thundertyping.com`. Verified: `sitemap.xml`, `robots.txt` and the `/` canonical all read from it.
+2. Confirm `npm run build` is **0 warnings** and `npm test` is green.
+3. `/debug/typing-engine` must 404 in production (it is guarded by `NODE_ENV`; verified).
+4. `NEXT_PUBLIC_ADSENSE_CLIENT_ID` stays unset until the account is approved — that is what keeps ad slots hidden.
+5. Node 22+ on CI, or `npm test` won't run. `npm ci` is in sync with `package.json` (verified).
+6. Optional housekeeping: four extraneous packages (`@img/sharp-wasm32` and its wasm deps) sit in local `node_modules` but are in no `package.json`, so `npm ci` won't install them. `npm prune` tidies local to match CI.
 
 ## Architecture notes (read before modifying the typing engine)
 
@@ -308,10 +418,11 @@ The entire product *is* keypress-to-render latency — unusually high-stakes her
 7. ~~Live-verify the "not live-verified" items~~ — **Done 2026-09-15**; two were genuinely broken and are now fixed. See Known issues fixed.
 
 ### QA / Performance / Security
-1. No automated tests yet — the engine's reducer/pure functions are good unit-test candidates if/when a framework is chosen. Don't add one speculatively without that decision.
-2. Lint and build are the only current automated gates, both clean.
-3. No security concerns identified; custom text capped at 2000 chars bounds worst-case rendering cost.
-4. `AnimatePresence` exit-unmount is now confirmed *unreliable* under rapid re-keying (see Known issues fixed) — the flip-digit case was fixed with manual lifecycle management instead. Other usages (`PageIntro`, `ResultsPanel`'s reveal, `CustomTextModal`) change far less frequently so the same failure mode is much less likely to matter, but haven't been stress-tested the same rigorous way (checking live DOM node counts, not just visual behavior) — worth doing if any of them are ever driven by fast-changing state.
+1. **A test suite exists as of 2026-09-17: 55 cases, `npm test`.** No framework was added — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+**. `scripts/test-setup.mjs` maps the `@/*` alias (Node ignores `tsconfig` paths). Files: `src/lib/typing-engine/typing-engine.test.ts` (scoring, timing, backspace, consistency, mobile input) and `src/lib/games/games-integrity.test.ts` (the anti-exploit rules). Tests drive pure reducers directly, never rendered components — through the UI a dropped keystroke and a missed render are indistinguishable.
+2. **Coverage is deliberately narrow: scoring correctness and exploit resistance only.** There are no component/render tests and no e2e suite. That is a real gap if you start changing UI behaviour; live browser verification is still the only check on anything visual.
+3. Gates, all currently clean: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` (**0 warnings** — a warning here previously meant the whole project was being traced into the server bundle, so treat a new one as a real finding).
+4. No security concerns identified; custom text capped at 2000 chars bounds worst-case rendering cost. Note the *integrity* concern that did exist: two games were winnable without typing (see Session 2026-09-17). **Any new game must tie its win condition to correctly-typed characters, and should get a test in `games-integrity.test.ts`.**
+5. `AnimatePresence` exit-unmount is now confirmed *unreliable* under rapid re-keying (see Known issues fixed) — the flip-digit case was fixed with manual lifecycle management instead. Other usages (`PageIntro`, `ResultsPanel`'s reveal, `CustomTextModal`) change far less frequently so the same failure mode is much less likely to matter, but haven't been stress-tested the same rigorous way (checking live DOM node counts, not just visual behavior) — worth doing if any of them are ever driven by fast-changing state.
 
 ### Growth / Retention / Monetization
 - **Typing games shipped** (2026-09-15): Falling Words and Word Rain. More were asked for — add them as `GAME_DEFINITIONS` entries per the Games architecture notes.
@@ -334,7 +445,9 @@ This project has genuinely been worked on by more than one AI session concurrent
 ## How to resume work
 
 1. Read this file completely.
-2. `cd` into this directory, run `npm run lint && npm run build` to confirm nothing's regressed.
+2. `cd` into this directory and run the full gate: `npm test && npm run lint && npx tsc --noEmit && npm run build`. All four must be clean and the build must emit **0 warnings**. If any fail, fix that before anything else — it means something regressed since the last session, not that the gate is wrong.
 3. Check `git log --oneline -10` and `git status` for what's actually landed vs. what this file claims.
 4. Pick the next item based on what's actually being asked right now — this file is context for good decisions, not a queue to execute blindly without checking in with whoever you're working for.
 5. When you're done, update this file's relevant section(s) — status, known issues, backlog — before ending your session, so the next session (whoever/whatever it is) doesn't start from behind.
+
+**One habit that has repeatedly paid off here, worth adopting:** when you fix something, try to prove the fix matters by deliberately reintroducing the bug and confirming a test or a measurement catches it, then restoring. Several "fixes" in this codebase's history were verified only by reading the code and turned out to do nothing — a `motion` `animate` prop that silently no-opped, a Tailwind arbitrary value with a comma that never compiled, an `innerText` check that returned empty in a headless pane and made a working feature look broken four times running. If you cannot verify something, say so plainly rather than reporting it as done.
