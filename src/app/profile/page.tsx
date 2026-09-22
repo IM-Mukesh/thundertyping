@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ProfileClient } from "@/components/profile/profile-client";
-import { AdSlot } from "@/components/layout/ad-slot";
 
 export const metadata: Metadata = {
   title: "Your Profile",
@@ -29,7 +28,8 @@ export default function ProfilePage() {
 
       <ProfileClient />
 
-      <AdSlot id="profile-footer" format="horizontal" />
+      {/* No ad slot of its own -- SiteFooter (every route) already carries
+          one directly below this page's content. Same fix as ContentPage. */}
     </div>
   );
 }

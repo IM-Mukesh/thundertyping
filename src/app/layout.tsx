@@ -52,6 +52,14 @@ export const metadata: Metadata = {
 // first paint instead of flashing the default dark theme.
 const THEME_INIT_SCRIPT = `(function(){try{var r=localStorage.getItem("thundertyping-settings");var t="dark";if(r){var p=JSON.parse(r);if(p&&p.state&&p.state.theme)t=p.state.theme;}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`;
 
+// Loads AdSense's own script once, in the document head, only when a real
+// client id is configured -- AdSlot's individual <ins> tags render nothing
+// without this (they push to window.adsbygoogle, but nothing is listening
+// until this script has run). Absent the env var, this renders nothing at
+// all, same as every AdSlot -- the site stays exactly as it is today until
+// someone sets NEXT_PUBLIC_ADSENSE_CLIENT_ID.
+const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -62,6 +70,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {adsenseClientId && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider>

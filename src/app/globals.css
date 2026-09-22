@@ -70,6 +70,28 @@
   --border: #332723;
 }
 
+/* Lesson finger colors -- one hue per finger, used by the virtual keyboard
+   and hand diagram on /lessons. Deliberately theme-INVARIANT (defined once,
+   not per [data-theme] block): these are categorical labels ("this is the
+   pinky's color"), not thematic decoration, so they should mean the same
+   thing across a theme switch the same way a legend in a chart wouldn't
+   recolor itself. Tailwind's 500-shade values are used because that shade is
+   built to hold contrast on both a near-white (Light theme) and a near-black
+   (Dark/Midnight/Forest/Sunset) background -- still worth checking by eye
+   against Light specifically, since baked colors in this codebase have
+   repeatedly turned out to only actually work on Dark. */
+:root {
+  --finger-left-pinky: #0ea5e9;
+  --finger-left-ring: #8b5cf6;
+  --finger-left-middle: #d946ef;
+  --finger-left-index: #f43f5e;
+  --finger-right-index: #f97316;
+  --finger-right-middle: #eab308;
+  --finger-right-ring: #22c55e;
+  --finger-right-pinky: #14b8a6;
+  --finger-thumb: #94a3b8;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -80,6 +102,15 @@
   --color-correct: var(--correct);
   --color-error: var(--error);
   --color-border: var(--border);
+  --color-finger-left-pinky: var(--finger-left-pinky);
+  --color-finger-left-ring: var(--finger-left-ring);
+  --color-finger-left-middle: var(--finger-left-middle);
+  --color-finger-left-index: var(--finger-left-index);
+  --color-finger-right-index: var(--finger-right-index);
+  --color-finger-right-middle: var(--finger-right-middle);
+  --color-finger-right-ring: var(--finger-right-ring);
+  --color-finger-right-pinky: var(--finger-right-pinky);
+  --color-finger-thumb: var(--finger-thumb);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-jetbrains-mono);
   --font-display: var(--font-orbitron);

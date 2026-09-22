@@ -39,6 +39,15 @@ export function SiteFooter() {
             <Link href="/games" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
               Games
             </Link>
+            <Link href="/lessons" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
+              Lessons
+            </Link>
+            <Link
+              href="/achievements"
+              className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0"
+            >
+              Achievements
+            </Link>
             <Link
               href="/guides/how-to-improve-typing-speed"
               className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0"

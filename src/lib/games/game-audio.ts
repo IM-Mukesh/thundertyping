@@ -12,7 +12,26 @@
 // The context is created lazily on the first real interaction, because
 // browsers refuse to start audio before a user gesture.
 
-type SoundName = "key" | "typo" | "clear" | "combo" | "miss" | "over" | "start";
+type SoundName =
+  | "key"
+  | "typo"
+  | "clear"
+  | "combo"
+  | "miss"
+  | "over"
+  | "start"
+  // Lessons get their own, slightly fuller versions of key/typo/clear/miss
+  // rather than reusing the games' -- those are deliberately subtle because
+  // a fast arcade game fires them constantly; a lesson is slower and more
+  // deliberate, and each keystroke is meant to read as clear feedback, not
+  // background texture. See the comment on the "lesson-key" tone below for
+  // the actual difference. Placeholder synthesis, upgradeable later to real
+  // sampled audio through the same `sound()`/audio-bus.ts path the newer
+  // games use, without lesson-drill.tsx changing at all.
+  | "lesson-key"
+  | "lesson-typo"
+  | "lesson-clear"
+  | "lesson-miss";
 
 let ctx: AudioContext | null = null;
 /** Master gain, so one node mutes everything and keeps overall level sane. */
@@ -105,6 +124,22 @@ const SOUNDS: Record<SoundName, () => void> = {
       tone({ freq, durationMs: 120, type: "triangle", gain: 0.34, delayMs: i * 70 }),
     );
   },
+  // A short high "tick" layered under a lower "thock" -- two tones landing
+  // together read as one percussive click rather than a flat beep, closer to
+  // a real key strike. Noticeably louder than the games' `key` (0.5 body gain
+  // vs 0.32 flat) because a lesson has one keystroke in flight at a time,
+  // where a game can have several sounds competing for attention at once.
+  "lesson-key": () => {
+    const base = 480 + Math.random() * 60;
+    tone({ freq: base * 2.1, durationMs: 16, type: "triangle", gain: 0.22 });
+    tone({ freq: base, durationMs: 42, type: "sine", gain: 0.5 });
+  },
+  "lesson-typo": () => tone({ freq: 170, toFreq: 110, durationMs: 90, type: "square", gain: 0.3 }),
+  "lesson-clear": () => {
+    tone({ freq: 660, toFreq: 990, durationMs: 130, type: "triangle", gain: 0.55 });
+    tone({ freq: 990, toFreq: 1480, durationMs: 150, type: "sine", gain: 0.32, delayMs: 50 });
+  },
+  "lesson-miss": () => tone({ freq: 240, toFreq: 100, durationMs: 320, type: "sawtooth", gain: 0.42 }),
 };
 
 /**

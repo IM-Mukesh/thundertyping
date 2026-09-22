@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Gamepad2, Info, Trophy, User, Zap } from "lucide-react";
+import { Gamepad2, GraduationCap, Trophy, User, Zap } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
 import { LevelBadge } from "@/components/layout/level-badge";
@@ -18,12 +18,18 @@ import { cn } from "@/lib/utils/cn";
  */
 
 const NAV = [
+  { href: "/lessons", label: "Lessons", icon: GraduationCap, always: true },
   { href: "/games", label: "Games", icon: Gamepad2, always: true },
-  { href: "/achievements", label: "Achievements", icon: Trophy, always: true },
   { href: "/profile", label: "Profile", icon: User, always: true },
-  // About is reachable from the footer on every page, so it is the one that
-  // gives way when four icons plus the wordmark will not fit 375px.
-  { href: "/about", label: "About", icon: Info, always: false },
+  // Adding Lessons as a fourth always-visible icon reopened the 375px
+  // budget this header is built to: wordmark + 4 icons + the theme button
+  // measured to 415px, 40px over. Achievements gives way on narrow screens
+  // for that reason -- it's in the footer link row (every page), so it
+  // costs a narrow-screen icon, not a route. About was dropped from the
+  // header entirely (not just narrow screens): it's low-frequency, already
+  // in the footer on every page, and the header reads cleaner without a
+  // fifth destination competing with the four people actually reach for.
+  { href: "/achievements", label: "Achievements", icon: Trophy, always: false },
 ];
 
 export function SiteHeader() {

@@ -6,6 +6,11 @@ interface ContentPageProps {
   children: ReactNode;
 }
 
+// No ad slot of its own -- SiteFooter (rendered globally, on every route)
+// already carries one right below this component's content, so a second one
+// here just stacked two horizontal ad boxes back to back with nothing
+// between them. That's genuinely covered already; "on every page" doesn't
+// need a second placement on these specific ones.
 export function ContentPage({ title, subtitle, children }: ContentPageProps) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-12 sm:px-10">

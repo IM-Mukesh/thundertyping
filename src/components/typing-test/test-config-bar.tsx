@@ -13,6 +13,11 @@ import {
 } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
 
+// Text-only for now, per request -- flip back to true to restore the icons.
+// The icon is still passed through everywhere below, just not rendered, so
+// this is the only line that needs to change to bring them back.
+const SHOW_ICONS = false;
+
 const MODES: { id: TestMode; label: string; icon: ReactNode }[] = [
   { id: "time", label: "Time", icon: <Clock size={14} /> },
   { id: "words", label: "Words", icon: <Type size={14} /> },
@@ -40,17 +45,19 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
 
   const showTextToggles = mode === "time" || mode === "words";
 
+  // One row, split left/right, rather than the mode pills stacked above the
+  // mode-specific options on a second row -- the two groups are different
+  // kinds of choice (what to type vs. how much of it), so left/right reads
+  // as two controls rather than a sequence to read top-to-bottom.
   return (
-    <div className="flex flex-col items-center gap-2 px-2 py-2 text-sm sm:gap-3 sm:px-4 sm:py-3">
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-2 py-2 text-sm sm:justify-between sm:px-4 sm:py-3">
       <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
         {showTextToggles && (
           <>
-            <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation">
-              <AtSign size={14} />
+            <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation" icon={<AtSign size={14} />}>
               punctuation
             </Pill>
-            <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers">
-              <Hash size={14} />
+            <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers" icon={<Hash size={14} />}>
               numbers
             </Pill>
             <span className="h-4 w-px bg-border" aria-hidden="true" />
@@ -62,57 +69,58 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
             active={mode === m.id}
             onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
             ariaLabel={m.label}
+            icon={m.icon}
           >
-            {m.icon}
             {m.label.toLowerCase()}
           </Pill>
         ))}
       </div>
 
-      {mode === "time" && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
-          {TIME_DURATIONS.map((d) => (
-            <Pill key={d} active={timeDuration === d} onClick={() => setTimeDuration(d)} ariaLabel={formatDuration(d)}>
-              {formatDuration(d)}
-            </Pill>
-          ))}
-          <CustomDurationInput
-            value={timeDuration}
-            isCustom={!TIME_DURATIONS.includes(timeDuration)}
-            onApply={setTimeDuration}
-          />
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
+        {mode === "time" && (
+          <>
+            {TIME_DURATIONS.map((d) => (
+              <Pill
+                key={d}
+                active={timeDuration === d}
+                onClick={() => setTimeDuration(d)}
+                ariaLabel={formatDuration(d)}
+              >
+                {formatDuration(d)}
+              </Pill>
+            ))}
+            <CustomDurationInput
+              value={timeDuration}
+              isCustom={!TIME_DURATIONS.includes(timeDuration)}
+              onApply={setTimeDuration}
+            />
+          </>
+        )}
 
-      {mode === "words" && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
-          {WORD_COUNTS.map((w) => (
+        {mode === "words" &&
+          WORD_COUNTS.map((w) => (
             <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
               {w}
             </Pill>
           ))}
-        </div>
-      )}
 
-      {mode === "quote" && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
-          {QUOTE_LENGTHS.map((l) => (
+        {mode === "quote" &&
+          QUOTE_LENGTHS.map((l) => (
             <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
               {l}
             </Pill>
           ))}
-        </div>
-      )}
 
-      {mode === "custom" && (
-        <button
-          type="button"
-          onClick={onOpenCustomText}
-          className="text-xs text-sub underline decoration-dotted hover:text-foreground"
-        >
-          Edit custom text
-        </button>
-      )}
+        {mode === "custom" && (
+          <button
+            type="button"
+            onClick={onOpenCustomText}
+            className="text-xs text-sub underline decoration-dotted hover:text-foreground"
+          >
+            Edit custom text
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -224,11 +232,13 @@ function Pill({
   onClick,
   children,
   ariaLabel,
+  icon,
 }: {
   active: boolean;
   onClick: () => void;
   children: ReactNode;
   ariaLabel: string;
+  icon?: ReactNode;
 }) {
   return (
     <button
@@ -254,6 +264,7 @@ function Pill({
         active ? "text-accent" : "text-sub hover:text-foreground",
       )}
     >
+      {SHOW_ICONS && icon}
       {children}
     </button>
   );

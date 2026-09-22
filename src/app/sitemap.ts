@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo/constants";
+import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 
 // Each route's lastModified is the date its content was actually last
 // changed, set by hand at edit time — not `new Date()` evaluated per
@@ -59,6 +60,18 @@ const routes: {
     changeFrequency: "monthly",
     lastModified: "2026-09-15",
   },
+  { path: "/lessons", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-22" },
+  // Generated rather than hand-listed like the games routes above, only
+  // because all 17 launched on the same day with the same date -- if an
+  // individual lesson's content is edited later, pull its entry out into the
+  // routes array above by hand so its own date can move independently,
+  // instead of bumping this whole block.
+  ...LESSON_LIST.map((lesson) => ({
+    path: `/lessons/${lesson.id}`,
+    priority: 0.6,
+    changeFrequency: "monthly" as const,
+    lastModified: "2026-09-22",
+  })),
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
