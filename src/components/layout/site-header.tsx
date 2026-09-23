@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Gamepad2, GraduationCap, Search, Trophy, User, Zap } from "lucide-react";
+import { Gamepad2, GraduationCap, Search, User, Zap } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { MoreMenu } from "@/components/layout/more-menu";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
 import { LevelBadge } from "@/components/layout/level-badge";
 import { setGameSearchQuery, useGameSearchQuery } from "@/lib/games/game-search-store";
@@ -19,19 +20,18 @@ import { cn } from "@/lib/utils/cn";
  * placeholder is worse than one that is not there.
  */
 
+// Wordmark + 4 always-visible pills + the theme button measured to 415px on
+// a 375px viewport, 40px over budget -- so only the three destinations
+// people reach for most (Lessons, Games, Profile) get a permanent pill.
+// Everything else (Achievements, Vocabulary, and any future feature page)
+// lives in MoreMenu instead: one icon that costs the same width regardless
+// of how many destinations it holds, rather than each new page reopening
+// this same budget fight. About stays out of both -- low-frequency, already
+// in the footer on every page.
 const NAV = [
-  { href: "/lessons", label: "Lessons", icon: GraduationCap, always: true },
-  { href: "/games", label: "Games", icon: Gamepad2, always: true },
-  { href: "/profile", label: "Profile", icon: User, always: true },
-  // Adding Lessons as a fourth always-visible icon reopened the 375px
-  // budget this header is built to: wordmark + 4 icons + the theme button
-  // measured to 415px, 40px over. Achievements gives way on narrow screens
-  // for that reason -- it's in the footer link row (every page), so it
-  // costs a narrow-screen icon, not a route. About was dropped from the
-  // header entirely (not just narrow screens): it's low-frequency, already
-  // in the footer on every page, and the header reads cleaner without a
-  // fifth destination competing with the four people actually reach for.
-  { href: "/achievements", label: "Achievements", icon: Trophy, always: false },
+  { href: "/lessons", label: "Lessons", icon: GraduationCap },
+  { href: "/games", label: "Games", icon: Gamepad2 },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 function GameSearchInput() {
@@ -98,7 +98,7 @@ export function SiteHeader() {
       </Link>
 
       <nav className="flex min-w-0 items-center gap-0.5 sm:gap-1">
-        {NAV.map(({ href, label, icon: Icon, always }) => {
+        {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -106,8 +106,7 @@ export function SiteHeader() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg font-display text-[11px] font-medium uppercase tracking-wider transition-colors sm:min-h-9 sm:min-w-0 sm:px-3",
-                always ? "flex" : "hidden sm:flex",
+                "flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg font-display text-[11px] font-medium uppercase tracking-wider transition-colors sm:min-h-9 sm:min-w-0 sm:px-3",
                 active
                   ? "bg-accent/15 text-accent"
                   : "text-sub hover:bg-sub-alt hover:text-foreground",
@@ -115,13 +114,14 @@ export function SiteHeader() {
             >
               <Icon size={15} aria-hidden="true" />
               {/* One label element, not two. It is visually hidden on narrow
-                  screens -- where four labels will not fit beside the wordmark
+                  screens -- where three labels will not fit beside the wordmark
                   -- but stays in the accessibility tree at every size. */}
               <span className="sr-only sm:not-sr-only">{label}</span>
             </Link>
           );
         })}
         {onGamesPage && <GameSearchInput />}
+        <MoreMenu />
         <ThemeSwitcher />
         <LevelBadge />
       </nav>
