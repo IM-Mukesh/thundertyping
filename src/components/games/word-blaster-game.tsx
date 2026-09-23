@@ -483,11 +483,14 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
                 <span
                   className={cn(
                     "rounded-md border bg-background/80 px-1.5 py-0.5 font-mono text-sm font-semibold tracking-tight backdrop-blur-[1px] sm:text-lg",
-                    isTarget
-                      ? "border-accent text-accent arcade-glow"
-                      : inDanger
-                        ? "border-error/60 text-error"
-                        : "border-border/60 text-foreground",
+                    // The border/glow signals "locked in"; text colour is
+                    // reserved for "this character is typed" and must never
+                    // apply to the whole word, or the untyped remainder
+                    // (which owns no colour of its own) inherits it and the
+                    // entire word reads as "done" after just one keystroke —
+                    // leaving only a faint underline to show what's left.
+                    isTarget ? "border-accent arcade-glow" : inDanger ? "border-error/60" : "border-border/60",
+                    inDanger ? "text-error" : "text-foreground",
                   )}
                 >
                   {matched > 0 && (
