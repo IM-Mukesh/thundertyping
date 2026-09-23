@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { Flame, Gamepad2, Star, Trophy } from "lucide-react";
+import { Gamepad2, Layers, Star, Trophy } from "lucide-react";
+import { GAME_LIST } from "@/lib/games/game-types";
 import {
   levelProgress,
   profileServerSnapshot,
@@ -10,15 +11,21 @@ import {
   subscribeProfile,
 } from "@/lib/profile/player-profile";
 
+// Site facts (never change per-player) alongside the two genuinely personal
+// figures. Computed once at module scope, not per render -- GAME_LIST is
+// static data.
+const GAME_COUNT = GAME_LIST.length;
+const GAME_MODE_COUNT = new Set(GAME_LIST.map((g) => g.category)).size;
+
 /**
  * The player's own figures, in the slot a mockup would put "125,432 active
  * players" in.
  *
- * That number would be fabricated: this site has no backend and no accounts, so
- * there is nothing to count. Publishing an invented player count is dishonest to
- * the reader and a real risk in an ad-network review, where inflated traffic
- * claims are exactly what gets a site rejected. These are all things the profile
- * actually knows.
+ * A global player count or ranking would be fabricated: this site has no
+ * backend and no accounts, so there is nothing to count. Publishing an
+ * invented number is dishonest to the reader and a real risk in an ad-network
+ * review, where inflated traffic claims are exactly what gets a site
+ * rejected. Achievements and level/XP are real, local, and actually known.
  *
  * Renders a zeroed state on the server and fills in after mount, because the
  * profile lives in localStorage and reading it during render would desync
@@ -35,61 +42,36 @@ export function PlayerSummary() {
     readProfileRaw,
     profileServerSnapshot,
   );
-  const profile = useMemo(() => (raw === null ? null : parseProfile(raw)), [raw]);
-
-  const xp = profile?.xp ?? 0;
-  const { level, into, needed, fraction } = levelProgress(xp);
-  const runs = profile
-    ? Object.values(profile.stats).reduce((n, s) => n + (s.runs ?? 0), 0)
-    : 0;
-  const achievements = profile ? Object.keys(profile.achievements).length : 0;
-  const streak = profile?.streak.count ?? 0;
+  const profile = useMemo(() => parseProfile(raw), [raw]);
+  const { level, into, needed } = levelProgress(profile.xp);
+  const achievements = Object.keys(profile.achievements).length;
 
   const stats = [
-    { icon: Star, label: "Level", value: level.toLocaleString() },
-    { icon: Gamepad2, label: "Runs played", value: runs.toLocaleString() },
-    { icon: Trophy, label: "Achievements", value: achievements.toLocaleString() },
-    { icon: Flame, label: "Day streak", value: streak.toLocaleString() },
+    { icon: Gamepad2, value: GAME_COUNT.toLocaleString(), label: "Games" },
+    { icon: Layers, value: GAME_MODE_COUNT.toLocaleString(), label: "Game modes" },
+    { icon: Trophy, value: achievements.toLocaleString(), label: "Achievements" },
+    {
+      icon: Star,
+      value: `${into.toLocaleString()}/${needed.toLocaleString()} XP`,
+      label: `Level ${level}`,
+    },
   ];
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-3 rounded-xl border border-border bg-background/60 p-4 backdrop-blur-sm">
-      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-wider">
-        <span className="text-sub">Your progress</span>
-        <span className="tabular-nums text-accent">
-          {into.toLocaleString()} / {needed.toLocaleString()} XP
-        </span>
-      </div>
-
-      <div
-        className="h-1.5 w-full overflow-hidden rounded-full bg-sub-alt"
-        role="progressbar"
-        aria-valuenow={Math.round(fraction * 100)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`Level ${level} progress`}
-      >
-        <div
-          className="h-full bg-accent transition-[width] duration-500"
-          style={{ width: `${fraction * 100}%` }}
-        />
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
-        {stats.map(({ icon: Icon, label, value }) => (
-          <div key={label} className="flex items-center gap-2">
-            <Icon size={14} className="shrink-0 text-accent" aria-hidden="true" />
-            <div className="min-w-0">
-              <dd className="font-mono text-sm font-bold tabular-nums text-foreground">
-                {value}
-              </dd>
-              <dt className="truncate font-mono text-[10px] uppercase tracking-wide text-sub">
-                {label}
-              </dt>
-            </div>
+    <dl className="flex flex-wrap items-center gap-x-7 gap-y-3">
+      {stats.map(({ icon: Icon, value, label }) => (
+        <div key={label} className="flex items-center gap-2">
+          <Icon size={16} className="shrink-0 text-accent" aria-hidden="true" />
+          <div className="min-w-0 leading-tight">
+            <dd className="font-mono text-sm font-bold tabular-nums text-foreground">
+              {value}
+            </dd>
+            <dt className="truncate font-mono text-[10px] uppercase tracking-wide text-sub">
+              {label}
+            </dt>
           </div>
-        ))}
-      </dl>
-    </div>
+        </div>
+      ))}
+    </dl>
   );
 }

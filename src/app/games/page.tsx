@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Keyboard, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Compass, Keyboard, Sparkles, Zap } from "lucide-react";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { getArt, getGameArt, getHubHeroArt } from "@/lib/games/game-art-assets";
 import { GameHubFilters } from "@/components/games/game-hub-filters";
@@ -24,6 +24,8 @@ export default function GamesHubPage() {
   // getArt takes plain strings, unlike getGameArt which is keyed to GameId.
   // Resolves public/games/hub-footer.webp when it exists.
   const footerArt = getArt("hub", "footer");
+  // Resolves public/games/games-cta-banner.webp when it exists.
+  const ctaArt = getArt("games", "cta-banner");
   const featured = GAME_LIST.find((g) => g.featured) ?? GAME_LIST[0];
 
   // Art is resolved on the server -- getGameArt reads the filesystem at build
@@ -53,18 +55,42 @@ export default function GamesHubPage() {
               // artefacts are invisible and this stops being the heaviest
               // asset on the page.
               quality={45}
-              className="object-cover object-center opacity-70"
+              className="object-cover opacity-70"
+              // The hero section is shorter (relative to its width) than
+              // this artwork, so `cover` crops roughly 14% off both left and
+              // right edges. This artwork's subject sits right-of-center, so
+              // an object-center crop kept the visually rich part (subject +
+              // portal) hugging the right edge and cropped mostly-empty sky
+              // off the left -- leaving a flat, unfilled-looking left two
+              // thirds. Biasing the crop window rightward keeps more of the
+              // subject in frame instead.
+              style={{ objectPosition: "72% 42%" }}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/55 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60" />
           <div className="absolute inset-0 arcade-grid opacity-25" />
         </div>
 
+        {/* Floating pull-quote over the art. Purely atmospheric copy (not a
+            claim about anything measurable), so it carries no data and needs
+            no source -- unlike PlayerSummary below it, which only ever shows
+            real, locally-tracked numbers. Hidden below lg: the art itself is
+            de-emphasized on narrow screens and there's no room to float
+            anything over it without colliding with the stats row. */}
+        <blockquote className="pointer-events-none absolute bottom-10 right-10 z-10 hidden max-w-xs rounded-xl border border-border/60 bg-background/70 px-5 py-4 text-right backdrop-blur-sm lg:block">
+          <p className="font-display text-sm italic leading-snug text-foreground">
+            &ldquo;Every keystroke makes you stronger.&rdquo;
+          </p>
+          <footer className="mt-2 font-display text-[10px] uppercase tracking-[0.3em] text-accent">
+            — ThunderTyping
+          </footer>
+        </blockquote>
+
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-6 py-14 sm:px-10 sm:py-20">
           <span className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/5 px-3.5 py-1.5 font-display text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             <Zap size={12} aria-hidden="true" />
-            Welcome to
+            Games
           </span>
 
           <h1 className="max-w-3xl font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
@@ -74,13 +100,13 @@ export default function GamesHubPage() {
           </h1>
 
           <p className="font-display text-[11px] font-medium uppercase tracking-[0.35em] text-sub sm:text-xs">
-            Type · Play · Level up · Be legendary
+            Type. Play. Level up. Be legendary.
           </p>
 
           <p className="max-w-xl text-sm leading-relaxed text-sub sm:text-base">
-            Ten games, one skill. Improve your typing while exploring worlds,
-            battling enemies, racing rivals and building decks — every one of
-            them driven entirely by what you type.
+            Turn your typing practice into an adventure. Explore different
+            worlds, battle enemies, race against time and build real typing
+            skills — all while having fun.
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -92,7 +118,7 @@ export default function GamesHubPage() {
                   "drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 70%, transparent))",
               }}
             >
-              Play {featured.name}
+              Start playing
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
             <Link
@@ -100,13 +126,14 @@ export default function GamesHubPage() {
               className="flex h-12 items-center gap-2 rounded-lg border border-border px-6 font-display text-xs uppercase tracking-[0.14em] text-sub transition-colors hover:border-accent hover:text-foreground"
             >
               <Keyboard size={14} aria-hidden="true" />
-              Take the speed test
+              Take a speed test
             </Link>
           </div>
 
           {/* Real numbers only. There is no backend and no user accounts, so a
-              global player count here would be invented -- these are the
-              player's own figures, and read as zeroes until they play. */}
+              global player count here would be invented -- two of these four
+              are static site facts (game/mode counts), the other two are the
+              player's own figures, read as zeroes until they play. */}
           <PlayerSummary />
         </div>
       </section>
@@ -116,8 +143,60 @@ export default function GamesHubPage() {
           <AdSlot id="games-hub-leaderboard" format="horizontal" />
         </div>
 
-        <h2 className="sr-only">All typing games</h2>
+        <h2 id="all-games" className="sr-only scroll-mt-24">All typing games</h2>
         <GameHubFilters games={[...GAME_LIST]} art={art} characters={characters} />
+
+        {/* Promo strip pointing back at the grid above. Text lives in the
+            gradient's dark two-thirds by design -- the art is anchored left,
+            same crop logic as the hero -- so it reads at any viewport without
+            the copy ever sitting on top of the busiest part of the image. */}
+        <section className="relative mt-16 overflow-hidden rounded-2xl border border-accent/25">
+          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-sub-alt/40">
+            {ctaArt && (
+              <Image
+                src={ctaArt}
+                alt=""
+                fill
+                sizes="100vw"
+                quality={60}
+                className="object-cover object-left opacity-70"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/85 to-background" />
+          </div>
+          <div className="flex flex-col items-start gap-4 px-6 py-10 sm:px-10 sm:py-12 md:flex-row md:items-center md:justify-between">
+            {/* A directional gradient alone wasn't reliable here -- the
+                generated art's subject sits wider/more central than a plain
+                left-edge silhouette, so it could still show through under the
+                copy at some viewport widths. A solid backdrop behind the text
+                itself guarantees contrast regardless of what any future
+                replacement image looks like. */}
+            <div className="max-w-xl rounded-xl bg-background/80 p-4 backdrop-blur-sm sm:p-5">
+              <span className="mb-3 flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-background/70 px-3 py-1 font-display text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+                <Compass size={12} aria-hidden="true" />
+                Not sure where to start?
+              </span>
+              <h2 className="mb-2 font-display text-2xl font-extrabold uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
+                Find your perfect game
+              </h2>
+              <p className="text-sm leading-relaxed text-sub sm:text-base">
+                Quick games for focus. Epic games for progress. Every game
+                improves your typing.
+              </p>
+            </div>
+            <Link
+              href="#all-games"
+              className="btn-chevron flex h-12 shrink-0 items-center gap-2 bg-accent px-8 font-display text-xs font-bold uppercase tracking-[0.16em] text-background transition-[filter] duration-200 hover:brightness-110"
+              style={{
+                filter:
+                  "drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 70%, transparent))",
+              }}
+            >
+              Explore games
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
 
         {/* Mission briefing rather than an article box: corner ticks, a rule
             under the heading and a HUD label, so it reads as part of the same
@@ -172,11 +251,11 @@ export default function GamesHubPage() {
             </p>
           </div>
         </section>
-
-        <div className="mt-14">
-          <AdSlot id="games-hub-footer" format="horizontal" />
-        </div>
       </div>
+
+      {/* No ad slot here -- SiteFooter (every page) already renders one
+          right below this, and stacking a second right above it is the exact
+          duplicate-ad-slot mistake already fixed once on content-page.tsx. */}
 
       {/* Footer band. Falls back to a plain rule when the art is absent, so a
           missing file is a quieter page rather than a broken one. */}

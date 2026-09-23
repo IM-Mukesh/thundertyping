@@ -5,6 +5,7 @@ import { Gamepad2, Grid3x3, Swords, Flag, Brain } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { GameHubCard } from "@/components/games/game-hub-card";
 import { SortControl } from "@/components/games/sort-control";
+import { useGameSearchQuery } from "@/lib/games/game-search-store";
 import { cn } from "@/lib/utils/cn";
 
 type Category = GameDefinition["category"];
@@ -40,7 +41,11 @@ export function GameHubFilters({
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("featured");
+  const searchQuery = useGameSearchQuery();
 
+  // Counts stay against the full list, not the search results -- the tabs
+  // answer "how many games are in this category", not "how many currently
+  // match", so they don't flicker between two different meanings as you type.
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: games.length };
     for (const g of games) map[g.category] = (map[g.category] ?? 0) + 1;
@@ -48,7 +53,12 @@ export function GameHubFilters({
   }, [games]);
 
   const visible = useMemo(() => {
-    const list = games.filter((g) => filter === "all" || g.category === filter);
+    const q = searchQuery.trim().toLowerCase();
+    const list = games.filter((g) => {
+      if (filter !== "all" && g.category !== filter) return false;
+      if (!q) return true;
+      return g.name.toLowerCase().includes(q) || g.tagline.toLowerCase().includes(q);
+    });
     const sorted = [...list];
     if (sort === "name") {
       sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -62,7 +72,7 @@ export function GameHubFilters({
       );
     }
     return sorted;
-  }, [games, filter, sort]);
+  }, [games, filter, sort, searchQuery]);
 
   return (
     <>
@@ -148,7 +158,7 @@ export function GameHubFilters({
 
       {visible.length === 0 && (
         <p className="py-12 text-center font-mono text-sm text-sub">
-          No games in that category yet.
+          {searchQuery.trim() ? `No games match "${searchQuery.trim()}".` : "No games in that category yet."}
         </p>
       )}
     </>
