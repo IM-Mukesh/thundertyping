@@ -8,15 +8,42 @@ import type { GameDefinition, GameId, GameStatus } from "@/lib/games/game-types"
 // a game with a different mechanic keeps its own state shape and tuning in its
 // own module the same way.
 
+/**
+ * Normal is the vast majority of spawns. Elite trades a longer, harder word
+ * for a bigger reward; golden is a rare bonus on an ordinary-length word.
+ * Deliberately just two variants beyond normal — enough to create real
+ * priority decisions ("save the golden one first") without needing the
+ * player to learn a whole bestiary of falling-object types.
+ */
+export type WordKind = "normal" | "elite" | "golden";
+
 export interface FallingWord {
   id: number;
   text: string;
+  kind: WordKind;
   /** 0 = just spawned at the ceiling, 1 = reached the floor. */
   progress: number;
   /** Milliseconds this particular word takes to fall, fixed at spawn. */
   fallMs: number;
   /** Horizontal lane index, so words don't overlap each other. */
   lane: number;
+}
+
+/**
+ * A destroyed word, kept around just long enough for the UI to draw a
+ * particle burst and a damage-style number at the spot it died — same
+ * pattern as Word Blaster's `HitEffect` and Boss Battle's hit timers: state
+ * that ages itself out on the engine's own tick rather than component state
+ * driven by AnimatePresence, which has been observed in this project failing
+ * to unmount rapidly re-keyed children.
+ */
+export interface DestroyEffect {
+  seq: number;
+  lane: number;
+  progress: number;
+  points: number;
+  kind: WordKind;
+  bornMs: number;
 }
 
 export interface GameState {
@@ -36,6 +63,13 @@ export interface GameState {
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   elapsedMs: number;
+  destroyed: DestroyEffect[];
+  /** `elapsedMs` of the most recent miss, for the impact flash. */
+  lastMissMs: number | null;
+  /** Builds on clean clears, spends itself into Overdrive at 100. */
+  fever: number;
+  /** While positive: words spawn falling slower and score more. */
+  overdriveMs: number;
 }
 
 /** Pacing knobs — the only thing separating the two games on this engine. */
@@ -91,16 +125,64 @@ export const LANE_COUNT = 6;
 /** Cap so a burst of spawns can never make the board unreadable. */
 const MAX_ACTIVE_WORDS = 7;
 
+/** How long a destroy effect stays in state — a whole number of ticks, so it
+ *  expires exactly when the UI's matching CSS animation ends. */
+export const DESTROY_EFFECT_MS = 420;
+const MAX_DESTROY_EFFECTS = 6;
+/** How long the impact flash holds after a miss. */
+export const MISS_FLASH_MS = 400;
+
+// ---------------------------------------------------------------------------
+// Fever / Overdrive
+// ---------------------------------------------------------------------------
+
+const FEVER_MAX = 100;
+const FEVER_PER_CLEAR = 7;
+const FEVER_BONUS_ELITE = 10;
+const FEVER_BONUS_GOLDEN = 14;
+/** Extra fever awarded when a clear also crosses a combo-of-5 milestone. */
+const FEVER_BONUS_COMBO_MILESTONE = 12;
+export const OVERDRIVE_MS = 7000;
+/** Words spawned during Overdrive fall this much slower... */
+const OVERDRIVE_FALL_SCALE = 1.4;
+/** ...and are worth this much more. */
+const OVERDRIVE_SCORE_MULT = 1.5;
+
+// Elite words are simply longer, and the shared word list has no length
+// metadata to filter on directly, so a handful are sampled and the longest
+// kept — same approach Boss Battle's word draw already uses.
+const ELITE_MIN_LENGTH = 7;
+const ELITE_SAMPLES = 6;
+/** Elites only start appearing once the run has some pace to it; golden
+ *  words are a flat-odds bonus from the very first spawn. */
+const ELITE_UNLOCK_AT_CLEARED = 8;
+const ELITE_CHANCE = 0.16;
+const GOLDEN_CHANCE = 0.08;
+
+function pickWordKind(cleared: number): WordKind {
+  if (Math.random() < GOLDEN_CHANCE) return "golden";
+  if (cleared >= ELITE_UNLOCK_AT_CLEARED && Math.random() < ELITE_CHANCE) return "elite";
+  return "normal";
+}
+
+function drawWordFor(kind: WordKind): string {
+  if (kind !== "elite") return generateWords(1, { punctuation: false, numbers: false })[0];
+  const candidates = generateWords(ELITE_SAMPLES, { punctuation: false, numbers: false });
+  const longEnough = candidates.filter((w) => w.length >= ELITE_MIN_LENGTH);
+  const pool = longEnough.length > 0 ? longEnough : candidates;
+  return pool.reduce((a, b) => (b.length > a.length ? b : a));
+}
+
 type GameAction =
   | { type: "START" }
   | { type: "RESET" }
   | { type: "PAUSE" }
   | { type: "RESUME" }
   | { type: "TICK" }
-  | { type: "SPAWN"; text: string; lane: number }
+  | { type: "SPAWN"; text: string; lane: number; kind: WordKind }
   | { type: "SET_TYPED"; value: string };
 
-function createInitialState(definition: GameDefinition): GameState {
+export function createInitialState(definition: GameDefinition): GameState {
   return {
     status: "idle",
     definition,
@@ -116,6 +198,10 @@ function createInitialState(definition: GameDefinition): GameState {
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     elapsedMs: 0,
+    destroyed: [],
+    lastMissMs: null,
+    fever: 0,
+    overdriveMs: 0,
   };
 }
 
@@ -127,7 +213,8 @@ export function currentSpawnMs(state: GameState): number {
 
 function currentFallMs(state: GameState): number {
   const { initialFallMs, minFallMs, fallRampPerClear } = tuningFor(state.definition.id);
-  return Math.max(minFallMs, initialFallMs - state.cleared * fallRampPerClear);
+  const base = Math.max(minFallMs, initialFallMs - state.cleared * fallRampPerClear);
+  return state.overdriveMs > 0 ? Math.round(base * OVERDRIVE_FALL_SCALE) : base;
 }
 
 // Caps at 2x so a long combo stays rewarding without making the early score
@@ -136,8 +223,19 @@ function comboMultiplier(combo: number): number {
   return 1 + Math.min(combo, 10) * 0.1;
 }
 
-function scoreForWord(text: string, combo: number): number {
-  return Math.round(text.length * 10 * comboMultiplier(combo));
+const KIND_SCORE_MULT: Record<WordKind, number> = { normal: 1, elite: 1.8, golden: 3 };
+
+function scoreForWord(text: string, combo: number, kind: WordKind, overdriveActive: boolean): number {
+  const base = text.length * 10 * comboMultiplier(combo) * KIND_SCORE_MULT[kind];
+  return Math.round(overdriveActive ? base * OVERDRIVE_SCORE_MULT : base);
+}
+
+function feverForClear(kind: WordKind, comboAfter: number): number {
+  let gain = FEVER_PER_CLEAR;
+  if (kind === "elite") gain += FEVER_BONUS_ELITE;
+  if (kind === "golden") gain += FEVER_BONUS_GOLDEN;
+  if (comboAfter > 0 && comboAfter % 5 === 0) gain += FEVER_BONUS_COMBO_MILESTONE;
+  return gain;
 }
 
 /**
@@ -168,8 +266,10 @@ function findTarget(words: FallingWord[], value: string, lockedId: number | null
 }
 
 let nextWordId = 0;
+/** React key for a destroy effect — stable for the effect's whole short life. */
+let nextDestroySeq = 0;
 
-function reducer(state: GameState, action: GameAction): GameState {
+export function reducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "START":
       return { ...createInitialState(state.definition), status: "running" };
@@ -189,6 +289,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       const word: FallingWord = {
         id: nextWordId++,
         text: action.text,
+        kind: action.kind,
         progress: 0,
         fallMs: currentFallMs(state),
         lane: action.lane,
@@ -208,7 +309,10 @@ function reducer(state: GameState, action: GameAction): GameState {
       }
 
       const elapsedMs = state.elapsedMs + TICK_MS;
-      if (landed === 0) return { ...state, words: survivors, elapsedMs };
+      const destroyed = state.destroyed.filter((d) => elapsedMs - d.bornMs < DESTROY_EFFECT_MS);
+      const overdriveMs = Math.max(0, state.overdriveMs - TICK_MS);
+
+      if (landed === 0) return { ...state, words: survivors, elapsedMs, destroyed, overdriveMs };
 
       const lives = Math.max(0, state.lives - landed);
       // A landed word may have been the one being typed — drop the lock so the
@@ -218,9 +322,12 @@ function reducer(state: GameState, action: GameAction): GameState {
         ...state,
         words: survivors,
         elapsedMs,
+        destroyed,
+        overdriveMs,
         lives,
         missed: state.missed + landed,
         combo: 0,
+        lastMissMs: elapsedMs,
         typed: lockedStillAlive ? state.typed : "",
         lockedId: lockedStillAlive ? state.lockedId : null,
         status: lives === 0 ? "over" : state.status,
@@ -254,16 +361,39 @@ function reducer(state: GameState, action: GameAction): GameState {
 
       if (target.text === value) {
         const combo = state.combo + 1;
+        const overdriveActive = state.overdriveMs > 0;
+        const points = scoreForWord(target.text, state.combo, target.kind, overdriveActive);
+
+        // Fever builds on every clean clear and is spent the instant it caps —
+        // Overdrive doesn't also refill fever while it's active, so the
+        // reward has a real cost (you have to earn the next one from zero).
+        const feverGain = overdriveActive ? 0 : feverForClear(target.kind, combo);
+        const fever = overdriveActive ? state.fever : Math.min(FEVER_MAX, state.fever + feverGain);
+        const enteringOverdrive = !overdriveActive && fever >= FEVER_MAX;
+
         return {
           ...state,
           words: state.words.filter((w) => w.id !== target.id),
           typed: "",
           lockedId: null,
           cleared: state.cleared + 1,
-          score: state.score + scoreForWord(target.text, state.combo),
+          score: state.score + points,
           combo,
           bestCombo: Math.max(state.bestCombo, combo),
           correctKeystrokes,
+          fever: enteringOverdrive ? 0 : fever,
+          overdriveMs: enteringOverdrive ? OVERDRIVE_MS : state.overdriveMs,
+          destroyed: [
+            ...state.destroyed,
+            {
+              seq: nextDestroySeq++,
+              lane: target.lane,
+              progress: target.progress,
+              points,
+              kind: target.kind,
+              bornMs: state.elapsedMs,
+            },
+          ].slice(-MAX_DESTROY_EFFECTS),
         };
       }
 
@@ -303,12 +433,13 @@ export function useFallingWords(definition: GameDefinition) {
         const current = stateRef.current;
         if (current.status === "running") {
           const active = new Set(current.words.map((w) => w.text));
+          const kind = pickWordKind(current.cleared);
           // Retry a few times to avoid two identical words on screen, which is
           // ambiguous to type against; give up rather than loop forever on a
           // small word list.
-          let text = generateWords(1, { punctuation: false, numbers: false })[0];
+          let text = drawWordFor(kind);
           for (let i = 0; i < 8 && active.has(text); i++) {
-            text = generateWords(1, { punctuation: false, numbers: false })[0];
+            text = drawWordFor(kind);
           }
           if (!active.has(text)) {
             const usedLanes = new Set(current.words.map((w) => w.lane));
@@ -327,7 +458,7 @@ export function useFallingWords(definition: GameDefinition) {
             // collision -- this tick's spawn is simply deferred to the next.
             if (freeLanes.length > 0) {
               const lane = freeLanes[Math.floor(Math.random() * freeLanes.length)];
-              dispatch({ type: "SPAWN", text, lane });
+              dispatch({ type: "SPAWN", text, lane, kind });
             }
           }
         }

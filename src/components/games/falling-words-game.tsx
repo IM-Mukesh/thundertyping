@@ -1,20 +1,40 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Crosshair, Heart, Play, RotateCcw, Target, Trophy, Volume2, VolumeX, Zap } from "lucide-react";
+import Image from "next/image";
+import {
+  Crosshair,
+  Flame,
+  Gauge,
+  Heart,
+  Play,
+  RotateCcw,
+  Target,
+  Trophy,
+  Volume2,
+  VolumeX,
+  Zap,
+} from "lucide-react";
 import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
-import { LANE_COUNT, useFallingWords } from "@/lib/games/use-falling-words";
+import {
+  DESTROY_EFFECT_MS,
+  LANE_COUNT,
+  MISS_FLASH_MS,
+  useFallingWords,
+  type WordKind,
+} from "@/lib/games/use-falling-words";
 import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
 import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import { playSound } from "@/lib/games/game-audio";
+import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
-import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
+import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
-// Board height is set in CSS (shorter on phones, where a keyboard eats half
-// the screen) and every position below is a PERCENTAGE of it. Pixel maths tied
-// the word positions to one fixed height, so the board could never be
-// responsive without the words drifting away from the floor line.
+// Board height is a PERCENTAGE-based layout (see FLOOR_INSET_PCT etc below),
+// so the real pixel height only needs to fit the viewport — clamp() instead
+// of a fixed per-breakpoint value, so it scales to the window instead of
+// overflowing a shorter laptop screen or looking small on a tall monitor.
 const FLOOR_INSET_PCT = 10.5;
 
 /** Words past this fraction are in the danger strip and get a warning colour. */
@@ -26,43 +46,133 @@ const DANGER_FROM = 0.74;
  */
 const LANE_INSET_PCT = 13;
 
-interface FallingWordsGameProps {
-  definition: GameDefinition;
+/** WPM performance bands — purely a colour cue, never gates anything. */
+function wpmBand(wpm: number): { label: string; className: string } {
+  if (wpm >= 100) return { label: "Extreme", className: "text-error" };
+  if (wpm >= 80) return { label: "Elite", className: "text-accent" };
+  if (wpm >= 60) return { label: "Fast", className: "text-correct" };
+  if (wpm >= 40) return { label: "Stable", className: "text-foreground" };
+  return { label: "Warming up", className: "text-sub" };
 }
 
-export function FallingWordsGame({ definition }: FallingWordsGameProps) {
+const KIND_STYLES: Record<WordKind, { text: string; chip: string }> = {
+  normal: { text: "text-foreground", chip: "border-border/60" },
+  elite: { text: "text-error", chip: "border-error/70" },
+  golden: { text: "text-accent", chip: "border-accent" },
+};
+
+/** Milestones are rare (seconds-to-minutes apart), so plain component state
+ *  is fine here — the AnimatePresence-unmount pitfall this codebase has hit
+ *  before only bites state that re-keys several times a second, which this
+ *  never does. */
+const TIME_MILESTONES_MS = [30_000, 60_000, 120_000, 180_000, 300_000, 600_000];
+const CLEARED_MILESTONES = [100, 250, 500, 1000];
+const SCORE_MILESTONES = [5000, 10_000, 25_000, 50_000];
+
+function formatMs(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+interface FallingWordsGameProps {
+  definition: GameDefinition;
+  art?: Record<string, string | null>;
+}
+
+export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
+  const bgArt = art?.hero ?? art?.cover ?? null;
+  const playerArt = art?.["char-fg"] ?? null;
+
   // `start` already rebuilds the initial state, so "Play again" needs it
   // rather than a separate reset.
   const { state, start, resume, setTyped } = useFallingWords(definition);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Lazy initialiser rather than a mount effect: this component only ever
-  // renders client-side (its wrapper is next/dynamic with ssr:false), so
-  // localStorage is guaranteed available and there's no server pass to
-  // reconcile. One game per route, so re-reading on id change isn't a case.
   const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
   const [isNewBest, setIsNewBest] = useState(false);
 
-  // Reuses the existing persisted `soundEnabled` setting, which until now had
-  // nothing wired to it, so the preference carries across games and sessions.
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
 
-  // Sounds are driven off state transitions rather than fired inline from
-  // handlers, so every path that changes the game (a keystroke, a word landing
-  // on the tick, an auto game-over) gets audio without each one remembering to
-  // play it.
-  const prevRef = useRef({ correct: 0, incorrect: 0, cleared: 0, missed: 0, combo: 0 });
+  const now = state.elapsedMs;
+  const missFlash = state.lastMissMs !== null && now - state.lastMissMs < MISS_FLASH_MS;
+  const overdriveActive = state.overdriveMs > 0;
+
+  // ---- live performance ----------------------------------------------------
+
+  const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
+  const wpm = round(calculateNetWpm(state.correctKeystrokes, Math.max(state.elapsedMs, 1000)));
+  const band = wpmBand(wpm);
+
+  // ---- milestones ------------------------------------------------------
+
+  const [milestone, setMilestone] = useState<string | null>(null);
+  const milestoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seenTimeRef = useRef(new Set<number>());
+  const seenClearedRef = useRef(new Set<number>());
+  const seenScoreRef = useRef(new Set<number>());
+
+  const announceMilestone = useCallback((text: string) => {
+    setMilestone(text);
+    if (milestoneTimerRef.current) clearTimeout(milestoneTimerRef.current);
+    milestoneTimerRef.current = setTimeout(() => setMilestone(null), 2200);
+    sound("chest-open", soundEnabled);
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    if (state.status !== "running") return;
+    for (const t of TIME_MILESTONES_MS) {
+      if (state.elapsedMs >= t && !seenTimeRef.current.has(t)) {
+        seenTimeRef.current.add(t);
+        announceMilestone(`${formatMs(t)} survived`);
+      }
+    }
+    for (const c of CLEARED_MILESTONES) {
+      if (state.cleared >= c && !seenClearedRef.current.has(c)) {
+        seenClearedRef.current.add(c);
+        announceMilestone(`${c} targets destroyed`);
+      }
+    }
+    for (const sc of SCORE_MILESTONES) {
+      if (state.score >= sc && !seenScoreRef.current.has(sc)) {
+        seenScoreRef.current.add(sc);
+        announceMilestone(`${sc.toLocaleString()} score`);
+      }
+    }
+  }, [state.status, state.elapsedMs, state.cleared, state.score, announceMilestone]);
+
+  // ---- audio ----------------------------------------------------------
+
+  const prevRef = useRef({
+    correct: 0,
+    incorrect: 0,
+    cleared: 0,
+    missed: 0,
+    combo: 0,
+    overdriveActive: false,
+  });
   useEffect(() => {
     const prev = prevRef.current;
     const s = state;
 
     if (s.correctKeystrokes > prev.correct) playSound("key", soundEnabled);
     if (s.incorrectKeystrokes > prev.incorrect) playSound("typo", soundEnabled);
-    if (s.cleared > prev.cleared) playSound("clear", soundEnabled);
-    if (s.missed > prev.missed) playSound("miss", soundEnabled);
+    if (s.cleared > prev.cleared) {
+      playSound("clear", soundEnabled);
+      sound("enemy-death", soundEnabled, { vary: 70 });
+    }
+    if (s.missed > prev.missed) {
+      playSound("miss", soundEnabled);
+      sound("player-hurt", soundEnabled, { volume: 0.5 });
+    }
     // Milestone only — a chime on every single clear would be exhausting.
-    if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) playSound("combo", soundEnabled);
+    if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) {
+      playSound("combo", soundEnabled);
+      sound("combo-milestone", soundEnabled);
+    }
+    if (s.overdriveMs > 0 && !prev.overdriveActive) sound("level-up", soundEnabled);
 
     prevRef.current = {
       correct: s.correctKeystrokes,
@@ -70,6 +180,7 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
       cleared: s.cleared,
       missed: s.missed,
       combo: s.combo,
+      overdriveActive: s.overdriveMs > 0,
     };
   }, [state, soundEnabled]);
 
@@ -97,9 +208,9 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
     setIsNewBest(newBest);
     setBest(stored);
     playSound("over", soundEnabled);
+    if (newBest) sound("new-record", soundEnabled);
     // Every game must feed the cross-game profile, or "play every game"
-    // (site:all-games) can never be earned no matter how much is played --
-    // this was previously missing on 6 of the 10 games, this one included.
+    // (site:all-games) can never be earned no matter how much is played.
     bumpStat(definition.id, "runs");
     awardXp(Math.round(state.score / 10) + state.cleared * 3);
     checkSiteAchievements(GAME_LIST.map((g) => g.id));
@@ -109,6 +220,9 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
 
   const handleStart = useCallback(() => {
     setIsNewBest(false);
+    seenTimeRef.current.clear();
+    seenClearedRef.current.clear();
+    seenScoreRef.current.clear();
     // Also the user gesture that unlocks the audio context, so the first
     // keystroke of a run is already audible.
     playSound("start", soundEnabled);
@@ -116,81 +230,51 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
     focusInput();
   }, [start, focusInput, soundEnabled]);
 
-  const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
   const seconds = Math.round(state.elapsedMs / 1000);
   const headline = definition.scoreBy === "time" ? `${seconds}` : state.score.toLocaleString();
   const isPlaying = state.status === "running";
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-3">
-      {/*
-        In-play chrome is numbers and icons only — no word labels. Everything
-        here is still announced to screen readers through aria-label, so
-        dropping the visible text costs nothing in accessibility.
-      */}
-      <div className="flex items-center justify-between gap-4 font-mono">
-        <span
-          className="text-3xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
-          aria-label={definition.scoreBy === "time" ? `${seconds} seconds survived` : `Score ${state.score}`}
-        >
-          {headline}
-          {definition.scoreBy === "time" && <span className="text-xl text-accent/70">s</span>}
-        </span>
-
-        <div className="flex items-center gap-4 text-sm text-sub">
-          <Stat icon={<Target size={13} />} value={state.cleared} label={`${state.cleared} words cleared`} />
-          <Stat icon={<Crosshair size={13} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
-
-          <span
-            className={cn(
-              "flex w-14 items-center justify-end gap-1 tabular-nums transition-opacity",
-              state.combo > 1 ? "text-accent opacity-100" : "opacity-0",
-            )}
-            aria-label={state.combo > 1 ? `Combo ${state.combo}` : undefined}
-          >
-            <Zap size={13} />
-            {state.combo}x
-          </span>
-
-          <span
-            className="flex items-center gap-1"
-            aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
-          >
-            {Array.from({ length: definition.lives }, (_, i) => (
-              <Heart
-                key={i}
-                size={15}
-                className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
-                fill={i < state.lives ? "currentColor" : "none"}
-              />
-            ))}
-          </span>
-
-          <button
-            type="button"
-            onClick={toggleSound}
-            aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
-            title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
-          >
-            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-          </button>
-        </div>
-      </div>
-
+    <div className="flex w-full max-w-4xl flex-col gap-3">
       <div
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:340px] sm:[--board-h:440px]"
-        style={{ height: "var(--board-h)" }}
+        className={cn(
+          "relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge",
+          overdriveActive && "border-accent",
+        )}
+        style={{ height: "clamp(440px, 76vh, 720px)" }}
       >
-        <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
-        <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
-
-        {/* Danger strip: the closer a word gets, the more this reads as a threat. */}
+        {bgArt && (
+          <Image
+            src={bgArt}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 1000px"
+            quality={60}
+            className={cn("object-cover transition-[opacity,filter] duration-500", overdriveActive ? "opacity-90 saturate-150" : "opacity-55")}
+          />
+        )}
+        <div aria-hidden="true" className="absolute inset-0 arcade-scanlines opacity-30" />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 arcade-danger"
-          style={{ height: `${FLOOR_INSET_PCT + 7}%` }}
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/25 to-background/55"
+        />
+
+        {/* Overdrive tint — a warm gold wash across the whole sky while it's active. */}
+        {overdriveActive && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+            style={{ background: "linear-gradient(to bottom, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%)" }}
+          />
+        )}
+
+        {/* Impact flash — the ground floods red the instant something lands. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 arcade-danger transition-opacity duration-200"
+          style={{ height: `${FLOOR_INSET_PCT + 7}%`, opacity: missFlash ? 1 : 0.5 }}
         />
         <div
           aria-hidden="true"
@@ -198,45 +282,190 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
           style={{ top: `${100 - FLOOR_INSET_PCT + 5.5}%` }}
         />
 
-        {state.words.map((word) => {
-          const isTarget = word.id === state.lockedId;
-          const matched = isTarget ? state.typed.length : 0;
-          const inDanger = word.progress >= DANGER_FROM;
-          return (
-            <span
-              key={word.id}
-              className={cn(
-                "absolute whitespace-nowrap font-mono text-lg tracking-tight transition-[top] ease-linear sm:text-2xl",
-                isTarget
-                  ? "text-foreground arcade-glow-soft"
-                  : inDanger
-                    ? "text-error/90"
-                    : "text-sub",
-              )}
-              style={{
-                // Matches the engine tick so stepped updates read as continuous
-                // motion without running the loop at frame rate.
-                transitionDuration: "50ms",
-                top: `${word.progress * (100 - FLOOR_INSET_PCT)}%`,
-                // Lanes are inset rather than spanning the full width. Words
-                // are centred on their lane, so an outer-lane word used to
-                // extend past the board edge and get clipped — a 58px word in
-                // a 52px lane on a 309px phone board. Keeping lane centres
-                // away from the edges leaves room for the widest words.
-                left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / LANE_COUNT)}%`,
-                transform: "translateX(-50%)",
-              }}
+        {/* ---------------------------------------------------------- HUD */}
+        <div className="relative z-10 flex h-full flex-col p-3 sm:p-4">
+          {/* Top stat row — every value here is real game state. */}
+          <div className="flex items-start justify-between gap-2 font-mono">
+            <div className="flex flex-col gap-1">
+              <span
+                className="text-2xl font-bold tabular-nums text-accent arcade-glow sm:text-3xl"
+                aria-label={definition.scoreBy === "time" ? `${seconds} seconds survived` : `Score ${state.score}`}
+              >
+                {headline}
+                {definition.scoreBy === "time" && <span className="text-lg text-accent/70">s</span>}
+              </span>
+              <span
+                className="flex items-center gap-1"
+                aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
+              >
+                {Array.from({ length: definition.lives }, (_, i) => (
+                  <Heart
+                    key={i}
+                    size={14}
+                    className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
+                    fill={i < state.lives ? "currentColor" : "none"}
+                  />
+                ))}
+              </span>
+            </div>
+
+            {/* The performance panel — WPM is the headline metric here, never
+                buried in a results screen. */}
+            <div className="flex flex-col items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-sm">
+              <span className={cn("text-xl font-bold tabular-nums transition-colors sm:text-2xl", band.className)}>
+                {wpm}
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-wider text-sub">wpm · {band.label}</span>
+            </div>
+
+            <div className="flex flex-col items-end gap-1 text-xs text-sub">
+              <Stat icon={<Crosshair size={12} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
+              <Stat icon={<Target size={12} />} value={state.cleared} label={`${state.cleared} targets destroyed`} />
+              <span
+                className={cn(
+                  "flex items-center gap-1 font-semibold tabular-nums transition-opacity",
+                  state.combo > 1 ? "text-accent opacity-100" : "opacity-0",
+                )}
+                aria-label={state.combo > 1 ? `Combo ${state.combo}` : undefined}
+              >
+                <Zap size={12} />
+                {state.combo}x
+              </span>
+              <button
+                type="button"
+                onClick={toggleSound}
+                aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
+                title={soundEnabled ? "Mute sound" : "Unmute sound"}
+                className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
+              >
+                {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Fever / Overdrive meter. */}
+          <div className="mt-2 flex items-center gap-2">
+            <Flame size={12} className={cn(overdriveActive ? "text-accent" : "text-sub/60")} aria-hidden="true" />
+            <div
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-sub-alt/70"
+              role="progressbar"
+              aria-label="Overdrive charge"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={overdriveActive ? 100 : Math.round(state.fever)}
             >
-              {matched > 0 && (
-                <span className="text-accent arcade-glow">{word.text.slice(0, matched)}</span>
-              )}
-              {word.text.slice(matched)}
-            </span>
-          );
-        })}
+              <div
+                className={cn("h-full rounded-full transition-[width]", overdriveActive ? "bg-accent arcade-pulse" : "bg-accent/70")}
+                style={{ width: `${overdriveActive ? 100 : state.fever}%`, transitionDuration: "150ms" }}
+              />
+            </div>
+            {overdriveActive && (
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-accent arcade-glow">
+                Overdrive {Math.ceil(state.overdriveMs / 1000)}s
+              </span>
+            )}
+          </div>
+
+          {/* -------------------------------------------------------- Sky --- */}
+          <div className="relative flex-1">
+            {state.words.map((word) => {
+              const isTarget = word.id === state.lockedId;
+              const matched = isTarget ? state.typed.length : 0;
+              const inDanger = word.progress >= DANGER_FROM;
+              const kindStyle = KIND_STYLES[word.kind];
+              return (
+                <span
+                  key={word.id}
+                  className={cn(
+                    "absolute whitespace-nowrap font-mono text-sm tracking-tight transition-[top] ease-linear sm:text-lg",
+                    "rounded-md border bg-background/70 px-1.5 py-0.5 backdrop-blur-[1px]",
+                    // The border/glow says "this is locked in" — the text
+                    // colour is reserved for "this character is typed",
+                    // never for the word as a whole. Colouring the whole chip
+                    // accent the instant it locks made the untyped remainder
+                    // (which has no colour of its own here) inherit that same
+                    // bright colour, so the moment you typed the first letter
+                    // the entire word looked "done" and there was no visual
+                    // answer to "what do I type next" beyond a faint
+                    // underline.
+                    isTarget ? "border-accent arcade-glow" : inDanger ? "border-error/60" : kindStyle.chip,
+                    inDanger ? "text-error" : "text-foreground",
+                    !isTarget && !inDanger && kindStyle.text,
+                    word.kind === "golden" && !isTarget && "arcade-pulse",
+                  )}
+                  style={{
+                    // Matches the engine tick so stepped updates read as
+                    // continuous motion without running the loop at frame rate.
+                    transitionDuration: "50ms",
+                    top: `${word.progress * (100 - FLOOR_INSET_PCT)}%`,
+                    left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / LANE_COUNT)}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {word.kind === "elite" && !isTarget && <Flame size={10} className="mr-1 inline text-error" aria-hidden="true" />}
+                  {matched > 0 && (
+                    <span className="text-accent arcade-glow">{word.text.slice(0, matched)}</span>
+                  )}
+                  {word.text.slice(matched)}
+                </span>
+              );
+            })}
+
+            {/* Destroy bursts + real per-word score popups. */}
+            {state.destroyed.map((hit) => {
+              const t = (now - hit.bornMs) / DESTROY_EFFECT_MS;
+              const y = hit.progress * (100 - FLOOR_INSET_PCT);
+              const x = LANE_INSET_PCT + (hit.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / LANE_COUNT);
+              const color = hit.kind === "golden" ? "var(--accent)" : hit.kind === "elite" ? "var(--error)" : "var(--correct)";
+              return (
+                <div key={hit.seq} aria-hidden="true" className="pointer-events-none absolute" style={{ left: `${x}%`, top: `${y}%` }}>
+                  <span
+                    className="absolute rounded-full border-2"
+                    style={{
+                      borderColor: color,
+                      width: 30,
+                      height: 30,
+                      marginLeft: -15,
+                      marginTop: -15,
+                      opacity: 1 - t,
+                      transform: `scale(${0.6 + t * 1.2})`,
+                    }}
+                  />
+                  <span
+                    className="absolute font-mono text-xs font-bold tabular-nums"
+                    style={{
+                      color,
+                      transform: `translate(-50%, calc(-50% - ${t * 22}px))`,
+                      opacity: 1 - t,
+                    }}
+                  >
+                    +{hit.points}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Milestone banner. */}
+        {milestone && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-[14%] z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-accent bg-background/85 px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent arcade-glow"
+          >
+            Milestone — {milestone}
+          </div>
+        )}
+
+        {/* Player, anchored to the defense line. */}
+        {playerArt && (
+          <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 h-[22%] w-24 -translate-x-1/2 opacity-95 sm:w-32">
+            <Image src={playerArt} alt="" fill sizes="160px" className="object-contain object-bottom" />
+          </div>
+        )}
 
         {!isPlaying && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 p-6 backdrop-blur-sm">
             {state.status === "idle" && (
               <StartCard definition={definition} best={best} onStart={handleStart} />
             )}
@@ -263,8 +492,11 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
                 cleared={state.cleared}
                 bestCombo={state.bestCombo}
                 accuracy={accuracy}
+                wpm={wpm}
+                survivedMs={state.elapsedMs}
                 isNewBest={isNewBest}
                 best={best}
+                resultArt={isNewBest ? (art?.victory ?? null) : (art?.defeat ?? null)}
                 onRestart={handleStart}
               />
             )}
@@ -359,7 +591,7 @@ function StartCard({
       </ArcadeButton>
 
       <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
-        Type a falling word to clear it
+        Type a falling target to destroy it — gold and marked targets are worth more
       </p>
     </div>
   );
@@ -371,8 +603,11 @@ function GameOverCard({
   cleared,
   bestCombo,
   accuracy,
+  wpm,
+  survivedMs,
   isNewBest,
   best,
+  resultArt,
   onRestart,
 }: {
   definition: GameDefinition;
@@ -380,57 +615,76 @@ function GameOverCard({
   cleared: number;
   bestCombo: number;
   accuracy: number;
+  wpm: number;
+  survivedMs: number;
   isNewBest: boolean;
   best: GameBest | null;
+  resultArt: string | null;
   onRestart: () => void;
 }) {
   return (
     <div
-      className="flex max-w-sm flex-col items-center gap-4 text-center"
+      className="relative flex w-full max-w-md flex-col items-center gap-4 overflow-hidden rounded-2xl border border-border p-6 text-center"
       role="status"
       aria-live="polite"
     >
-      {isNewBest ? (
-        <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
-          <Trophy size={12} />
-          New best
-        </span>
-      ) : (
-        <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-sub">Run over</span>
+      {resultArt && (
+        <>
+          <Image src={resultArt} alt="" fill sizes="448px" quality={65} className="object-cover opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/45" />
+        </>
       )}
 
-      <div className="flex flex-col">
-        <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
-          {headline}
-          {definition.scoreBy === "time" && <span className="text-2xl text-accent/70">s</span>}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-5 font-mono text-xs tabular-nums text-sub">
-        <span className="flex items-center gap-1.5">
-          <Target size={12} className="text-sub/60" />
-          {cleared}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Zap size={12} className="text-sub/60" />
-          {bestCombo}x
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Crosshair size={12} className="text-sub/60" />
-          {accuracy}%
-        </span>
-        {best && !isNewBest && (
-          <span className="flex items-center gap-1.5 text-accent/80">
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        {isNewBest ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
             <Trophy size={12} />
-            {definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
+            New personal best
           </span>
+        ) : (
+          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-sub">Defense breached</span>
         )}
-      </div>
 
-      <ArcadeButton onClick={onRestart}>
-        <RotateCcw size={15} />
-        Play again
-      </ArcadeButton>
+        <div className="flex flex-col">
+          <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
+            {headline}
+            {definition.scoreBy === "time" && <span className="text-2xl text-accent/70">s</span>}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-x-5 gap-y-2 font-mono text-xs tabular-nums text-sub">
+          <ResultStat icon={<Gauge size={12} />} value={`${wpm}`} label={`${wpm} words per minute`} />
+          <ResultStat icon={<Crosshair size={12} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
+          <ResultStat icon={<Zap size={12} />} value={`${bestCombo}x`} label={`Best combo ${bestCombo}`} />
+          <ResultStat icon={<Target size={12} />} value={cleared} label={`${cleared} targets destroyed`} />
+          <ResultStat icon={<Flame size={12} />} value={formatMs(survivedMs)} label={`Survived ${formatMs(survivedMs)}`} />
+          {best && !isNewBest && (
+            <ResultStat
+              icon={<Trophy size={12} />}
+              value={definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
+              label={`Best ${best.score}`}
+            />
+          )}
+        </div>
+
+        <p className="max-w-xs text-xs italic text-sub">Can you survive longer?</p>
+
+        <ArcadeButton onClick={onRestart}>
+          <RotateCcw size={15} />
+          Play again
+        </ArcadeButton>
+      </div>
     </div>
+  );
+}
+
+function ResultStat({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
+  return (
+    <span className="flex items-center justify-center gap-1.5" aria-label={`${label}: ${value}`}>
+      <span className="text-sub/60" aria-hidden="true">
+        {icon}
+      </span>
+      {typeof value === "number" ? value.toLocaleString() : value}
+    </span>
   );
 }

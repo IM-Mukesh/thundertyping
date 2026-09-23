@@ -49,6 +49,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   // null and cost nothing; this isn't specific to any one game.
   const boardArt: Record<string, string | null> = {
     hero: heroArt,
+    cover: getGameArt(game.id, "cover"),
     victory: getGameArt(game.id, "victory"),
     defeat: getGameArt(game.id, "defeat"),
     "char-fg": getArt(game.id, "char-fg"),

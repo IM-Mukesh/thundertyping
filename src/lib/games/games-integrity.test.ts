@@ -27,6 +27,12 @@ import {
   reducer as bbReducer,
   damageFor,
 } from "@/lib/games/use-boss-battle";
+import {
+  createInitialState as fwInitialState,
+  reducer as fwReducer,
+  OVERDRIVE_MS,
+} from "@/lib/games/use-falling-words";
+import type { GameState as FallingWordsState } from "@/lib/games/use-falling-words";
 
 describe("ghost racer: distance is correct characters, not keystrokes", () => {
   const text = "the quick brown fox";
@@ -254,5 +260,66 @@ describe("boss battle: damage-number popup reports the real hit", () => {
       damageFor("spark", 0) + damageFor("ember", 1),
       "the running total is the sum, not overwritten by the latest hit",
     );
+  });
+});
+
+describe("falling words: target variety, fever and overdrive", () => {
+  function running(overrides: Partial<FallingWordsState> = {}): FallingWordsState {
+    return {
+      ...fwInitialState(GAME_DEFINITIONS["falling-words"]),
+      status: "running",
+      ...overrides,
+    };
+  }
+
+  it("a golden word scores strictly more than the same text as a normal word", () => {
+    const word = { id: 1, text: "spark", kind: "normal" as const, progress: 0.4, fallMs: 5000, lane: 0 };
+    const normal = fwReducer(running({ words: [word] }), { type: "SET_TYPED", value: "spark" });
+
+    const goldenWord = { ...word, id: 2, kind: "golden" as const };
+    const golden = fwReducer(running({ words: [goldenWord] }), { type: "SET_TYPED", value: "spark" });
+
+    assert.ok(golden.score > normal.score, "golden must outscore an identical normal word");
+  });
+
+  it("fever caps at 100 and spending it into Overdrive resets it to 0", () => {
+    let s = running({ words: [{ id: 1, text: "a", kind: "normal", progress: 0, fallMs: 5000, lane: 0 }], fever: 95 });
+    s = fwReducer(s, { type: "SET_TYPED", value: "a" });
+    assert.equal(s.fever, 0, "crossing the cap spends it, not caps it at 100");
+    assert.equal(s.overdriveMs, OVERDRIVE_MS, "Overdrive starts the instant fever caps");
+  });
+
+  it("Overdrive doesn't also refill fever while it's already active", () => {
+    let s = running({
+      words: [{ id: 1, text: "a", kind: "normal", progress: 0, fallMs: 5000, lane: 0 }],
+      fever: 0,
+      overdriveMs: 3000,
+    });
+    s = fwReducer(s, { type: "SET_TYPED", value: "a" });
+    assert.equal(s.fever, 0, "fever stays at 0 during an active Overdrive");
+    assert.equal(s.overdriveMs, 3000, "an already-running Overdrive isn't extended by more clears");
+  });
+
+  it("a word reaching the floor sets the miss flash and doesn't touch fever", () => {
+    const s0 = running({
+      words: [{ id: 1, text: "gone", kind: "normal", progress: 0.999, fallMs: 50, lane: 0 }],
+      fever: 40,
+      lives: 3,
+      elapsedMs: 0,
+    });
+    const s = fwReducer(s0, { type: "TICK" });
+    assert.equal(s.lives, 2);
+    assert.ok(s.lastMissMs !== null, "the miss flash timestamp is set");
+    assert.equal(s.fever, 40, "a miss costs a life and the combo, not fever progress");
+  });
+
+  it("a destroy effect ages itself out after DESTROY_EFFECT_MS", () => {
+    let s = running({ words: [{ id: 1, text: "pop", kind: "normal", progress: 0, fallMs: 5000, lane: 0 }] });
+    s = fwReducer(s, { type: "SET_TYPED", value: "pop" });
+    assert.equal(s.destroyed.length, 1, "a destroy effect is recorded on clear");
+
+    // Advance well past DESTROY_EFFECT_MS in ticks.
+    for (let i = 0; i < 20; i++) s = fwReducer(s, { type: "TICK" });
+    assert.equal(s.destroyed.length, 0, "the effect ages out on its own without extra cleanup");
   });
 });
