@@ -152,7 +152,16 @@ export function TypingTest() {
     setFocusToken((t) => t + 1);
     focusLossCountRef.current = 0;
     visibilityChangesRef.current = 0;
-  }, [engine]);
+    // engine.restart itself is stable (useTypingEngine wraps it in its own
+    // empty-deps useCallback) -- depending on the whole `engine` object
+    // instead meant a new `handleRestart` identity every render, since
+    // useTypingEngine returns a fresh object literal each time and `state`
+    // changes every tick. That re-subscribed the reset-bus listener below
+    // roughly 10x/second during a running test: not a leak (cleanup was
+    // always correct), just unnecessary addEventListener/removeEventListener
+    // churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine.restart]);
 
   useEffect(() => listenForTestReset(handleRestart), [handleRestart]);
 

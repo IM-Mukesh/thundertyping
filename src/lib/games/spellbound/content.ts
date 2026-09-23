@@ -426,7 +426,7 @@ export const RELICS: readonly RelicDef[] = [
   {
     id: "quickened",
     name: "Quickened Rune",
-    effect: "Spells of 5 letters or fewer complete 2 characters early.",
+    effect: "Spells of 5 letters or fewer cool down 40% faster.",
     sigil: "QR",
     price: 60,
   },

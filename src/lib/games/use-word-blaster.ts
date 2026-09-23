@@ -199,6 +199,13 @@ function findTarget(enemies: Enemy[], value: string, lockedId: number | null): E
   }
   const matches = enemies.filter((e) => e.text.startsWith(value));
   if (matches.length === 0) return null;
+  // Prefer an exact match over "closest to the wall" -- otherwise typing a
+  // word perfectly (e.g. "a") could still target a different, longer enemy
+  // that merely shares the prefix and is further along (e.g. "are"),
+  // leaving the correctly-typed one un-destroyed. Only reached when there's
+  // no active lock on a still-matching enemy (see above).
+  const exact = matches.find((e) => e.text === value);
+  if (exact) return exact;
   return matches.reduce((a, b) => (b.progress > a.progress ? b : a));
 }
 

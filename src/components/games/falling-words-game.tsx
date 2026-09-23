@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Crosshair, Heart, Play, RotateCcw, Target, Trophy, Volume2, VolumeX, Zap } from "lucide-react";
-import type { GameDefinition } from "@/lib/games/game-types";
+import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
 import { LANE_COUNT, useFallingWords } from "@/lib/games/use-falling-words";
 import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import { playSound } from "@/lib/games/game-audio";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
@@ -96,6 +97,12 @@ export function FallingWordsGame({ definition }: FallingWordsGameProps) {
     setIsNewBest(newBest);
     setBest(stored);
     playSound("over", soundEnabled);
+    // Every game must feed the cross-game profile, or "play every game"
+    // (site:all-games) can never be earned no matter how much is played --
+    // this was previously missing on 6 of the 10 games, this one included.
+    bumpStat(definition.id, "runs");
+    awardXp(Math.round(state.score / 10) + state.cleared * 3);
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
     // settle the run once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);

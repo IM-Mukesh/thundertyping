@@ -137,7 +137,7 @@ describe("isLessonUnlocked: derived purely from LESSON_LIST order + completion",
 });
 
 function completedUnit(): UnitProgress {
-  return { completed: true, currentStep: 5, attemptCount: 5, avgAccuracy: 95, avgWpm: 30, totalTimeMs: 5000, completedAt: 1 };
+  return { completed: true, currentStep: 5, passCount: 5, avgAccuracy: 95, avgWpm: 30, totalTimeMs: 5000, completedAt: 1 };
 }
 
 describe("computeUnitProgressUpdate: gates completion on minAccuracy and step count", () => {
@@ -173,12 +173,20 @@ describe("computeUnitProgressUpdate: gates completion on minAccuracy and step co
     assert.equal(unit.completed, false);
   });
 
-  it("averages accuracy/wpm across attempts rather than overwriting", () => {
-    const first = computeUnitProgressUpdate(undefined, { ...baseInput, accuracy: 80, wpm: 10 }).unit;
-    const second = computeUnitProgressUpdate(first, { ...baseInput, accuracy: 100, wpm: 30 }).unit;
-    assert.equal(second.avgAccuracy, 90);
+  it("averages accuracy/wpm across passing attempts rather than overwriting", () => {
+    const first = computeUnitProgressUpdate(undefined, { ...baseInput, step: 1, accuracy: 92, wpm: 10 }).unit;
+    const second = computeUnitProgressUpdate(first, { ...baseInput, step: 2, accuracy: 100, wpm: 30 }).unit;
+    assert.equal(second.avgAccuracy, 96);
     assert.equal(second.avgWpm, 20);
-    assert.equal(second.attemptCount, 2);
+    assert.equal(second.passCount, 2);
+  });
+
+  it("a failed attempt does not drag the displayed average down", () => {
+    const passing = computeUnitProgressUpdate(undefined, { ...baseInput, accuracy: 96, wpm: 40 }).unit;
+    const { unit } = computeUnitProgressUpdate(passing, { ...baseInput, step: 2, accuracy: 20, wpm: 5 }); // fails
+    assert.equal(unit.avgAccuracy, 96, "a failed retry must not lower the average");
+    assert.equal(unit.avgWpm, 40);
+    assert.equal(unit.passCount, 1, "passCount only advances on a pass");
   });
 });
 

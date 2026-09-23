@@ -67,6 +67,8 @@ export interface SurvivorState {
   level: number;
   upgrades: string[];
   offer: string[];
+  /** Extra level-ups earned by a single XP gain crossing more than one threshold, each still owed its own draft. */
+  pendingLevelUps: number;
   score: number;
   kills: number;
   combo: number;
@@ -115,6 +117,7 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       level: 1,
       upgrades: [],
       offer: [],
+      pendingLevelUps: 0,
       score: 0,
       kills: 0,
       combo: 0,
@@ -237,7 +240,13 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
         }
 
         // --- wave rollover --------------------------------------------
-        if (s.waveMs >= WAVE_MS && !hasBoss) {
+        // Re-checked here (not the `hasBoss` computed above, before this
+        // wave's boss may have just spawned) so a boss wave can roll over
+        // the instant its boss actually dies, rather than waiting out the
+        // full WAVE_MS regardless -- previously a fast boss kill left the
+        // player standing in an empty arena for up to ~26 idle seconds.
+        const bossStillAlive = isBossWave && s.enemies.some((e) => e.type.kind === "boss" && e.hp > 0);
+        if (!bossStillAlive && (s.waveMs >= WAVE_MS || isBossWave)) {
           s.wave += 1;
           s.waveMs = 0;
           s.banner = `Wave ${s.wave}`;
@@ -273,7 +282,12 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       if (s.upgrades.includes("short-fuse") && len <= 4) damage *= 2.1;
       if (s.upgrades.includes("heavy-hand") && len >= 8) damage *= 1.9;
       if (s.upgrades.includes("momentum")) damage *= 1 + Math.min(1, s.combo * 0.04);
-      if (s.upgrades.includes("scholar")) damage += s.level * 1.5;
+      // Scholar is marked `stacking: true` (re-offered after being taken),
+      // but this only checked whether it was owned at all -- a second or
+      // third pick gave no additional benefit, silently wasting the draft.
+      // Count how many copies are actually owned.
+      const scholarCount = s.upgrades.filter((u) => u === "scholar").length;
+      if (scholarCount > 0) damage += scholarCount * s.level * 1.5;
 
       let critChance = 0.05;
       if (s.upgrades.includes("keen-edge")) critChance += 0.2;
@@ -302,17 +316,6 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       };
       s.enemies = s.enemies.map((e, i) => (i === idx ? updated : e));
 
-      // Chain Lightning arcs to a second enemy every few words.
-      if (s.upgrades.includes("chain") && s.kills % 3 === 2) {
-        const other = s.enemies.find((e) => e.uid !== uid && e.hp > 0);
-        if (other) {
-          const arc = Math.round(applied * 0.5);
-          s.enemies = s.enemies.map((e) =>
-            e.uid === other.uid ? { ...e, hp: Math.max(0, e.hp - arc), hitFlash: 200 } : e,
-          );
-        }
-      }
-
       // Word Explosion: a long word kills splash the swarm around them.
       if (killedNow && s.upgrades.includes("detonate") && len >= 7) {
         const blast = Math.round(applied * 0.4);
@@ -332,6 +335,20 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
         if (s.upgrades.includes("bloodletting")) {
           s.hp = Math.min(s.maxHp, s.hp + 2);
         }
+        // Chain Lightning: "every third kill arcs" -- previously checked on
+        // every strike (not gated on a kill at all) and against the
+        // pre-increment kill count, so once the counter landed on 2-mod-3 it
+        // stayed there and every non-lethal hit on a multi-hit target
+        // splashed, not just one hit per three kills.
+        if (s.upgrades.includes("chain") && s.kills % 3 === 0) {
+          const other = s.enemies.find((e) => e.uid !== uid && e.hp > 0);
+          if (other) {
+            const arc = Math.round(applied * 0.5);
+            s.enemies = s.enemies.map((e) =>
+              e.uid === other.uid ? { ...e, hp: Math.max(0, e.hp - arc), hitFlash: 200 } : e,
+            );
+          }
+        }
         cbRef.current.onKill?.(updated, damage, crit);
       } else {
         s.combo += 1;
@@ -342,15 +359,30 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       s.typed = "";
       s.lockedUid = null;
 
-      // level up -> draft
-      if (s.xp >= s.xpToNext) {
+      // level up -> draft. A single large XP gain (an early elite/boss kill
+      // while already close to xpToNext) can cross more than one threshold
+      // at once -- previously only one level-up was ever applied per strike
+      // (an `if`, not a loop), so the extra level(s) earned were simply
+      // never granted at all: xp only ever carried over toward the *next*
+      // single level, and the surplus level(s) needed another kill's worth
+      // of XP to re-trigger, one at a time, rather than being owed
+      // immediately. Cascade properly, but still only show one draft at a
+      // time -- takeUpgrade below pops the next one off pendingLevelUps
+      // once the current pick is made, so multiple levels earned in one
+      // strike each get their own pick instead of being collapsed into one.
+      let levelsGained = 0;
+      while (s.xp >= s.xpToNext) {
         s.xp -= s.xpToNext;
         s.level += 1;
         s.xpToNext = xpForLevel(s.level);
+        levelsGained += 1;
+      }
+      if (levelsGained > 0) {
         const owned = new Set(s.upgrades);
         const pool = UPGRADES.filter((u) => !owned.has(u.id) || u.stacking);
         s.offer = rng.sample(pool.map((u) => u.id), 3);
         s.phase = "draft";
+        s.pendingLevelUps = levelsGained - 1;
         cbRef.current.onLevel?.(s.level);
         cbRef.current.onPhase?.("draft");
       }
@@ -388,7 +420,16 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
 
         if (locked.word === lower) {
           queueMicrotask(() => strike(locked.uid));
-          return { ...prev, typed: "", lockedUid: null };
+          // Perfectionist reads target.typed === word.length to know the
+          // word was typed clean -- previously never set on this, the only
+          // path that actually completes a word, so the check was always
+          // false and the upgrade's crit bonus could never apply.
+          return {
+            ...prev,
+            typed: "",
+            lockedUid: null,
+            enemies: prev.enemies.map((e) => (e.uid === locked.uid ? { ...e, typed: lower.length } : e)),
+          };
         }
 
         return {
@@ -406,7 +447,7 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
 
   const takeUpgrade = useCallback((id: string) => {
     setState((prev) => {
-      const s: SurvivorState = { ...prev, phase: "playing", offer: [] };
+      const s: SurvivorState = { ...prev, offer: [] };
       s.upgrades = [...s.upgrades, id];
       const def = UPGRADES.find((u) => u.id === id);
       if (def?.id === "iron-skin") {
@@ -414,7 +455,22 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
         s.hp += 20;
       }
       s.banner = def ? def.name : null;
-      cbRef.current.onPhase?.("playing");
+
+      if (s.pendingLevelUps > 0) {
+        // Another level-up from the same earlier XP gain is still owed its
+        // own draft -- offer it immediately rather than dropping back into
+        // play, so it isn't silently skipped.
+        const rng = rngRef.current;
+        const owned = new Set(s.upgrades);
+        const pool = UPGRADES.filter((u) => !owned.has(u.id) || u.stacking);
+        s.offer = rng.sample(pool.map((u) => u.id), 3);
+        s.pendingLevelUps -= 1;
+        s.phase = "draft";
+        cbRef.current.onPhase?.("draft");
+      } else {
+        s.phase = "playing";
+        cbRef.current.onPhase?.("playing");
+      }
       return s;
     });
   }, []);

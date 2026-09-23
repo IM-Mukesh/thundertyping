@@ -23,10 +23,27 @@ function isTrackableMode(mode: TestMode): mode is "time" | "words" {
   return mode === "time" || mode === "words";
 }
 
+// Finite, non-negative, and (for accuracy) capped at 100 -- `typeof ===
+// "number"` alone lets NaN/Infinity/negative values through. A corrupted
+// `wpm` of NaN would make `existing.wpm >= wpm` always false in
+// recordResult, so every run "wins" and silently keeps overwriting the
+// record; a corrupted absurdly-high `wpm` would instead permanently block
+// any real run from ever registering a new best, with no way to recover
+// short of clearing storage. Matches the range-checking settings-store.ts
+// already does for its own persisted fields.
+function isFiniteNonNegative(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
 function isValidPersonalBest(value: unknown): value is PersonalBest {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Partial<PersonalBest>;
-  return typeof v.wpm === "number" && typeof v.accuracy === "number" && typeof v.achievedAt === "number";
+  return (
+    isFiniteNonNegative(v.wpm) &&
+    isFiniteNonNegative(v.accuracy) &&
+    v.accuracy <= 100 &&
+    isFiniteNonNegative(v.achievedAt)
+  );
 }
 
 export function getPersonalBest(

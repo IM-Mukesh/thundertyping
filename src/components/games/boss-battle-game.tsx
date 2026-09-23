@@ -18,7 +18,8 @@ import {
   VolumeX,
   Zap,
 } from "lucide-react";
-import type { GameDefinition } from "@/lib/games/game-types";
+import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
+import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import {
   BOSS_MAX_HP,
   PHASE_COUNT,
@@ -119,6 +120,11 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
     setBest(stored);
     // A won fight gets the rising motif, a lost one the falling motif.
     playSound(state.outcome === "victory" ? "combo" : "over", soundEnabled);
+    // Every game must feed the cross-game profile, or "play every game"
+    // (site:all-games) can never be earned no matter how much is played.
+    bumpStat(definition.id, "runs");
+    awardXp(Math.round(state.score / 8) + (state.outcome === "victory" ? 40 : 10));
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
     // settle the run once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
@@ -375,7 +381,17 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
         <input
           ref={inputRef}
           value={state.typed}
-          onChange={(e) => setTyped(e.target.value.toLowerCase())}
+          onChange={(e) => {
+            // A word here never legitimately contains a space, so any space
+            // that lands in the value can only be a mobile keyboard's
+            // autocomplete/predictive-text appending one on acceptance --
+            // real on-device behavior the onKeyDown guard below can't catch,
+            // since it arrives as part of an IME composition, not a keydown.
+            // Previously that space made the buffer longer than the target
+            // word, so `state.word.startsWith(value)` failed and a correctly
+            // completed word was scored as a mistake and never cleared.
+            setTyped(e.target.value.replace(/ /g, "").toLowerCase());
+          }}
           onPaste={(e) => e.preventDefault()}
           onKeyDown={(e) => {
             // Space never commits here — a word lands the instant it matches —

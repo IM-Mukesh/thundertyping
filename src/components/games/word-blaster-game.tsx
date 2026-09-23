@@ -13,7 +13,8 @@ import {
   VolumeX,
   Zap,
 } from "lucide-react";
-import type { GameDefinition } from "@/lib/games/game-types";
+import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
+import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import { HIT_EFFECT_MS, LANE_COUNT, TICK_MS, useWordBlaster } from "@/lib/games/use-word-blaster";
 import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
@@ -180,6 +181,11 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
     setIsNewBest(newBest);
     setBest(stored);
     playSound("over", soundEnabled);
+    // Every game must feed the cross-game profile, or "play every game"
+    // (site:all-games) can never be earned no matter how much is played.
+    bumpStat(definition.id, "runs");
+    awardXp(Math.round(state.score / 10) + state.destroyed * 3);
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
     // settle the run once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);

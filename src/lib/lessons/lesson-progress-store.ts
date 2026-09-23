@@ -20,7 +20,8 @@ export interface UnitProgress {
   completed: boolean;
   /** How many sub-lesson steps have been passed, 0..subLessonCount. Where "Resume" picks back up. */
   currentStep: number;
-  attemptCount: number;
+  /** Count of *passing* attempts only -- what avgAccuracy/avgWpm are averaged over. A failed retry updates totalTimeMs (an honest total) but not the averages, so struggling on one step doesn't drag down the number the dashboard shows for the whole unit. */
+  passCount: number;
   avgAccuracy: number;
   avgWpm: number;
   totalTimeMs: number;
@@ -54,17 +55,26 @@ export interface LessonProgressState {
 
 const emptyTotals = (): LessonTotals => ({ typedChars: 0, correctChars: 0, incorrectChars: 0, timeMs: 0 });
 
+// A finite, non-negative number -- rejects NaN/Infinity/negatives, which
+// `typeof === "number"` alone lets straight through. A corrupted or
+// hand-edited value passing validation here used to mean a dashboard row
+// could render e.g. "-50 wpm" or a progress bar past 100%.
+function isFiniteNonNegative(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
 function isValidUnitProgress(value: unknown): value is UnitProgress {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Partial<UnitProgress>;
   return (
     typeof v.completed === "boolean" &&
-    typeof v.currentStep === "number" &&
-    typeof v.attemptCount === "number" &&
-    typeof v.avgAccuracy === "number" &&
-    typeof v.avgWpm === "number" &&
-    typeof v.totalTimeMs === "number" &&
-    typeof v.completedAt === "number"
+    isFiniteNonNegative(v.currentStep) &&
+    isFiniteNonNegative(v.passCount) &&
+    isFiniteNonNegative(v.avgAccuracy) &&
+    v.avgAccuracy <= 100 &&
+    isFiniteNonNegative(v.avgWpm) &&
+    isFiniteNonNegative(v.totalTimeMs) &&
+    isFiniteNonNegative(v.completedAt)
   );
 }
 
@@ -72,10 +82,10 @@ function isValidTotals(value: unknown): value is LessonTotals {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Partial<LessonTotals>;
   return (
-    typeof v.typedChars === "number" &&
-    typeof v.correctChars === "number" &&
-    typeof v.incorrectChars === "number" &&
-    typeof v.timeMs === "number"
+    isFiniteNonNegative(v.typedChars) &&
+    isFiniteNonNegative(v.correctChars) &&
+    isFiniteNonNegative(v.incorrectChars) &&
+    isFiniteNonNegative(v.timeMs)
   );
 }
 
@@ -90,16 +100,25 @@ export function computeUnitProgressUpdate(
   input: RecordAttemptInput,
 ): { unit: UnitProgress; passed: boolean; unitCompleted: boolean } {
   const passed = input.accuracy >= input.minAccuracy;
-  const prevCount = existing?.attemptCount ?? 0;
-  const nextCount = prevCount + 1;
-  const avgAccuracy = ((existing?.avgAccuracy ?? 0) * prevCount + input.accuracy) / nextCount;
-  const avgWpm = ((existing?.avgWpm ?? 0) * prevCount + input.wpm) / nextCount;
   const unitCompleted = passed && input.step >= input.totalSteps;
+
+  // Only a passing attempt feeds the displayed averages. A failed retry
+  // still counts toward totalTimeMs (an honest total -- the time was really
+  // spent) but not toward avgAccuracy/avgWpm, so acing 6 of 7 steps and
+  // needing three tries on one doesn't show a misleadingly low unit average.
+  const prevPassCount = existing?.passCount ?? 0;
+  const nextPassCount = passed ? prevPassCount + 1 : prevPassCount;
+  const avgAccuracy = passed
+    ? ((existing?.avgAccuracy ?? 0) * prevPassCount + input.accuracy) / nextPassCount
+    : (existing?.avgAccuracy ?? 0);
+  const avgWpm = passed
+    ? ((existing?.avgWpm ?? 0) * prevPassCount + input.wpm) / nextPassCount
+    : (existing?.avgWpm ?? 0);
 
   const unit: UnitProgress = {
     completed: (existing?.completed ?? false) || unitCompleted,
     currentStep: passed ? Math.max(existing?.currentStep ?? 0, input.step) : (existing?.currentStep ?? 0),
-    attemptCount: nextCount,
+    passCount: nextPassCount,
     avgAccuracy,
     avgWpm,
     totalTimeMs: (existing?.totalTimeMs ?? 0) + input.elapsedMs,

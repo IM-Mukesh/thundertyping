@@ -10,7 +10,7 @@
 cd path/to/thundertyping
 npm install       # only needed if node_modules isn't already present
 npm run dev        # starts Next.js on http://localhost:3000 by default
-npm test            # 80 unit tests (Node's built-in runner, no extra dependency)
+npm test            # 81 unit tests (Node's built-in runner, no extra dependency)
 npm run lint        # must be clean before you consider anything "done"
 npm run build       # must be clean before you consider anything "done"
 npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
@@ -18,13 +18,15 @@ npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
 
 Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now.
 
-**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 80 cases) covering the scoring engine, the mobile input path, the game anti-exploit rules and the lesson curriculum's content generation/gating — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
+**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 81 cases) covering the scoring engine, the mobile input path, the game anti-exploit rules and the lesson curriculum's content generation/gating — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
 
 **Write a test for anything scoring-related.** Every scoring bug found so far was invisible through the UI — a dropped keystroke and a missed render look identical on screen. The tests drive the pure reducer directly for that reason.
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of **2026-09-22**: a feature-complete MVP, fully mobile-responsive, with **ten typing games** under `/games`, **a 28-unit, 3-tier touch-typing curriculum** under `/lessons`, two SEO guides, and an **80-test suite** guarding the scoring engine and the lesson curriculum. Not launched — no domain, no AdSense (wired but not activated), no Search Console yet.
+As of **2026-09-22**: a feature-complete MVP, fully mobile-responsive, with **ten typing games** under `/games`, **a 28-unit, 3-tier touch-typing curriculum** under `/lessons`, two SEO guides, and an **81-test suite** guarding the scoring engine and the lesson curriculum. A full site-wide bug hunt (34 issues, all now fixed — see "Session 2026-09-22 — site-wide bug hunt and repair" below) followed the lessons build the same day. Not launched — no domain, no AdSense (wired but not activated), no Search Console yet.
+
+**Session 2026-09-22, third pass: site-wide bug hunt across every game, `/lessons` and the main typing test — all 34 found issues fixed.** Read "Session 2026-09-22 — site-wide bug hunt and repair" below before touching Spellbound's room generation, Typing Survivor's level-up flow, or `word-stream.tsx`'s line-pitch measurement — each had a genuine correctness bug, not just polish.
 
 **Session 2026-09-22 (two passes) built `/lessons`, then reshaped it into a typing.com-style dashboard.** First pass: 17 flat lessons, home row through a graduation passage. Second pass, same day, after the project owner saw typing.com directly: restructured into three tiers (Beginner/Intermediate/Advanced, 28 units total), each unit now runs several sub-lessons of escalating difficulty rather than one drill, progress moved to a proper zustand store (`useLessonProgressStore`), keystroke sound was wired in (reusing the games' existing synth audio, not a new system), and a persistent ad rail was added beside every active typing surface. Read "Lessons architecture" below before touching any of it — the sub-lesson generator and the progress store's averaging logic are the two places a change is most likely to silently break something.
 
@@ -39,6 +41,7 @@ As of **2026-09-22**: a feature-complete MVP, fully mobile-responsive, with **te
 6. Two "Awaiting human input" questions are genuinely blocked on the project owner — don't guess, ask.
 7. The live countdown still shows raw seconds for long custom durations (a 24h test reads `86400`) — see Frontend/UX backlog item 6.
 8. Everything else is in "Prioritized backlog," roughly ordered within each category but not urgent.
+9. **The 2026-09-22 site-wide bug hunt is fully closed** — all 34 found issues (Spellbound's boss-room generation, Typing Survivor's cascading level-ups, five games' "Full Arcade" achievement never firing, several mobile-IME input gaps, `word-stream.tsx`'s short-text line-pitch fallback, and more) are fixed and verified (`npm test && npm run lint && npx tsc --noEmit && npm run build` clean; live-verified in browser where the bug was UI-observable). See "Session 2026-09-22 — site-wide bug hunt and repair" below before touching any of the files it names.
 
 **Corpus note, deliberately left alone:** the word generator samples uniformly from a 489-word frequency-ordered list (mean word length 4.45), while MonkeyType's default draws from the ~200 most common words. Ours therefore runs slightly harder and scores slightly lower on a typical run. That is a product decision, not a bug — narrowing the corpus would raise the displayed WPM without the typist improving, which was explicitly ruled out. Change it only on instruction.
 
@@ -196,6 +199,43 @@ npm test && npm run lint && npx tsc --noEmit && npm run build   # all clean, bui
 
 Then in a browser: take a 15s test and confirm the results breakdown reconciles (`Total Typed` == correct + incorrect), and confirm a space cannot win Ghost Racer.
 
+## Session 2026-09-22 — site-wide bug hunt and repair (READ BEFORE TOUCHING SPELLBOUND, SURVIVOR OR WORD-STREAM)
+
+Requested explicitly as a deep, unhurried pass across *every* page — all ten games, the lessons system, and the main typing test — not just the areas already known to be shaky. Found **34 bugs**, from cosmetic to critical, via a mix of direct code reading and parallel background audit agents (four games-focused, one covering lessons + the main UI). 32 were fixed immediately; the remaining 2 needed more than a one-line change and were fixed in a follow-up pass the same day, closing the list at 34/34.
+
+**Full list of fixes, grouped by area:**
+
+*Spellbound (roguelike spell-caster) — the worst-hit game, 9 bugs:*
+- **Boss room was silently sliced off every floor.** `buildMap()`'s filler-room math shorted the room count by 3, which happened to be exactly the "shop" and "boss" rooms — verified with a standalone Node script proving the old code never emitted a `"boss"` room, and the fixed version always emits exactly `ROOMS_PER_FLOOR` (6) with both `"shop"` and `"boss"` present.
+- Spell slots could silently collide (two slots offering the same word) and buying/learning/reward flows didn't rotate which slot got replaced — fixed with a shared `assignSpellToSlot()` helper and a `pickWord(avoid)` that excludes words already on other slots.
+- Six cards (Cursed Quill, Scholar's Mark, Heavy Tome, Mana Engine, Iron Will, Vampiric Ink, Echo Shard) had descriptions that didn't match what the code actually did — fixed to match, and Quickened Rune's own description was corrected instead (cooldown reduction, not "complete early").
+- Quicken/hex buffs and the Void King's "silence"/"drain" mechanics were described but not implemented — added real `quickenMs`/`hexMs`/`hexTargetUid` state and wired the rules through.
+
+*Typing Survivor:*
+- **Perfectionist achievement could never trigger** — the completing keystroke's branch struck the enemy before updating that enemy's own `typed` field, so the check that read it always saw stale data.
+- **Level-ups didn't cascade** (closed 2026-09-22, second pass): a single XP gain crossing two or more level thresholds only advanced one level and only offered one draft, silently skipping upgrade picks the player had earned. `strike()` now loops while XP clears the next threshold, tracks `levelsGained`, and queues any extra levels in a new `pendingLevelUps` field; `takeUpgrade()` checks it after every pick and immediately serves the next queued draft (staying in `"draft"` phase) before returning to `"playing"`. See `src/lib/games/survivor/use-survivor.ts`.
+
+*Card Battle:* Rupture's upgraded ops used `[burstBlight, burstBlight]` instead of `[doubleBlight, burstBlight]` (the upgrade didn't actually change anything); a stale "remove card" doc comment was corrected.
+
+*Cross-game (Falling Words, Word Blaster, Ghost Racer, Boss Battle, Combo Rush, Typing Grand Prix):*
+- **"Full Arcade" site achievement was permanently unearnable** — five of the ten games (`boss-battle`, `combo-rush`, `falling-words`, `typing-grand-prix`, `word-blaster`) never called `awardXp`/`bumpStat`/`checkSiteAchievements` on finish, verified by grep before fixing. All five now call them in their existing "settle once" effect, same as the other five games already did.
+- Mobile IME input gaps: Combo Rush's space-to-skip only fired on a real `keydown`, which Android/GBoard never sends mid-composition — now also detects a space landed directly in the input value. Boss Battle's `onChange` didn't strip a trailing space before `setTyped`. Ghost Racer was missing an `onPaste` guard and had a stray uncleared `setTimeout` in its countdown.
+- Falling Words' and Word Blaster's spawn/target logic could force a collision when no lane was free, and `findTarget()` in both picked "closest to floor" even when an exact match existed elsewhere — now prefers the exact match, and the spawner skips spawning rather than forcing an overlap.
+- Boss Battle's `hit` callback didn't carry the post-hit phase, so a killing blow on a phase transition reported the enemy's *previous* phase.
+
+*Lessons:*
+- `physicalKeyFor()` (`keyboard-layout.ts`) didn't normalize shifted symbols (`!`, `?`, `:`) back to their physical base key (`1`, `/`, `;`), so the virtual keyboard highlighted the wrong key — or none — for punctuation lessons. Same bug existed independently in the hand-diagram's finger lookup; both now go through the one corrected helper.
+- `lesson-drill.tsx` had no unlock-gate (a locked unit was directly playable via URL), no Enter-key advance, no mute toggle, and wasn't wired to the games' sound module at all.
+
+*Main typing test:*
+- `custom-text-modal.tsx` claimed `aria-modal="true"` but had no real focus trap — Shift+Tab out of the textarea walked straight into the page behind it, including the hidden typing input, whose own Tab handler restarts the test; a keyboard user could silently wipe an in-progress run. Fixed with a real Tab/Shift+Tab cycle.
+- `results-graph.tsx`'s y-axis ticks could duplicate (and produce a duplicate React key) on a very short/low-WPM run, where several of the five tick fractions rounded to the same integer — deduplicated via `Set`.
+- `results-store.ts`'s personal-best validator didn't range-check `wpm`/`accuracy` on read, so corrupted storage (`NaN`, negative, or absurdly high) could either permanently block or permanently win every future comparison — now range-validated the same way `settings-store.ts` already does.
+- `typing-test.tsx`'s restart-effect depended on the whole `engine` object instead of `engine.restart`, re-subscribing the reset-bus listener roughly 10x/second during a running test (not a leak, but real unnecessary churn).
+- **`word-stream.tsx`'s runtime line-pitch measurement never activated for short text** (closed 2026-09-22, second pass): `measureLinePitch()` required at least 3 distinct wrapped-row offsets before trusting a real DOM measurement, so any text wrapping onto just 1–2 lines — the common case for a short custom text or an early-test moment — silently fell back to the hardcoded `LINE_HEIGHT_FALLBACK` constant instead of measuring. Lowered the threshold to 2 tops; the existing median-of-deltas logic already handles a single delta correctly (a length-1 array's "median" is just its one element), and the existing font-size sanity check still guards against an untrustworthy measurement. This file has now had its line-height constant go stale three separate times (see Known issues fixed below) — this fix removes one more case where the constant was silently in play instead of a real measurement.
+
+**Verification:** `npm test && npm run lint && npx tsc --noEmit && npm run build` clean (81 tests, 0 lint errors, 0 type errors, 0 build warnings) after every batch of fixes. UI-observable fixes were live-verified in a running browser — notably Spellbound's boss room actually appearing, the Typing Survivor level-up draft flow (played a live run through to a Level 2 draft with three real upgrade choices), and the achievements page reflecting all five previously-broken games. The Survivor cascade's exact "one strike crosses two level thresholds" path was **not** independently observed live (it needs a very specific same-tick XP spike that's impractical to force deterministically through simulated keystrokes) — that path is verified by code review plus the type/test/build gate, not by an observed live cascade. Worth a real live check if this code is touched again.
+
 ### Known issues fixed (context for why the code looks the way it does — read before "fixing" these back)
 - **Results screen's accuracy % and its "correct/incorrect" breakdown could contradict each other.** Reproduced precisely: custom text "cat" typed with one backspaced-out mistake showed "3 correct, 0 incorrect" but 75% accuracy — impossible for both to be right. Root cause: the breakdown was tallied from each word's *final* character state, while accuracy came from full keystroke history (including corrected mistakes). Fixed by removing correct/incorrect from `CharTally` entirely; the breakdown now reads `correctKeystrokes`/`incorrectKeystrokes` directly — the same numbers accuracy is computed from — so they can never disagree again.
 - **A run with visible skips reported 100% accuracy and "0 incorrect"** (caught on a screencast, 2026-09-15). Three separate causes stacked, which is why it looked so wrong:
@@ -288,7 +328,8 @@ Everything else is presentation. These are the files where a careless edit chang
 | `src/lib/typing-engine/use-typing-engine.ts` | The reducer: every keystroke, the clock, all counters. `reducer` and `createInitialState` are exported **for tests** | Move timing back to `Date.now()`; drop the separator credit in `COMMIT_WORD` |
 | `src/lib/typing-engine/stats.ts` | WPM / raw / accuracy / consistency — the single source of these formulas | Duplicate a formula into a component |
 | `src/lib/typing-engine/input-commit.ts` | `splitOnCommit` — the mobile-keyboard space path | Assume `keydown` sees the space; it doesn't on Android |
-| `src/components/typing-test/word-stream.tsx` | The 3-line window and its **runtime-measured** line pitch | Reintroduce a hardcoded `LINE_HEIGHT` |
+| `src/components/typing-test/word-stream.tsx` | The 3-line window and its **runtime-measured** line pitch | Reintroduce a hardcoded `LINE_HEIGHT`; raise `measureLinePitch`'s minimum-tops threshold back above 2 — that's what made short text silently skip measurement (fixed 2026-09-22) |
+| `src/lib/games/survivor/use-survivor.ts` | Wave/enemy sim, XP/level curve, and the **cascading** level-up draft (`pendingLevelUps`) | Collapse a multi-level XP gain into one draft — it must queue and serve one draft per level gained |
 | `src/lib/games/use-typing-grand-prix.ts` | Race distance + placement. Reducer exported for tests | Bank `target.length`; hardcode `playerProgress: 1` |
 | `src/lib/games/racer/progress.ts` | Ghost Racer's position rule | Use `typed.length` as position |
 | `src/lib/audio/audio-bus.ts` | One AudioContext, buses, the `musicEpoch` race guard | Put the epoch in module scope (chunk duplication) |
@@ -441,7 +482,7 @@ The entire product *is* keypress-to-render latency — unusually high-stakes her
 7. ~~Live-verify the "not live-verified" items~~ — **Done 2026-09-15**; two were genuinely broken and are now fixed. See Known issues fixed.
 
 ### QA / Performance / Security
-1. **A test suite exists as of 2026-09-17, expanded 2026-09-22: 80 cases, `npm test`.** No framework was added — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+**. `scripts/test-setup.mjs` maps the `@/*` alias (Node ignores `tsconfig` paths). Files: `src/lib/typing-engine/typing-engine.test.ts` (scoring, timing, backspace, consistency, mobile input), `src/lib/games/games-integrity.test.ts` (the anti-exploit rules) and `src/lib/lessons/lessons.test.ts` (drill/review content never leaks a disallowed key, progress gating, curriculum data integrity). Tests drive pure reducers/functions directly, never rendered components — through the UI a dropped keystroke and a missed render are indistinguishable.
+1. **A test suite exists as of 2026-09-17, expanded 2026-09-22: 81 cases, `npm test`.** No framework was added — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+**. `scripts/test-setup.mjs` maps the `@/*` alias (Node ignores `tsconfig` paths). Files: `src/lib/typing-engine/typing-engine.test.ts` (scoring, timing, backspace, consistency, mobile input), `src/lib/games/games-integrity.test.ts` (the anti-exploit rules) and `src/lib/lessons/lessons.test.ts` (drill/review content never leaks a disallowed key, progress gating, curriculum data integrity). Tests drive pure reducers/functions directly, never rendered components — through the UI a dropped keystroke and a missed render are indistinguishable.
 2. **Coverage is deliberately narrow: scoring correctness and exploit resistance only.** There are no component/render tests and no e2e suite. That is a real gap if you start changing UI behaviour; live browser verification is still the only check on anything visual.
 3. Gates, all currently clean: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` (**0 warnings** — a warning here previously meant the whole project was being traced into the server bundle, so treat a new one as a real finding).
 4. No security concerns identified; custom text capped at 2000 chars bounds worst-case rendering cost. Note the *integrity* concern that did exist: two games were winnable without typing (see Session 2026-09-17). **Any new game must tie its win condition to correctly-typed characters, and should get a test in `games-integrity.test.ts`.**

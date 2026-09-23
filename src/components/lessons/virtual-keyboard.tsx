@@ -5,6 +5,7 @@ import {
   KEY_ROWS,
   SPACE_KEY,
   fingerForKey,
+  physicalKeyFor,
   type FingerId,
 } from "@/lib/lessons/keyboard-layout";
 import { cn } from "@/lib/utils/cn";
@@ -41,6 +42,10 @@ interface VirtualKeyboardProps {
 export function VirtualKeyboard({ nextKey }: VirtualKeyboardProps) {
   const normalizedKey = nextKey?.toLowerCase() ?? null;
   const activeFinger = fingerForKey(normalizedKey);
+  // A shifted symbol ("!", "?", ":") has no key of its own on the grid --
+  // it's Shift plus a key that's already there. Compare against the
+  // physical key so that key (not nothing) lights up.
+  const activePhysicalKey = physicalKeyFor(normalizedKey);
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
@@ -50,12 +55,12 @@ export function VirtualKeyboard({ nextKey }: VirtualKeyboardProps) {
         {KEY_ROWS.map((row, i) => (
           <div key={i} className="flex justify-center gap-1.5">
             {row.map((k) => (
-              <Key key={k.key} keyDef={k} active={normalizedKey === k.key} />
+              <Key key={k.key} keyDef={k} active={activePhysicalKey === k.key} />
             ))}
           </div>
         ))}
         <div className="flex justify-center pt-1">
-          <Key keyDef={SPACE_KEY} active={normalizedKey === " "} wide />
+          <Key keyDef={SPACE_KEY} active={activePhysicalKey === " "} wide />
         </div>
       </div>
 

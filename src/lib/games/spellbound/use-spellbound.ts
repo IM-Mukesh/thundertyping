@@ -133,6 +133,12 @@ export interface SpellboundState {
   lastSpellId: string | null;
   /** Consecutive casts of lastSpellId. */
   repeatCount: number;
+  /** Ms remaining on Quicken's +60% spell damage buff, 0 when inactive. */
+  quickenMs: number;
+  /** Ms remaining on Hex's +50%-damage mark, 0 when inactive. */
+  hexMs: number;
+  /** Which enemy Hex marked -- only meaningful while hexMs > 0. */
+  hexTargetUid: number | null;
 }
 
 export interface CastResult {
@@ -149,18 +155,48 @@ interface Internal {
   mirrorLast: SpellDef | null;
 }
 
-function pickWord(rng: Rng, spell: SpellDef): string {
-  return rng.pick(bandWords(spell.band));
+// `avoid` is the set of words already sitting in other equipped slots. Two
+// slots sharing an identical word used to be possible (two spells in the
+// same band rolling the same word independently) -- when that happened,
+// typing it could only ever resolve to the lower-index slot, so the other
+// spell was silently uncastable by that word until it rerolled on its own.
+function pickWord(rng: Rng, spell: SpellDef, avoid: ReadonlySet<string> = new Set()): string {
+  const pool = bandWords(spell.band);
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const word = rng.pick(pool);
+    if (!avoid.has(word)) return word;
+  }
+  // The band's pool is too small to avoid a collision after several tries
+  // (rather than loop indefinitely) -- accept one.
+  return rng.pick(pool);
 }
 
-function makeSlot(rng: Rng, spellId: string): SpellSlot {
+function makeSlot(rng: Rng, spellId: string, avoid?: ReadonlySet<string>): SpellSlot {
   return {
     spellId,
-    word: pickWord(rng, SPELLS[spellId]),
+    word: pickWord(rng, SPELLS[spellId], avoid),
     cooldown: 0,
     corrupted: false,
     sealed: 0,
   };
+}
+
+/**
+ * Puts a newly bought/learned/rewarded spell into an actual castable slot.
+ *
+ * Every acquisition path used to only push onto `s.spells` (the "known"
+ * list) without ever touching `s.slots` -- gold spent in the shop, and
+ * spells learned from events, had zero gameplay effect, since only
+ * `s.slots` is ever read by `cast()`. The one path that did touch a slot
+ * always overwrote the same fixed index, discarding whatever was equipped
+ * there. This rotates the target slot by how many distinct spells are known
+ * (`nextSpells.length`), so acquisitions spread across all `SLOTS` slots
+ * over a run instead of piling onto one.
+ */
+function assignSpellToSlot(rng: Rng, slots: SpellSlot[], nextSpells: string[], spellId: string): SpellSlot[] {
+  const slotIndex = (nextSpells.length - 1) % slots.length;
+  const avoid = new Set(slots.filter((_, i) => i !== slotIndex).map((slot) => slot.word));
+  return slots.map((slot, i) => (i === slotIndex ? makeSlot(rng, spellId, avoid) : slot));
 }
 
 function buildMap(rng: Rng, floor: number): RoomNode[] {
@@ -178,12 +214,24 @@ function buildMap(rng: Rng, floor: number): RoomNode[] {
       ? ["elite", "combat", "event", "treasure", "elite"]
       : ["combat", "combat", "event", "treasure", "elite"];
   const shuffled = rng.shuffle(filler);
-  for (let i = 0; i < ROOMS_PER_FLOOR - 1; i++) {
-    rooms.push({ index: i, kind: i === 0 ? "combat" : shuffled[i - 1] ?? "combat", done: false });
+  // 6 rooms total: 1 fixed opening combat + this many shuffled filler rooms
+  // + 1 fixed shop + 1 fixed boss. Previously this used all 5 filler items
+  // (pushing the room count to 7 before a shop was even inserted) and then
+  // sliced back down to ROOMS_PER_FLOOR -- which always cut off whatever was
+  // pushed last, and boss was always pushed last. Every floor's map
+  // therefore never contained a boss room, and the run "won" on clearing the
+  // final filler room. Take only as many filler rooms as actually fit.
+  const fillerCount = ROOMS_PER_FLOOR - 3;
+  rooms.push({ index: 0, kind: "combat", done: false });
+  for (const kind of shuffled.slice(0, fillerCount)) {
+    rooms.push({ index: 0, kind, done: false });
   }
-  rooms.splice(ROOMS_PER_FLOOR - 2, 0, { index: 0, kind: "shop", done: false });
+  // Shop lands in the middle of the filler run, not immediately after the
+  // opening fight or immediately before the boss.
+  const shopAt = Math.min(rooms.length, 1 + Math.floor(fillerCount / 2));
+  rooms.splice(shopAt, 0, { index: 0, kind: "shop", done: false });
   rooms.push({ index: 0, kind: "boss", done: false });
-  return rooms.slice(0, ROOMS_PER_FLOOR).map((r, i) => ({ ...r, index: i }));
+  return rooms.map((r, i) => ({ ...r, index: i }));
 }
 
 function enemyFrom(def: EnemyDef, floor: number, uid: number): EnemyState {
@@ -269,6 +317,9 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
       telegraph: null,
       lastSpellId: null,
       repeatCount: 0,
+      quickenMs: 0,
+      hexMs: 0,
+      hexTargetUid: null,
     };
   }
 
@@ -316,9 +367,14 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         gold: 40,
         relics: [],
         spells,
-        slots: Array.from({ length: SLOTS }, (_, i) =>
-          makeSlot(rng, spells[i % spells.length]),
-        ),
+        slots: (() => {
+          const initialSlots: SpellSlot[] = [];
+          for (let i = 0; i < SLOTS; i++) {
+            const avoid = new Set(initialSlots.map((slot) => slot.word));
+            initialSlots.push(makeSlot(rng, spells[i % spells.length], avoid));
+          }
+          return initialSlots;
+        })(),
         enemies: spawnFor(rng, map[0].kind, 1, internal.current.uid),
       });
       internal.current.uid += 8;
@@ -402,9 +458,20 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         // rule change cannot sit over the board for the rest of the fight.
         if (s.telegraph && s.elapsedMs % 2500 < TICK_MS) s.telegraph = null;
 
-        // mana regen, modified by relics
+        // Quicken/Hex durations count down like any other timed effect.
+        if (s.quickenMs > 0) s.quickenMs = Math.max(0, s.quickenMs - TICK_MS);
+        if (s.hexMs > 0) {
+          s.hexMs = Math.max(0, s.hexMs - TICK_MS);
+          if (s.hexMs === 0) s.hexTargetUid = null;
+        }
+
+        // mana regen, modified by relics -- the Void King's "silence" rule
+        // stops it outright (telegraphed and picked, but never actually
+        // applied anywhere until now).
         const regenMult = s.relics.includes("mana-engine") ? 1.6 : 1;
-        s.mana = Math.min(s.maxMana, s.mana + char.regen * (TICK_MS / 1000) * regenMult);
+        if (s.voidRule !== "silence") {
+          s.mana = Math.min(s.maxMana, s.mana + char.regen * (TICK_MS / 1000) * regenMult);
+        }
 
         // cooldowns and seals
         s.slots = s.slots.map((slot) => {
@@ -442,12 +509,15 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         if (incoming > 0) {
           const absorbed = Math.min(s.shield, incoming);
           s.shield -= absorbed;
+          const afterShield = incoming - absorbed;
           // Sleight's cost: the Rogue Mage trades durability for burst.
-          const scaled =
-            s.characterId === "rogue-mage"
-              ? Math.round((incoming - absorbed) * 1.25)
-              : incoming - absorbed;
-          const through = scaled;
+          // Iron Will's cost: "never interrupted" costs +15% damage taken --
+          // there's no interrupt mechanic in the game to make that upside
+          // meaningful, but the downside is real and was previously never
+          // applied at all, making the relic strictly beneficial.
+          let takeMult = s.characterId === "rogue-mage" ? 1.25 : 1;
+          if (s.relics.includes("iron-will")) takeMult *= 1.15;
+          const through = Math.round(afterShield * takeMult);
           if (through > 0) {
             s.hp = Math.max(0, s.hp - through);
             s.combo = 0;
@@ -559,12 +629,22 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           ? spell.mana * 0.65
           : spell.mana;
         s.mana -= manaCost;
+        // The Void King's "drain" rule: telegraphed and picked, but never
+        // actually applied anywhere until now.
+        if (s.voidRule === "drain") s.hp = Math.max(0, s.hp - 3);
         s.castCount += 1;
 
         // Relics and passives that change the maths rather than nudging a stat.
         let power = spell.base + spell.perLetter * len;
-        if (s.relics.includes("heavy-tome") && len >= 8) power *= 1.35;
-        if (s.relics.includes("scholar")) power += s.combo * 0.6;
+        if (s.relics.includes("heavy-tome") && len >= 8) power *= 1.5;
+        // Capped at +60%, matching "up to +60%" in its own description --
+        // previously uncapped and based on raw combo count rather than a
+        // percentage, so a long clean streak (fully player-controlled, not
+        // hard to sustain) could dwarf a spell's own base power.
+        if (s.relics.includes("scholar")) power *= 1 + Math.min(0.6, s.combo * 0.02);
+        // Quicken: +60% spell damage while active.
+        if (s.quickenMs > 0) power *= 1.6;
+        if (s.relics.includes("cursed-quill")) power *= 1.45;
 
         // Sleight: short words hit far harder, at the cost of taking more.
         if (s.characterId === "rogue-mage" && len <= 5) power *= 1.7;
@@ -596,6 +676,21 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         } else if (spell.type === "shield") {
           s.shield += damage;
           pushEvent(s, "info", `shield ${damage}`, 0.5);
+        } else if (spell.type === "buff") {
+          // Quicken: previously fell through to the damage branch below with
+          // base/perLetter both 0, dealing a flat 1 damage instead of
+          // buffing anything.
+          s.quickenMs = spell.durationMs ?? 0;
+          pushEvent(s, "info", "damage +60%", 0.5);
+        } else if (spell.type === "debuff") {
+          // Hex: same previous bug as Quicken -- marks the frontmost living
+          // enemy instead of dealing 1 damage nowhere useful.
+          const target = s.enemies.find((e) => e.hp > 0);
+          if (target) {
+            s.hexTargetUid = target.uid;
+            s.hexMs = spell.durationMs ?? 0;
+            pushEvent(s, "info", "marked", 0.5);
+          }
         } else {
           const alive = s.enemies.filter((e) => e.hp > 0);
           const targets =
@@ -617,6 +712,9 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
               1,
               (isSplash ? damage * 0.35 : damage) - (e.def.armor ?? 0),
             );
+            // Hex: the marked enemy takes +50% damage from anything, not
+            // just the debuff cast that marked it.
+            if (s.hexTargetUid === e.uid && s.hexMs > 0) dealt *= 1.5;
             if (
               spell.type === "execute" &&
               e.hp / e.maxHp <= (spell.threshold ?? 0.25)
@@ -644,8 +742,14 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           }
           pushEvent(s, crit ? "crit" : "damage", `${damage}`, 0.35);
 
-          const lifesteal = spell.lifesteal ?? (s.relics.includes("vampiric") ? 0.12 : 0);
-          if (lifesteal > 0) s.hp = Math.min(s.maxHp, s.hp + Math.round(damage * lifesteal));
+          // Vampiric Ink is described as "killing an enemy restores 10% of
+          // max health" -- previously applied as 12% lifesteal on *all*
+          // damage dealt, gated on nothing.
+          if (spell.lifesteal) {
+            s.hp = Math.min(s.maxHp, s.hp + Math.round(damage * spell.lifesteal));
+          } else if (s.relics.includes("vampiric") && killed.length > 0) {
+            s.hp = Math.min(s.maxHp, s.hp + Math.round(s.maxHp * 0.1));
+          }
           if (crit && s.relics.includes("bloodstone")) {
             s.hp = Math.min(s.maxHp, s.hp + 4);
           }
@@ -683,20 +787,29 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         const cd = s.relics.includes("quickened") && len <= 5
           ? spell.cooldownMs * 0.6
           : spell.cooldownMs;
+        const otherWords = new Set(s.slots.filter((_, i) => i !== slotIndex).map((sl) => sl.word));
         s.slots = s.slots.map((sl, i) =>
           i === slotIndex
-            ? { ...sl, word: pickWord(rng, spell), cooldown: cd, corrupted: false }
+            ? { ...sl, word: pickWord(rng, spell, otherWords), cooldown: cd, corrupted: false }
             : sl,
         );
         s.typed = "";
 
-        // Echo relic: a second, free cast at reduced power.
-        if (s.relics.includes("echo") && rng.chance(0.2) && spell.type !== "heal") {
-          const echo = Math.round(damage * 0.5);
-          s.enemies = s.enemies.map((e, i) =>
-            i === 0 && e.hp > 0 ? { ...e, hp: Math.max(0, e.hp - echo) } : e,
-          );
-          pushEvent(s, "info", `echo ${echo}`, 0.6);
+        // Echo relic: a second, free cast at reduced power. Only for spells
+        // that actually dealt damage -- previously excluded only "heal", so
+        // a shield/buff/debuff cast (0 direct damage) could still "echo"
+        // using that spell's base/perLetter numbers as free damage, and the
+        // echo hit skipped enemy armor entirely.
+        const echoEligible = spell.type === "damage" || spell.type === "aoe" || spell.type === "execute";
+        if (s.relics.includes("echo") && rng.chance(0.2) && echoEligible) {
+          const target = s.enemies.find((e) => e.hp > 0);
+          if (target) {
+            const echo = Math.max(1, Math.round(damage * 0.5) - (target.def.armor ?? 0));
+            s.enemies = s.enemies.map((e) =>
+              e.uid === target.uid ? { ...e, hp: Math.max(0, e.hp - echo) } : e,
+            );
+            pushEvent(s, "info", `echo ${echo}`, 0.6);
+          }
         }
 
         internal.current.mirrorLast = spell;
@@ -769,7 +882,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         const rng = internal.current.rng;
         if (kind === "spell" && id) {
           s.spells = [...new Set([...s.spells, id])];
-          s.slots = s.slots.map((sl, i) => (i === s.slots.length - 1 ? makeSlot(rng, id) : sl));
+          s.slots = assignSpellToSlot(rng, s.slots, s.spells, id);
         } else if (kind === "relic" && id) {
           s.relics = [...s.relics, id];
           const relic = relicById(id);
@@ -779,6 +892,13 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           }
           if (relic?.id === "cursed-quill") {
             s.maxHp = Math.max(20, s.maxHp - 15);
+            s.hp = Math.min(s.hp, s.maxHp);
+          }
+          // "Mana regen +60%. Max health -10." -- the regen upside was
+          // already applied every tick; the downside was never applied
+          // anywhere, making a "cursed" relic pure upside.
+          if (relic?.id === "mana-engine") {
+            s.maxHp = Math.max(20, s.maxHp - 10);
             s.hp = Math.min(s.hp, s.maxHp);
           }
         }
@@ -807,6 +927,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           else if (e.kind === "spell") {
             const pick = rng.pick(Object.keys(SPELLS));
             s.spells = [...new Set([...s.spells, pick])];
+            s.slots = assignSpellToSlot(rng, s.slots, s.spells, pick);
           } else if (e.kind === "gamble") {
             if (rng.chance(0.5)) s.gold += 60;
             else s.hp = Math.max(1, s.hp - 12);
@@ -825,8 +946,12 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
     setState((prev) => {
       if (prev.gold < price) return prev;
       const s: SpellboundState = { ...prev, gold: prev.gold - price };
-      if (kind === "spell") s.spells = [...new Set([...s.spells, id])];
-      else s.relics = [...s.relics, id];
+      if (kind === "spell") {
+        s.spells = [...new Set([...s.spells, id])];
+        s.slots = assignSpellToSlot(internal.current.rng, s.slots, s.spells, id);
+      } else {
+        s.relics = [...s.relics, id];
+      }
       s.offer = {
         spells: s.offer.spells.filter((x) => x !== id),
         relics: s.offer.relics.filter((x) => x !== id),

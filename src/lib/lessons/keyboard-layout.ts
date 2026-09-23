@@ -92,7 +92,27 @@ const KEY_FINGER_MAP: Record<string, FingerId> = Object.fromEntries(
   [...KEY_ROWS.flat(), SPACE_KEY].map((k) => [k.key, k.finger]),
 );
 
-export function fingerForKey(key: string | null): FingerId | null {
+// Punctuation the word generator can inject (see PUNCTUATION_MARKS in
+// word-generator.ts) that isn't its own physical key -- it's Shift plus a
+// key already on the grid. Without this, any Intermediate/Advanced lesson
+// (or the two Beginner ones with punctuation) that generates a "!", "?" or
+// ":" made the keyboard go completely blank -- no key lit, no finger lit,
+// label falling back to "Get ready" -- exactly when guidance mattered most.
+// Mapped to the physical key you'd actually hold Shift and press.
+const SHIFTED_SYMBOL_TO_BASE_KEY: Record<string, string> = {
+  "!": "1",
+  "?": "/",
+  ":": ";",
+};
+
+/** The physical key someone actually presses (with Shift, for a symbol) to type `key`. Used to decide which grid key lights up, not just which finger. */
+export function physicalKeyFor(key: string | null): string | null {
   if (!key) return null;
-  return KEY_FINGER_MAP[key.toLowerCase()] ?? null;
+  const lower = key.toLowerCase();
+  return SHIFTED_SYMBOL_TO_BASE_KEY[lower] ?? lower;
+}
+
+export function fingerForKey(key: string | null): FingerId | null {
+  const physical = physicalKeyFor(key);
+  return physical ? (KEY_FINGER_MAP[physical] ?? null) : null;
 }

@@ -29,7 +29,13 @@ function measureLinePitch(container: HTMLElement): number {
   const tops = [...new Set(Array.from(container.children, (c) => (c as HTMLElement).offsetTop))].sort(
     (a, b) => a - b,
   );
-  if (tops.length < 3) return LINE_HEIGHT_FALLBACK;
+  // Two distinct row offsets are enough for a real gap -- the median logic
+  // below already tolerates a single delta (length-1 arrays just return
+  // their only element). Requiring three tops meant any text short enough to
+  // wrap onto just two lines (the common case) never measured at all and
+  // silently rode the hardcoded fallback -- exactly the kind of wrongness
+  // this function exists to avoid.
+  if (tops.length < 2) return LINE_HEIGHT_FALLBACK;
   const deltas = tops.slice(1).map((t, i) => t - tops[i]).filter((d) => d > 0);
   if (deltas.length === 0) return LINE_HEIGHT_FALLBACK;
   deltas.sort((a, b) => a - b);

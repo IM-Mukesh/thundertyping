@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Bot, Crosshair, Flag, Gauge, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
-import type { GameDefinition } from "@/lib/games/game-types";
+import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
+import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import {
   LEAD_IN_BEAT_MS,
   OPPONENT_COUNT,
@@ -104,6 +105,11 @@ export function TypingGrandPrixGame({ definition }: TypingGrandPrixGameProps) {
     setIsNewBest(newBest);
     setBest(stored);
     playSound("over", soundEnabled);
+    // Every game must feed the cross-game profile, or "play every game"
+    // (site:all-games) can never be earned no matter how much is played.
+    bumpStat(definition.id, "runs");
+    awardXp(Math.round(state.score / 10) + (state.place === 1 ? 40 : 10));
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
     // settle the race once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);

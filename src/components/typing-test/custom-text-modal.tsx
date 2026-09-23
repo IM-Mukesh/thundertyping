@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 interface CustomTextModalProps {
@@ -19,6 +19,7 @@ export function CustomTextModal({ open, initialValue, onSubmit, onClose }: Custo
   const [draft, setDraft] = useState(initialValue);
   const [prevOpen, setPrevOpen] = useState(open);
   const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -28,7 +29,32 @@ export function CustomTextModal({ open, initialValue, onSubmit, onClose }: Custo
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // Focus trap. Without this, Shift+Tab out of the textarea walks
+      // straight past this dialog into the page behind it -- including the
+      // hidden typing input, whose own Tab handler restarts the test. A
+      // keyboard user could silently wipe an in-progress run while this
+      // modal still looks open (aria-modal="true" was already claiming this
+      // behavior; nothing was actually enforcing it).
+      if (e.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'textarea, button:not(:disabled), [href], input, select, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -45,6 +71,7 @@ export function CustomTextModal({ open, initialValue, onSubmit, onClose }: Custo
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}

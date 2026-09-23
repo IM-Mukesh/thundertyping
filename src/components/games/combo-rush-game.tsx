@@ -13,7 +13,8 @@ import {
   VolumeX,
   Zap,
 } from "lucide-react";
-import type { GameDefinition } from "@/lib/games/game-types";
+import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
+import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import {
   comboMultiplier,
   LOW_TIME_MS,
@@ -124,6 +125,11 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
     setIsNewBest(newBest);
     setBest(stored);
     playSound("over", soundEnabled);
+    // Every game must feed the cross-game profile, or "play every game"
+    // (site:all-games) can never be earned no matter how much is played.
+    bumpStat(definition.id, "runs");
+    awardXp(Math.round(state.score / 10) + state.cleared * 3);
+    checkSiteAchievements(GAME_LIST.map((g) => g.id));
     // settle the run once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
@@ -338,7 +344,24 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
         <input
           ref={inputRef}
           value={state.typed}
-          onChange={(e) => setTyped(e.target.value.toLowerCase())}
+          onChange={(e) => {
+            const value = e.target.value;
+            // onKeyDown below normally swallows the space before it reaches
+            // the value, so this branch is the fallback for input that
+            // arrives without a matching keydown at all -- IME composition
+            // and predictive-text acceptance on mobile keyboards, which
+            // report keydown as keyCode 229 / key "Unidentified" rather than
+            // a real space. Previously that meant "space skips" (advertised
+            // on this game's own start screen) silently did nothing there:
+            // the space just landed in the buffer, failed to match any
+            // word, and scored as a wrong keystroke instead of a skip.
+            if (value.includes(" ")) {
+              setTyped(value.slice(0, value.indexOf(" ")).toLowerCase());
+              skip();
+              return;
+            }
+            setTyped(value.toLowerCase());
+          }}
           onPaste={(e) => e.preventDefault()}
           onKeyDown={(e) => {
             // Space never commits a word here — a word clears the instant it

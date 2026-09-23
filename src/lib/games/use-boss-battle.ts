@@ -379,6 +379,11 @@ function reducer(state: BossBattleState, action: BossAction): BossBattleState {
       const hit: BossBattleState = {
         ...state,
         bossHp,
+        // Set here (not only in the phasesCrossed>0 branch below) so a
+        // killing blow that also crosses a phase threshold reports the
+        // boss's true final phase instead of the stale pre-hit one --
+        // previously only the non-lethal "crossed a phase" path updated it.
+        phase: nextPhase,
         damageDealt: state.damageDealt + damage,
         score: state.score + damage + phaseBonus,
         phaseBonus: state.phaseBonus + phaseBonus,

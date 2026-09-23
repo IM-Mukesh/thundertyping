@@ -93,6 +93,7 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const recorder = useRef(new GhostRecorder());
   const startedAt = useRef(0);
+  const focusTimeoutRef = useRef<number | null>(null);
 
   // The daily uses a UTC-seeded word list so every player races the same text.
   const textKey = mode === "daily" ? dailySeedFor("ghost-racer") : "practice:english";
@@ -109,15 +110,15 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
   const text = useMemo(() => words.join(" "), [words]);
   const totalChars = text.length;
 
-  const correctChars = useMemo(() => {
-    let n = 0;
-    for (let i = 0; i < typed.length && i < text.length; i++) {
-      if (typed[i] === text[i]) n++;
-    }
-    return n;
-  }, [typed, text]);
-
+  // Was its own positional-match loop (counting any index where typed[i] ===
+  // text[i], not stopping at the first miss) -- a looser definition of
+  // "correct" than racePositionOf's strict prefix match, which is what
+  // actually gates the win condition and the saved ghost. The two happened
+  // to always agree given how input is gated elsewhere, but that made this a
+  // latent trap: change the gating and WPM/accuracy could silently diverge
+  // from what actually won the race. One definition of "correct" now.
   const racePosition = useMemo(() => racePositionOf(typed, text), [typed, text]);
+  const correctChars = racePosition;
 
   const ghostIndex = ghost && phase === "racing" ? ghostIndexAt(ghost, elapsed) : 0;
   const playerPct = (racePosition / totalChars) * 100;
@@ -157,14 +158,20 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
             setPhase("racing");
             void playMusic(MUSIC.race);
             sound("race-start", soundEnabled);
-            window.setTimeout(() => inputRef.current?.focus(), 0);
+            focusTimeoutRef.current = window.setTimeout(() => inputRef.current?.focus(), 0);
             return 0;
           }
           sound("tick", soundEnabled);
           return c - 1;
         });
       }, 700);
-      return () => window.clearInterval(id);
+      return () => {
+        window.clearInterval(id);
+        if (focusTimeoutRef.current !== null) {
+          window.clearTimeout(focusTimeoutRef.current);
+          focusTimeoutRef.current = null;
+        }
+      };
     }
 
     if (phase === "racing") {
@@ -403,6 +410,12 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
           ref={inputRef}
           value={typed}
           onChange={(e) => handleInput(e.target.value)}
+          // Every other typing surface on this site blocks paste (a whole
+          // race pasted in one event finishes at a near-zero duration, and
+          // that run then gets saved as the new ghost -- an unbeatable
+          // phantom for everyone who races this text afterward). This was
+          // the one game missing the guard.
+          onPaste={(e) => e.preventDefault()}
           aria-label="Type the race text"
           autoComplete="off"
           autoCapitalize="off"

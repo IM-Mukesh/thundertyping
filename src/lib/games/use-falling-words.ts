@@ -154,6 +154,16 @@ function findTarget(words: FallingWord[], value: string, lockedId: number | null
   }
   const matches = words.filter((w) => w.text.startsWith(value));
   if (matches.length === 0) return null;
+  // Prefer an exact match over "closest to the floor" -- otherwise a word
+  // typed perfectly could be passed over for a different, longer word that
+  // merely shares a prefix and is further along (e.g. "a" vs "are"), leaving
+  // the correctly-typed word uncleared. Real dictionary collisions like this
+  // are common among the shortest, most frequent words. Only reached when
+  // there's no active lock on a still-matching word (see above) -- an
+  // existing lock still wins, matching the documented "targeting locks on"
+  // behavior.
+  const exact = matches.find((w) => w.text === value);
+  if (exact) return exact;
   return matches.reduce((a, b) => (b.progress > a.progress ? b : a));
 }
 
@@ -305,8 +315,20 @@ export function useFallingWords(definition: GameDefinition) {
             const freeLanes = Array.from({ length: LANE_COUNT }, (_, i) => i).filter(
               (l) => !usedLanes.has(l),
             );
-            const lanes = freeLanes.length > 0 ? freeLanes : [Math.floor(Math.random() * LANE_COUNT)];
-            dispatch({ type: "SPAWN", text, lane: lanes[Math.floor(Math.random() * lanes.length)] });
+            // MAX_ACTIVE_WORDS (7) can exceed LANE_COUNT (6), so all lanes
+            // being occupied is a real, reachable state, not just a
+            // theoretical one. Previously falling back to a random --
+            // already-occupied -- lane here forced two words to overlap at
+            // the exact same horizontal position, contradicting `lane`'s own
+            // doc comment ("so words don't overlap") and sometimes making
+            // one genuinely unreadable/untypeable before it reached the
+            // floor. Skipping the spawn (same choice Word Blaster's
+            // pickLane already makes) is strictly better than a guaranteed
+            // collision -- this tick's spawn is simply deferred to the next.
+            if (freeLanes.length > 0) {
+              const lane = freeLanes[Math.floor(Math.random() * freeLanes.length)];
+              dispatch({ type: "SPAWN", text, lane });
+            }
           }
         }
         schedule();

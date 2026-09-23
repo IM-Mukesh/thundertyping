@@ -40,7 +40,13 @@ export function ResultsGraph({ samples }: ResultsGraphProps) {
     const toPath = (key: "wpm" | "rawWpm") =>
       samples.map((s, i) => `${i === 0 ? "M" : "L"}${x(s.t).toFixed(1)},${y(s[key]).toFixed(1)}`).join(" ");
 
-    const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(yMax * f));
+    // Deduped: when the fastest WPM anywhere in the test is very low (a very
+    // short or barely-started run, yMax as low as 1-2), several of the five
+    // fractions round to the same integer -- e.g. yMax=1 produces
+    // [0,0,1,1,1]. Undeduped, that's both a duplicate React key (a real
+    // console warning) and overlapping/garbled axis labels sitting on top of
+    // each other at the same pixel row.
+    const yTicks = [...new Set([0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(yMax * f)))];
     const tickCount = Math.min(6, samples.length);
     const xTicks = Array.from({ length: tickCount }, (_, i) => {
       const t = tickCount === 1 ? 0 : (maxT / (tickCount - 1)) * i;

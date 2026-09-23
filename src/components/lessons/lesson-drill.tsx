@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, CheckCircle2, Lock, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
@@ -11,7 +11,7 @@ import { HiddenInput } from "@/components/typing-test/hidden-input";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { VirtualKeyboard } from "@/components/lessons/virtual-keyboard";
 import { buildSubLessons, buildTextForContent, type SubLessonSpec } from "@/lib/lessons/lesson-content";
-import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
+import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
 import { LESSON_LIST, type LessonDefinition } from "@/lib/lessons/lesson-types";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { playSound } from "@/lib/games/game-audio";
@@ -52,6 +52,12 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   // next/dynamic(ssr:false) -- so by the time this reads the store, real
   // progress (if any) is already there, not a pre-hydration default.
   const existingProgress = useLessonProgressStore((s) => s.units[definition.id]);
+  // The dashboard only *visually* disables a locked unit's card -- nothing
+  // previously stopped someone from typing this route directly and playing
+  // (and completing, and earning its achievements) a unit whose prerequisite
+  // was never finished. Enforced here too now, not just on the card.
+  const allUnits = useLessonProgressStore((s) => s.units);
+  const unlocked = isLessonUnlocked(definition.id, allUnits);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
 
@@ -188,6 +194,31 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- continueToNextStep/router are stable enough here; re-binding on every result/nextUnit change is what keeps the handler's closure correct
   }, [isFinished, result, nextUnit, router]);
+
+  // Every hook above still runs even when locked (Rules of Hooks) -- they
+  // just sit inert, since nothing below ever mounts HiddenInput to feed them
+  // real input. This is the actual enforcement: no typing surface renders
+  // at all for a unit whose prerequisite isn't complete.
+  if (!unlocked) {
+    const previousUnit = currentIndex > 0 ? LESSON_LIST[currentIndex - 1] : undefined;
+    return (
+      <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-10 text-center">
+        <Lock size={28} className="text-sub" aria-hidden="true" />
+        <p className="font-display text-sm font-bold uppercase tracking-wide text-foreground">Unit locked</p>
+        <p className="max-w-sm text-sm text-sub">
+          {previousUnit
+            ? `Complete "${previousUnit.name}" first to unlock this unit.`
+            : "This unit isn't unlocked yet."}
+        </p>
+        <Link
+          href="/lessons"
+          className="flex h-11 items-center gap-2 rounded-lg bg-accent px-5 text-sm font-bold text-background transition-[filter] hover:brightness-110"
+        >
+          Back to all lessons
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full max-w-3xl flex-col items-center gap-8">

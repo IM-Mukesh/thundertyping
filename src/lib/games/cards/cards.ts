@@ -5,8 +5,10 @@
  * on its own; Redouble does literally nothing on its own; played in sequence
  * against an enemy about to act, they end the fight. A deck that commits to one
  * archetype and cuts everything else should beat a pile of individually strong
- * cards, and the reward screen's remove option exists precisely so that is
- * possible.
+ * cards -- though today the reward screen only ever adds a card or skips
+ * (`takeReward(cardId: string | null)` in use-card-battle.ts); there's no way
+ * to actually cut one from the deck yet, despite what an earlier version of
+ * this comment claimed.
  *
  * Archetypes: Blight (damage over time), Poise (block into damage), Crescendo
  * (burst setup), Encore (many small hits), Summon (the troupe), Hush/Exposure
@@ -89,7 +91,12 @@ export const CARDS: readonly CardDef[] = [
     rarity: "rare",
     targeted: true,
     base: { text: "Deal damage equal to the target's Blight, then clear it.", cost: 2, ops: [{ k: "burstBlight" }] },
-    upgraded: { text: "Deal double the target's Blight, then clear it.", cost: 2, ops: [{ k: "burstBlight" }, { k: "burstBlight" }] },
+    // Previously ran burstBlight twice -- the first call already deals
+    // damage equal to Blight *and* zeroes it, so the second call always saw
+    // 0 and did nothing; upgraded and base Rupture dealt identical damage.
+    // Doubling the stack before bursting it deals genuinely double damage,
+    // reusing the same doubleBlight op Redouble already uses above.
+    upgraded: { text: "Deal double the target's Blight, then clear it.", cost: 2, ops: [{ k: "doubleBlight" }, { k: "burstBlight" }] },
   },
   {
     id: "spores",
