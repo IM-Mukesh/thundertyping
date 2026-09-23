@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo/constants";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
+import { VOCAB_DIFFICULTIES } from "@/lib/vocabulary/vocabulary-words";
 
 // Each route's lastModified is the date its content was actually last
 // changed, set by hand at edit time — not `new Date()` evaluated per
@@ -71,6 +72,13 @@ const routes: {
     priority: 0.6,
     changeFrequency: "monthly" as const,
     lastModified: "2026-09-22",
+  })),
+  { path: "/vocabulary", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-23" },
+  ...VOCAB_DIFFICULTIES.map((difficulty) => ({
+    path: `/vocabulary/${difficulty}`,
+    priority: 0.6,
+    changeFrequency: "monthly" as const,
+    lastModified: "2026-09-23",
   })),
 ];
 

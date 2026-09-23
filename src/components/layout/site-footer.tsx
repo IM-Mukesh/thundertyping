@@ -42,6 +42,9 @@ export function SiteFooter() {
             <Link href="/lessons" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
               Lessons
             </Link>
+            <Link href="/vocabulary" className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0">
+              Vocabulary
+            </Link>
             <Link
               href="/achievements"
               className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0"
