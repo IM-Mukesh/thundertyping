@@ -28,3 +28,16 @@ export function pickSessionWords(
   const seen = shuffle(pool.filter((w) => masteredWords.has(w.word)));
   return [...unseen, ...seen].slice(0, Math.min(count, pool.length));
 }
+
+/**
+ * Plain word strings for the main typing test's "vocabulary" mode — a
+ * continuous word stream like "words" mode, just drawn from a difficulty
+ * tier instead of the generic word list. No definitions here (that's the
+ * dedicated /vocabulary test); this is the same test, different word source.
+ */
+export function pickPracticeWords(difficulty: VocabDifficulty, count: number): string[] {
+  const pool = VOCAB_WORDS[difficulty];
+  return shuffle(pool)
+    .slice(0, Math.min(count, pool.length))
+    .map((w) => w.word);
+}

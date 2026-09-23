@@ -1,4 +1,6 @@
-export type TestMode = "time" | "words" | "quote" | "custom";
+import type { VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
+
+export type TestMode = "time" | "words" | "quote" | "custom" | "vocabulary";
 // Any positive integer is valid (see MIN/MAX_CUSTOM_TIME_DURATION below) -
 // the literal union of presets was widened to plain `number` so a
 // user-entered custom duration has somewhere to live without a second field.
@@ -20,6 +22,7 @@ export interface TestConfig {
   customText: string;
   punctuation: boolean;
   numbers: boolean;
+  vocabDifficulty: VocabDifficulty;
 }
 
 // "missed" is a character the user skipped past by committing the word early.

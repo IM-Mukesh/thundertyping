@@ -27,6 +27,7 @@ const BASE: TestConfig = {
   timeDuration: 15,
   wordCount: 10,
   quoteLength: "short",
+  vocabDifficulty: "easy",
   customText: "",
   punctuation: false,
   numbers: false,

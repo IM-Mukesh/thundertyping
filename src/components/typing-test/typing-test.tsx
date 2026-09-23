@@ -26,6 +26,7 @@ export function TypingTest() {
   const timeDuration = useSettingsStore((s) => s.timeDuration);
   const wordCount = useSettingsStore((s) => s.wordCount);
   const quoteLength = useSettingsStore((s) => s.quoteLength);
+  const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
   const setMode = useSettingsStore((s) => s.setMode);
@@ -48,6 +49,7 @@ export function TypingTest() {
       customText,
       punctuation,
       numbers,
+      vocabDifficulty,
     }),
     [
       mode,
@@ -57,6 +59,7 @@ export function TypingTest() {
       customText,
       punctuation,
       numbers,
+      vocabDifficulty,
     ],
   );
 
@@ -81,6 +84,7 @@ export function TypingTest() {
     customText,
     punctuation,
     numbers,
+    vocabDifficulty,
   ]);
 
   useEffect(() => {

@@ -41,6 +41,7 @@ export function TypingEngineDebug() {
       timeDuration: applied?.duration ?? duration,
       wordCount: 25,
       quoteLength: "medium",
+      vocabDifficulty: "easy",
       customText: applied?.text ?? "",
       punctuation: false,
       numbers: false,

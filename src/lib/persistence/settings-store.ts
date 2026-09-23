@@ -11,6 +11,7 @@ import {
   type WordCountOption,
   type QuoteLength,
 } from "@/lib/typing-engine/engine-types";
+import { VOCAB_DIFFICULTIES, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 
 interface SettingsState {
   theme: ThemeId;
@@ -18,6 +19,7 @@ interface SettingsState {
   timeDuration: TimeDuration;
   wordCount: WordCountOption;
   quoteLength: QuoteLength;
+  vocabDifficulty: VocabDifficulty;
   punctuation: boolean;
   numbers: boolean;
   soundEnabled: boolean;
@@ -30,6 +32,7 @@ interface SettingsState {
   setTimeDuration: (duration: TimeDuration) => void;
   setWordCount: (count: WordCountOption) => void;
   setQuoteLength: (length: QuoteLength) => void;
+  setVocabDifficulty: (difficulty: VocabDifficulty) => void;
   togglePunctuation: () => void;
   toggleNumbers: () => void;
   toggleSound: () => void;
@@ -42,7 +45,7 @@ const THEME_IDS: ThemeId[] = THEMES.map((t) => t.id);
 // component state, not this persisted store, so restoring "custom" as the
 // mode on a fresh page load would leave the engine with no text to build a
 // test from. Treat a persisted "custom" as if it were never set.
-const RESTORABLE_MODES: TestMode[] = ["time", "words", "quote"];
+const RESTORABLE_MODES: TestMode[] = ["time", "words", "quote", "vocabulary"];
 
 type PersistedSettings = Pick<
   SettingsState,
@@ -51,6 +54,7 @@ type PersistedSettings = Pick<
   | "timeDuration"
   | "wordCount"
   | "quoteLength"
+  | "vocabDifficulty"
   | "punctuation"
   | "numbers"
   | "soundEnabled"
@@ -79,6 +83,9 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
     timeDuration: isValidTimeDuration(p.timeDuration) ? p.timeDuration : fallback.timeDuration,
     wordCount: WORD_COUNTS.includes(p.wordCount as WordCountOption) ? (p.wordCount as WordCountOption) : fallback.wordCount,
     quoteLength: QUOTE_LENGTHS.includes(p.quoteLength as QuoteLength) ? (p.quoteLength as QuoteLength) : fallback.quoteLength,
+    vocabDifficulty: VOCAB_DIFFICULTIES.includes(p.vocabDifficulty as VocabDifficulty)
+      ? (p.vocabDifficulty as VocabDifficulty)
+      : fallback.vocabDifficulty,
     punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,
     numbers: typeof p.numbers === "boolean" ? p.numbers : fallback.numbers,
     soundEnabled: typeof p.soundEnabled === "boolean" ? p.soundEnabled : fallback.soundEnabled,
@@ -103,6 +110,7 @@ export const useSettingsStore = create<SettingsState>()(
       timeDuration: 30,
       wordCount: 25,
       quoteLength: "medium",
+      vocabDifficulty: "easy",
       punctuation: false,
       numbers: false,
       // On by default for the games, which feel inert without it. Nothing can
@@ -120,6 +128,7 @@ export const useSettingsStore = create<SettingsState>()(
       setTimeDuration: (timeDuration) => set({ timeDuration }),
       setWordCount: (wordCount) => set({ wordCount }),
       setQuoteLength: (quoteLength) => set({ quoteLength }),
+      setVocabDifficulty: (vocabDifficulty) => set({ vocabDifficulty }),
       togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
       toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),

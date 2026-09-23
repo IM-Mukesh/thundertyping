@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { CharState, CharTally, TestConfig, TestState, WordState } from "@/lib/typing-engine/engine-types";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
+import { pickPracticeWords } from "@/lib/vocabulary/vocabulary-content";
 import { calculateNetWpm, calculateRawWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
 
 const TIME_MODE_BATCH = 40;
@@ -41,6 +42,8 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
     }
     case "custom":
       return { words: config.customText.trim().split(/\s+/).filter(Boolean), quoteSource: null };
+    case "vocabulary":
+      return { words: pickPracticeWords(config.vocabDifficulty, config.wordCount), quoteSource: null };
   }
 }
 

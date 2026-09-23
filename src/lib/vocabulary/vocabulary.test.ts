@@ -7,7 +7,7 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { pickSessionWords, SESSION_WORD_COUNT } from "@/lib/vocabulary/vocabulary-content";
+import { pickPracticeWords, pickSessionWords, SESSION_WORD_COUNT } from "@/lib/vocabulary/vocabulary-content";
 import { createInitialState, reducer } from "@/lib/vocabulary/use-vocabulary-test";
 import { isValidVocabProgress } from "@/lib/vocabulary/vocabulary-progress";
 import { VOCAB_WORDS, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
@@ -45,6 +45,13 @@ describe("vocabulary: word selection", () => {
     const words = pickSessionWords("medium", masteredWords, 20);
     const unmasteredInRound = words.filter((w) => !masteredWords.has(w.word));
     assert.equal(unmasteredInRound.length, 5);
+  });
+
+  it("pickPracticeWords returns plain, unique word strings for the main typing test", () => {
+    const words = pickPracticeWords("medium", 25);
+    assert.equal(words.length, 25);
+    assert.equal(new Set(words).size, 25);
+    for (const w of words) assert.equal(typeof w, "string");
   });
 
   it("every tier has real, unique words with a definition", () => {

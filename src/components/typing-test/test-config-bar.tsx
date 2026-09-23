@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil } from "lucide-react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
@@ -11,7 +11,14 @@ import {
   MAX_CUSTOM_TIME_DURATION,
   type TestMode,
 } from "@/lib/typing-engine/engine-types";
+import { VOCAB_DIFFICULTIES, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 import { cn } from "@/lib/utils/cn";
+
+const VOCAB_DIFFICULTY_LABEL: Record<VocabDifficulty, string> = {
+  easy: "easy",
+  medium: "medium",
+  hard: "hard",
+};
 
 // Text-only for now, per request -- flip back to true to restore the icons.
 // The icon is still passed through everywhere below, just not rendered, so
@@ -23,6 +30,7 @@ const MODES: { id: TestMode; label: string; icon: ReactNode }[] = [
   { id: "words", label: "Words", icon: <Type size={14} /> },
   { id: "quote", label: "Quote", icon: <QuoteIcon size={14} /> },
   { id: "custom", label: "Custom", icon: <Wrench size={14} /> },
+  { id: "vocabulary", label: "Vocabulary", icon: <BookOpen size={14} /> },
 ];
 
 interface TestConfigBarProps {
@@ -34,12 +42,14 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const timeDuration = useSettingsStore((s) => s.timeDuration);
   const wordCount = useSettingsStore((s) => s.wordCount);
   const quoteLength = useSettingsStore((s) => s.quoteLength);
+  const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
   const setMode = useSettingsStore((s) => s.setMode);
   const setTimeDuration = useSettingsStore((s) => s.setTimeDuration);
   const setWordCount = useSettingsStore((s) => s.setWordCount);
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
+  const setVocabDifficulty = useSettingsStore((s) => s.setVocabDifficulty);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
@@ -119,6 +129,27 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
           >
             Edit custom text
           </button>
+        )}
+
+        {mode === "vocabulary" && (
+          <>
+            {VOCAB_DIFFICULTIES.map((d) => (
+              <Pill
+                key={d}
+                active={vocabDifficulty === d}
+                onClick={() => setVocabDifficulty(d)}
+                ariaLabel={VOCAB_DIFFICULTY_LABEL[d]}
+              >
+                {VOCAB_DIFFICULTY_LABEL[d]}
+              </Pill>
+            ))}
+            <span className="h-4 w-px bg-border" aria-hidden="true" />
+            {WORD_COUNTS.map((w) => (
+              <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
+                {w}
+              </Pill>
+            ))}
+          </>
         )}
       </div>
     </div>
