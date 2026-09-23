@@ -30,6 +30,15 @@ export type SoundName =
   | "player-death"
   | "race-start"
   | "new-record"
+  // Word Blaster's boss encounter
+  | "turret-fire"
+  | "wb-explosion"
+  | "boss-core-hit"
+  | "boss-intro"
+  | "boss-fanfare"
+  | "base-alarm"
+  | "combo-milestone"
+  | "wb-defeat"
   // synthesized, below
   | "key-correct"
   | "key-wrong"
@@ -51,6 +60,14 @@ const SAMPLED: Partial<Record<SoundName, string>> = {
   "player-death": `${SFX}/sfx-player-death.opus`,
   "race-start": `${SFX}/sfx-race-start.opus`,
   "new-record": `${SFX}/sfx-new-record.opus`,
+  "turret-fire": `${SFX}/sfx-turret-fire.opus`,
+  "wb-explosion": `${SFX}/sfx-wb-explosion.opus`,
+  "boss-core-hit": `${SFX}/sfx-boss-core-hit.opus`,
+  "boss-intro": `${SFX}/sfx-boss-intro.opus`,
+  "boss-fanfare": `${SFX}/sfx-boss-fanfare.opus`,
+  "base-alarm": `${SFX}/sfx-base-alarm.opus`,
+  "combo-milestone": `${SFX}/sfx-combo-milestone.opus`,
+  "wb-defeat": `${SFX}/sfx-wb-defeat.opus`,
 };
 
 /** Every sampled file, for preloading a game's set up front. */

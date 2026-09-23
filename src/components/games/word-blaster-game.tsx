@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import {
   Crosshair,
   Heart,
@@ -15,14 +16,26 @@ import {
 } from "lucide-react";
 import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
 import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
-import { HIT_EFFECT_MS, LANE_COUNT, TICK_MS, useWordBlaster } from "@/lib/games/use-word-blaster";
+import {
+  BOSS_TIME_PER_WORD_MS,
+  HIT_EFFECT_MS,
+  LANE_COUNT,
+  TICK_MS,
+  useWordBlaster,
+} from "@/lib/games/use-word-blaster";
 import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
+import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
+import { HealthBar, IncomingWarning, WordDisplay } from "@/components/games/ui/game-chrome";
 
-const BOARD_HEIGHT = 400;
+// Reference height for the turret's aim-angle trig only — the board's real
+// height varies by breakpoint via the `--board-h` CSS var below, and this
+// constant being slightly stale just points the barrel a few degrees off,
+// same tolerance the original geometry comment already accepted.
+const BOARD_HEIGHT = 620;
 
 /**
  * Horizontal geometry, in percent of the board width. Percentages rather than
@@ -49,6 +62,10 @@ const DANGER_FROM = 0.72;
  */
 const TRACER_MS = 100;
 const BREACH_FLASH_MS = 400;
+/** How long a damage-number popup stays on screen before it's aged out. */
+const DAMAGE_POPUP_MS = 750;
+/** How long the combo-milestone banner stays up after the triggering kill. */
+const COMBO_BANNER_MS = 1100;
 
 /** Where an enemy sits across the field, 0 = spawn edge, 1 = base wall. */
 function enemyX(progress: number): number {
@@ -61,9 +78,19 @@ function laneY(lane: number): number {
 
 interface WordBlasterGameProps {
   definition: GameDefinition;
+  /** Resolved art URLs (see game-client.tsx) — every key is optional, and
+   *  every piece of art below has a plain CSS/icon fallback so a missing
+   *  file is a quieter board, never a broken one. */
+  art?: Record<string, string | null>;
 }
 
-export function WordBlasterGame({ definition }: WordBlasterGameProps) {
+export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
+  const heroArt = art?.hero ?? null;
+  const gunnerArt = art?.["char-fg"] ?? null;
+  const droneArt = art?.["enemy-drone"] ?? null;
+  const heavyArt = art?.["enemy-heavy"] ?? null;
+  const bossArt = art?.["boss-dreadnought"] ?? null;
+
   // `start` already rebuilds the initial state, so "Play again" needs it rather
   // than a separate reset.
   const { state, start, resume, setTyped } = useWordBlaster(definition);
@@ -87,8 +114,54 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
   // nothing to clean up between runs.
   const now = state.elapsedMs;
   const tracers = state.hits.filter((hit) => now - hit.bornMs < TRACER_MS);
-  const isFiring = tracers.length > 0;
+  const bossTracerActive =
+    state.lastBossHitMs !== null && now - state.lastBossHitMs < TRACER_MS;
+  const isFiring = tracers.length > 0 || bossTracerActive;
   const breachFlash = state.lastBreachMs !== null && now - state.lastBreachMs < BREACH_FLASH_MS;
+  const bossEscapeFlash =
+    state.lastBossEscapeMs !== null && now - state.lastBossEscapeMs < BREACH_FLASH_MS;
+  // A landed word should read as an impact on the boss itself, not just a
+  // number in the corner — a brief flash/shake on the art, same idea as the
+  // breach flash on the wall.
+  const bossHitFlash =
+    state.lastBossHitMs !== null && now - state.lastBossHitMs < BREACH_FLASH_MS;
+
+  // Damage-number popups. Every value shown is a real amount the reducer
+  // already computed (HitEffect.points / lastBossHitPoints) — never a
+  // decorative placeholder, per the rule that a visual must correspond to
+  // real state or not exist at all.
+  const damagePopups = [
+    ...state.hits
+      .filter((hit) => now - hit.bornMs < DAMAGE_POPUP_MS)
+      .map((hit) => ({
+        key: `hit-${hit.seq}`,
+        x: enemyX(hit.progress),
+        y: laneY(hit.lane),
+        points: hit.points,
+        age: now - hit.bornMs,
+      })),
+    ...(state.lastBossHitMs !== null && now - state.lastBossHitMs < DAMAGE_POPUP_MS
+      ? [
+          {
+            key: `boss-${state.lastBossHitMs}`,
+            x: 78,
+            y: 46,
+            points: state.lastBossHitPoints,
+            age: now - state.lastBossHitMs,
+          },
+        ]
+      : []),
+  ];
+
+  // The combo banner reads the timestamp of whatever scoring event most
+  // recently happened (a lane kill or a boss hit) rather than its own timer,
+  // so it can never drift from the number it's celebrating.
+  const lastScoreEventMs = Math.max(
+    state.hits.length > 0 ? state.hits[state.hits.length - 1].bornMs : -Infinity,
+    state.lastBossHitMs ?? -Infinity,
+  );
+  const showComboBanner =
+    state.combo > 0 && state.combo % 5 === 0 && now - lastScoreEventMs < COMBO_BANNER_MS;
 
   // ---- board geometry ------------------------------------------------------
 
@@ -114,7 +187,8 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
     state.lockedId === null ? null : (state.enemies.find((e) => e.id === state.lockedId) ?? null);
   // With nothing locked the turret tracks the leading threat — the same enemy
   // the engine would target on the next keystroke, so the barrel is an honest
-  // preview of where the shot will go.
+  // preview of where the shot will go. During a boss encounter it points at
+  // the boss instead, since the lane field is empty by then anyway.
   const aimTarget =
     locked ??
     (state.enemies.length > 0
@@ -122,7 +196,11 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
       : null);
 
   let aimAngle = 0;
-  if (aimTarget) {
+  if (state.boss) {
+    const dx = ((78 - MUZZLE_X) / 100) * boardWidth;
+    const dy = ((46 - 50) / 100) * BOARD_HEIGHT;
+    aimAngle = (Math.atan2(dy, Math.max(dx, 1)) * 180) / Math.PI;
+  } else if (aimTarget) {
     const dx = ((enemyX(aimTarget.progress) - MUZZLE_X) / 100) * boardWidth;
     const dy = ((laneY(aimTarget.lane) - 50) / 100) * BOARD_HEIGHT;
     // Clamped so an enemy level with or behind the muzzle can't swing the
@@ -135,17 +213,50 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
   // Driven off state transitions rather than fired inline from handlers, so
   // every path that changes the game (a keystroke, an enemy breaching on the
   // tick, an automatic game over) gets audio without each one remembering to.
-  const prevRef = useRef({ correct: 0, incorrect: 0, destroyed: 0, breached: 0, combo: 0 });
+  const prevRef = useRef({
+    correct: 0,
+    incorrect: 0,
+    destroyed: 0,
+    breached: 0,
+    combo: 0,
+    bossActive: false,
+    bossesDefeated: 0,
+    lastBossEscapeMs: null as number | null,
+    lastBossHitMs: null as number | null,
+  });
   useEffect(() => {
     const prev = prevRef.current;
     const s = state;
 
     if (s.correctKeystrokes > prev.correct) playSound("key", soundEnabled);
     if (s.incorrectKeystrokes > prev.incorrect) playSound("typo", soundEnabled);
-    if (s.destroyed > prev.destroyed) playSound("clear", soundEnabled);
-    if (s.breached > prev.breached) playSound("miss", soundEnabled);
+
+    // A boss kill also increments `destroyed` — excluded here so it doesn't
+    // double up with the boss-fanfare cue below.
+    if (s.destroyed > prev.destroyed && s.bossesDefeated === prev.bossesDefeated) {
+      playSound("clear", soundEnabled);
+      sound("wb-explosion", soundEnabled);
+      sound("turret-fire", soundEnabled, { volume: 0.7 });
+    }
+    if (s.breached > prev.breached) {
+      playSound("miss", soundEnabled);
+      sound("base-alarm", soundEnabled);
+    }
     // Milestone only — a chime on every single kill would be exhausting.
-    if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) playSound("combo", soundEnabled);
+    if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) {
+      playSound("combo", soundEnabled);
+      sound("combo-milestone", soundEnabled);
+    }
+
+    if (!prev.bossActive && s.boss) sound("boss-intro", soundEnabled);
+    if (s.bossesDefeated > prev.bossesDefeated) {
+      sound("boss-fanfare", soundEnabled);
+    } else if (s.lastBossHitMs !== null && s.lastBossHitMs !== prev.lastBossHitMs) {
+      sound("boss-core-hit", soundEnabled);
+    }
+    if (s.lastBossEscapeMs !== null && s.lastBossEscapeMs !== prev.lastBossEscapeMs) {
+      sound("base-alarm", soundEnabled);
+    }
 
     prevRef.current = {
       correct: s.correctKeystrokes,
@@ -153,6 +264,10 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
       destroyed: s.destroyed,
       breached: s.breached,
       combo: s.combo,
+      bossActive: s.boss !== null,
+      bossesDefeated: s.bossesDefeated,
+      lastBossEscapeMs: s.lastBossEscapeMs,
+      lastBossHitMs: s.lastBossHitMs,
     };
   }, [state, soundEnabled]);
 
@@ -181,6 +296,7 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
     setIsNewBest(newBest);
     setBest(stored);
     playSound("over", soundEnabled);
+    sound("wb-defeat", soundEnabled);
     // Every game must feed the cross-game profile, or "play every game"
     // (site:all-games) can never be earned no matter how much is played.
     bumpStat(definition.id, "runs");
@@ -201,9 +317,12 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
 
   const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
   const isPlaying = state.status === "running";
+  const boss = state.boss;
+  const bossTimeLeftMs = boss ? boss.deadlineMs - now : 0;
+  const bossTimeFraction = boss ? Math.max(0, Math.min(1, bossTimeLeftMs / BOSS_TIME_PER_WORD_MS)) : 0;
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-3">
+    <div className="flex w-full max-w-4xl flex-col gap-3">
       {/*
         In-play chrome is numbers and icons only — no word labels. Everything
         here is still announced to screen readers through aria-label, so
@@ -269,22 +388,39 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
       <div
         ref={boardRef}
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:320px] sm:[--board-h:400px]"
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:clamp(320px,65vh,440px)] sm:[--board-h:clamp(360px,70vh,560px)] lg:[--board-h:clamp(400px,72vh,680px)]"
         style={{ height: "var(--board-h)" }}
       >
+        {heroArt && (
+          <Image
+            src={heroArt}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 900px"
+            quality={55}
+            className="object-cover opacity-45"
+          />
+        )}
         <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
-        <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
+        <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-30" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"
+        />
 
         {/* Lane separators, so a lane reads as a firing line rather than as
-            arbitrary vertical space. */}
-        {Array.from({ length: LANE_COUNT - 1 }, (_, i) => (
-          <div
-            key={i}
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 border-t border-border/50"
-            style={{ top: `${((i + 1) / LANE_COUNT) * 100}%` }}
-          />
-        ))}
+            arbitrary vertical space. Hidden during a boss encounter, when the
+            lane field is empty and the boss panel owns the board instead. */}
+        {!boss &&
+          Array.from({ length: LANE_COUNT - 1 }, (_, i) => (
+            <div
+              key={i}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 border-t border-border/50"
+              style={{ top: `${((i + 1) / LANE_COUNT) * 100}%` }}
+            />
+          ))}
 
         {/* The zone behind the wall: intensity reads as threat, and it flares
             on a breach. Built with color-mix over the theme's --error rather
@@ -294,7 +430,7 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
           className="pointer-events-none absolute inset-y-0 left-0 transition-opacity duration-200"
           style={{
             width: `${BASE_X + 14}%`,
-            opacity: breachFlash ? 1 : 0.55,
+            opacity: breachFlash || bossEscapeFlash ? 1 : 0.55,
             background:
               "linear-gradient(to right, color-mix(in srgb, var(--error) 30%, transparent) 0%, transparent 100%)",
           }}
@@ -305,62 +441,65 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
           aria-hidden="true"
           className={cn(
             "pointer-events-none absolute inset-y-0 w-0.5 transition-colors",
-            breachFlash ? "bg-error" : "bg-accent/55",
+            breachFlash || bossEscapeFlash ? "bg-error" : "bg-accent/55",
           )}
           style={{ left: `${BASE_X}%` }}
         />
 
-        {state.enemies.map((enemy) => {
-          const isTarget = enemy.id === state.lockedId;
-          const matched = isTarget ? state.typed.length : 0;
-          const inDanger = enemy.progress >= DANGER_FROM;
-          return (
-            <span
-              key={enemy.id}
-              className={cn(
-                "absolute flex items-center gap-1.5 whitespace-nowrap font-mono text-sm tracking-tight transition-[left,transform] ease-linear sm:text-xl",
-                isTarget
-                  ? "text-foreground arcade-glow-soft"
-                  : inDanger
-                    ? "text-error/90"
-                    : "text-sub",
-              )}
-              style={{
-                // Matches the engine tick so stepped updates read as continuous
-                // motion without running the loop at frame rate.
-                transitionDuration: `${TICK_MS}ms`,
-                left: `${enemyX(enemy.progress)}%`,
-                top: `${laneY(enemy.lane)}%`,
-                // The horizontal anchor interpolates from the word's right edge
-                // at spawn to its left edge at the wall, which is the only way
-                // to get both ends right without knowing the text width here.
-                //
-                // Anchoring the left edge throughout (the original) parked the
-                // text's left edge at SPAWN_X and let the rest run past the
-                // board's overflow-hidden clip: the longest word overhung a
-                // 320px-wide board by 52px and stayed partly cut off for the
-                // first quarter of its approach. You cannot type a word you
-                // cannot read, so that was a real difficulty bug, not cosmetic.
-                // Right-anchoring throughout would fix spawn but push the text
-                // through the wall before the breach registers.
-                transform: `translate(${-100 * (1 - enemy.progress)}%, -50%)`,
-              }}
-            >
-              {/* The nose of the craft, and the point that crosses the wall. */}
-              <Triangle
-                size={10}
-                aria-hidden="true"
-                className="-rotate-90 fill-current opacity-70"
-              />
-              <span>
-                {matched > 0 && (
-                  <span className="text-accent arcade-glow">{enemy.text.slice(0, matched)}</span>
+        {!boss &&
+          state.enemies.map((enemy) => {
+            const isTarget = enemy.id === state.lockedId;
+            const matched = isTarget ? state.typed.length : 0;
+            const inDanger = enemy.progress >= DANGER_FROM;
+            const craftArt = enemy.id % 2 === 0 ? droneArt : (heavyArt ?? droneArt);
+            return (
+              <span
+                key={enemy.id}
+                className="absolute flex items-center gap-1.5 whitespace-nowrap transition-[left,transform] ease-linear"
+                style={{
+                  // Matches the engine tick so stepped updates read as continuous
+                  // motion without running the loop at frame rate.
+                  transitionDuration: `${TICK_MS}ms`,
+                  left: `${enemyX(enemy.progress)}%`,
+                  top: `${laneY(enemy.lane)}%`,
+                  // The horizontal anchor interpolates from the word's right edge
+                  // at spawn to its left edge at the wall, which is the only way
+                  // to get both ends right without knowing the text width here.
+                  transform: `translate(${-100 * (1 - enemy.progress)}%, -50%)`,
+                }}
+              >
+                {craftArt ? (
+                  <span className="relative -my-2 h-7 w-9 shrink-0 sm:h-9 sm:w-12" style={{ transform: "scaleX(-1)" }}>
+                    <Image src={craftArt} alt="" fill sizes="48px" className="object-contain" />
+                  </span>
+                ) : (
+                  <Triangle size={10} aria-hidden="true" className="-rotate-90 fill-current opacity-70" />
                 )}
-                {enemy.text.slice(matched)}
+                {/* A word sitting directly over the environment art was
+                    unreadable at low contrast, whatever colour it used — a
+                    solid backdrop chip guarantees legibility regardless of
+                    what's behind it, the same trick the boss's WordDisplay
+                    already relies on. */}
+                <span
+                  className={cn(
+                    "rounded-md border bg-background/80 px-1.5 py-0.5 font-mono text-sm font-semibold tracking-tight backdrop-blur-[1px] sm:text-lg",
+                    isTarget
+                      ? "border-accent text-accent arcade-glow"
+                      : inDanger
+                        ? "border-error/60 text-error"
+                        : "border-border/60 text-foreground",
+                  )}
+                >
+                  {matched > 0 && (
+                    <span className="text-accent underline decoration-2 underline-offset-2">
+                      {enemy.text.slice(0, matched)}
+                    </span>
+                  )}
+                  {enemy.text.slice(matched)}
+                </span>
               </span>
-            </span>
-          );
-        })}
+            );
+          })}
 
         {/*
           Lock-on beam and tracers. preserveAspectRatio="none" lets the whole
@@ -374,7 +513,7 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
         >
-          {isPlaying && aimTarget && (
+          {isPlaying && !boss && aimTarget && (
             <line
               x1={MUZZLE_X}
               y1={50}
@@ -384,6 +523,19 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
               strokeWidth={1}
               strokeDasharray="4 5"
               strokeOpacity={locked ? 0.55 : 0.18}
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+          {isPlaying && boss && (
+            <line
+              x1={MUZZLE_X}
+              y1={50}
+              x2={78}
+              y2={46}
+              stroke="var(--accent)"
+              strokeWidth={1}
+              strokeDasharray="4 5"
+              strokeOpacity={0.4}
               vectorEffect="non-scaling-stroke"
             />
           )}
@@ -400,6 +552,18 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
               vectorEffect="non-scaling-stroke"
             />
           ))}
+          {bossTracerActive && (
+            <line
+              x1={MUZZLE_X}
+              y1={50}
+              x2={78}
+              y2={46}
+              stroke="var(--accent)"
+              strokeWidth={3}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
         </svg>
 
         {/* The explosion. animate-ping is Tailwind's own keyframe (no custom CSS
@@ -446,37 +610,168 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
           );
         })}
 
-        {/* The turret: tracks the target it would shoot, recoils and flares on
-            every kill. */}
+        {/* Damage numbers — real per-kill score, floating up and fading. Ages
+            itself out the same way hit effects do: derived from elapsed time,
+            nothing to unmount by hand. */}
+        {damagePopups.map((popup) => {
+          const t = popup.age / DAMAGE_POPUP_MS;
+          return (
+            <span
+              key={popup.key}
+              aria-hidden="true"
+              className="pointer-events-none absolute font-mono text-sm font-bold tabular-nums text-accent arcade-glow sm:text-base"
+              style={{
+                left: `${popup.x}%`,
+                top: `${popup.y}%`,
+                transform: `translate(-50%, calc(-50% - ${t * 26}px))`,
+                opacity: 1 - t,
+              }}
+            >
+              +{popup.points}
+            </span>
+          );
+        })}
+
+        {/* Combo milestone banner — only ever shown alongside a real combo
+            value already reflected in the stat row above, never a standalone
+            decoration. */}
+        {showComboBanner && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-[18%] -translate-x-1/2 whitespace-nowrap rounded-full border border-accent bg-background/80 px-4 py-1.5 font-mono text-sm font-bold uppercase tracking-[0.2em] text-accent arcade-glow"
+            style={{ opacity: 1 - (now - lastScoreEventMs) / COMBO_BANNER_MS }}
+          >
+            {state.combo}x combo
+          </div>
+        )}
+
+        {/* The turret: the gunner cutout when art is available, tracking the
+            target it would shoot and recoiling on every kill. Falls back to
+            the original abstract circle-and-barrel when no art is provided. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute h-8 w-8 transition-transform duration-100 ease-out"
+          className={cn(
+            "pointer-events-none absolute transition-transform duration-100 ease-out",
+            gunnerArt ? "h-24 w-24 sm:h-32 sm:w-32" : "h-8 w-8",
+          )}
           style={{
             left: `${BASE_X}%`,
             top: "50%",
-            transform: `translate(calc(-50% - ${isFiring ? 4 : 0}px), -50%)`,
+            transform: `translate(calc(-38% - ${isFiring ? 4 : 0}px), -50%)`,
           }}
         >
-          <span
-            className="absolute left-1/2 top-1/2 h-[5px] w-9 origin-left rounded-full bg-accent transition-transform duration-100 ease-out"
-            style={{ transform: `translateY(-50%) rotate(${aimAngle}deg)` }}
-          />
-          {isFiring && (
-            <span className="absolute -inset-2 rounded-full bg-accent/35 blur-[3px]" />
+          {gunnerArt ? (
+            <>
+              <span
+                className="absolute inset-0 origin-[38%_50%] transition-transform duration-100 ease-out"
+                style={{ transform: `rotate(${aimAngle * 0.35}deg)` }}
+              >
+                <Image src={gunnerArt} alt="" fill sizes="128px" className="object-contain drop-shadow-[0_0_12px_rgba(0,0,0,0.5)]" />
+              </span>
+              {isFiring && (
+                <span className="absolute right-0 top-1/2 h-6 w-6 -translate-y-1/2 translate-x-1/2 rounded-full bg-accent/50 blur-[4px]" />
+              )}
+            </>
+          ) : (
+            <>
+              <span
+                className="absolute left-1/2 top-1/2 h-[5px] w-9 origin-left rounded-full bg-accent transition-transform duration-100 ease-out"
+                style={{ transform: `translateY(-50%) rotate(${aimAngle}deg)` }}
+              />
+              {isFiring && <span className="absolute -inset-2 rounded-full bg-accent/35 blur-[3px]" />}
+              <span
+                className={cn(
+                  "absolute inset-0 rounded-full border-2 border-accent bg-background transition-transform duration-100",
+                  isFiring ? "scale-110" : "scale-100",
+                )}
+              />
+              <span className="absolute inset-[7px] rounded-full bg-accent/75" />
+            </>
           )}
-          <span
-            className={cn(
-              "absolute inset-0 rounded-full border-2 border-accent bg-background transition-transform duration-100",
-              isFiring ? "scale-110" : "scale-100",
-            )}
-          />
-          <span className="absolute inset-[7px] rounded-full bg-accent/75" />
         </div>
 
+        {/* Boss encounter — takes over the board while active. Reuses the
+            shared HealthBar/WordDisplay/IncomingWarning from game-chrome.tsx
+            (built for Boss Battle) rather than one-off components, proving the
+            shared kit generalises to a second game. */}
+        {boss && (
+          <div
+            className={cn(
+              "absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-6",
+              bossHitFlash && "boss-shake",
+            )}
+          >
+            <div className="flex flex-col gap-2">
+              <HealthBar
+                label="Boss"
+                current={boss.hp}
+                max={boss.maxHp}
+                phases={boss.maxHp}
+                phase={boss.maxHp - boss.hp}
+                tone="error"
+              />
+              <div
+                className="h-1 w-full overflow-hidden rounded-full bg-sub-alt/60"
+                role="progressbar"
+                aria-label="Time remaining on this word"
+                aria-valuenow={Math.round(bossTimeFraction * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className={cn(
+                    "h-full transition-[width] ease-linear",
+                    bossTimeLeftMs < 1500 ? "bg-error" : "bg-accent",
+                  )}
+                  style={{
+                    width: `${bossTimeFraction * 100}%`,
+                    transitionDuration: `${TICK_MS}ms`,
+                  }}
+                />
+              </div>
+              <IncomingWarning show={bossTimeLeftMs < 1500} text="Target escaping!" />
+            </div>
+
+            {bossArt && (
+              <div
+                className={cn(
+                  "pointer-events-none absolute right-[4%] top-1/2 h-[70%] w-[42%] -translate-y-1/2 opacity-90 transition-transform duration-100 sm:w-[38%]",
+                  bossHitFlash ? "translate-x-[-6px]" : "translate-x-0",
+                )}
+              >
+                <div className={cn("relative h-full w-full", !bossHitFlash && "arcade-breathe")}>
+                  {/* Mirrored so the art's spire leans toward the turret
+                      instead of away from it — the source image's default
+                      orientation reads as facing up-right, not left. */}
+                  <Image
+                    src={bossArt}
+                    alt=""
+                    fill
+                    sizes="480px"
+                    className="object-contain"
+                    style={{ transform: "scaleX(-1)" }}
+                  />
+                  {bossHitFlash && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-full bg-error/40 mix-blend-screen"
+                      style={{ filter: "blur(12px)" }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="relative z-10">
+              <WordDisplay word={boss.word} typed={state.typed} shake={false} />
+            </div>
+          </div>
+        )}
+
         {!isPlaying && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
             {state.status === "idle" && (
-              <StartCard definition={definition} best={best} onStart={handleStart} />
+              <StartCard definition={definition} best={best} charArt={gunnerArt} onStart={handleStart} />
             )}
             {state.status === "paused" && (
               <div className="flex flex-col items-center gap-4 text-center">
@@ -499,9 +794,11 @@ export function WordBlasterGame({ definition }: WordBlasterGameProps) {
                 score={state.score}
                 destroyed={state.destroyed}
                 bestCombo={state.bestCombo}
+                bossesDefeated={state.bossesDefeated}
                 accuracy={accuracy}
                 isNewBest={isNewBest}
                 best={best}
+                defeatArt={art?.defeat ?? null}
                 onRestart={handleStart}
               />
             )}
@@ -562,14 +859,22 @@ function ArcadeButton({ onClick, children }: { onClick: () => void; children: Re
 function StartCard({
   definition,
   best,
+  charArt,
   onStart,
 }: {
   definition: GameDefinition;
   best: GameBest | null;
+  charArt: string | null;
   onStart: () => void;
 }) {
   return (
-    <div className="flex max-w-sm flex-col items-center gap-5 text-center">
+    <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+      {charArt && (
+        <div className="relative h-28 w-28 sm:h-36 sm:w-36">
+          <Image src={charArt} alt="" fill sizes="144px" className="object-contain" />
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground arcade-glow-soft">
           {definition.name}
@@ -596,7 +901,7 @@ function StartCard({
       </ArcadeButton>
 
       <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
-        Type an enemy&apos;s word to shoot it down
+        Type an enemy&apos;s word to shoot it down — survive the boss when it arrives
       </p>
     </div>
   );
@@ -606,63 +911,82 @@ function GameOverCard({
   score,
   destroyed,
   bestCombo,
+  bossesDefeated,
   accuracy,
   isNewBest,
   best,
+  defeatArt,
   onRestart,
 }: {
   score: number;
   destroyed: number;
   bestCombo: number;
+  bossesDefeated: number;
   accuracy: number;
   isNewBest: boolean;
   best: GameBest | null;
+  defeatArt: string | null;
   onRestart: () => void;
 }) {
   return (
     <div
-      className="flex max-w-sm flex-col items-center gap-4 text-center"
+      className="relative flex w-full max-w-sm flex-col items-center gap-4 overflow-hidden rounded-2xl border border-border p-6 text-center"
       role="status"
       aria-live="polite"
     >
-      {isNewBest ? (
-        <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
-          <Trophy size={12} />
-          New best
-        </span>
-      ) : (
-        <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-sub">Base lost</span>
+      {defeatArt && (
+        <>
+          <Image src={defeatArt} alt="" fill sizes="384px" quality={60} className="object-cover opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/40" />
+        </>
       )}
 
-      <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
-        {score.toLocaleString()}
-      </span>
-
-      <div className="flex items-center gap-5 font-mono text-xs tabular-nums text-sub">
-        <span className="flex items-center gap-1.5">
-          <Skull size={12} className="text-sub/60" />
-          {destroyed}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Zap size={12} className="text-sub/60" />
-          {bestCombo}x
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Crosshair size={12} className="text-sub/60" />
-          {accuracy}%
-        </span>
-        {best && !isNewBest && (
-          <span className="flex items-center gap-1.5 text-accent/80">
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        {isNewBest ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
             <Trophy size={12} />
-            {best.score.toLocaleString()}
+            New best
           </span>
+        ) : (
+          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-sub">Base lost</span>
         )}
-      </div>
 
-      <ArcadeButton onClick={onRestart}>
-        <RotateCcw size={15} />
-        Play again
-      </ArcadeButton>
+        <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
+          {score.toLocaleString()}
+        </span>
+
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 font-mono text-xs tabular-nums text-sub">
+          <span className="flex items-center gap-1.5">
+            <Skull size={12} className="text-sub/60" />
+            {destroyed}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Zap size={12} className="text-sub/60" />
+            {bestCombo}x
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Crosshair size={12} className="text-sub/60" />
+            {accuracy}%
+          </span>
+          {bossesDefeated > 0 && (
+            <span className="flex items-center gap-1.5 text-accent">
+              <Trophy size={12} />
+              {bossesDefeated} {bossesDefeated === 1 ? "boss" : "bosses"}
+            </span>
+          )}
+          {best && !isNewBest && (
+            <span className="flex items-center gap-1.5 text-accent/80">
+              <Trophy size={12} />
+              {best.score.toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        <ArcadeButton onClick={onRestart}>
+          <RotateCcw size={15} />
+          Play again
+        </ArcadeButton>
+      </div>
     </div>
   );
 }

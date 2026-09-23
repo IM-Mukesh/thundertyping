@@ -16,6 +16,12 @@ import {
 } from "@/lib/games/use-typing-grand-prix";
 import { GAME_DEFINITIONS } from "@/lib/games/game-types";
 import type { GrandPrixState } from "@/lib/games/use-typing-grand-prix";
+import {
+  createInitialState as wbInitialState,
+  reducer as wbReducer,
+  TICK_MS,
+} from "@/lib/games/use-word-blaster";
+import type { WordBlasterState } from "@/lib/games/use-word-blaster";
 
 describe("ghost racer: distance is correct characters, not keystrokes", () => {
   const text = "the quick brown fox";
@@ -148,5 +154,77 @@ describe("typing grand prix: the car banks only what was typed correctly", () =>
     for (const w of words) s = typeAndCommit(s, w);
     assert.equal(s.bankedChars, words.join("").length);
     assert.equal(s.playerProgress, 1);
+  });
+});
+
+describe("word blaster: boss encounters", () => {
+  function running(overrides: Partial<WordBlasterState> = {}): WordBlasterState {
+    return {
+      ...wbInitialState(GAME_DEFINITIONS["word-blaster"]),
+      status: "running",
+      ...overrides,
+    };
+  }
+
+  it("spawns a boss exactly when destroyed reaches nextBossAt, clearing the board", () => {
+    let s = running({ destroyed: 11, nextBossAt: 12 });
+    assert.equal(s.boss, null);
+
+    s = wbReducer(s, { type: "TICK" });
+    assert.equal(s.boss, null, "not yet — destroyed is still 11");
+
+    s = { ...s, destroyed: 12 };
+    s = wbReducer(s, { type: "TICK" });
+    assert.ok(s.boss, "a boss spawns once destroyed reaches nextBossAt");
+    assert.equal(s.enemies.length, 0, "lane enemies are cleared for the encounter");
+  });
+
+  it("wrong keystrokes against the boss word don't touch its hp", () => {
+    let s = running({ boss: { hp: 4, maxHp: 4, word: "sturdy", deadlineMs: 6000 } });
+    s = wbReducer(s, { type: "SET_TYPED", value: "z" });
+    assert.equal(s.boss?.hp, 4);
+    assert.equal(s.incorrectKeystrokes, 1);
+    assert.equal(s.combo, 0);
+  });
+
+  it("landing the boss's last word defeats it, awards a bonus, and reopens spawning", () => {
+    let s = running({
+      boss: { hp: 1, maxHp: 4, word: "sturdy", deadlineMs: 6000 },
+      score: 0,
+      destroyed: 12,
+      nextBossAt: 12,
+    });
+    s = wbReducer(s, { type: "SET_TYPED", value: "sturdy" });
+    assert.equal(s.boss, null, "the encounter ends");
+    assert.equal(s.bossesDefeated, 1);
+    assert.equal(s.destroyed, 13, "counts as exactly one kill toward the lifetime tally");
+    assert.ok(s.score > 0, "a defeat bonus is scored");
+    assert.equal(s.nextBossAt, 13 + 12, "the next boss is scheduled from here, not from a stale count");
+  });
+
+  it("a boss that outlasts its deadline costs exactly one life, not a breach", () => {
+    const s0 = running({
+      lives: 3,
+      breached: 0,
+      boss: { hp: 4, maxHp: 4, word: "sturdy", deadlineMs: 10 },
+      elapsedMs: 0,
+    });
+    const s = wbReducer(s0, { type: "TICK" });
+    assert.equal(s.boss, null, "the boss escapes");
+    assert.equal(s.lives, 2, "exactly one life lost");
+    assert.equal(s.breached, 0, "an escape is not a lane breach");
+  });
+
+  it("a boss encounter suspends the tick's normal enemy advance", () => {
+    const s0 = running({
+      boss: { hp: 4, maxHp: 4, word: "sturdy", deadlineMs: 10_000 },
+      enemies: [{ id: 1, text: "wontmove", progress: 0.5, travelMs: 5000, lane: 0 }],
+    });
+    const s = wbReducer(s0, { type: "TICK" });
+    // The board was already cleared when the boss spawned in real play; this
+    // asserts the tick itself never advances anything while `boss` is set,
+    // regardless of how `enemies` got populated.
+    assert.equal(s.enemies[0].progress, 0.5);
+    assert.equal(s.elapsedMs, TICK_MS);
   });
 });

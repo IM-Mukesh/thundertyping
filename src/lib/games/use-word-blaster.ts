@@ -44,16 +44,53 @@ export interface HitEffect {
   progress: number;
   /** `elapsedMs` at the moment of the kill, so the UI can age the effect. */
   bornMs: number;
+  /** The real score this kill awarded, for a damage-number popup that shows
+   *  an actual value rather than a decorative placeholder. */
+  points: number;
+}
+
+/**
+ * A boss encounter. Deliberately not modeled as an `Enemy` — a boss has no
+ * lane or travel progress, it has to be typed down over several words rather
+ * than one, and it suspends normal spawning rather than joining it. Giving it
+ * its own shape keeps both reducer branches simple instead of bending `Enemy`
+ * into a union of two unrelated things.
+ */
+export interface Boss {
+  hp: number;
+  maxHp: number;
+  word: string;
+  /** `elapsedMs` by which the current word must be finished, or the boss
+   *  escapes. Reset on every landed word, not just once at spawn, so a player
+   *  who keeps landing hits is never punished for a long encounter — only
+   *  stalling on one word costs anything. */
+  deadlineMs: number;
 }
 
 export interface WordBlasterState {
   status: GameStatus;
   definition: GameDefinition;
   enemies: Enemy[];
-  /** What the player has typed toward the currently locked enemy. */
+  /** What the player has typed toward the currently locked enemy or boss. */
   typed: string;
   /** The enemy the current keystrokes are committed to, once one matches. */
   lockedId: number | null;
+  boss: Boss | null;
+  /** Lifetime boss kills, tracked separately from `destroyed` (which a boss
+   *  kill also increments once, as one significant kill) so the result
+   *  screen can call out "2 bosses defeated" without recomputing it. */
+  bossesDefeated: number;
+  /** The `destroyed` count at which the next boss spawns. */
+  nextBossAt: number;
+  /** `elapsedMs` of the most recent boss kill, for a victory flash. */
+  lastBossDefeatMs: number | null;
+  /** `elapsedMs` of the most recent boss escape, for a warning flash. */
+  lastBossEscapeMs: number | null;
+  /** `elapsedMs` of the most recently landed boss word, for a damage-number
+   *  popup — fires on every hit, not just the killing one. */
+  lastBossHitMs: number | null;
+  /** The real score that hit awarded, shown by the same popup. */
+  lastBossHitPoints: number;
   lives: number;
   score: number;
   destroyed: number;
@@ -122,6 +159,37 @@ const LANE_CLEARANCE = 0.2;
 const MAX_COMBO_STEPS = 10;
 const POINTS_PER_CHAR = 10;
 
+// ---------------------------------------------------------------------------
+// Boss tuning
+// ---------------------------------------------------------------------------
+
+/** A boss spawns after this many total kills, then again every this many. */
+const BOSS_EVERY_KILLS = 12;
+/** Words the boss takes to bring down. */
+const BOSS_HP_HITS = 4;
+/** Time allowed per boss word before it escapes. Generous on purpose — the
+ *  words are also longer, and the tension should come from their length, not
+ *  a hidden clock the player can't see coming. */
+export const BOSS_TIME_PER_WORD_MS = 6000;
+/** Flat score awarded on top of the word's own points for landing the kill. */
+const BOSS_DEFEAT_BONUS = 500;
+/** Sampled and the longest kept, since the shared word list has no length
+ *  metadata to filter on directly. */
+const BOSS_WORD_SAMPLES = 6;
+
+/**
+ * Escalates within one encounter: `hitsLanded` is 0 for the boss's first
+ * word and climbs toward `maxHp - 1` for its last, so the finishing word is
+ * reliably harder than the opener.
+ */
+function pickBossWord(hitsLanded: number): string {
+  const candidates = generateWords(BOSS_WORD_SAMPLES, { punctuation: false, numbers: false });
+  const minLength = 4 + hitsLanded;
+  const longEnough = candidates.filter((w) => w.length >= minLength);
+  const pool = longEnough.length > 0 ? longEnough : candidates;
+  return pool.reduce((a, b) => (b.length > a.length ? b : a));
+}
+
 /** Difficulty ramps with kills, so it tracks skill rather than the clock. */
 function currentSpawnMs(state: WordBlasterState): number {
   return Math.max(MIN_SPAWN_MS, INITIAL_SPAWN_MS - state.destroyed * SPAWN_RAMP_PER_KILL);
@@ -156,13 +224,20 @@ type GameAction =
   | { type: "SPAWN"; text: string; lane: number }
   | { type: "SET_TYPED"; value: string };
 
-function createInitialState(definition: GameDefinition): WordBlasterState {
+export function createInitialState(definition: GameDefinition): WordBlasterState {
   return {
     status: "idle",
     definition,
     enemies: [],
     typed: "",
     lockedId: null,
+    boss: null,
+    bossesDefeated: 0,
+    nextBossAt: BOSS_EVERY_KILLS,
+    lastBossDefeatMs: null,
+    lastBossEscapeMs: null,
+    lastBossHitMs: null,
+    lastBossHitPoints: 0,
     lives: definition.lives,
     score: 0,
     destroyed: 0,
@@ -213,7 +288,7 @@ let nextEnemyId = 0;
 /** React key for a hit effect — stable for the effect's whole short life. */
 let nextHitSeq = 0;
 
-function reducer(state: WordBlasterState, action: GameAction): WordBlasterState {
+export function reducer(state: WordBlasterState, action: GameAction): WordBlasterState {
   switch (action.type) {
     case "START":
       return { ...createInitialState(state.definition), status: "running" };
@@ -243,6 +318,52 @@ function reducer(state: WordBlasterState, action: GameAction): WordBlasterState 
     case "TICK": {
       if (state.status !== "running") return state;
 
+      const elapsedMs = state.elapsedMs + TICK_MS;
+
+      // A boss in progress owns the tick: lane enemies don't advance (the
+      // board was cleared when it spawned) and no new one spawns (the hook's
+      // spawn timer checks `boss` before dispatching SPAWN) — the encounter
+      // is the only thing happening until it resolves one way or the other.
+      if (state.boss) {
+        if (elapsedMs < state.boss.deadlineMs) {
+          return { ...state, elapsedMs, hits: expireHits(state.hits, elapsedMs) };
+        }
+        // Escaped: costs a life, same as a breach, but doesn't touch
+        // `breached` — that count means "a lane enemy got through," which
+        // this isn't.
+        const lives = Math.max(0, state.lives - 1);
+        return {
+          ...state,
+          elapsedMs,
+          hits: expireHits(state.hits, elapsedMs),
+          boss: null,
+          lives,
+          combo: 0,
+          typed: "",
+          lockedId: null,
+          lastBossEscapeMs: elapsedMs,
+          nextBossAt: state.destroyed + BOSS_EVERY_KILLS,
+          status: lives === 0 ? "over" : state.status,
+        };
+      }
+
+      if (state.destroyed > 0 && state.destroyed >= state.nextBossAt) {
+        return {
+          ...state,
+          elapsedMs,
+          hits: expireHits(state.hits, elapsedMs),
+          enemies: [],
+          typed: "",
+          lockedId: null,
+          boss: {
+            hp: BOSS_HP_HITS,
+            maxHp: BOSS_HP_HITS,
+            word: pickBossWord(0),
+            deadlineMs: elapsedMs + BOSS_TIME_PER_WORD_MS,
+          },
+        };
+      }
+
       const survivors: Enemy[] = [];
       let breaches = 0;
       for (const enemy of state.enemies) {
@@ -251,7 +372,6 @@ function reducer(state: WordBlasterState, action: GameAction): WordBlasterState 
         else survivors.push({ ...enemy, progress });
       }
 
-      const elapsedMs = state.elapsedMs + TICK_MS;
       const hits = expireHits(state.hits, elapsedMs);
       if (breaches === 0) return { ...state, enemies: survivors, elapsedMs, hits };
 
@@ -285,9 +405,68 @@ function reducer(state: WordBlasterState, action: GameAction): WordBlasterState 
         return { ...state, typed: value, lockedId: value === "" ? null : state.lockedId };
       }
       if (value === state.typed) return state;
+      const added = value.length - state.typed.length;
+
+      if (state.boss) {
+        const boss = state.boss;
+        if (!boss.word.startsWith(value)) {
+          return {
+            ...state,
+            incorrectKeystrokes: state.incorrectKeystrokes + added,
+            combo: 0,
+          };
+        }
+
+        const correctKeystrokes = state.correctKeystrokes + added;
+        if (value !== boss.word) {
+          return { ...state, typed: value, correctKeystrokes };
+        }
+
+        const combo = state.combo + 1;
+        const scoreGain = scoreForKill(boss.word, state.combo);
+        const hp = boss.hp - 1;
+
+        if (hp <= 0) {
+          return {
+            ...state,
+            boss: null,
+            typed: "",
+            lockedId: null,
+            destroyed: state.destroyed + 1,
+            bossesDefeated: state.bossesDefeated + 1,
+            nextBossAt: state.destroyed + 1 + BOSS_EVERY_KILLS,
+            score: state.score + scoreGain + BOSS_DEFEAT_BONUS,
+            combo,
+            bestCombo: Math.max(state.bestCombo, combo),
+            correctKeystrokes,
+            lastBossDefeatMs: state.elapsedMs,
+            lastBossHitMs: state.elapsedMs,
+            lastBossHitPoints: scoreGain + BOSS_DEFEAT_BONUS,
+          };
+        }
+
+        const hitsLanded = boss.maxHp - hp;
+        return {
+          ...state,
+          boss: {
+            ...boss,
+            hp,
+            word: pickBossWord(hitsLanded),
+            // Reset, not extended — a fresh full window for the next word.
+            deadlineMs: state.elapsedMs + BOSS_TIME_PER_WORD_MS,
+          },
+          typed: "",
+          lockedId: null,
+          score: state.score + scoreGain,
+          combo,
+          bestCombo: Math.max(state.bestCombo, combo),
+          correctKeystrokes,
+          lastBossHitMs: state.elapsedMs,
+          lastBossHitPoints: scoreGain,
+        };
+      }
 
       const target = findTarget(state.enemies, value, state.lockedId);
-      const added = value.length - state.typed.length;
 
       if (!target) {
         // Nothing on screen starts with this — reject the character outright
@@ -303,15 +482,16 @@ function reducer(state: WordBlasterState, action: GameAction): WordBlasterState 
 
       if (target.text === value) {
         const combo = state.combo + 1;
+        // Scored at the combo *before* this kill, so the first kill of a run
+        // is a plain 1x.
+        const points = scoreForKill(target.text, state.combo);
         return {
           ...state,
           enemies: state.enemies.filter((e) => e.id !== target.id),
           typed: "",
           lockedId: null,
           destroyed: state.destroyed + 1,
-          // Scored at the combo *before* this kill, so the first kill of a run
-          // is a plain 1x.
-          score: state.score + scoreForKill(target.text, state.combo),
+          score: state.score + points,
           combo,
           bestCombo: Math.max(state.bestCombo, combo),
           correctKeystrokes,
@@ -322,6 +502,7 @@ function reducer(state: WordBlasterState, action: GameAction): WordBlasterState 
               lane: target.lane,
               progress: target.progress,
               bornMs: state.elapsedMs,
+              points,
             },
           ].slice(-MAX_HIT_EFFECTS),
         };
@@ -401,7 +582,11 @@ export function useWordBlaster(definition: GameDefinition) {
     const schedule = () => {
       timer = setTimeout(() => {
         const current = stateRef.current;
-        if (current.status === "running" && current.enemies.length < MAX_ACTIVE_ENEMIES) {
+        if (
+          current.status === "running" &&
+          !current.boss &&
+          current.enemies.length < MAX_ACTIVE_ENEMIES
+        ) {
           const lane = pickLane(current.enemies);
           const text = lane === null ? null : pickText(current.enemies);
           if (lane !== null && text !== null) dispatch({ type: "SPAWN", text, lane });

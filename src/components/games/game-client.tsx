@@ -11,6 +11,15 @@ import type { GameDefinition, GameId } from "@/lib/games/game-types";
 
 export interface GameComponentProps {
   definition: GameDefinition;
+  /**
+   * Resolved art URLs, keyed by role (e.g. "hero", "boss-dreadnought"). Art
+   * resolution (`game-art-assets.ts`) reads the filesystem and can only run
+   * server-side, so the page resolves whatever a game needs and hands the
+   * plain strings down — a game with nothing special to render just ignores
+   * this prop, which is why it's optional rather than every game needing an
+   * empty object.
+   */
+  art?: Record<string, string | null>;
 }
 
 function lazyGame(load: () => Promise<{ default: ComponentType<GameComponentProps> }>) {
@@ -63,8 +72,14 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
   "card-battle": lazyGame(() => import("@/components/games/card-battle-game")),
 };
 
-export function GameClient({ definition }: { definition: GameDefinition }) {
+export function GameClient({
+  definition,
+  art,
+}: {
+  definition: GameDefinition;
+  art?: Record<string, string | null>;
+}) {
   const Game = GAME_COMPONENTS[definition.id];
   if (!Game) return null;
-  return <Game definition={definition} />;
+  return <Game definition={definition} art={art} />;
 }

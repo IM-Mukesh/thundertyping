@@ -268,6 +268,46 @@ button:disabled,
   animation: arcade-pulse 2.6s ease-in-out infinite;
 }
 
+/* A slow scale "breathe" for boss art, so a static image reads as a live
+   threat rather than a pasted sticker. CSS-driven (not JS rAF), so it keeps
+   running even in a hidden/non-displayed tab. */
+@keyframes arcade-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+.arcade-breathe {
+  animation: arcade-breathe 3.2s ease-in-out infinite;
+}
+
+/* A short, sharp jolt for the instant a boss word lands. */
+@keyframes boss-shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.boss-shake {
+  animation: boss-shake 0.15s ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Gamepad2, Heart } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
-import { getGameArt } from "@/lib/games/game-art-assets";
+import { getArt, getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
 import { GameCoverArt } from "@/components/games/game-cover-art";
 import { GameBestBadge } from "@/components/games/game-best-badge";
@@ -41,6 +41,21 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
   const characterArt = getGameArt(game.id, "character");
   const others = GAME_LIST.filter((g) => g.id !== game.id);
+
+  // A small, generic set of extra roles a game's own board can reach for
+  // beyond the five fixed GameArtRole slots above — resolved here (server
+  // only, filesystem-backed) and handed down as plain strings, since a game
+  // component can't call getArt/getGameArt itself. Absent roles resolve to
+  // null and cost nothing; this isn't specific to any one game.
+  const boardArt: Record<string, string | null> = {
+    hero: heroArt,
+    victory: getGameArt(game.id, "victory"),
+    defeat: getGameArt(game.id, "defeat"),
+    "char-fg": getArt(game.id, "char-fg"),
+    "enemy-drone": getArt(game.id, "enemy-drone"),
+    "enemy-heavy": getArt(game.id, "enemy-heavy"),
+    "boss-dreadnought": getArt(game.id, "boss-dreadnought"),
+  };
 
   return (
     // Overriding the accent here re-skins everything downstream — board glow,
@@ -172,7 +187,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
       {/* CABINET — the board sits flush under the marquee so the two read as
           one unit rather than a banner with a stray panel beneath it. */}
       <div className="flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-6 pt-6 sm:px-8">
-        <GameClient definition={game} />
+        <GameClient definition={game} art={boardArt} />
       </div>
 
       {/* Below the cabinet, never beside or above it — an ad next to an active
