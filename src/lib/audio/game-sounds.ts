@@ -39,6 +39,16 @@ export type SoundName =
   | "base-alarm"
   | "combo-milestone"
   | "wb-defeat"
+  // Boss Battle's duel
+  | "sword-hit"
+  | "boss-roar"
+  | "boss-attack-land"
+  | "shield-block"
+  | "player-hurt"
+  | "bb-phase-transition"
+  | "bb-combo-rising"
+  | "bb-victory-fanfare"
+  | "bb-defeat-stinger"
   // synthesized, below
   | "key-correct"
   | "key-wrong"
@@ -68,6 +78,15 @@ const SAMPLED: Partial<Record<SoundName, string>> = {
   "base-alarm": `${SFX}/sfx-base-alarm.opus`,
   "combo-milestone": `${SFX}/sfx-combo-milestone.opus`,
   "wb-defeat": `${SFX}/sfx-wb-defeat.opus`,
+  "sword-hit": `${SFX}/sfx-sword-hit.opus`,
+  "boss-roar": `${SFX}/sfx-boss-roar.opus`,
+  "boss-attack-land": `${SFX}/sfx-boss-attack-land.opus`,
+  "shield-block": `${SFX}/sfx-shield-block.opus`,
+  "player-hurt": `${SFX}/sfx-player-hurt.opus`,
+  "bb-phase-transition": `${SFX}/sfx-phase-transition.opus`,
+  "bb-combo-rising": `${SFX}/sfx-combo-rising.opus`,
+  "bb-victory-fanfare": `${SFX}/sfx-boss-victory-fanfare.opus`,
+  "bb-defeat-stinger": `${SFX}/sfx-boss-defeat-stinger.opus`,
 };
 
 /** Every sampled file, for preloading a game's set up front. */

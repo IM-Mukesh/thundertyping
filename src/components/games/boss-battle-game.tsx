@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import {
   Crosshair,
   Flame,
@@ -12,7 +13,6 @@ import {
   ShieldCheck,
   Skull,
   Swords,
-  Target,
   Trophy,
   Volume2,
   VolumeX,
@@ -30,24 +30,45 @@ import {
 } from "@/lib/games/use-boss-battle";
 import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
+import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
-// Matches the board height the other games use, so the route's reserved space
-// and the loading placeholder stay right.
 /** Charge fraction past which the telegraph reads as imminent. */
 const DANGER_FROM = 0.72;
 
+/** How long the heartbeat repeats while on the last life. */
+const HEARTBEAT_MS = 900;
+
+/** Each phase's name and boss-art role, index-aligned with `PHASES` in the
+ *  engine (phase is 1-based, so index with `phase - 1`). */
+const PHASE_INFO = [
+  { name: "Awakened", art: "boss-phase1" },
+  { name: "Core Exposed", art: "boss-phase2" },
+  { name: "Enraged", art: "boss-phase3" },
+] as const;
+
 interface BossBattleGameProps {
   definition: GameDefinition;
+  /** Resolved art URLs (see game-client.tsx). Every piece has a CSS/icon
+   *  fallback, so a missing file is a quieter board, never a broken one. */
+  art?: Record<string, string | null>;
 }
 
-export function BossBattleGame({ definition }: BossBattleGameProps) {
+export function BossBattleGame({ definition, art }: BossBattleGameProps) {
+  const bgArt = art?.["bg-arena"] ?? art?.hero ?? null;
+  const playerArt = art?.["char-fg"] ?? null;
+  const attackArt = art?.["player-attack"] ?? null;
+  const victoryArt = art?.["victory-v2"] ?? art?.victory ?? null;
+  const defeatArt = art?.defeat ?? null;
+  const characterArt = art?.character ?? null;
+
   // `start` rebuilds the initial state, so "Play again" needs it rather than a
   // separate reset.
   const { state, start, resume, setTyped } = useBossBattle(definition);
   const inputRef = useRef<HTMLInputElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
 
   // Lazy initialiser rather than a mount effect: this component only ever
   // renders client-side (its wrapper is next/dynamic with ssr:false), so
@@ -59,10 +80,16 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
 
-  // Audio is driven off state transitions rather than fired inline from
-  // handlers, so every path that changes the fight — a keystroke, an attack
-  // landing on the tick, a phase break — gets sound without each call site
-  // remembering to play it. Every sound here already existed.
+  const bossArt = art?.[PHASE_INFO[Math.min(state.phase, PHASE_COUNT) - 1].art] ?? null;
+
+  // ---- audio -----------------------------------------------------------
+
+  // Driven off state transitions rather than fired inline from handlers, so
+  // every path that changes the fight — a keystroke, an attack landing on
+  // the tick, a phase break — gets sound without each call site remembering
+  // to play it. The lightweight synth layer (playSound) and the sampled
+  // layer (sound) are deliberately both played on the big moments: the synth
+  // gives instant, zero-latency texture, the sample gives it real weight.
   const prevRef = useRef({
     correct: 0,
     incorrect: 0,
@@ -78,12 +105,27 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
 
     if (s.correctKeystrokes > prev.correct) playSound("key", soundEnabled);
     if (s.incorrectKeystrokes > prev.incorrect) playSound("typo", soundEnabled);
-    if (s.cleared > prev.cleared) playSound("clear", soundEnabled);
-    // An attack that landed is the harsh one; a blocked attack and a phase
-    // break both reuse the two rising motifs.
-    if (s.hitsTaken > prev.hitsTaken) playSound("miss", soundEnabled);
-    if (s.blocked > prev.blocked) playSound("combo", soundEnabled);
-    if (s.phase > prev.phase) playSound("start", soundEnabled);
+    if (s.cleared > prev.cleared) {
+      playSound("clear", soundEnabled);
+      sound("sword-hit", soundEnabled, { vary: 60 });
+    }
+    if (s.hitsTaken > prev.hitsTaken) {
+      playSound("miss", soundEnabled);
+      sound("player-hurt", soundEnabled);
+    }
+    if (s.blocked > prev.blocked) {
+      playSound("combo", soundEnabled);
+      sound("shield-block", soundEnabled);
+    }
+    if (s.phase > prev.phase) {
+      playSound("start", soundEnabled);
+      sound("bb-phase-transition", soundEnabled);
+      sound("boss-roar", soundEnabled, { volume: 0.8 });
+    }
+    // Milestone only — a chime on every single hit would be exhausting.
+    if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) {
+      sound("bb-combo-rising", soundEnabled);
+    }
 
     prevRef.current = {
       correct: s.correctKeystrokes,
@@ -95,6 +137,19 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
       phase: s.phase,
     };
   }, [state, soundEnabled]);
+
+  // A tense heartbeat while down to the last life — synthesised (see
+  // game-audio.ts) specifically because it has to repeat for as long as
+  // danger holds, which a fixed-length sample can't do without a seam.
+  useEffect(() => {
+    const danger = state.status === "running" && state.lives === 1;
+    if (!danger) return;
+    playSound("heartbeat", soundEnabled);
+    const id = setInterval(() => playSound("heartbeat", soundEnabled), HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [state.status, state.lives, soundEnabled]);
+
+  // ---- lifecycle ---------------------------------------------------------
 
   const focusInput = useCallback(() => inputRef.current?.focus(), []);
   useEffect(() => {
@@ -118,8 +173,8 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
     });
     setIsNewBest(newBest);
     setBest(stored);
-    // A won fight gets the rising motif, a lost one the falling motif.
     playSound(state.outcome === "victory" ? "combo" : "over", soundEnabled);
+    sound(state.outcome === "victory" ? "bb-victory-fanfare" : "bb-defeat-stinger", soundEnabled);
     // Every game must feed the cross-game profile, or "play every game"
     // (site:all-games) can never be earned no matter how much is played.
     bumpStat(definition.id, "runs");
@@ -146,149 +201,273 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
   const imminent = !quotaMet && chargeRatio >= DANGER_FROM;
   const hpPercent = Math.max(0, Math.round((state.bossHp / BOSS_MAX_HP) * 100));
   const secondsToImpact = Math.max(0, (chargeDuration - state.chargeMs) / 1000);
+  const inDanger = isPlaying && state.lives === 1;
+  const phaseInfo = PHASE_INFO[Math.min(state.phase, PHASE_COUNT) - 1];
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-3">
-      {/*
-        In-play chrome is numbers and icons only — no word labels. Everything
-        here is still announced to screen readers through aria-label, so
-        dropping the visible text costs nothing in accessibility.
-      */}
-      <div className="flex items-center justify-between gap-4 font-mono">
-        <span
-          className="text-3xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
-          aria-label={`Score ${state.score}`}
-        >
-          {state.score.toLocaleString()}
-        </span>
-
-        <div className="flex items-center gap-4 text-sm text-sub">
-          <Stat icon={<Target size={13} />} value={state.cleared} label={`${state.cleared} words landed`} />
-          <Stat icon={<Crosshair size={13} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
-
-          <span
-            className={cn(
-              "flex w-14 items-center justify-end gap-1 tabular-nums transition-opacity",
-              state.combo > 1 ? "text-accent opacity-100" : "opacity-0",
-            )}
-            aria-label={state.combo > 1 ? `Combo ${state.combo}` : undefined}
-          >
-            <Zap size={13} />
-            {state.combo}x
-          </span>
-
-          <span
-            className="flex items-center gap-1"
-            aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
-          >
-            {Array.from({ length: definition.lives }, (_, i) => (
-              <Heart
-                key={i}
-                size={15}
-                className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
-                fill={i < state.lives ? "currentColor" : "none"}
-              />
-            ))}
-          </span>
-
-          <button
-            type="button"
-            onClick={toggleSound}
-            aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
-            title={soundEnabled ? "Mute sound" : "Unmute sound"}
-            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
-          >
-            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-          </button>
-        </div>
-      </div>
-
+    <div className="flex w-full max-w-5xl flex-col gap-3">
       <div
+        ref={boardRef}
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:340px] sm:[--board-h:440px]"
-        style={{ height: "var(--board-h)" }}
+        className={cn(
+          "relative w-full overflow-hidden rounded-2xl border border-border bg-background transition-transform",
+          state.phaseFlashMs > 0 && "boss-shake",
+        )}
+        style={{ height: "clamp(480px, 82vh, 780px)" }}
       >
-        <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
-        <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
+        {/* Battlefield backdrop. */}
+        {bgArt && (
+          <Image
+            src={bgArt}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 1100px"
+            quality={60}
+            className="object-cover opacity-70"
+          />
+        )}
+        <div aria-hidden="true" className="absolute inset-0 arcade-scanlines opacity-40" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/50"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/70 via-transparent to-transparent"
+        />
 
-        {/* The board floods when an attack lands. Driven by a countdown in
-            game state rather than AnimatePresence: these fire several times a
-            second, and a number that freezes with the run is more reliable
-            than an exit animation that has to unmount to finish. */}
+        {/* Player-hit danger wash — the whole board floods red when an
+            attack lands, same explicit-timer treatment as before (a number
+            that freezes with the run beats an exit animation that has to
+            unmount to finish). */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 arcade-danger transition-opacity duration-300"
           style={{ opacity: state.playerHitMs > 0 ? 1 : 0 }}
         />
-
-        <div className="relative flex h-full flex-col gap-3 p-4 sm:p-5">
-          <BossHealth
-            hpPercent={hpPercent}
-            hp={state.bossHp}
-            phase={state.phase}
-            flashing={state.bossHitMs > 0}
+        {/* A slow red pulse while on the last life — danger is ambient, not
+            just a one-off flash. */}
+        {inDanger && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 arcade-pulse"
+            style={{
+              background:
+                "radial-gradient(120% 100% at 50% 100%, color-mix(in srgb, var(--error) 25%, transparent), transparent 65%)",
+            }}
           />
+        )}
 
-          <div className="relative flex flex-1 items-center justify-center">
-            {/* Telegraph: the ring closes in as the attack charges, so the
-                threat is readable without looking away from the word. */}
-            <div
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute rounded-full border-2 transition-[transform,opacity] ease-linear",
-                quotaMet ? "border-accent" : "border-error",
-              )}
-              style={{
-                width: 210,
-                height: 210,
-                transitionDuration: `${TICK_MS}ms`,
-                transform: `scale(${1.5 - 0.5 * chargeRatio})`,
-                opacity: isPlaying ? 0.2 + 0.6 * chargeRatio : 0,
-              }}
-            />
-
-            <Skull
-              size={92}
-              strokeWidth={1.5}
-              aria-label={`Boss at ${hpPercent} percent health, phase ${state.phase} of ${PHASE_COUNT}`}
-              className={cn(
-                "transition-[transform,color] duration-150",
-                state.bossHitMs > 0
-                  ? "text-accent arcade-glow"
-                  : state.phase >= 3
-                    ? "text-error"
-                    : state.phase === 2
-                      ? "text-error/75"
-                      : "text-sub",
-              )}
-              style={{ transform: `scale(${state.bossHitMs > 0 ? 0.9 : 1})` }}
-            />
-
-            {/* Block confirmation — same explicit-timer treatment. */}
-            <ShieldCheck
-              aria-hidden="true"
-              size={44}
-              className="pointer-events-none absolute text-accent arcade-glow transition-opacity duration-200"
-              style={{ opacity: state.blockMs > 0 ? 1 : 0 }}
-            />
-
-            {/* Phase break: the whole board states the new phase, loudly. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-background/70 transition-opacity duration-300"
-              style={{ opacity: state.phaseFlashMs > 0 ? 1 : 0 }}
-            >
-              <Flame size={34} className="text-accent arcade-glow" />
-              <span className="font-mono text-6xl font-semibold tabular-nums text-accent arcade-glow">
-                {state.phase}
+        {/* ---------------------------------------------------------- HUD */}
+        <div className="relative z-10 flex h-full flex-col p-3 sm:p-5">
+          {/* Top row: objective + lives (left), boss name + HP (center), score + combo (right). */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-sub sm:text-[11px]">
+                <Swords size={12} className="text-error" aria-hidden="true" />
+                Boss Battle
               </span>
+              <span
+                className="flex items-center gap-1"
+                aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
+              >
+                {Array.from({ length: definition.lives }, (_, i) => (
+                  <Heart
+                    key={i}
+                    size={16}
+                    className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
+                    fill={i < state.lives ? "currentColor" : "none"}
+                  />
+                ))}
+              </span>
+              <Stat icon={<Crosshair size={12} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
+            </div>
+
+            <div className="hidden w-full max-w-md flex-col gap-1.5 pt-0.5 sm:flex">
+              <BossHealth hpPercent={hpPercent} phase={state.phase} phaseName={phaseInfo.name} flashing={state.bossHitMs > 0} />
+            </div>
+
+            <div className="flex flex-col items-end gap-1.5">
+              <span
+                className="font-mono text-2xl font-bold tabular-nums text-accent arcade-glow sm:text-3xl"
+                aria-label={`Score ${state.score}`}
+              >
+                {state.score.toLocaleString()}
+              </span>
+              <span
+                className={cn(
+                  "flex items-center gap-1 font-mono text-sm font-semibold tabular-nums transition-opacity",
+                  state.combo > 1 ? "text-accent opacity-100" : "opacity-0",
+                )}
+                aria-label={state.combo > 1 ? `Combo ${state.combo}` : undefined}
+              >
+                <Zap size={13} />
+                {state.combo}x
+              </span>
+              <button
+                type="button"
+                onClick={toggleSound}
+                aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
+                title={soundEnabled ? "Mute sound" : "Unmute sound"}
+                className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
+              >
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </button>
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-3">
-            {/* Attack clock. The pips are the block quota: fill them before the
-                bar does and the attack is parried. */}
-            <div className="flex w-full max-w-md items-center gap-3">
+          {/* Mobile-only compact HP bar (the centred one above is hidden below sm:). */}
+          <div className="mt-2 sm:hidden">
+            <BossHealth hpPercent={hpPercent} phase={state.phase} phaseName={phaseInfo.name} flashing={state.bossHitMs > 0} compact />
+          </div>
+
+          {/* Phase pips, right edge — a quiet "map" of the fight. */}
+          <div className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 flex-col items-end gap-2.5 sm:right-5 sm:flex">
+            {PHASE_INFO.map((p, i) => {
+              const n = i + 1;
+              const reached = state.phase > n || (state.phase === n && state.bossHp <= 0);
+              const active = state.phase === n && state.bossHp > 0;
+              return (
+                <div key={p.name} className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "font-mono text-[9px] uppercase tracking-wider transition-colors",
+                      active ? "text-accent" : reached ? "text-sub" : "text-sub/40",
+                    )}
+                  >
+                    {p.name}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "h-2 w-2 rounded-full border transition-colors",
+                      active
+                        ? "border-accent bg-accent arcade-glow"
+                        : reached
+                          ? "border-sub bg-sub"
+                          : "border-sub/40 bg-transparent",
+                    )}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* --------------------------------------------------- Arena --- */}
+          <div className="relative flex flex-1 items-end justify-between gap-2 py-2">
+            {/* Player, lower-left. */}
+            <div className="relative flex h-full w-[34%] max-w-[220px] items-end justify-start sm:w-[30%]">
+              {playerArt ? (
+                <div
+                  className={cn(
+                    "relative h-[85%] w-full transition-transform duration-150",
+                    state.playerHitMs > 0 && "translate-x-[-4px]",
+                  )}
+                >
+                  <Image src={playerArt} alt="" fill sizes="320px" className="object-contain object-bottom" />
+                  {/* Attack flash: the player's own swing, timed to the same
+                      instant a hit lands on the boss. */}
+                  {attackArt && state.bossHitMs > 0 && (
+                    <div className="absolute inset-0 origin-bottom-left scale-110 opacity-90">
+                      <Image src={attackArt} alt="" fill sizes="320px" className="object-contain" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Shield size={64} className="mb-4 text-accent" aria-hidden="true" />
+              )}
+            </div>
+
+            {/* Boss, upper-right of the arena. */}
+            <div className="relative flex h-full w-[54%] max-w-[420px] items-start justify-end sm:w-[52%]">
+              {bossArt ? (
+                <div
+                  className={cn(
+                    "relative h-[92%] w-full transition-transform duration-100",
+                    !state.bossHitMs && "arcade-breathe",
+                    state.bossHitMs > 0 && "translate-x-[5px] scale-[0.98]",
+                  )}
+                >
+                  <Image
+                    src={bossArt}
+                    alt=""
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 60vw, 480px"
+                    className={cn(
+                      "object-contain object-top transition-[filter] duration-150",
+                      state.bossHitMs > 0 && "brightness-150",
+                    )}
+                  />
+                  {state.bossHitMs > 0 && (
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 mix-blend-screen"
+                      style={{
+                        background:
+                          "radial-gradient(50% 50% at 50% 40%, color-mix(in srgb, var(--accent) 55%, transparent), transparent 70%)",
+                      }}
+                    />
+                  )}
+                </div>
+              ) : (
+                <Skull
+                  size={92}
+                  strokeWidth={1.5}
+                  aria-label={`Boss at ${hpPercent} percent health, phase ${state.phase} of ${PHASE_COUNT}`}
+                  className={cn(
+                    "mt-6 transition-[transform,color] duration-150",
+                    state.bossHitMs > 0
+                      ? "text-accent arcade-glow"
+                      : state.phase >= 3
+                        ? "text-error"
+                        : state.phase === 2
+                          ? "text-error/75"
+                          : "text-sub",
+                  )}
+                />
+              )}
+
+              {/* Attack telegraph ring, anchored on the boss. */}
+              <div
+                aria-hidden="true"
+                className={cn(
+                  "pointer-events-none absolute bottom-[10%] right-[18%] rounded-full border-2 transition-[transform,opacity] ease-linear",
+                  quotaMet ? "border-accent" : "border-error",
+                )}
+                style={{
+                  width: 130,
+                  height: 130,
+                  transitionDuration: `${TICK_MS}ms`,
+                  transform: `translate(50%, 50%) scale(${1.5 - 0.5 * chargeRatio})`,
+                  opacity: isPlaying ? 0.2 + 0.6 * chargeRatio : 0,
+                }}
+              />
+            </div>
+
+            {/* Damage number — real per-hit value, floats up and fades. */}
+            {state.bossHitMs > 0 && state.lastHitDamage > 0 && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute right-[30%] top-[18%] font-mono text-xl font-bold tabular-nums text-accent arcade-glow sm:text-2xl"
+              >
+                −{state.lastHitDamage}
+              </span>
+            )}
+
+            {/* Block confirmation. */}
+            <ShieldCheck
+              aria-hidden="true"
+              size={48}
+              className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 text-accent arcade-glow transition-opacity duration-200"
+              style={{ opacity: state.blockMs > 0 ? 1 : 0 }}
+            />
+          </div>
+
+          {/* ------------------------------------------------ Console --- */}
+          <div className="flex flex-col items-center gap-2.5">
+            <div className="flex w-full max-w-lg items-center gap-3">
               <span
                 className="flex items-center gap-1"
                 aria-label={`${state.clearsThisCharge} of ${requiredClears} words needed to block the attack`}
@@ -297,63 +476,65 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
                   <Shield
                     key={i}
                     size={14}
-                    className={cn(
-                      "transition-colors",
-                      i < state.clearsThisCharge ? "text-accent" : "text-sub/30",
-                    )}
+                    className={cn("transition-colors", i < state.clearsThisCharge ? "text-accent" : "text-sub/30")}
                     fill={i < state.clearsThisCharge ? "currentColor" : "none"}
                   />
                 ))}
               </span>
-
               <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-sub-alt">
                 <div
-                  className={cn(
-                    "h-full rounded-full transition-[width] ease-linear",
-                    quotaMet ? "bg-accent" : "bg-error",
-                  )}
-                  style={{
-                    // Matches the engine tick, so stepped updates read as a
-                    // continuously filling bar without a frame-rate loop.
-                    transitionDuration: `${TICK_MS}ms`,
-                    width: `${chargeRatio * 100}%`,
-                  }}
+                  className={cn("h-full rounded-full transition-[width] ease-linear", quotaMet ? "bg-accent" : "bg-error")}
+                  style={{ transitionDuration: `${TICK_MS}ms`, width: `${chargeRatio * 100}%` }}
                 />
               </div>
-
               <span
-                className={cn(
-                  "w-9 text-right font-mono text-[11px] tabular-nums transition-colors",
-                  imminent ? "text-error" : "text-sub",
-                )}
+                className={cn("w-9 text-right font-mono text-[11px] tabular-nums transition-colors", imminent ? "text-error" : "text-sub")}
                 aria-label={`${secondsToImpact.toFixed(1)} seconds until the next attack`}
               >
                 {secondsToImpact.toFixed(1)}
               </span>
             </div>
 
-            <div
-              className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl"
-              aria-label={state.word ? `Type ${state.word}` : undefined}
-            >
-              <span className="text-accent arcade-glow">{state.word.slice(0, state.typed.length)}</span>
-              <span className={cn(imminent ? "text-error/90" : "text-foreground")}>
-                {state.word.slice(state.typed.length)}
-              </span>
+            <div className="w-full max-w-lg rounded-xl border border-border bg-background/80 px-5 py-3 backdrop-blur-sm">
+              <p className="mb-1 text-center font-mono text-[9px] uppercase tracking-[0.3em] text-sub">
+                {state.word ? "Type to attack" : ""}
+              </p>
+              <div
+                className="text-center font-mono text-2xl font-semibold tracking-tight sm:text-3xl"
+                aria-label={state.word ? `Type ${state.word}` : undefined}
+              >
+                <span className="text-accent arcade-glow">{state.word.slice(0, state.typed.length)}</span>
+                <span className={cn(imminent ? "text-error/90" : "text-foreground")}>
+                  {state.word.slice(state.typed.length)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Phase break — the whole board states the new phase, loudly. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background/80 transition-opacity duration-300"
+          style={{ opacity: state.phaseFlashMs > 0 ? 1 : 0 }}
+        >
+          <Flame size={40} className="text-error arcade-glow" />
+          <span className="font-mono text-sm uppercase tracking-[0.35em] text-sub">
+            Phase {state.phase} of {PHASE_COUNT}
+          </span>
+          <span className="font-mono text-4xl font-bold uppercase tracking-tight text-foreground arcade-glow sm:text-6xl">
+            {phaseInfo.name}
+          </span>
+        </div>
+
         {!isPlaying && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 p-6 backdrop-blur-sm">
             {state.status === "idle" && (
-              <StartCard definition={definition} best={best} onStart={handleStart} />
+              <StartCard definition={definition} best={best} characterArt={characterArt} onStart={handleStart} />
             )}
             {state.status === "paused" && (
               <div className="flex flex-col items-center gap-4 text-center">
-                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">
-                  Paused
-                </p>
+                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">Paused</p>
                 <ArcadeButton
                   onClick={() => {
                     resume();
@@ -372,6 +553,7 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
                 hpPercent={hpPercent}
                 isNewBest={isNewBest}
                 best={best}
+                resultArt={state.outcome === "victory" ? victoryArt : defeatArt}
                 onRestart={handleStart}
               />
             )}
@@ -387,15 +569,10 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
             // autocomplete/predictive-text appending one on acceptance --
             // real on-device behavior the onKeyDown guard below can't catch,
             // since it arrives as part of an IME composition, not a keydown.
-            // Previously that space made the buffer longer than the target
-            // word, so `state.word.startsWith(value)` failed and a correctly
-            // completed word was scored as a mistake and never cleared.
             setTyped(e.target.value.replace(/ /g, "").toLowerCase());
           }}
           onPaste={(e) => e.preventDefault()}
           onKeyDown={(e) => {
-            // Space never commits here — a word lands the instant it matches —
-            // so swallow it rather than letting it scroll the page.
             if (e.key === " ") e.preventDefault();
             if (e.key === "Tab" && state.status === "over") {
               e.preventDefault();
@@ -418,39 +595,29 @@ export function BossBattleGame({ definition }: BossBattleGameProps) {
 
 function BossHealth({
   hpPercent,
-  hp,
   phase,
+  phaseName,
   flashing,
+  compact,
 }: {
   hpPercent: number;
-  hp: number;
   phase: number;
+  phaseName: string;
   flashing: boolean;
+  compact?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between font-mono text-[11px] tabular-nums">
-        <span
-          className="flex items-center gap-1"
-          aria-label={`Phase ${phase} of ${PHASE_COUNT}`}
-        >
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.15em] text-sub sm:text-[11px]">
+        <span className="truncate text-foreground">{phaseName}</span>
+        <span className="flex items-center gap-1" aria-label={`Phase ${phase} of ${PHASE_COUNT}`}>
           {Array.from({ length: PHASE_COUNT }, (_, i) => (
-            <Flame
-              key={i}
-              size={13}
-              className={cn("transition-colors", i < phase ? "text-accent" : "text-sub/25")}
-              fill={i < phase ? "currentColor" : "none"}
-            />
+            <Flame key={i} size={11} className={cn("transition-colors", i < phase ? "text-error" : "text-sub/25")} fill={i < phase ? "currentColor" : "none"} />
           ))}
         </span>
-        <span className="flex items-center gap-1 text-sub" aria-hidden="true">
-          <Skull size={12} className={cn("transition-colors", flashing ? "text-accent" : "text-error")} />
-          {hp}
-        </span>
       </div>
-
       <div
-        className="relative h-3 w-full overflow-hidden rounded-full bg-sub-alt"
+        className={cn("relative w-full overflow-hidden rounded-full bg-sub-alt/70", compact ? "h-2" : "h-2.5")}
         role="progressbar"
         aria-label="Boss health"
         aria-valuemin={0}
@@ -458,20 +625,11 @@ function BossHealth({
         aria-valuenow={hpPercent}
       >
         <div
-          className={cn(
-            "h-full rounded-full transition-[width,background-color] ease-linear",
-            flashing ? "bg-accent" : "bg-error",
-          )}
+          className={cn("h-full rounded-full transition-[width,background-color] ease-linear", flashing ? "bg-accent" : "bg-error")}
           style={{ transitionDuration: `${TICK_MS * 2}ms`, width: `${hpPercent}%` }}
         />
-        {/* Phase thresholds, so the next break is visible before it happens. */}
         {[66, 33].map((mark) => (
-          <span
-            key={mark}
-            aria-hidden="true"
-            className="absolute inset-y-0 w-px bg-background/80"
-            style={{ left: `${mark}%` }}
-          />
+          <span key={mark} aria-hidden="true" className="absolute inset-y-0 w-px bg-background/80" style={{ left: `${mark}%` }} />
         ))}
       </div>
     </div>
@@ -480,7 +638,7 @@ function BossHealth({
 
 function Stat({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
   return (
-    <span className="flex items-center gap-1.5 tabular-nums" aria-label={label}>
+    <span className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-sub" aria-label={label}>
       <span className="text-sub/60" aria-hidden="true">
         {icon}
       </span>
@@ -504,14 +662,23 @@ function ArcadeButton({ onClick, children }: { onClick: () => void; children: Re
 function StartCard({
   definition,
   best,
+  characterArt,
   onStart,
 }: {
   definition: GameDefinition;
   best: GameBest | null;
+  characterArt: string | null;
   onStart: () => void;
 }) {
   return (
-    <div className="flex max-w-sm flex-col items-center gap-5 text-center">
+    <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+      {characterArt && (
+        <div className="relative h-32 w-44 overflow-hidden rounded-xl border border-border sm:h-40 sm:w-56">
+          <Image src={characterArt} alt="" fill sizes="220px" className="object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <h2 className="font-mono text-2xl font-semibold tracking-tight text-foreground arcade-glow-soft">
           {definition.name}
@@ -526,7 +693,7 @@ function StartCard({
         </span>
         <span className="flex items-center gap-1.5">
           <Flame size={12} className="text-accent" />
-          {PHASE_COUNT}
+          {PHASE_COUNT} phases
         </span>
         {best && (
           <span className="flex items-center gap-1.5 text-accent">
@@ -542,7 +709,7 @@ function StartCard({
       </ArcadeButton>
 
       <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
-        Type to damage it — fill the shields before the bar fills
+        Type to attack — fill the shields before the bar fills
       </p>
     </div>
   );
@@ -554,6 +721,7 @@ function ResultCard({
   hpPercent,
   isNewBest,
   best,
+  resultArt,
   onRestart,
 }: {
   state: BossBattleState;
@@ -561,78 +729,76 @@ function ResultCard({
   hpPercent: number;
   isNewBest: boolean;
   best: GameBest | null;
+  resultArt: string | null;
   onRestart: () => void;
 }) {
   const won = state.outcome === "victory";
 
   return (
     <div
-      className="flex max-w-sm flex-col items-center gap-4 text-center"
+      className="relative flex w-full max-w-md flex-col items-center gap-4 overflow-hidden rounded-2xl border border-border p-6 text-center"
       role="status"
       aria-live="polite"
     >
-      {isNewBest ? (
-        <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
-          <Trophy size={12} />
-          New best
-        </span>
-      ) : (
-        <span
-          className={cn(
-            "flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.25em]",
-            won ? "text-accent" : "text-sub",
-          )}
-        >
-          {won ? <Trophy size={12} /> : <Skull size={12} />}
-          {won ? "Victory" : "Defeated"}
-        </span>
+      {resultArt && (
+        <>
+          <Image src={resultArt} alt="" fill sizes="448px" quality={65} className="object-cover opacity-55" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/40" />
+        </>
       )}
 
-      <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
-        {state.score.toLocaleString()}
-      </span>
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        {isNewBest ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-accent arcade-pulse">
+            <Trophy size={12} />
+            New best
+          </span>
+        ) : (
+          <span
+            className={cn(
+              "flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.25em]",
+              won ? "text-accent" : "text-sub",
+            )}
+          >
+            {won ? <Trophy size={12} /> : <Skull size={12} />}
+            {won ? "Victory" : "Defeated"}
+          </span>
+        )}
 
-      {/* What the score is made of, in the same icon language as the HUD. */}
-      <div className="grid grid-cols-3 gap-x-5 gap-y-2 font-mono text-xs tabular-nums text-sub">
-        <ResultStat icon={<Swords size={12} />} value={state.damageDealt} label="Damage dealt" />
-        <ResultStat icon={<Flame size={12} />} value={state.phaseBonus} label="Phase bonus" />
-        <ResultStat icon={<Gauge size={12} />} value={state.speedBonus} label="Speed bonus" />
-        <ResultStat icon={<Crosshair size={12} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
-        <ResultStat icon={<Zap size={12} />} value={`${state.bestCombo}x`} label={`Best combo ${state.bestCombo}`} />
-        <ResultStat
-          icon={won ? <Heart size={12} /> : <Skull size={12} />}
-          value={won ? state.victoryBonus : `${hpPercent}%`}
-          label={won ? `Victory bonus ${state.victoryBonus}` : `Boss left on ${hpPercent} percent health`}
-        />
+        <span className="font-mono text-5xl font-semibold tabular-nums text-accent arcade-glow">
+          {state.score.toLocaleString()}
+        </span>
+
+        <div className="grid grid-cols-3 gap-x-5 gap-y-2 font-mono text-xs tabular-nums text-sub">
+          <ResultStat icon={<Swords size={12} />} value={state.damageDealt} label="Damage dealt" />
+          <ResultStat icon={<Flame size={12} />} value={state.phaseBonus} label="Phase bonus" />
+          <ResultStat icon={<Gauge size={12} />} value={state.speedBonus} label="Speed bonus" />
+          <ResultStat icon={<Crosshair size={12} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
+          <ResultStat icon={<Zap size={12} />} value={`${state.bestCombo}x`} label={`Best combo ${state.bestCombo}`} />
+          <ResultStat
+            icon={won ? <Heart size={12} /> : <Skull size={12} />}
+            value={won ? state.victoryBonus : `${hpPercent}%`}
+            label={won ? `Victory bonus ${state.victoryBonus}` : `Boss left on ${hpPercent} percent health`}
+          />
+        </div>
+
+        {best && !isNewBest && (
+          <span className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-accent/80" aria-label={`Best score ${best.score}`}>
+            <Trophy size={12} />
+            {best.score.toLocaleString()}
+          </span>
+        )}
+
+        <ArcadeButton onClick={onRestart}>
+          <RotateCcw size={15} />
+          Play again
+        </ArcadeButton>
       </div>
-
-      {best && !isNewBest && (
-        <span
-          className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-accent/80"
-          aria-label={`Best score ${best.score}`}
-        >
-          <Trophy size={12} />
-          {best.score.toLocaleString()}
-        </span>
-      )}
-
-      <ArcadeButton onClick={onRestart}>
-        <RotateCcw size={15} />
-        Play again
-      </ArcadeButton>
     </div>
   );
 }
 
-function ResultStat({
-  icon,
-  value,
-  label,
-}: {
-  icon: ReactNode;
-  value: string | number;
-  label: string;
-}) {
+function ResultStat({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
   return (
     <span className="flex items-center justify-center gap-1.5" aria-label={`${label}: ${value}`}>
       <span className="text-sub/60" aria-hidden="true">

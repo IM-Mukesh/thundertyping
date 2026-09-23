@@ -55,6 +55,12 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
     "enemy-drone": getArt(game.id, "enemy-drone"),
     "enemy-heavy": getArt(game.id, "enemy-heavy"),
     "boss-dreadnought": getArt(game.id, "boss-dreadnought"),
+    "bg-arena": getArt(game.id, "bg-arena"),
+    "boss-phase1": getArt(game.id, "boss-phase1"),
+    "boss-phase2": getArt(game.id, "boss-phase2"),
+    "boss-phase3": getArt(game.id, "boss-phase3"),
+    "player-attack": getArt(game.id, "player-attack"),
+    "victory-v2": getArt(game.id, "victory-v2"),
   };
 
   return (

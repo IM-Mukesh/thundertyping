@@ -60,6 +60,10 @@ export interface BossBattleState {
   playerHitMs: number;
   blockMs: number;
   phaseFlashMs: number;
+  /** Damage dealt by the most recent hit, for a floating damage-number popup
+   *  that shows a real value — ages out on the same clock as `bossHitMs`
+   *  rather than needing a timer of its own. */
+  lastHitDamage: number;
 }
 
 /* ------------------------------------------------------------------ tuning */
@@ -202,7 +206,7 @@ type BossAction =
   | { type: "REFILL"; words: string[] }
   | { type: "SET_TYPED"; value: string };
 
-function createInitialState(definition: GameDefinition): BossBattleState {
+export function createInitialState(definition: GameDefinition): BossBattleState {
   return {
     status: "idle",
     definition,
@@ -234,6 +238,7 @@ function createInitialState(definition: GameDefinition): BossBattleState {
     playerHitMs: 0,
     blockMs: 0,
     phaseFlashMs: 0,
+    lastHitDamage: 0,
   };
 }
 
@@ -264,7 +269,7 @@ function settle(state: BossBattleState, outcome: BossOutcome): BossBattleState {
   };
 }
 
-function reducer(state: BossBattleState, action: BossAction): BossBattleState {
+export function reducer(state: BossBattleState, action: BossAction): BossBattleState {
   switch (action.type) {
     case "START": {
       const fresh = createInitialState(state.definition);
@@ -384,6 +389,7 @@ function reducer(state: BossBattleState, action: BossAction): BossBattleState {
         // boss's true final phase instead of the stale pre-hit one --
         // previously only the non-lethal "crossed a phase" path updated it.
         phase: nextPhase,
+        lastHitDamage: damage,
         damageDealt: state.damageDealt + damage,
         score: state.score + damage + phaseBonus,
         phaseBonus: state.phaseBonus + phaseBonus,

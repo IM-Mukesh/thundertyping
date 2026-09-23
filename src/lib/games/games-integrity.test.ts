@@ -22,6 +22,11 @@ import {
   TICK_MS,
 } from "@/lib/games/use-word-blaster";
 import type { WordBlasterState } from "@/lib/games/use-word-blaster";
+import {
+  createInitialState as bbInitialState,
+  reducer as bbReducer,
+  damageFor,
+} from "@/lib/games/use-boss-battle";
 
 describe("ghost racer: distance is correct characters, not keystrokes", () => {
   const text = "the quick brown fox";
@@ -226,5 +231,28 @@ describe("word blaster: boss encounters", () => {
     // regardless of how `enemies` got populated.
     assert.equal(s.enemies[0].progress, 0.5);
     assert.equal(s.elapsedMs, TICK_MS);
+  });
+});
+
+describe("boss battle: damage-number popup reports the real hit", () => {
+  it("lastHitDamage matches the damage actually dealt this hit, not a running total", () => {
+    const definition = GAME_DEFINITIONS["boss-battle"];
+    let s: ReturnType<typeof bbInitialState> = {
+      ...bbInitialState(definition),
+      status: "running",
+      word: "spark",
+      queue: ["ember"],
+    };
+    s = bbReducer(s, { type: "SET_TYPED", value: "spark" });
+    assert.equal(s.lastHitDamage, damageFor("spark", 0));
+    assert.equal(s.damageDealt, s.lastHitDamage, "first hit: total equals the single hit");
+
+    s = bbReducer(s, { type: "SET_TYPED", value: "ember" });
+    assert.equal(s.lastHitDamage, damageFor("ember", 1), "second hit is scored at the prior combo");
+    assert.equal(
+      s.damageDealt,
+      damageFor("spark", 0) + damageFor("ember", 1),
+      "the running total is the sum, not overwritten by the latest hit",
+    );
   });
 });
