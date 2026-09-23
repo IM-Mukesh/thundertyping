@@ -50,6 +50,14 @@ export type SoundName =
   | "bb-victory-fanfare"
   | "bb-defeat-stinger"
   | "bb-heartbeat"
+  // Typing Grand Prix
+  | "tire-screech"
+  | "race-defeat"
+  | "race-victory"
+  | "final-lap-alarm"
+  | "overtake"
+  | "boost-whoosh"
+  | "engine-accel"
   // synthesized, below
   | "key-correct"
   | "key-wrong"
@@ -89,6 +97,13 @@ const SAMPLED: Partial<Record<SoundName, string>> = {
   "bb-victory-fanfare": `${SFX}/sfx-boss-victory-fanfare.opus`,
   "bb-defeat-stinger": `${SFX}/sfx-boss-defeat-stinger.opus`,
   "bb-heartbeat": `${SFX}/sfx-low-health-pulse.opus`,
+  "tire-screech": `${SFX}/sfx-tire-screech.opus`,
+  "race-defeat": `${SFX}/sfx-race-defeat.opus`,
+  "race-victory": `${SFX}/sfx-race-victory.opus`,
+  "final-lap-alarm": `${SFX}/sfx-final-lap-alarm.opus`,
+  "overtake": `${SFX}/sfx-overtake.opus`,
+  "boost-whoosh": `${SFX}/sfx-boost-whoosh.opus`,
+  "engine-accel": `${SFX}/sfx-engine-accel.opus`,
 };
 
 /** Every sampled file, for preloading a game's set up front. */

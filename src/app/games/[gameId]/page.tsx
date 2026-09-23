@@ -62,6 +62,10 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
     "boss-phase3": getArt(game.id, "boss-phase3"),
     "player-attack": getArt(game.id, "player-attack"),
     "victory-v2": getArt(game.id, "victory-v2"),
+    "car-player": getArt(game.id, "car-player"),
+    "car-shadow": getArt(game.id, "car-shadow"),
+    "car-blaze": getArt(game.id, "car-blaze"),
+    "car-nova": getArt(game.id, "car-nova"),
   };
 
   return (

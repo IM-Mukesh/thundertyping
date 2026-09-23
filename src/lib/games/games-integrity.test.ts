@@ -168,6 +168,117 @@ describe("typing grand prix: the car banks only what was typed correctly", () =>
   });
 });
 
+describe("typing grand prix: combo, boost and overtakes", () => {
+  function race(words: string[], overrides: Partial<GrandPrixState> = {}): GrandPrixState {
+    const base = gpInitialState(GAME_DEFINITIONS["typing-grand-prix"]);
+    return {
+      ...base,
+      status: "running",
+      leadInMs: 0,
+      words,
+      wordIndex: 0,
+      totalChars: words.reduce((n, w) => n + w.length, 0),
+      bankedChars: 0,
+      typed: "",
+      ...overrides,
+    };
+  }
+
+  function typeAndCommit(state: GrandPrixState, value: string): GrandPrixState {
+    const typed = gpReducer(state, { type: "SET_TYPED", value });
+    return gpReducer(typed, { type: "COMMIT_WORD" });
+  }
+
+  it("combo climbs on clean words and resets the instant a keystroke is wrong", () => {
+    let s = race(["alpha", "bravo", "charlie"]);
+    s = typeAndCommit(s, "alpha");
+    assert.equal(s.combo, 1);
+    s = typeAndCommit(s, "bravo");
+    assert.equal(s.combo, 2);
+
+    s = gpReducer(s, { type: "SET_TYPED", value: "z" });
+    assert.equal(s.combo, 0, "a single wrong keystroke breaks the streak immediately");
+  });
+
+  it("committing a wrong or incomplete word earns no score and resets combo", () => {
+    // Three words, not two — committing the wrong word must land on the
+    // *middle* word, or it would also be the last word of the race and pull
+    // in finishRace's separate placement/speed bonus, which would make this
+    // test about the wrong thing.
+    let s = race(["alpha", "bravo", "charlie"]);
+    s = typeAndCommit(s, "alpha");
+    assert.equal(s.combo, 1);
+    const scoreAfterFirst = s.score;
+
+    s = typeAndCommit(s, "zzzzz");
+    assert.equal(s.status, "running", "sanity check: the race is not over yet");
+    assert.equal(s.combo, 0, "spacing past a wrong word is not a clean word");
+    assert.equal(s.score, scoreAfterFirst, "no points for a word that wasn't actually typed");
+  });
+
+  it("boost caps at 100 and spending it into a window resets it to 0", () => {
+    let s = race(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"], { boost: 92 });
+    s = typeAndCommit(s, "a");
+    assert.equal(s.boost, 0, "crossing the cap spends it, not caps it at 100");
+    assert.ok(s.boostMs > 0, "Overdrive-style window starts the instant boost caps");
+  });
+
+  it("boost never advances the car — only real correct characters do", () => {
+    const words = ["alpha", "bravo"];
+    let s = race(words, { boostMs: 6000 });
+    s = typeAndCommit(s, "alpha");
+    // The anti-exploit invariant this whole game was fixed for: distance can
+    // only ever equal correctly-typed characters, whatever else is active.
+    assert.equal(s.bankedChars, "alpha".length);
+    assert.equal(s.playerProgress, "alpha".length / (words.join("").length));
+  });
+
+  it("a clean word during an active boost window scores strictly more than the same word without it", () => {
+    const withoutBoost = typeAndCommit(race(["mountain"]), "mountain");
+    const withBoost = typeAndCommit(race(["mountain"], { boostMs: 6000 }), "mountain");
+    assert.ok(withBoost.score > withoutBoost.score);
+  });
+
+  it("the player's own progress passing an opponent sets a real overtake timestamp", () => {
+    // Opponents don't move during SET_TYPED, so pushing the player's own
+    // progress past a stationary opponent's is a fully deterministic way to
+    // exercise the same position-comparison path a tick would.
+    const words = ["mountain"];
+    const s0 = race(words, {
+      elapsedMs: 1000,
+      opponents: [
+        { id: 0, targetWpm: 50, speedFactor: 1, progress: 0.5, finishedAtMs: null },
+        { id: 1, targetWpm: 50, speedFactor: 1, progress: 0.9, finishedAtMs: null },
+        { id: 2, targetWpm: 50, speedFactor: 1, progress: 0.95, finishedAtMs: null },
+      ],
+    });
+    assert.equal(s0.lastOvertakeMs, null);
+
+    // "mountain" is 8 chars of 8 total — typing it fully takes the player
+    // from 0 to 1, crossing well past opponent 0's 0.5.
+    const s = gpReducer(s0, { type: "SET_TYPED", value: "mountain" });
+    assert.equal(s.lastOvertakeMs, 1000, "stamped with the tick's own elapsedMs, not fabricated");
+  });
+
+  it("an opponent pulling ahead on a tick sets a real overtaken timestamp", () => {
+    const s0 = race(["alpha"], {
+      playerProgress: 0.5,
+      elapsedMs: 1000,
+      opponents: [
+        // targetWpm=0 still advances (progress can only grow, never reverse)
+        // but far too slowly to cross the player inside one tick on its own
+        // — instead, place it a hair behind so any forward tick crosses it.
+        { id: 0, targetWpm: 500, speedFactor: 1, progress: 0.4999, finishedAtMs: null },
+        { id: 1, targetWpm: 10, speedFactor: 1, progress: 0.1, finishedAtMs: null },
+        { id: 2, targetWpm: 10, speedFactor: 1, progress: 0.05, finishedAtMs: null },
+      ],
+    });
+    const s = gpReducer(s0, { type: "TICK" });
+    assert.ok(s.opponents[0].progress > 0.5, "the fast opponent did cross the player this tick");
+    assert.equal(s.lastOvertakenMs, s.elapsedMs, "stamped the instant the position actually changed");
+  });
+});
+
 describe("word blaster: boss encounters", () => {
   function running(overrides: Partial<WordBlasterState> = {}): WordBlasterState {
     return {
