@@ -49,6 +49,7 @@ export type SoundName =
   | "bb-combo-rising"
   | "bb-victory-fanfare"
   | "bb-defeat-stinger"
+  | "bb-heartbeat"
   // synthesized, below
   | "key-correct"
   | "key-wrong"
@@ -87,6 +88,7 @@ const SAMPLED: Partial<Record<SoundName, string>> = {
   "bb-combo-rising": `${SFX}/sfx-combo-rising.opus`,
   "bb-victory-fanfare": `${SFX}/sfx-boss-victory-fanfare.opus`,
   "bb-defeat-stinger": `${SFX}/sfx-boss-defeat-stinger.opus`,
+  "bb-heartbeat": `${SFX}/sfx-low-health-pulse.opus`,
 };
 
 /** Every sampled file, for preloading a game's set up front. */

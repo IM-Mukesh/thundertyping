@@ -138,14 +138,15 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
     };
   }, [state, soundEnabled]);
 
-  // A tense heartbeat while down to the last life — synthesised (see
-  // game-audio.ts) specifically because it has to repeat for as long as
-  // danger holds, which a fixed-length sample can't do without a seam.
+  // A tense heartbeat while down to the last life. Re-triggered as a short
+  // one-shot on an interval rather than looped as a single audio file, so
+  // there's no seam to get right — each beat is just an independent playback
+  // of the recorded double-thump.
   useEffect(() => {
     const danger = state.status === "running" && state.lives === 1;
     if (!danger) return;
-    playSound("heartbeat", soundEnabled);
-    const id = setInterval(() => playSound("heartbeat", soundEnabled), HEARTBEAT_MS);
+    sound("bb-heartbeat", soundEnabled);
+    const id = setInterval(() => sound("bb-heartbeat", soundEnabled), HEARTBEAT_MS);
     return () => clearInterval(id);
   }, [state.status, state.lives, soundEnabled]);
 

@@ -31,14 +31,7 @@ type SoundName =
   | "lesson-key"
   | "lesson-typo"
   | "lesson-clear"
-  | "lesson-miss"
-  // Boss Battle's low-health warning. Synthesised rather than a generated
-  // sample specifically because it has to loop for as long as danger holds —
-  // a fixed-length file either loops with an audible seam or has to be
-  // trimmed frame-perfectly, where two oscillator tones cost nothing to
-  // repeat cleanly and can be re-triggered at whatever cadence the caller
-  // wants (see the pulse-rate note in boss-battle-game.tsx).
-  | "heartbeat";
+  | "lesson-miss";
 
 let ctx: AudioContext | null = null;
 /** Master gain, so one node mutes everything and keeps overall level sane. */
@@ -147,12 +140,6 @@ const SOUNDS: Record<SoundName, () => void> = {
     tone({ freq: 990, toFreq: 1480, durationMs: 150, type: "sine", gain: 0.32, delayMs: 50 });
   },
   "lesson-miss": () => tone({ freq: 240, toFreq: 100, durationMs: 320, type: "sawtooth", gain: 0.42 }),
-  // A deep double-thump -- "dun-DUN" -- pure low sine tones, no melody. Loud
-  // in its own low register but layered under everything else in the mix.
-  heartbeat: () => {
-    tone({ freq: 95, toFreq: 45, durationMs: 110, type: "sine", gain: 0.55 });
-    tone({ freq: 85, toFreq: 40, durationMs: 90, type: "sine", gain: 0.4, delayMs: 160 });
-  },
 };
 
 /**
