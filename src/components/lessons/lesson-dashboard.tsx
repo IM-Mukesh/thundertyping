@@ -6,6 +6,7 @@ import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-p
 import { LessonStatsBar } from "@/components/lessons/lesson-stats-bar";
 import { LessonSidebar } from "@/components/lessons/lesson-sidebar";
 import { LessonUnitRow } from "@/components/lessons/lesson-unit-row";
+import { TodaysTrainingCard } from "@/components/lessons/todays-training-card";
 
 /** The dashboard body: stats bar, tier sidebar and the unit list for whichever tier is selected. Filtering happens client-side over a list the server already rendered, so every unit is in the initial HTML and stays indexable. */
 export function LessonDashboard() {
@@ -16,6 +17,7 @@ export function LessonDashboard() {
 
   return (
     <div className="flex w-full flex-col gap-6">
+      <TodaysTrainingCard />
       <LessonStatsBar />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">

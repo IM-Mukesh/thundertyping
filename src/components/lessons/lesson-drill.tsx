@@ -13,8 +13,11 @@ import { VirtualKeyboard } from "@/components/lessons/virtual-keyboard";
 import { buildSubLessons, buildTextForContent, type SubLessonSpec } from "@/lib/lessons/lesson-content";
 import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
 import { LESSON_LIST, type LessonDefinition } from "@/lib/lessons/lesson-types";
+import { getWeakKeys, tallyKeyAttempt } from "@/lib/lessons/key-performance";
+import { useKeyPerformanceStore } from "@/lib/lessons/key-performance-store";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { playSound } from "@/lib/games/game-audio";
+import { awardXp, bumpStat } from "@/lib/profile/player-profile";
 import { cn } from "@/lib/utils/cn";
 
 // Lessons deliberately do not go through the main TypingTest component --
@@ -33,6 +36,7 @@ function buildConfig(content: SubLessonSpec["content"]): TestConfig {
     timeDuration: 30,
     wordCount: 10,
     quoteLength: "short",
+    vocabDifficulty: "easy",
     customText: buildTextForContent(content),
     punctuation: false,
     numbers: false,
@@ -58,6 +62,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   // was never finished. Enforced here too now, not just on the card.
   const allUnits = useLessonProgressStore((s) => s.units);
   const unlocked = isLessonUnlocked(definition.id, allUnits);
+  const recordKeyAttempt = useKeyPerformanceStore((s) => s.recordKeyAttempt);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
 
@@ -124,6 +129,12 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       engine.state.incorrectKeystrokes,
       engine.state.charTally.missed,
     );
+    // Captured before recordAttempt mutates the store -- computeUnitProgressUpdate
+    // returns unitCompleted:true on every passing re-run of a unit's last step
+    // (including a deliberate Restart on an already-completed unit), so XP must
+    // be gated on the completed->completed transition, not the returned flag
+    // alone, or restarting a finished unit would farm infinite XP.
+    const wasAlreadyCompleted = existingProgress?.completed ?? false;
     const outcome = recordAttempt(definition.id, {
       step: sessionStep,
       totalSteps: subLessons.length,
@@ -135,6 +146,11 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       elapsedMs: engine.state.elapsedMs,
       minAccuracy: stepSpec.minAccuracy,
     });
+    recordKeyAttempt(engine.state.wordStates);
+    if (!wasAlreadyCompleted && outcome.unitCompleted) {
+      bumpStat("lessons", "unitsCompleted");
+      awardXp(50 + Math.round(wpm));
+    }
     playSound(outcome.passed ? "lesson-clear" : "lesson-miss", soundEnabled);
     setResult(outcome);
     // intentionally narrow: only re-evaluate when the run transitions to "finished"
@@ -154,6 +170,15 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   const accuracy = round(
     calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.charTally.missed),
   );
+
+  // Derived live from just this attempt's wordStates, no store round-trip --
+  // a lower minAttempts than the global weak-key threshold since one run has
+  // far fewer keystrokes per key to judge from.
+  const attemptWeakKeys = useMemo(() => {
+    if (!isFinished) return [];
+    const stats = tallyKeyAttempt(engine.state.wordStates);
+    return getWeakKeys(stats, { minAttempts: 3, accuracyThreshold: 90 });
+  }, [isFinished, engine.state.wordStates]);
 
   const isLastStep = sessionStep >= subLessons.length;
   const currentIndex = LESSON_LIST.findIndex((l) => l.id === definition.id);
@@ -285,6 +310,19 @@ export function LessonDrill({ definition }: LessonDrillProps) {
               <span className="text-lg text-foreground">{stepSpec.minAccuracy}%</span> required
             </span>
           </div>
+
+          {attemptWeakKeys.length > 0 && (
+            <Link
+              href="/lessons/practice"
+              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-xs text-sub transition-colors hover:border-accent hover:text-foreground"
+            >
+              Keys to review:{" "}
+              <span className="font-mono font-bold text-foreground">
+                {attemptWeakKeys.map((k) => (k === " " ? "space" : k)).join(", ")}
+              </span>
+              <ArrowRight size={12} aria-hidden="true" />
+            </Link>
+          )}
 
           <div className="flex flex-wrap justify-center gap-3">
             <button
