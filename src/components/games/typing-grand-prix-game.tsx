@@ -46,7 +46,28 @@ const VISIBLE_WORDS = 9;
 /** How long a popup (overtake/overtaken/milestone) stays up. */
 const POPUP_MS = 1600;
 
+// The track art's road recedes toward a vanishing point rather than running
+// flat, so cars are placed in true perspective — lerped between a "horizon"
+// anchor (small, near the vanishing point) and a "near" anchor (full size,
+// spread into lanes) — instead of just sliding up the image. That perspective
+// is what keeps a rival grounded on the road instead of floating over it.
+const HORIZON_Y = 34;
+const NEAR_Y = 62;
+const HORIZON_X = 55;
+const NEAR_LANE_X = [20, 50, 84];
+const HORIZON_SCALE = 0.22;
+/** Fan angles (degrees) for the road's forward-motion streak lines. */
+const STREAK_ANGLES = [-26, -15, -5, 5, 15, 26];
+
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
 
 /** WPM performance bands for the speedometer glow — cosmetic only. */
 function speedTier(wpm: number): string {
@@ -332,33 +353,50 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           )}
 
           {/* ------------------------------------------------------ Track --- */}
-          <div className="relative flex-1">
-            {/* Rival cars, positioned by real progress relative to the player. */}
+          <div className="relative flex-1 overflow-hidden">
+            <RoadStreaks wpm={liveWpm} active={isPlaying && !inLeadIn} />
+
+            {/* Rival cars, grounded on the road in real perspective — lerped
+                between the horizon (far) and near-lane anchors by how close
+                each rival's real progress is to the player's. */}
             {state.opponents.map((o, i) => {
               const identity = OPPONENT_IDENTITY[i];
               const carArt = rivalArt[i];
               const delta = o.progress - state.playerProgress;
-              const laneX = [24, 52, 78][i] ?? 50;
-              const topPct = Math.max(8, Math.min(58, 30 - delta * 160));
-              const scale = Math.max(0.5, Math.min(1.05, 1 - delta * 2.4));
+              const closeness = clamp01(0.5 - delta * 2.2);
+              const topPct = lerp(HORIZON_Y, NEAR_Y, closeness);
+              const xPct = lerp(HORIZON_X, NEAR_LANE_X[i] ?? 50, closeness);
+              const scale = lerp(HORIZON_SCALE, 1, closeness);
+              const spawnFade = closeness < 0.05 ? closeness / 0.05 : 1;
+              const width = 150 * scale;
               return (
                 <div
                   key={o.id}
                   className="absolute flex flex-col items-center gap-1 transition-[top,left] duration-150 ease-linear"
                   style={{
-                    left: `${laneX}%`,
+                    left: `${xPct}%`,
                     top: `${topPct}%`,
-                    width: 120 * scale,
+                    width,
+                    opacity: spawnFade,
+                    zIndex: 10 + Math.round(closeness * 19),
                     transitionDuration: `${TICK_MS * 3}ms`,
-                    transform: "translateX(-50%)",
+                    transform: "translate(-50%, -50%)",
                   }}
                 >
-                  <span className="rounded-full border border-border/60 bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-sub backdrop-blur-sm">
+                  <span
+                    className="rounded-full border border-border/60 bg-background/70 px-1.5 py-0.5 font-mono uppercase tracking-wider text-sub backdrop-blur-sm"
+                    style={{ fontSize: Math.max(7, 9 * scale) }}
+                  >
                     {identity?.name ?? `Rival ${i + 1}`}
                   </span>
                   {carArt ? (
                     <div className="relative aspect-[3/2] w-full drop-shadow-[0_6px_10px_rgba(0,0,0,0.4)]">
-                      <Image src={carArt} alt="" fill sizes="160px" className="object-contain" />
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 mx-auto w-[62%] rounded-[50%] bg-black/50 blur-[3px]"
+                        style={{ height: "16%", opacity: 0.3 + closeness * 0.4 }}
+                      />
+                      <Image src={carArt} alt="" fill sizes="160px" className="relative object-contain" />
                     </div>
                   ) : (
                     <div className="h-6 w-full rounded bg-sub-alt" />
@@ -370,7 +408,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
             {/* Player car — always anchored bottom-center; the camera follows you. */}
             <div
               className={cn(
-                "absolute bottom-[6%] left-1/2 flex w-[42%] max-w-[280px] -translate-x-1/2 flex-col items-center transition-transform",
+                "absolute bottom-[6%] left-1/2 z-30 flex w-[42%] max-w-[280px] -translate-x-1/2 flex-col items-center transition-transform",
                 overtakeFlash && "scale-[1.03]",
               )}
             >
@@ -381,7 +419,11 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
                     boostActive && "brightness-125",
                   )}
                 >
-                  <Image src={playerCarArt} alt="" fill priority sizes="360px" className="object-contain" />
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-x-0 bottom-0 mx-auto h-[16%] w-[66%] rounded-[50%] bg-black/60 blur-[4px]"
+                  />
+                  <Image src={playerCarArt} alt="" fill priority sizes="360px" className="relative object-contain" />
                   {boostActive && (
                     <div
                       aria-hidden="true"
@@ -535,6 +577,48 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           style={{ fontSize: 16 }}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * A fan of streaks racing out from the road's vanishing point toward the
+ * camera — the only thing that reads as "the road is actually moving"
+ * against a single static backdrop image. Speed is real, not decorative
+ * filler: it's driven by the player's own live WPM, so typing faster
+ * visibly speeds the road up.
+ */
+function RoadStreaks({ wpm, active }: { wpm: number; active: boolean }) {
+  const duration = Math.max(0.5, Math.min(2.2, 2.4 - wpm / 55));
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+      style={{ opacity: active ? 1 : 0 }}
+    >
+      {STREAK_ANGLES.map((angle, i) => (
+        <span
+          key={angle}
+          className="absolute"
+          style={{
+            left: `${HORIZON_X}%`,
+            top: `${HORIZON_Y}%`,
+            transform: `rotate(${angle}deg)`,
+            transformOrigin: "top center",
+          }}
+        >
+          <span
+            className="gp-road-streak absolute rounded-full"
+            style={{
+              width: 2,
+              height: 40,
+              background: "linear-gradient(to bottom, color-mix(in srgb, var(--accent) 70%, transparent), transparent)",
+              animationDuration: `${duration}s`,
+              animationDelay: `${-(i / STREAK_ANGLES.length) * duration}s`,
+            }}
+          />
+        </span>
+      ))}
     </div>
   );
 }

@@ -308,6 +308,33 @@ button:disabled,
   animation: boss-shake 0.15s ease-in-out;
 }
 
+/* A single streak racing from the road's vanishing point toward the camera.
+   Typing Grand Prix stacks several of these with staggered negative delays
+   (and a duration driven by the player's real live WPM) so the road reads as
+   continuous forward motion rather than a static backdrop. */
+@keyframes gp-road-streak {
+  0% {
+    transform: translate(-50%, 0) scale(0.15);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.8;
+  }
+  92% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, 340px) scale(1.6);
+    opacity: 0;
+  }
+}
+
+.gp-road-streak {
+  animation-name: gp-road-streak;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
