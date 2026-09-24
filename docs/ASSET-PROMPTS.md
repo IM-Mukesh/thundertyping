@@ -1,4 +1,4 @@
-# ThunderTyping — Master Image Prompt Batch
+# HeroTyping — Master Image Prompt Batch
 
 Four Flow batches of 24 = **96 AI-generated images**. Everything else is drawn in
 code as SVG (see "Tier B" below). Read the Style Bible once, then run the batches

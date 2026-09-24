@@ -22,7 +22,7 @@ export default function Image() {
         }}
       >
         <div style={{ display: "flex", fontSize: 96, fontWeight: 700, letterSpacing: -2 }}>
-          <span style={{ color: "#facc15" }}>Thunder</span>
+          <span style={{ color: "#facc15" }}>Hero</span>
           <span>Typing</span>
         </div>
         <div style={{ display: "flex", marginTop: 24, fontSize: 32, color: "#8b8b90" }}>{SITE_TAGLINE}</div>

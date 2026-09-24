@@ -54,6 +54,9 @@ export const useKeyPerformanceStore = create<KeyPerformanceState>()(
       },
     }),
     {
+      // Left unrenamed on the HeroTyping rebrand -- every existing player's
+      // key-performance history is saved under this name, and renaming it
+      // would orphan it.
       name: "thundertyping-lesson-key-performance",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ keys: state.keys }),

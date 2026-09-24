@@ -8,7 +8,7 @@ const TOTAL_COUNT = ACHIEVEMENT_LIST.length + LESSON_ACHIEVEMENT_LIST.length;
 export const metadata: Metadata = {
   title: "Achievements",
   description:
-    "Every achievement across ThunderTyping's lessons and typing games — survive fifteen waves, beat a ghost at perfect accuracy, master the full keyboard. No sign-up required.",
+    "Every achievement across HeroTyping's lessons and typing games — survive fifteen waves, beat a ghost at perfect accuracy, master the full keyboard. No sign-up required.",
   alternates: { canonical: "/achievements" },
 };
 

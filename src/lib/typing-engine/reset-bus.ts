@@ -3,7 +3,7 @@
 // Deliberately not zustand state — nothing needs to read the current value,
 // only react to the event firing, so a plain DOM CustomEvent avoids adding a
 // store for what's really just a notification.
-const RESET_EVENT = "thundertyping:reset";
+const RESET_EVENT = "herotyping:reset";
 
 export function emitTestReset() {
   window.dispatchEvent(new Event(RESET_EVENT));

@@ -1,4 +1,4 @@
-# ThunderTyping — audio worklist
+# HeroTyping — audio worklist
 
 Generate one at a time, straight down the list. Each entry gives the **duration
 to set**, the **filename to save as**, and the **prompt to paste**.

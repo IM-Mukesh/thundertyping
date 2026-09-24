@@ -10,8 +10,8 @@ import { useSyncExternalStore } from "react";
 // ssr:false boundary today. Session-only: the query resets on a full reload,
 // matching "search" rather than "a saved filter".
 
-const STATE_KEY = "__thundertyping_game_search__";
-const CHANGE_EVENT = "thundertyping:game-search-change";
+const STATE_KEY = "__herotyping_game_search__";
+const CHANGE_EVENT = "herotyping:game-search-change";
 
 interface GameSearchState {
   query: string;

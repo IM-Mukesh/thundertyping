@@ -3,7 +3,7 @@ import { PracticeClient } from "@/components/lessons/practice-client";
 import { AdSlot } from "@/components/layout/ad-slot";
 
 export const metadata: Metadata = {
-  title: "Weak Key Drill — ThunderTyping",
+  title: "Weak Key Drill — HeroTyping",
   description: "A short, targeted drill for the specific keys giving you trouble, built from your own lesson history.",
   alternates: { canonical: "/lessons/practice" },
 };

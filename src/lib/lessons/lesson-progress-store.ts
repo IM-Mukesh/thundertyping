@@ -164,6 +164,9 @@ export const useLessonProgressStore = create<LessonProgressState>()(
       },
     }),
     {
+      // Left unrenamed on the HeroTyping rebrand -- every existing player's
+      // lesson progress is saved under this name, and renaming it would
+      // orphan it.
       name: "thundertyping-lesson-progress",
       storage: createJSONStorage(() => localStorage),
       merge: (persistedState, currentState) => {

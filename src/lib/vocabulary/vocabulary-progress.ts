@@ -7,6 +7,9 @@ import type { VocabWordResult } from "@/lib/vocabulary/use-vocabulary-test";
 // than subscribed to reactively from many places at once, so this follows
 // game-scores.ts's pattern rather than lesson-progress-store.ts's.
 
+// Left unrenamed on the HeroTyping rebrand -- every existing player's
+// vocabulary progress is saved under this name, and renaming it would orphan
+// it.
 const KEY = "thundertyping-vocabulary-progress";
 
 /** Exposed so a component can key `useSyncExternalStore` off the raw storage

@@ -1,4 +1,4 @@
-# ThunderTyping — Project State & Roadmap
+# HeroTyping — Project State & Roadmap
 
 **Read this file first, completely, before touching any code.** It exists so *any* AI coding assistant — Claude, GPT-based, Astra, Gemini, a local model, whatever picks this up next — or any human developer can start from zero context and be productive immediately, without re-asking the project owner questions that are already answered here. Nothing in this file assumes you're using a specific tool; where a note is specific to one environment, it's labeled as such near the end, not mixed into the main instructions.
 
@@ -7,7 +7,7 @@
 ## Quick start (works regardless of which AI tool or editor you are)
 
 ```bash
-cd path/to/thundertyping
+cd path/to/herotyping
 npm install       # only needed if node_modules isn't already present
 npm run dev        # starts Next.js on http://localhost:3000 by default
 npm test            # 81 unit tests (Node's built-in runner, no extra dependency)
@@ -33,7 +33,7 @@ As of **2026-09-22**: a feature-complete MVP, fully mobile-responsive, with **te
 **The 2026-09-17 session was an audit-and-repair pass, not a feature pass.** Four real defect classes were found and fixed; read "Session 2026-09-17" below before touching the typing engine, the games' scoring, the audio bus or the image pipeline, because several of those fixes look like things you might "simplify" back into bugs.
 
 **What's genuinely open right now, roughly by leverage:**
-1. **`NEXT_PUBLIC_SITE_URL` is unset**, so canonicals, `sitemap.xml` and `robots.txt` all emit `https://thundertyping.com`. Set it before deploying anywhere else, or search engines get pointed at a domain that may not be yours yet. This is the single highest-risk item for launch.
+1. **`NEXT_PUBLIC_SITE_URL` is unset**, so canonicals, `sitemap.xml` and `robots.txt` all emit `https://herotyping.com`. Set it before deploying anywhere else, or search engines get pointed at a domain that may not be yours yet. This is the single highest-risk item for launch.
 2. **AdSense is fully wired but not activated** — `NEXT_PUBLIC_ADSENSE_CLIENT_ID` unset. `layout.tsx` now loads the AdSense script conditionally, `AdSlot` placements exist on every route (including a new persistent side rail on `/`, `/lessons/[lessonId]` and every `ContentPage`-based route), and everything stays exactly as-is — no visible change anywhere — until a real client ID is set. Setting it is the only remaining step; no code changes needed.
 3. SEO content roadmap: guides #1 and #2 of 5 planned Tier-1 guides are done; #3–5 (`touch-typing-basics`, `wpm-vs-cpm`, `typing-accuracy-vs-speed`) are scoped and ready to write — see "Content architecture" below. Note `touch-typing-basics` now substantially overlaps with `/lessons` itself; worth deciding whether it still needs to be a separate guide or should just link into the lesson track.
 4. **Ten games shipped**: `falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush`, `spellbound`, `typing-survivor`, `ghost-racer`, `card-battle`. Adding another means a new `GameId`, a `GAME_DEFINITIONS` entry and one line in the `game-client.tsx` registry. Read "Games architecture" below first. **Deliberately not given an ad rail** — that page already documents, in its own comment, why an ad beside an active game board is a distraction/mis-click risk; the new rail respects that and was only added to keyboard-only typing surfaces (home, lessons).
@@ -49,7 +49,7 @@ As of **2026-09-22**: a feature-complete MVP, fully mobile-responsive, with **te
 
 A typing-speed-test website (MonkeyType-style) aiming for large organic Google traffic, monetized via Google AdSense. Long-term ambition: "world's best typing platform," but development proceeds in deliberate phases — **do not jump ahead to multiplayer/accounts/backend/games until explicitly prioritized below.**
 
-- **Brand name**: ThunderTyping
+- **Brand name**: HeroTyping
 - **Current phase**: Frontend-only MVP, feature-complete and hardened. No backend, no accounts, no database. Everything persists to `localStorage`. Not yet launched (no real domain, no AdSense account, no Search Console).
 - **Language**: English only (architecture supports adding more later, see `src/data/words/` and `src/data/quotes/`). The games draw from the same word list, so a new language reaches them for free.
 - **Design**: Minimalist, MonkeyType-inspired — the typing area is the visual star, chrome stays out of the way. Five built-in themes (Dark default, Light, Midnight, Forest, Sunset) via a theme picker in the header, all color changes transition smoothly except per-character typing feedback (deliberately instant — see Architecture).
@@ -344,7 +344,7 @@ Everything else is presentation. These are the files where a careless edit chang
 
 ## Before deploying (prerequisites, in order)
 
-1. **Set `NEXT_PUBLIC_SITE_URL`** to the real origin. Unset, everything SEO-facing emits `https://thundertyping.com`. Verified: `sitemap.xml`, `robots.txt` and the `/` canonical all read from it.
+1. **Set `NEXT_PUBLIC_SITE_URL`** to the real origin. Unset, everything SEO-facing emits `https://herotyping.com`. Verified: `sitemap.xml`, `robots.txt` and the `/` canonical all read from it.
 2. Confirm `npm run build` is **0 warnings** and `npm test` is green.
 3. `/debug/typing-engine` must 404 in production (it is guarded by `NODE_ENV`; verified).
 4. `NEXT_PUBLIC_ADSENSE_CLIENT_ID` stays unset until the account is approved — that is what keeps ad slots hidden.
@@ -377,7 +377,7 @@ Everything else is presentation. These are the files where a careless edit chang
 - **Targeting locks on.** Once a word's prefix matches, keystrokes stay committed to it even if another word also matches, otherwise the highlight visibly jumps mid-word. With nothing locked, the word closest to the floor wins — it's the one about to cost a life, so it's almost always what the player meant.
 - **Runs pause on tab-hide**, so a backgrounded run doesn't drain every life at once when the player comes back.
 
-- **`SUPPORT_EMAIL`/`SITE_URL` in `src/lib/seo/constants.ts` are placeholders** (`hello@thundertyping.com`, `https://thundertyping.com`) — not real yet. Referenced from `/privacy`, `/terms`, and all metadata. Update these together once a real domain/inbox exists.
+- **`SUPPORT_EMAIL`/`SITE_URL` in `src/lib/seo/constants.ts` are placeholders** (`hello@herotyping.com`, `https://herotyping.com`) — not real yet. Referenced from `/privacy`, `/terms`, and all metadata. Update these together once a real domain/inbox exists.
 
 ### Lessons architecture (read before adding or editing a lesson)
 
@@ -403,7 +403,7 @@ Pre-launch, zero traffic, zero backlinks, zero domain authority. "World-class SE
 ### Technical SEO — current state (audited directly against the live code)
 
 **In place:**
-- Per-route `Metadata` API usage with a title template (`%s | ThunderTyping`), description, canonical (`alternates.canonical` on `/`, `/about`, `/privacy`, `/terms`), Open Graph + Twitter card defaults in the root layout.
+- Per-route `Metadata` API usage with a title template (`%s | HeroTyping`), description, canonical (`alternates.canonical` on `/`, `/about`, `/privacy`, `/terms`), Open Graph + Twitter card defaults in the root layout.
 - `sitemap.ts` and `robots.ts` via Next.js file conventions, sitemap linked from robots.
 - One JSON-LD `WebApplication` schema on the homepage.
 - Dynamically generated OG image (`opengraph-image.tsx`) — no static asset to go stale.

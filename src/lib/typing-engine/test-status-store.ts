@@ -23,8 +23,8 @@ import { useSyncExternalStore } from "react";
 // Prefer this pattern (or the window-event bus in reset-bus.ts) over a
 // module singleton for ANY state shared across that dynamic-import boundary.
 
-const STATE_KEY = "__thundertyping_test_status__";
-const CHANGE_EVENT = "thundertyping:test-status-change";
+const STATE_KEY = "__herotyping_test_status__";
+const CHANGE_EVENT = "herotyping:test-status-change";
 
 interface TestStatusState {
   isFinished: boolean;

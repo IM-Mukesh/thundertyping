@@ -4,7 +4,7 @@ import { ProfileClient } from "@/components/profile/profile-client";
 export const metadata: Metadata = {
   title: "Your Profile",
   description:
-    "Your typing progress across every ThunderTyping game — level, XP, achievements, best scores and per-game statistics. Stored on your own device, no sign-up needed.",
+    "Your typing progress across every HeroTyping game — level, XP, achievements, best scores and per-game statistics. Stored on your own device, no sign-up needed.",
   alternates: { canonical: "/profile" },
   // Nothing here is the same for two visitors, so there is nothing for a
   // crawler to usefully index -- but the route must still be reachable and

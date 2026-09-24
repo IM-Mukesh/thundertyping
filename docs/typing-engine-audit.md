@@ -1,7 +1,7 @@
 # Typing engine audit
 
 Prompted by a 15-second comparison: MonkeyType 86 WPM / 108 characters,
-ThunderTyping 66 WPM / 82 characters, same typist, minutes apart.
+HeroTyping 66 WPM / 82 characters, same typist, minutes apart.
 
 No formula was changed to move a score. Where a formula was changed
 (consistency), it was because it measured the wrong quantity, and the change
@@ -51,7 +51,7 @@ mostly measured test length. Measured directly:
 | steady with a 4-second stall | **82.8** | **36.8** |
 
 A typist alternating between full speed and complete stops scored 78%
-"consistency". This is also why your screenshots show ThunderTyping 95% against
+"consistency". This is also why your screenshots show HeroTyping 95% against
 MonkeyType 85% for the same typist.
 
 **Fix.** Samples now carry raw cumulative counts; consistency differences them
@@ -74,7 +74,7 @@ speed. One-second buckets because the 100ms tick holds under two characters at
 **Why it matters.** monkeytype.com is a production build. A 34ms p95 input
 latency is perceptible while typing fast — it is above the 16ms frame budget —
 and degrades both speed and accuracy. This matches your report that
-ThunderTyping "feels like I make significantly more typing mistakes" while
+HeroTyping "feels like I make significantly more typing mistakes" while
 showing 100% accuracy: the lag was real, the missing errors were the space bug.
 
 **Fix.** None required in code — production is already fast. Benchmark against
@@ -85,13 +85,13 @@ showing 100% accuracy: the lag was real, the missing errors were the space bug.
 I initially suspected this and was wrong. Measured on the two prompts in your
 screenshots:
 
-| | MonkeyType | ThunderTyping |
+| | MonkeyType | HeroTyping |
 |---|---|---|
 | words | 46 | 39 |
 | mean word length | 4.11 | **4.10** |
 | words over 5 letters | 11% | **5%** |
 
-Statistically indistinguishable; if anything ThunderTyping's draw was easier.
+Statistically indistinguishable; if anything HeroTyping's draw was easier.
 Monte Carlo over 20,000 simulated prompts shows our generator's expected mean is
 4.45 (p05–p95: 4.13–4.80), so *both* observed prompts sat at the 4th percentile.
 
@@ -213,7 +213,7 @@ the 15s cutoff landed mid-word. **On identical text the two engines agree.**
 - **Backgrounded tabs** throttle the tick. Elapsed time stays correct because
   it is measured from timestamp deltas, not by counting ticks, but the test may
   be *detected* as finished late. Score is unaffected.
-- **Corpus difficulty** is untouched and will keep typical ThunderTyping runs
+- **Corpus difficulty** is untouched and will keep typical HeroTyping runs
   slightly below MonkeyType's default. This is a product decision, not a bug.
 - **`english-1k.ts` holds 489 words**, not 1000. The name is wrong, not the
   behaviour.

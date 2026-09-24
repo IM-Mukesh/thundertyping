@@ -38,6 +38,8 @@ export interface GhostRun {
 // mashed the spacebar was saved as a fast, accurate opponent -- replaying one
 // would put an unbeatable phantom on the track. The old entries are left in
 // place rather than deleted; they are simply never read again.
+// Left unrenamed on the HeroTyping rebrand -- every existing player's saved
+// ghost replays live under this prefix, and renaming it would orphan them.
 const KEY_PREFIX = "thundertyping:ghost:v2";
 const INDEX_KEY = `${KEY_PREFIX}:index`;
 /** Ghosts are small but not free; keep the most recent per text. */

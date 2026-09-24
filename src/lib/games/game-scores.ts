@@ -6,6 +6,8 @@ import type { GameId } from "@/lib/games/game-types";
 // describe a game run. Same defensive posture though — parsed storage is
 // validated before it reaches the UI.
 
+// Left unrenamed on the HeroTyping rebrand -- every existing player's best
+// scores are saved under this prefix, and renaming it would orphan them.
 const KEY_PREFIX = "thundertyping-game-best";
 
 export interface GameBest {

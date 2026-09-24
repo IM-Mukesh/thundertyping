@@ -15,8 +15,12 @@ import {
   setStorageItem,
 } from "@/lib/persistence/storage";
 
+// Storage key deliberately left unrenamed on the HeroTyping (formerly
+// ThunderTyping) rebrand -- it's what every existing player's XP,
+// achievements and unlocks are saved under, and renaming it would silently
+// orphan that data. Only the in-memory change-event name below changed.
 const KEY = "thundertyping:profile:v1";
-const CHANGE_EVENT = "thundertyping:profile-change";
+const CHANGE_EVENT = "herotyping:profile-change";
 
 export interface Achievement {
   id: string;

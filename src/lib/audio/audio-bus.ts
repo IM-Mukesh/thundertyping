@@ -13,7 +13,7 @@
  * pushed in, so it survives a reload and applies everywhere at once.
  */
 
-const STATE_KEY = "__thundertyping_audio__";
+const STATE_KEY = "__herotyping_audio__";
 
 export type Bus = "music" | "sfx";
 

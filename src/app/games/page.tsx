@@ -83,7 +83,7 @@ export default function GamesHubPage() {
             &ldquo;Every keystroke makes you stronger.&rdquo;
           </p>
           <footer className="mt-2 font-display text-[10px] uppercase tracking-[0.3em] text-accent">
-            — ThunderTyping
+            — HeroTyping
           </footer>
         </blockquote>
 

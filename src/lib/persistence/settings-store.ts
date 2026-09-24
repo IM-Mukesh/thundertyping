@@ -136,6 +136,10 @@ export const useSettingsStore = create<SettingsState>()(
       setSfxVolume: (v) => set({ sfxVolume: Math.max(0, Math.min(1, v)) }),
     }),
     {
+      // Left unrenamed on the HeroTyping rebrand -- every existing player's
+      // settings are saved under this name (layout.tsx's inline theme-init
+      // script also hardcodes this exact string to avoid a flash of the
+      // wrong theme before hydration), and renaming it would orphan both.
       name: "thundertyping-settings",
       storage: createJSONStorage(() => localStorage),
       merge: (persistedState, currentState) => ({

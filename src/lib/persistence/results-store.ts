@@ -1,6 +1,9 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import type { TestMode } from "@/lib/typing-engine/engine-types";
 
+// Left unrenamed on the HeroTyping rebrand -- every existing player's
+// personal bests are saved under this prefix, and renaming it would orphan
+// them.
 const KEY_PREFIX = "thundertyping-pb";
 
 function pbKey(mode: TestMode, param: number | string, punctuation: boolean, numbers: boolean): string {
