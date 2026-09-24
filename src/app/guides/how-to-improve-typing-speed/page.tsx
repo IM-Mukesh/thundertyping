@@ -68,7 +68,9 @@ export default function HowToImproveTypingSpeedPage() {
           The reason this matters for speed specifically (not just for typing without looking):
           keeping fingers on home row means every keystroke is a short, consistent motion instead
           of a hand repositioning. Repositioning is what actually costs time, far more than the
-          keystroke itself.
+          keystroke itself. If home row still isn&apos;t automatic yet,{" "}
+          <Link href="/lessons">structured typing lessons</Link> walk through finger placement key
+          by key, with an on-screen hand diagram, before moving on to full sentences.
         </p>
 
         <h2>3. Practice in short, focused sessions — not long, tired ones</h2>
@@ -117,7 +119,8 @@ export default function HowToImproveTypingSpeedPage() {
             <strong>Practicing only on easy text.</strong> If every practice session uses common
             words you already type fluently, you&apos;re not training your weak points. Mixing in
             punctuation, numbers, or unfamiliar text (quotes, custom text) surfaces exactly the
-            patterns that are currently limiting you.
+            patterns that are currently limiting you. <Link href="/vocabulary">Vocabulary practice</Link>{" "}
+            is a good source of unfamiliar words that still have real definitions behind them.
           </li>
         </ul>
 
@@ -128,7 +131,9 @@ export default function HowToImproveTypingSpeedPage() {
           at a pace where you can stay near 100% accuracy — that&apos;s the pace worth building
           speed from. Curious where your result actually stands? See{" "}
           <Link href="/guides/average-typing-speed">average typing speed by context</Link> for
-          honest benchmarks instead of a single made-up number.
+          honest benchmarks instead of a single made-up number. Once accuracy feels automatic,{" "}
+          <Link href="/games">typing games</Link> are a low-friction way to keep logging practice
+          time without it feeling like a drill.
         </p>
       </ContentPage>
     </>

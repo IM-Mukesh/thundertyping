@@ -6,6 +6,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      // Defense in depth alongside each page's own `robots: { index: false }`
+      // meta tag (profile/page.tsx, debug/typing-engine/page.tsx) -- a
+      // crawler that ignores meta robots for some reason still gets stopped
+      // here. /profile is per-visitor local state with no standalone search
+      // value; /debug is a dev-only utility page.
+      disallow: ["/profile", "/debug"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Gamepad2, Heart } from "lucide-react";
+import { Gamepad2, Heart } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
 import { getArt, getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
@@ -11,6 +11,8 @@ import { GameCoverArt } from "@/components/games/game-cover-art";
 import { GameBestBadge } from "@/components/games/game-best-badge";
 import { GameInfoPanel } from "@/components/games/game-info-panel";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { buildGameSchema } from "@/lib/seo/json-ld";
 
 export function generateStaticParams() {
   return GAME_LIST.map((game) => ({ gameId: game.id }));
@@ -26,10 +28,14 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
   const { gameId } = await params;
   const game = getGame(gameId);
   if (!game) return {};
+  const title = `${game.name} — Typing Game`;
+  const description = `${game.tagline} ${game.about[0].slice(0, 120)}`;
   return {
-    title: `${game.name} — Typing Game`,
-    description: `${game.tagline} ${game.about[0].slice(0, 120)}`,
+    title,
+    description,
     alternates: { canonical: `/games/${game.id}` },
+    openGraph: { title, description },
+    twitter: { title, description },
   };
 }
 
@@ -122,15 +128,18 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
       </div>
 
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildGameSchema({ name: game.name, description: game.about[0], path: `/games/${game.id}` }),
+          ),
+        }}
+      />
+
       <div className="flex w-full max-w-4xl items-center justify-between gap-4 pb-4">
-        <Link
-          href="/games"
-          className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-sub transition-colors hover:text-foreground"
-        >
-          <ArrowLeft size={13} />
-          Arcade
-        </Link>
-        <div className="flex items-center gap-3">
+        <Breadcrumbs items={[{ name: "Games", path: "/games" }, { name: game.name, path: `/games/${game.id}` }]} />
+        <div className="flex shrink-0 items-center gap-3">
           <GameBestBadge definition={game} />
           <GameInfoPanel game={game} others={others} />
         </div>

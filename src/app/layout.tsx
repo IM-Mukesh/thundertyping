@@ -6,6 +6,7 @@ import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SITE_NAME, SITE_URL, SITE_TAGLINE, SITE_DESCRIPTION } from "@/lib/seo/constants";
+import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/json-ld";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,6 +61,9 @@ const THEME_INIT_SCRIPT = `(function(){try{var r=localStorage.getItem("thunderty
 // someone sets NEXT_PUBLIC_ADSENSE_CLIENT_ID.
 const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
+const organizationSchema = buildOrganizationSchema();
+const webSiteSchema = buildWebSiteSchema();
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -70,6 +74,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Sitewide identity, once, rather than duplicated per-route -- the
+            homepage's own WebApplication schema covers the product itself. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }} />
         {adsenseClientId && (
           <script
             async

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { TypingTestClient } from "@/components/typing-test/typing-test-client";
 import { PageIntro } from "@/components/layout/page-intro";
 import { AdRail } from "@/components/layout/ad-rail";
+import { HomepageSeoContent } from "@/components/layout/homepage-seo-content";
 import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
 import { SITE_URL } from "@/lib/seo/constants";
 
@@ -41,6 +42,8 @@ export default function Home() {
           <AdRail id="home-rail" />
         </div>
       </div>
+
+      <HomepageSeoContent />
     </div>
   );
 }

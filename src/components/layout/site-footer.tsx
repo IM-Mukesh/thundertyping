@@ -52,7 +52,7 @@ export function SiteFooter() {
               Achievements
             </Link>
             <Link
-              href="/guides/how-to-improve-typing-speed"
+              href="/guides"
               className="flex min-h-11 items-center transition-colors hover:text-foreground sm:min-h-0"
             >
               Guides

@@ -1,7 +1,7 @@
 export const SITE_NAME = "HeroTyping";
 
-// Placeholder until a production domain is registered — update via
-// NEXT_PUBLIC_SITE_URL once available.
+// Overridable via NEXT_PUBLIC_SITE_URL (e.g. for preview deployments); the
+// production domain is the default.
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://herotyping.com";
 

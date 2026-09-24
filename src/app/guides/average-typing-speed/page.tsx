@@ -131,7 +131,9 @@ export default function AverageTypingSpeedPage() {
           Numbers on a page are easy to skim past. <Link href="/">Take a typing test</Link> under
           the same conditions a few times (same duration, similar text type) before comparing
           your result to any of the ranges above — a single test tells you less than a short
-          streak of them.
+          streak of them. Still building up to these ranges?{" "}
+          <Link href="/lessons">Typing lessons</Link> start from the home row, and{" "}
+          <Link href="/games">typing games</Link> keep practice time from feeling like a chore.
         </p>
       </ContentPage>
     </>
