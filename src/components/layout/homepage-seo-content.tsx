@@ -10,11 +10,11 @@ import Link from "next/link";
  */
 export function HomepageSeoContent() {
   return (
-    <section className="mx-auto mt-14 w-full max-w-2xl text-center text-xs leading-relaxed text-sub">
+    <section className="mx-auto w-full max-w-4xl text-center text-xs leading-relaxed text-sub">
       <h2 className="mb-1.5 font-display text-[11px] font-medium uppercase tracking-[0.2em] text-sub/80">
         Want more than a score?
       </h2>
-      <p>
+      <p className="whitespace-nowrap max-[560px]:whitespace-normal">
         See what counts as a{" "}
         <Link href="/guides/average-typing-speed" className="text-accent underline underline-offset-2">
           good typing speed

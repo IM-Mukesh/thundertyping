@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import type { BreadcrumbItem } from "@/lib/seo/json-ld";
 
 interface ContentPageProps {
   title: string;
   subtitle?: string;
+  /** Optional -- pages like /privacy or /terms have no meaningful trail and skip this. */
+  breadcrumbItems?: BreadcrumbItem[];
   children: ReactNode;
 }
 
@@ -11,9 +15,10 @@ interface ContentPageProps {
 // here just stacked two horizontal ad boxes back to back with nothing
 // between them. That's genuinely covered already; "on every page" doesn't
 // need a second placement on these specific ones.
-export function ContentPage({ title, subtitle, children }: ContentPageProps) {
+export function ContentPage({ title, subtitle, breadcrumbItems, children }: ContentPageProps) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-12 sm:px-10">
+      {breadcrumbItems && <Breadcrumbs items={breadcrumbItems} />}
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
         {subtitle && <p className="text-sm text-sub">{subtitle}</p>}

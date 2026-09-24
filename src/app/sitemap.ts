@@ -31,6 +31,18 @@ const routes: {
     changeFrequency: "monthly",
     lastModified: "2026-09-24",
   },
+  {
+    path: "/guides/how-to-touch-type",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
+  {
+    path: "/guides/net-wpm-vs-gross-wpm",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
   { path: "/games", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-15" },
   // Generated from GAME_LIST rather than hand-listed -- a hand-maintained
   // copy of this list previously drifted out of sync and silently dropped 4

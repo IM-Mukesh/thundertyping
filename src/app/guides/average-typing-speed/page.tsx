@@ -31,6 +31,10 @@ export default function AverageTypingSpeedPage() {
       <ContentPage
         title="Average Typing Speed by Context"
         subtitle="&ldquo;Good&rdquo; typing speed depends entirely on what you're comparing it to."
+        breadcrumbItems={[
+          { name: "Guides", path: "/guides" },
+          { name: "Average Typing Speed by Context", path: "/guides/average-typing-speed" },
+        ]}
       >
         <p>
           &ldquo;What&apos;s a good WPM?&rdquo; doesn&apos;t have one honest answer — it depends
@@ -109,7 +113,9 @@ export default function AverageTypingSpeedPage() {
             <strong>Net vs. raw WPM.</strong> Raw WPM ignores mistakes; net WPM (the number that
             actually matters) subtracts them. A score reported without saying which one it is
             can&apos;t be compared fairly to another score — {SITE_NAME} always shows both,
-            separately, on the results screen.
+            separately, on the results screen. See{" "}
+            <Link href="/guides/net-wpm-vs-gross-wpm">net WPM vs. gross WPM</Link> for the full
+            breakdown.
           </li>
         </ul>
 

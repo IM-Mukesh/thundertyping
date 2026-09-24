@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SITE_NAME } from "@/lib/seo/constants";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Typing Guides",
@@ -23,11 +24,22 @@ const GUIDES = [
     description:
       "What counts as a good typing speed for casual use, office work, programming, and competitive typing.",
   },
+  {
+    href: "/guides/how-to-touch-type",
+    title: "How to Touch Type",
+    description: "The actual finger-to-key map, in order, plus a practice progression that doesn't skip steps.",
+  },
+  {
+    href: "/guides/net-wpm-vs-gross-wpm",
+    title: "Net WPM vs. Gross WPM",
+    description: "Why two typing tests can report wildly different numbers for the exact same run.",
+  },
 ];
 
 export default function GuidesIndexPage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-12 sm:px-10">
+      <Breadcrumbs items={[{ name: "Guides", path: "/guides" }]} />
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Typing Guides</h1>
         <p className="text-sm text-sub">

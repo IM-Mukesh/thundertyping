@@ -31,6 +31,10 @@ export default function HowToImproveTypingSpeedPage() {
       <ContentPage
         title="How to Improve Your Typing Speed"
         subtitle="Practical technique, not shortcuts — most gains come from fixing habits, not typing more."
+        breadcrumbItems={[
+          { name: "Guides", path: "/guides" },
+          { name: "How to Improve Your Typing Speed", path: "/guides/how-to-improve-typing-speed" },
+        ]}
       >
         <p>
           Typing speed is a motor skill, not a talent. Almost everyone who types daily for work
@@ -70,7 +74,9 @@ export default function HowToImproveTypingSpeedPage() {
           of a hand repositioning. Repositioning is what actually costs time, far more than the
           keystroke itself. If home row still isn&apos;t automatic yet,{" "}
           <Link href="/lessons">structured typing lessons</Link> walk through finger placement key
-          by key, with an on-screen hand diagram, before moving on to full sentences.
+          by key, with an on-screen hand diagram, before moving on to full sentences — or see{" "}
+          <Link href="/guides/how-to-touch-type">how to touch type</Link> for the full finger map
+          and practice order in one place.
         </p>
 
         <h2>3. Practice in short, focused sessions — not long, tired ones</h2>
