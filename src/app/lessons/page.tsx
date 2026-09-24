@@ -4,13 +4,14 @@ import { ArrowRight, Keyboard } from "lucide-react";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import { LessonDashboard } from "@/components/lessons/lesson-dashboard";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Learn to Type",
+export const metadata: Metadata = pageMetadata({
+  title: "Learn to Type — Free Touch-Typing Lessons",
   description:
-    "Free touch-typing lessons for complete beginners through advanced speed and precision -- three tiers, home row to full-length passages, with an on-screen keyboard and finger guide for every key. No sign-up required.",
-  alternates: { canonical: "/lessons" },
-};
+    "Free touch-typing lessons, beginner to advanced -- home row to full-length passages, with an on-screen keyboard and finger guide. No sign-up required.",
+  path: "/lessons",
+});
 
 export default function LessonsHubPage() {
   return (

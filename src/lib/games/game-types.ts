@@ -311,17 +311,17 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
   "ghost-racer": {
     id: "ghost-racer",
     name: "Ghost Racer",
-    tagline: "Race the recorded keystrokes of a real player.",
+    tagline: "Race the ghost of your own best run.",
     rules: [
       "You and a ghost type the same text, side by side.",
-      "The ghost is a real recorded run, replayed keystroke by keystroke.",
-      "Cross the line first to win and become the next ghost.",
-      "A daily race gives everyone the same text.",
+      "The ghost is your own real previous run on this text, replayed keystroke by keystroke.",
+      "Beat it and that run becomes your new ghost to beat next time.",
+      "A daily race gives you the same text every day, so yesterday's ghost is today's target.",
     ],
     about: [
-      "Ghost Racer replays a real run rather than simulating an opponent. The ghost beside you is somebody's actual keystrokes with their actual timing, including the half-second they hesitated on a hard word and the burst where they found their rhythm. Racing that feels nothing like racing a number, because it is uneven in the specific way people are uneven.",
-      "The tactical layer is pacing. A ghost that starts fast is not necessarily beating you — it may be the run where they stumbled at the end. Learning to hold your own rhythm while somebody pulls ahead, rather than panicking into a mistake, is the skill the mode trains, and it transfers directly to any timed test.",
-      "Every run you finish is recorded and can become the ghost somebody else races. Beating a ghost puts yours in its place, which means the pool of opponents is made of real attempts rather than difficulty tiers, and the daily race gives everybody the same text so the comparison is exact.",
+      "Ghost Racer replays a real run rather than simulating an opponent -- specifically, your own. The ghost beside you is your actual keystrokes from a previous attempt at this exact text, with their actual timing: the half-second you hesitated on a hard word, the burst where you found your rhythm. Racing that feels nothing like racing a number, because it's uneven in the specific way a real run is uneven.",
+      "The tactical layer is pacing. A ghost that starts fast isn't necessarily beating you -- it may be the run where you stumbled at the end. Learning to hold your own rhythm while a ghost pulls ahead, rather than panicking into a mistake, is the skill the mode trains, and it transfers directly to any timed test.",
+      "Every run you finish against a text is saved, and beating your ghost replaces it -- so the bar keeps rising, one real run at a time, at your own pace. Everything stays on this device: there's no shared pool of other players' runs and no ranking, just your own history to race against.",
     ],
     lives: 1,
     scoreBy: "time",
@@ -330,9 +330,9 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tags: ["Racing", "Competitive", "Single Player"],
     duration: "2-5 min",
     replayability: "High",
-    pitch:
-      "Go head-to-head with real player ghosts. Beat their time, set new records, climb the ranks.",
-    highlights: ["Real recorded runs", "Daily race", "Personal bests", "Rank progression", "Revenge matches"],  },
+    pitch: "Race the ghost of your own best run. Beat it, and that becomes the new ghost to chase next.",
+    highlights: ["Real recorded runs", "Daily race", "Personal bests", "Progressive ghosts"],
+  },
   "card-battle": {
     id: "card-battle",
     name: "Card Battle",

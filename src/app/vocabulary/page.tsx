@@ -3,13 +3,14 @@ import { BookOpen } from "lucide-react";
 import { VOCAB_DIFFICULTIES, VOCAB_WORDS } from "@/lib/vocabulary/vocabulary-words";
 import { VocabularyHubCard } from "@/components/vocabulary/vocabulary-hub-card";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Vocabulary Typing Test",
+export const metadata: Metadata = pageMetadata({
+  title: "Vocabulary Typing Test — Practice by Difficulty",
   description:
-    "Build real vocabulary while you type. Hundreds of words across Easy, Medium and Hard tiers, each shown with a real definition to learn as you practice. No sign-up required.",
-  alternates: { canonical: "/vocabulary" },
-};
+    "Build real vocabulary while you type. Hundreds of words across Easy, Medium and Hard tiers, each shown with a real definition. No sign-up required.",
+  path: "/vocabulary",
+});
 
 export default function VocabularyHubPage() {
   const totalWords = VOCAB_DIFFICULTIES.reduce((sum, d) => sum + VOCAB_WORDS[d].length, 0);

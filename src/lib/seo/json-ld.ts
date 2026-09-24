@@ -119,6 +119,27 @@ export function buildGameSchema({ name, description, path, genre }: GameSchemaIn
   };
 }
 
+interface FaqItem {
+  question: string;
+  /** Plain text only -- FAQPage schema doesn't support markup, and the rendered FAQ section carries the real (possibly linked) answer. */
+  answer: string;
+}
+
+export function buildFaqSchema(items: FaqItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+}
+
 interface LearningResourceSchemaInput {
   name: string;
   description: string;

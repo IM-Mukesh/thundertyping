@@ -43,6 +43,20 @@ yarn-error.log*
 /.claude/
 /.mcp.json
 
+# Stray shell/IDE dotfiles that land in the project root in some sandboxed
+# dev environments (where $HOME resolves here) rather than a real home
+# directory - not project config, never meant to be shared/committed.
+/.bash_profile
+/.bashrc
+/.gitconfig
+/.gitmodules
+/.idea
+/.profile
+/.ripgreprc
+/.vscode
+/.zprofile
+/.zshrc
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

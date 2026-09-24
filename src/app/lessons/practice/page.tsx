@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { PracticeClient } from "@/components/lessons/practice-client";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Weak Key Drill — HeroTyping",
+// Title is plain here (no manual "— HeroTyping") because the root layout's
+// title template ("%s | HeroTyping") already appends the brand name -- this
+// page previously duplicated it into "Weak Key Drill — HeroTyping | HeroTyping".
+export const metadata: Metadata = pageMetadata({
+  title: "Weak Key Drill",
   description: "A short, targeted drill for the specific keys giving you trouble, built from your own lesson history.",
-  alternates: { canonical: "/lessons/practice" },
-};
+  path: "/lessons/practice",
+});
 
 export default function PracticePage() {
   return (

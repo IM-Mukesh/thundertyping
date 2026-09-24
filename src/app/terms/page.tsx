@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { ContentPage } from "@/components/layout/content-page";
 import { SITE_NAME, SUPPORT_EMAIL } from "@/lib/seo/constants";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms of Use",
   description: `The terms for using ${SITE_NAME}, a free typing speed test.`,
-  alternates: { canonical: "/terms" },
-};
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

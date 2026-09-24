@@ -124,6 +124,22 @@ export default async function LessonPage({ params }: PageProps<"/lessons/[lesson
               ))}
             </div>
 
+            <p className="text-xs text-sub">
+              Want the full finger-to-key map?{" "}
+              <Link href="/guides/how-to-touch-type" className="text-accent underline underline-offset-2">
+                How to touch type
+              </Link>{" "}
+              covers it end to end. Once you&apos;re comfortable, build vocabulary with{" "}
+              <Link href="/vocabulary" className="text-accent underline underline-offset-2">
+                vocabulary practice
+              </Link>{" "}
+              or keep it fun with a{" "}
+              <Link href="/games" className="text-accent underline underline-offset-2">
+                typing game
+              </Link>
+              .
+            </p>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {previousLesson && (
                 <Link

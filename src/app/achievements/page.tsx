@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AchievementsClient } from "@/components/profile/achievements-client";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
 import { LESSON_ACHIEVEMENT_LIST } from "@/lib/lessons/lesson-achievements";
+import { pageMetadata } from "@/lib/seo/metadata";
 
 const TOTAL_COUNT = ACHIEVEMENT_LIST.length + LESSON_ACHIEVEMENT_LIST.length;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Achievements",
   description:
-    "Every achievement across HeroTyping's lessons and typing games — survive fifteen waves, beat a ghost at perfect accuracy, master the full keyboard. No sign-up required.",
-  alternates: { canonical: "/achievements" },
-};
+    "Every achievement across HeroTyping's lessons and games -- survive fifteen waves, beat your ghost at perfect accuracy, master the keyboard.",
+  path: "/achievements",
+});
 
 export default function AchievementsPage() {
   const visibleGameAchievements = ACHIEVEMENT_LIST.filter((a) => !a.secret);
@@ -33,6 +35,18 @@ export default function AchievementsPage() {
           server HTML; the noscript block below is what keeps them present
           and indexable regardless. */}
       <AchievementsClient />
+
+      <p className="text-xs text-sub">
+        Go earn some:{" "}
+        <Link href="/lessons" className="text-accent underline underline-offset-2">
+          work through the lessons
+        </Link>{" "}
+        or{" "}
+        <Link href="/games" className="text-accent underline underline-offset-2">
+          jump into a game
+        </Link>
+        .
+      </p>
 
       <noscript>
         <ul className="flex flex-col gap-2">

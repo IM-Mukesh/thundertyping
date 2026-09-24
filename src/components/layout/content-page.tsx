@@ -27,8 +27,11 @@ export function ContentPage({ title, subtitle, breadcrumbItems, children }: Cont
         className="flex flex-col gap-4 text-sm leading-relaxed text-sub
           [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2
           [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground
+          [&_h3]:mt-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-foreground
           [&_li]:ml-4 [&_li]:list-disc
-          [&_strong]:font-medium [&_strong]:text-foreground"
+          [&_ol_li]:list-decimal
+          [&_strong]:font-medium [&_strong]:text-foreground
+          [&_code]:rounded [&_code]:bg-sub-alt/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-foreground"
       >
         {children}
       </div>

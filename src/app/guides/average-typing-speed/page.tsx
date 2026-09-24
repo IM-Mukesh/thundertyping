@@ -1,23 +1,85 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ContentPage } from "@/components/layout/content-page";
+import { GuideLayout } from "@/components/content/guide-layout";
+import { Callout } from "@/components/content/callout";
+import { FaqSection } from "@/components/content/faq-section";
+import { SourceList } from "@/components/content/source-list";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
-export const metadata: Metadata = {
-  title: "Average Typing Speed by Context (WPM Benchmarks)",
+export const metadata: Metadata = pageMetadata({
+  title: "What Is a Good Typing Speed? WPM Benchmarks by Level & Context",
   description:
-    "What counts as a good typing speed, broken down by context: casual, office work, programming, transcription, and competitive typing — with honest ranges, not a single made-up number.",
-  alternates: { canonical: "/guides/average-typing-speed" },
-};
+    "What counts as a good typing speed, by skill level and by context — casual, office, programming, data entry — with sourced ranges, not one made-up number.",
+  path: "/guides/average-typing-speed",
+});
 
 const PUBLISHED = "2026-09-15";
+const UPDATED = "2026-09-24";
+
+const LEVELS = [
+  { label: "Beginner", range: "Under 20 WPM", note: "Still locating keys; hunt-and-peck or very early touch typing." },
+  { label: "Developing", range: "20–35 WPM", note: "Home row is familiar; full keyboard still requires some looking." },
+  { label: "Intermediate", range: "35–50 WPM", note: "Comfortable everyday typing — most casual and office typists land here." },
+  { label: "Proficient", range: "50–70 WPM", note: "Fast enough that typing rarely bottlenecks writing speed." },
+  { label: "Advanced", range: "70–100 WPM", note: "Professional-level — data entry, transcription, career typists." },
+  { label: "Competitive", range: "100+ WPM", note: "Top percentile; typing-competition and speed-test leaderboard territory." },
+];
+
+const IS_X_GOOD: { wpm: string; verdict: string }[] = [
+  { wpm: "Is 40 WPM good?", verdict: "Solidly average for casual and general office typing — comfortable for everyday writing and messaging, below professional data-entry benchmarks." },
+  { wpm: "Is 50 WPM good?", verdict: "Above the general average and squarely typical for an experienced office worker; typing stops being the bottleneck for most writing tasks." },
+  { wpm: "Is 60 WPM good?", verdict: "A strong, professional-level speed — meets or exceeds most entry-level data-entry and administrative job requirements." },
+  { wpm: "Is 80 WPM good?", verdict: "Genuinely fast — in the range of experienced transcriptionists and career typists, well above the vast majority of typists." },
+  { wpm: "Is 100 WPM good?", verdict: "Elite for sustained typing — approaching the fastest individuals in large-scale studies, and a realistic ceiling for most people only with dedicated practice." },
+];
+
+const CONTEXT_TABLE = [
+  { context: "General population, casual typing", range: "30–45" },
+  { context: "Average office / knowledge worker", range: "40–65" },
+  { context: "Professional typist / data entry", range: "60–80" },
+  { context: "Programmer (sustained, real code)", range: "40–70" },
+  { context: "Transcriptionist / court reporter", range: "75–100+" },
+  { context: "Competitive typist (top percentile)", range: "120–150+" },
+];
+
+const FAQ_ITEMS = [
+  {
+    question: "What is a good typing speed overall?",
+    answer:
+      "For everyday use, 40–65 WPM is a comfortable, widely-typical range for adults who type regularly. The largest keystroke study to date (168,000 volunteers, 136 million keystrokes) found an average of 52 WPM — a genuinely useful reference point, though real-world \"good\" still depends heavily on what you're comparing it to.",
+    plainAnswer:
+      "For everyday use, 40–65 WPM is typical. The largest keystroke study to date found an average of 52 WPM across 168,000 volunteers.",
+  },
+  {
+    question: "Does a good typing speed include accuracy?",
+    answer:
+      "It should. A high WPM with frequent uncorrected errors isn't actually a fast typist — it's a fast typist of wrong text. Most typing tests, including HeroTyping's, report net WPM (which already subtracts errors) specifically so the number reflects usable output, not raw hand speed.",
+    plainAnswer:
+      "Yes — a high WPM with frequent errors isn't genuinely fast. Net WPM, which subtracts errors, is the more meaningful number.",
+  },
+  {
+    question: "Why does my typing speed vary between different tests and sites?",
+    answer:
+      "Test length, text difficulty, and whether a site reports gross or net WPM all change the number for the exact same underlying skill. See net WPM vs. gross WPM for the full breakdown of why two legitimate tests can disagree.",
+    plainAnswer:
+      "Test length, text difficulty, and whether a site reports gross or net WPM all change the number for the same underlying skill.",
+  },
+  {
+    question: "Is typing speed more important than accuracy?",
+    answer:
+      "No — accuracy is the better predictor of real-world usefulness. A typist who is fast but constantly correcting mistakes usually produces finished text slower than a more accurate typist at a moderate pace, once correction time is counted.",
+    plainAnswer:
+      "No — accuracy is the better predictor of real-world usefulness, since correcting mistakes costs more time than moderate extra speed saves.",
+  },
+];
 
 export default function AverageTypingSpeedPage() {
   const schema = buildArticleSchema({
-    headline: "Average Typing Speed by Context (WPM Benchmarks)",
+    headline: "What Is a Good Typing Speed? WPM Benchmarks by Level & Context",
     description:
-      "Typing speed benchmarks by context — casual, office, programming, transcription, competitive — with honest ranges instead of one number.",
+      "What counts as a good typing speed, by skill level and by context, with sourced ranges instead of one made-up number.",
     path: "/guides/average-typing-speed",
     datePublished: PUBLISHED,
   });
@@ -28,24 +90,80 @@ export default function AverageTypingSpeedPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
-      <ContentPage
-        title="Average Typing Speed by Context"
-        subtitle="&ldquo;Good&rdquo; typing speed depends entirely on what you're comparing it to."
+      <GuideLayout
+        title="What Is a Good Typing Speed?"
+        subtitle="&ldquo;Good&rdquo; depends entirely on what you're comparing it to — here are honest ranges, not a certificate."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
-          { name: "Average Typing Speed by Context", path: "/guides/average-typing-speed" },
+          { name: "What Is a Good Typing Speed?", path: "/guides/average-typing-speed" },
         ]}
+        toc={[
+          { id: "by-skill-level", label: "By skill level" },
+          { id: "is-my-wpm-good", label: "“Is my WPM good?”" },
+          { id: "by-context", label: "By context" },
+          { id: "largest-study", label: "What the largest typing study found" },
+          { id: "programmers", label: "Why programmers type “slower”" },
+          { id: "accuracy", label: "Accuracy matters as much as the number" },
+          { id: "why-vary", label: "Why these numbers vary" },
+          { id: "what-matters", label: "What actually matters more" },
+          { id: "test-yourself", label: "Test yourself" },
+        ]}
+        hasFaq
+        hasSources
       >
+        <Callout label="Quick answer">
+          <p>
+            For general adult typing, <strong>40–65 WPM</strong> is typical, and the largest
+            keystroke study to date measured an average of <strong>52 WPM</strong> across 168,000
+            volunteers. Above 70 WPM is genuinely fast; above 100 WPM is elite. But the single
+            number matters less than accuracy alongside it — a fast, error-prone typist is
+            usually slower in practice than an accurate, moderate one.
+          </p>
+        </Callout>
+
         <p>
           &ldquo;What&apos;s a good WPM?&rdquo; doesn&apos;t have one honest answer — it depends
           entirely on who you&apos;re comparing yourself to. A number that&apos;s impressive for
-          casual typing is unremarkable for a professional transcriptionist, and competitive
+          casual typing is unremarkable for a professional data-entry role, and competitive
           typists operate in a range that would be a career-defining skill anywhere else. The
-          ranges below are the commonly cited bands for each context; treat them as orientation,
-          not a certificate.
+          ranges below are practical, commonly-cited bands, not a universal scientific standard.
         </p>
 
-        <h2>By context</h2>
+        <h2 id="by-skill-level">By skill level</h2>
+        <table className="w-full border-collapse text-left text-sm">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="py-2 pr-4 font-medium text-foreground">Level</th>
+              <th className="py-2 pr-4 font-medium text-foreground">WPM range</th>
+              <th className="py-2 font-medium text-foreground">What it looks like</th>
+            </tr>
+          </thead>
+          <tbody className="[&_tr]:border-b [&_tr]:border-border">
+            {LEVELS.map((row) => (
+              <tr key={row.label}>
+                <td className="py-2 pr-4 font-medium text-foreground">{row.label}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{row.range}</td>
+                <td className="py-2">{row.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-xs text-sub/80">
+          These are practical ranges for orientation, not a scientific classification — real
+          typists overlap between adjacent bands constantly.
+        </p>
+
+        <h2 id="is-my-wpm-good">&ldquo;Is my WPM good?&rdquo;</h2>
+        <div className="flex flex-col gap-3">
+          {IS_X_GOOD.map((row) => (
+            <div key={row.wpm} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+              <p className="text-sm font-medium text-foreground">{row.wpm}</p>
+              <p className="mt-1 text-sm leading-relaxed text-sub">{row.verdict}</p>
+            </div>
+          ))}
+        </div>
+
+        <h2 id="by-context">By context</h2>
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">
@@ -54,40 +172,33 @@ export default function AverageTypingSpeedPage() {
             </tr>
           </thead>
           <tbody className="[&_tr]:border-b [&_tr]:border-border">
-            <tr>
-              <td className="py-2 pr-4">General population, casual typing</td>
-              <td className="py-2">30&ndash;45</td>
-            </tr>
-            <tr>
-              <td className="py-2 pr-4">Average office / knowledge worker</td>
-              <td className="py-2">40&ndash;65</td>
-            </tr>
-            <tr>
-              <td className="py-2 pr-4">Professional typist / data entry</td>
-              <td className="py-2">60&ndash;80</td>
-            </tr>
-            <tr>
-              <td className="py-2 pr-4">Programmer (sustained, real code)</td>
-              <td className="py-2">40&ndash;70</td>
-            </tr>
-            <tr>
-              <td className="py-2 pr-4">Transcriptionist / court reporter</td>
-              <td className="py-2">75&ndash;100+</td>
-            </tr>
-            <tr>
-              <td className="py-2 pr-4">Competitive typist (top percentile)</td>
-              <td className="py-2">120&ndash;150+</td>
-            </tr>
+            {CONTEXT_TABLE.map((row) => (
+              <tr key={row.context}>
+                <td className="py-2 pr-4">{row.context}</td>
+                <td className="py-2">{row.range}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
         <p>
           These are broad, widely-cited bands rather than results from a single controlled study
           — typing-speed research uses inconsistent test lengths, text difficulty, and error
           penalties, so exact figures vary by source. Use them as a rough compass, not a
-          leaderboard.
+          leaderboard. Looking for data-entry-specific hiring benchmarks? See{" "}
+          <Link href="/guides/data-entry-typing-test">the data entry typing test guide</Link>.
         </p>
 
-        <h2>Why programmers often type &ldquo;slower&rdquo; than expected</h2>
+        <h2 id="largest-study">What the largest typing study found</h2>
+        <p>
+          In 2018, researchers from Aalto University and Cambridge published the largest typing
+          study to date: 136 million keystrokes from 168,000 volunteers typing under controlled
+          conditions online. The measured average was <strong>52 WPM</strong>, with the fastest 5%
+          of typists exceeding 80 WPM. It&apos;s one of the few typing-speed figures with real,
+          public methodology behind it rather than an unsourced &ldquo;average&rdquo; repeated
+          across the web — see the sources below for the study itself.
+        </p>
+
+        <h2 id="programmers">Why programmers often type &ldquo;slower&rdquo; than expected</h2>
         <p>
           Programmer WPM looks low next to office-worker WPM, and that&apos;s not a skill gap —
           it&apos;s a different task. Code isn&apos;t prose: it&apos;s dense with punctuation,
@@ -97,12 +208,22 @@ export default function AverageTypingSpeedPage() {
           over unfamiliar symbols and indentation.
         </p>
 
-        <h2>Why these numbers vary so much between sources</h2>
+        <h2 id="accuracy">Accuracy matters as much as the number</h2>
+        <p>
+          A WPM score without its accuracy is only half the picture. Two typists at 60 WPM are not
+          equally skilled if one holds 98% accuracy and the other holds 88% — the second one is
+          spending real time on corrections that the raw number doesn&apos;t show. {SITE_NAME}{" "}
+          reports accuracy and consistency alongside WPM on every results screen for this reason.
+          See <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>{" "}
+          if your accuracy is lagging behind your speed.
+        </p>
+
+        <h2 id="why-vary">Why these numbers vary so much between sources</h2>
         <ul>
           <li>
             <strong>Test length.</strong> Short bursts (15&ndash;30s) tend to read higher than
             sustained multi-minute tests, since fatigue and error-correction haven&apos;t caught
-            up yet.
+            up yet. See <Link href="/guides/typing-test-duration-guide">which test duration to use</Link>.
           </li>
           <li>
             <strong>Text difficulty.</strong> Common English words are faster to type than
@@ -114,12 +235,12 @@ export default function AverageTypingSpeedPage() {
             actually matters) subtracts them. A score reported without saying which one it is
             can&apos;t be compared fairly to another score — {SITE_NAME} always shows both,
             separately, on the results screen. See{" "}
-            <Link href="/guides/net-wpm-vs-gross-wpm">net WPM vs. gross WPM</Link> for the full
+            <Link href="/guides/net-wpm-vs-gross-wpm">how WPM is calculated</Link> for the full
             breakdown.
           </li>
         </ul>
 
-        <h2>What actually matters more than the number</h2>
+        <h2 id="what-matters">What actually matters more than the number</h2>
         <p>
           A single WPM score is a snapshot, not a skill level — it swings with the text, your
           focus, and even the time of day. Consistency (how even your pace is across an entire
@@ -132,7 +253,7 @@ export default function AverageTypingSpeedPage() {
           — accuracy first, speed follows.
         </p>
 
-        <h2>Test yourself</h2>
+        <h2 id="test-yourself">Test yourself</h2>
         <p>
           Numbers on a page are easy to skim past. <Link href="/">Take a typing test</Link> under
           the same conditions a few times (same duration, similar text type) before comparing
@@ -141,7 +262,21 @@ export default function AverageTypingSpeedPage() {
           <Link href="/lessons">Typing lessons</Link> start from the home row, and{" "}
           <Link href="/games">typing games</Link> keep practice time from feeling like a chore.
         </p>
-      </ContentPage>
+
+        <FaqSection items={FAQ_ITEMS} />
+
+        <SourceList
+          sources={[
+            {
+              label:
+                "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+              href: "https://userinterfaces.aalto.fi/136Mkeystrokes/",
+            },
+          ]}
+        />
+
+        <p className="text-xs text-sub/70">Last updated {UPDATED}.</p>
+      </GuideLayout>
     </>
   );
 }

@@ -43,6 +43,42 @@ const routes: {
     changeFrequency: "monthly",
     lastModified: "2026-09-24",
   },
+  {
+    path: "/guides/how-to-type-without-looking-at-the-keyboard",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
+  {
+    path: "/guides/typing-practice-for-beginners",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
+  {
+    path: "/guides/how-to-improve-typing-accuracy",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
+  {
+    path: "/guides/english-typing-test-and-practice",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
+  {
+    path: "/guides/typing-test-duration-guide",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
+  {
+    path: "/guides/data-entry-typing-test",
+    priority: 0.6,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-24",
+  },
   { path: "/games", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-15" },
   // Generated from GAME_LIST rather than hand-listed -- a hand-maintained
   // copy of this list previously drifted out of sync and silently dropped 4

@@ -13,6 +13,7 @@ import { GameInfoPanel } from "@/components/games/game-info-panel";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { buildGameSchema } from "@/lib/seo/json-ld";
+import { truncateAtWord } from "@/lib/seo/metadata";
 
 export function generateStaticParams() {
   return GAME_LIST.map((game) => ({ gameId: game.id }));
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
   const game = getGame(gameId);
   if (!game) return {};
   const title = `${game.name} — Typing Game`;
-  const description = `${game.tagline} ${game.about[0].slice(0, 120)}`;
+  const description = `${game.tagline} ${truncateAtWord(game.about[0], 120)}`;
   return {
     title,
     description,
