@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Gamepad2, GraduationCap, Search, User, Zap } from "lucide-react";
+import Image from "next/image";
+import { Gamepad2, GraduationCap, Search, User } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { MoreMenu } from "@/components/layout/more-menu";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
@@ -81,15 +82,17 @@ export function SiteHeader() {
         }}
         className="flex shrink-0 items-center gap-2"
       >
-        <span
-          aria-hidden="true"
-          className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-background sm:h-8 sm:w-8"
-        >
-          <Zap size={17} strokeWidth={2.5} />
-        </span>
+        <Image
+          src="/brand/hero-mark-icon.png"
+          alt=""
+          width={32}
+          height={32}
+          priority
+          className="h-7 w-7 shrink-0 object-contain sm:h-8 sm:w-8"
+        />
         <span className="flex flex-col leading-none">
           <span className="font-display text-sm font-extrabold uppercase tracking-tight text-foreground sm:text-lg">
-            Thunder<span className="text-accent">typing</span>
+            Hero<span className="text-accent">typing</span>
           </span>
           <span className="hidden font-display text-[8px] uppercase tracking-[0.3em] text-sub sm:block">
             Type · Play · Improve

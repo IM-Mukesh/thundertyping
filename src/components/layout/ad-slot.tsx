@@ -25,14 +25,14 @@ declare global {
 
 /**
  * Renders a real AdSense unit once NEXT_PUBLIC_ADSENSE_CLIENT_ID is set.
- * Until then, renders a visible placeholder box (dashed border, labeled with
- * the format and dimensions) so every placement can be reviewed in place
- * before the AdSense account is approved -- explicitly requested, this
- * supersedes an earlier version of this component that rendered nothing at
- * all pre-approval.
+ * Until then, renders nothing -- commented out (via this early return, not
+ * by removing call sites) until the site is approved for ads. Every
+ * placement stays in the tree at its call site either way, so switching the
+ * whole site on later is one environment variable and no code change.
  *
- * Every placement stays in the tree at its call site, so switching the whole
- * site on is one environment variable and no code change.
+ * (Earlier this rendered a visible dashed-border placeholder pre-approval,
+ * for reviewing placements in place -- reverted at the site owner's request
+ * now that placements are already settled.)
  */
 export function AdSlot({ id, format, className }: AdSlotProps) {
   const { width, height } = DIMENSIONS[format];
@@ -48,18 +48,7 @@ export function AdSlot({ id, format, className }: AdSlotProps) {
   }, [adsenseClientId]);
 
   if (!adsenseClientId) {
-    return (
-      <div
-        aria-hidden="true"
-        className={cn(
-          "flex w-full items-center justify-center rounded-lg border border-dashed border-border bg-sub-alt/30 font-mono text-[11px] uppercase tracking-wider text-sub",
-          className,
-        )}
-        style={{ maxWidth: width, minHeight: height }}
-      >
-        Ad · {width}×{height}
-      </div>
-    );
+    return null;
   }
 
   return (
