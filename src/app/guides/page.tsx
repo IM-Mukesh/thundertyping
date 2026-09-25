@@ -31,9 +31,19 @@ const GUIDES = [
     description: "The exact formula, worked examples, and why two typing sites can score the same run differently.",
   },
   {
+    href: "/guides/wpm-cpm-kph-calculator",
+    title: "WPM, CPM & KPH Calculator",
+    description: "Calculate all three live from a test, or convert freely between them — every formula shown.",
+  },
+  {
     href: "/guides/how-to-touch-type",
     title: "How to Touch Type",
     description: "The full finger-to-key map, a practice progression that doesn't skip steps, and a realistic timeline.",
+  },
+  {
+    href: "/guides/touch-typing-finger-map",
+    title: "Touch-Typing Finger Map",
+    description: "An interactive, hover-or-tap chart of every key and the finger that owns it, plus Shift and numbers.",
   },
   {
     href: "/guides/how-to-type-without-looking-at-the-keyboard",
@@ -64,6 +74,11 @@ const GUIDES = [
     href: "/guides/data-entry-typing-test",
     title: "Data Entry Typing Test",
     description: "What it measures, how KPH relates to WPM, and how to train for one.",
+  },
+  {
+    href: "/guides/typing-resources-for-teachers",
+    title: "Free Typing Resources for Teachers",
+    description: "A week-by-week curriculum built from 28 real lessons, classroom activities, and assessment ideas.",
   },
 ];
 

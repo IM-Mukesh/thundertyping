@@ -13,6 +13,19 @@ export type FingerId =
   | "right-pinky"
   | "thumb";
 
+/** CSS custom properties defined in globals.css -- shared by every consumer that colors a key or finger by which finger owns it, so the drill keyboard and any other finger-map visual can never disagree on a color. */
+export const FINGER_VAR: Record<FingerId, string> = {
+  "left-pinky": "var(--finger-left-pinky)",
+  "left-ring": "var(--finger-left-ring)",
+  "left-middle": "var(--finger-left-middle)",
+  "left-index": "var(--finger-left-index)",
+  "right-index": "var(--finger-right-index)",
+  "right-middle": "var(--finger-right-middle)",
+  "right-ring": "var(--finger-right-ring)",
+  "right-pinky": "var(--finger-right-pinky)",
+  thumb: "var(--finger-thumb)",
+};
+
 export const FINGER_LABELS: Record<FingerId, string> = {
   "left-pinky": "Left pinky",
   "left-ring": "Left ring finger",

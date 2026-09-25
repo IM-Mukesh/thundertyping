@@ -182,7 +182,8 @@ export default function HowToTouchTypePage() {
           This is the exact map HeroTyping&apos;s{" "}
           <Link href="/lessons">on-screen keyboard and hand diagram</Link> highlight live while you
           type, so you can check your hand against it in real time instead of memorizing a chart
-          in isolation.
+          in isolation. For a hover-or-tap version of this exact map, see the{" "}
+          <Link href="/guides/touch-typing-finger-map">interactive touch-typing finger map</Link>.
         </p>
 
         <Image

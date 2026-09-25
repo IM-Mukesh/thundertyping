@@ -149,7 +149,9 @@ export default function DataEntryTypingTestPage() {
         <p>
           Keystrokes per hour is simply your character rate over a full hour instead of a minute.
           Since a WPM &ldquo;word&rdquo; is a standardized 5-character unit, the conversion is
-          direct: <code>KPH ≈ WPM × 300</code> (5 characters × 60 minutes).
+          direct: <code>KPH ≈ WPM × 300</code> (5 characters × 60 minutes). For live conversion
+          in either direction, use the{" "}
+          <Link href="/guides/wpm-cpm-kph-calculator">WPM, CPM &amp; KPH calculator</Link>.
         </p>
         <table className="w-full border-collapse text-left text-sm">
           <thead>

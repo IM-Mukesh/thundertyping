@@ -243,7 +243,9 @@ export default function NetVsGrossWpmPage() {
 
         <p>
           Curious what your own gap looks like? <Link href="/">Take a typing test</Link> — the
-          results screen shows both numbers side by side, not just one.
+          results screen shows both numbers side by side, not just one. Already have raw numbers
+          from a test and just want the math done for you? Use the{" "}
+          <Link href="/guides/wpm-cpm-kph-calculator">WPM, CPM &amp; KPH calculator</Link>.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

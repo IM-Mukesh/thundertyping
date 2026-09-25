@@ -2,6 +2,7 @@
 
 import {
   FINGER_LABELS,
+  FINGER_VAR,
   KEY_ROWS,
   SPACE_KEY,
   fingerForKey,
@@ -21,18 +22,6 @@ import { cn } from "@/lib/utils/cn";
 // game-cover-art.tsx for why: every color here derives from a CSS variable,
 // so it re-themes for free and costs nothing to load, where baked art can
 // only ever match one theme.
-
-const FINGER_VAR: Record<FingerId, string> = {
-  "left-pinky": "var(--finger-left-pinky)",
-  "left-ring": "var(--finger-left-ring)",
-  "left-middle": "var(--finger-left-middle)",
-  "left-index": "var(--finger-left-index)",
-  "right-index": "var(--finger-right-index)",
-  "right-middle": "var(--finger-right-middle)",
-  "right-ring": "var(--finger-right-ring)",
-  "right-pinky": "var(--finger-right-pinky)",
-  thumb: "var(--finger-thumb)",
-};
 
 interface VirtualKeyboardProps {
   /** The next character the typist needs to press, lowercase, or `null` before the drill starts / after it finishes. */
@@ -122,7 +111,8 @@ const HAND_FINGER_LAYOUT: Record<HandSide, { finger: FingerId; x: number; height
   ],
 };
 
-function HandDiagram({ activeFinger }: { activeFinger: FingerId | null }) {
+/** Exported for reuse outside the drill -- the finger-map explorer (/guides/touch-typing-finger-map) drives the same two-hand SVG from hover/tap instead of a lesson's next-key. */
+export function HandDiagram({ activeFinger }: { activeFinger: FingerId | null }) {
   return (
     <div className="flex items-end gap-10">
       <Hand side="left" activeFinger={activeFinger} />
