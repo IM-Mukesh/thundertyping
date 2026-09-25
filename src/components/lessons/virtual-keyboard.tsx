@@ -37,18 +37,18 @@ export function VirtualKeyboard({ nextKey }: VirtualKeyboardProps) {
   const activePhysicalKey = physicalKeyFor(normalizedKey);
 
   return (
-    <div className="flex w-full flex-col items-center gap-4">
+    <div className="flex w-full max-w-full flex-col items-center gap-3 sm:gap-4 overflow-hidden">
       <HandDiagram activeFinger={activeFinger} />
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex w-full max-w-full flex-col items-center gap-1 sm:gap-1.5 py-1">
         {KEY_ROWS.map((row, i) => (
-          <div key={i} className="flex justify-center gap-1.5">
+          <div key={i} className="flex justify-center gap-0.5 sm:gap-1.5">
             {row.map((k) => (
               <Key key={k.key} keyDef={k} active={activePhysicalKey === k.key} />
             ))}
           </div>
         ))}
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center pt-0.5 sm:pt-1">
           <Key keyDef={SPACE_KEY} active={activePhysicalKey === " "} wide />
         </div>
       </div>
@@ -74,9 +74,11 @@ function Key({
     <div
       aria-hidden="true"
       className={cn(
-        "relative flex items-center justify-center rounded-md border font-mono text-[11px] uppercase transition-all duration-150",
-        wide ? "h-8 w-40" : "h-8 w-8",
-        active ? "scale-110 border-transparent text-background" : "border-border/60 text-sub",
+        "relative flex items-center justify-center rounded font-mono uppercase transition-all duration-150 sm:rounded-md border",
+        wide
+          ? "h-7 w-32 text-[10px] min-[380px]:w-36 sm:h-8 sm:w-40 sm:text-[11px]"
+          : "h-7 w-[23px] text-[9px] min-[360px]:w-[25px] min-[400px]:w-7 sm:h-8 sm:w-8 sm:text-[11px]",
+        active ? "scale-110 border-transparent text-background z-10" : "border-border/60 text-sub",
       )}
       style={{
         backgroundColor: active ? color : `color-mix(in srgb, ${color} 16%, transparent)`,
@@ -86,7 +88,7 @@ function Key({
       {keyDef.key === " " ? "space" : keyDef.key}
       {keyDef.homeRow && (
         <span
-          className="absolute bottom-1 h-0.5 w-3 rounded-full"
+          className="absolute bottom-0.5 h-0.5 w-2 rounded-full sm:bottom-1 sm:w-3"
           style={{ backgroundColor: active ? "var(--background)" : "var(--sub)" }}
         />
       )}
@@ -114,7 +116,7 @@ const HAND_FINGER_LAYOUT: Record<HandSide, { finger: FingerId; x: number; height
 /** Exported for reuse outside the drill -- the finger-map explorer (/guides/touch-typing-finger-map) drives the same two-hand SVG from hover/tap instead of a lesson's next-key. */
 export function HandDiagram({ activeFinger }: { activeFinger: FingerId | null }) {
   return (
-    <div className="flex items-end gap-10">
+    <div className="flex items-end gap-6 sm:gap-10">
       <Hand side="left" activeFinger={activeFinger} />
       <Hand side="right" activeFinger={activeFinger} />
     </div>

@@ -149,27 +149,28 @@ function QuickConvert() {
   const kphId = useId();
 
   function handleChange(field: ConvertField, raw: string) {
+    if (raw === "" || raw.trim() === "") {
+      setWpm("");
+      setCpm("");
+      setKph("");
+      return;
+    }
+    const val = Number(raw);
+    if (Number.isNaN(val)) return;
+    const n = Math.max(0, val);
+
     if (field === "wpm") {
       setWpm(raw);
-      const n = Number(raw);
-      if (raw !== "" && !Number.isNaN(n)) {
-        setCpm(String(round(wpmToCpm(n), 1)));
-        setKph(String(round(wpmToKph(n), 0)));
-      }
+      setCpm(String(round(wpmToCpm(n), 1)));
+      setKph(String(round(wpmToKph(n), 0)));
     } else if (field === "cpm") {
       setCpm(raw);
-      const n = Number(raw);
-      if (raw !== "" && !Number.isNaN(n)) {
-        setWpm(String(round(cpmToWpm(n), 1)));
-        setKph(String(round(cpmToKph(n), 0)));
-      }
+      setWpm(String(round(cpmToWpm(n), 1)));
+      setKph(String(round(cpmToKph(n), 0)));
     } else {
       setKph(raw);
-      const n = Number(raw);
-      if (raw !== "" && !Number.isNaN(n)) {
-        setWpm(String(round(kphToWpm(n), 1)));
-        setCpm(String(round(kphToCpm(n), 1)));
-      }
+      setWpm(String(round(kphToWpm(n), 1)));
+      setCpm(String(round(kphToCpm(n), 1)));
     }
   }
 
@@ -183,6 +184,7 @@ function QuickConvert() {
           id={wpmId}
           type="number"
           inputMode="decimal"
+          min={0}
           value={wpm}
           onChange={(e) => handleChange("wpm", e.target.value)}
           className={inputClass}
@@ -196,6 +198,7 @@ function QuickConvert() {
           id={cpmId}
           type="number"
           inputMode="decimal"
+          min={0}
           value={cpm}
           onChange={(e) => handleChange("cpm", e.target.value)}
           className={inputClass}
@@ -209,6 +212,7 @@ function QuickConvert() {
           id={kphId}
           type="number"
           inputMode="decimal"
+          min={0}
           value={kph}
           onChange={(e) => handleChange("kph", e.target.value)}
           className={inputClass}

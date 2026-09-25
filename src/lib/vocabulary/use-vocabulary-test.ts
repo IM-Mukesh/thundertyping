@@ -99,6 +99,15 @@ export function reducer(state: VocabTestState, action: VocabTestAction): VocabTe
       // un-counts a keystroke that already happened.
       if (value.length > prevTyped.length) {
         for (let i = prevTyped.length; i < value.length; i++) {
+          const isTrailingSpaceCommit =
+            i === target.length &&
+            value[i] === " " &&
+            value.slice(0, target.length) === target;
+
+          if (isTrailingSpaceCommit) {
+            continue;
+          }
+
           if (value[i] === target[i]) {
             correctKeystrokes++;
           } else {
@@ -109,7 +118,9 @@ export function reducer(state: VocabTestState, action: VocabTestAction): VocabTe
       }
 
       const next: VocabTestState = { ...state, typed: value, correctKeystrokes, incorrectKeystrokes, mistakeThisWord };
-      if (target.length > 0 && value === target) return advanceWord(next);
+      const trimmed = value.trim();
+      const isMatch = value === target || (value.endsWith(" ") && trimmed === target);
+      if (target.length > 0 && isMatch) return advanceWord(next);
       return next;
     }
 

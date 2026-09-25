@@ -27,6 +27,7 @@ import {
   grantUnlock,
   hasUnlock,
 } from "@/lib/profile/player-profile";
+import { recordGameResult } from "@/lib/games/game-scores";
 import {
   ACHIEVEMENTS,
   ART,
@@ -181,6 +182,13 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
     }
     if (bankedRef.current) return;
     bankedRef.current = true;
+
+    recordGameResult("spellbound", {
+      score: state.score,
+      cleared: state.floor,
+      bestCombo: 0,
+      survivedMs: 0,
+    });
 
     bumpStat("spellbound", "runs");
     grantAchievement(ACHIEVEMENTS.firstRun);

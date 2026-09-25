@@ -150,9 +150,11 @@ function Caret() {
     <motion.span
       layoutId="typing-caret"
       transition={{ type: "spring", stiffness: 500, damping: 32 }}
-      className="inline-block w-[2px] self-center bg-caret"
+      className="relative inline-flex items-center w-0 self-center pointer-events-none"
       style={{ height: "1.2em" }}
-    />
+    >
+      <span className="absolute left-0 -ml-[1px] w-[2px] h-full bg-caret rounded-full" />
+    </motion.span>
   );
 }
 

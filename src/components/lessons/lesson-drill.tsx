@@ -72,6 +72,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   });
   const [attempt, setAttempt] = useState(0);
   const [focusToken, setFocusToken] = useState(0);
+  const [isFocused, setIsFocused] = useState(true);
 
   const stepSpec = subLessons[sessionStep - 1];
 
@@ -275,9 +276,19 @@ export function LessonDrill({ definition }: LessonDrillProps) {
             onCommitWord={engine.commitWord}
             onRestart={retryStep}
             onEscape={() => {}}
-            onFocusChange={() => {}}
+            onFocusChange={setIsFocused}
             focusToken={focusToken}
           />
+          {engine.state.status === "running" && !isFocused && (
+            <div
+              role="status"
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-[2px]"
+            >
+              <span className="font-display text-sm uppercase tracking-wider text-sub">
+                Click or press a key to resume &mdash; the clock is still running
+              </span>
+            </div>
+          )}
         </div>
       )}
 

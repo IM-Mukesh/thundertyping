@@ -67,7 +67,7 @@ export function LessonUnitRow({ unit, position, unlocked, progress, lockedReason
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+      <div className="flex w-full sm:w-auto shrink-0 items-center justify-end sm:justify-start gap-4 sm:gap-6">
         <dl className="hidden gap-4 font-mono text-xs text-sub sm:flex">
           <div className="text-right">
             <dd className="font-bold text-foreground">{progress ? `${round(progress.avgWpm)}` : "—"}</dd>
@@ -82,7 +82,7 @@ export function LessonUnitRow({ unit, position, unlocked, progress, lockedReason
         {unlocked && (
           <span
             className={cn(
-              "flex h-9 items-center gap-1.5 rounded-lg px-4 font-display text-[11px] font-bold uppercase tracking-wider",
+              "flex h-9 w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg px-4 font-display text-[11px] font-bold uppercase tracking-wider",
               completed ? "border border-border text-sub group-hover/row:text-foreground" : "bg-accent text-background",
             )}
           >

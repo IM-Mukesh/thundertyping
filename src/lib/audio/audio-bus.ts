@@ -26,6 +26,7 @@ interface AudioState {
   pending: Map<string, Promise<AudioBuffer | null>>;
   nowPlaying: { src: AudioBufferSourceNode; gain: GainNode; url: string } | null;
   duckDepth: number;
+  musicVolume: number;
   /**
    * Increments on every playMusic call, including stopMusic.
    *
@@ -74,6 +75,7 @@ function state(): AudioState | null {
     pending: new Map(),
     nowPlaying: null,
     duckDepth: 0,
+    musicVolume: 0.45,
     musicEpoch: 0,
   };
   return w[STATE_KEY]!;
@@ -88,8 +90,11 @@ export function resumeAudio(): void {
 export function setVolume(bus: Bus | "master", value: number): void {
   const s = state();
   if (!s) return;
-  const node = bus === "master" ? s.master : s[bus];
   const v = Math.max(0, Math.min(1, value));
+  if (bus === "music") {
+    s.musicVolume = v;
+  }
+  const node = bus === "master" ? s.master : s[bus];
   // Ramp rather than assign: a step change in gain is an audible click.
   node.gain.setTargetAtTime(v, s.ctx.currentTime, 0.015);
 }
@@ -216,12 +221,12 @@ export function duck(depth = 0.35, seconds = 0.6): void {
   const s = state();
   if (!s) return;
   s.duckDepth += 1;
-  s.music.gain.setTargetAtTime(depth, s.ctx.currentTime, 0.05);
+  s.music.gain.setTargetAtTime(s.musicVolume * depth, s.ctx.currentTime, 0.05);
   window.setTimeout(() => {
     s.duckDepth -= 1;
     if (s.duckDepth <= 0) {
       s.duckDepth = 0;
-      s.music.gain.setTargetAtTime(1, s.ctx.currentTime, 0.25);
+      s.music.gain.setTargetAtTime(s.musicVolume, s.ctx.currentTime, 0.25);
     }
   }, seconds * 1000);
 }

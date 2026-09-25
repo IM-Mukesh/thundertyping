@@ -31,6 +31,7 @@ import { sound } from "@/lib/audio/game-sounds";
 import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
 import { awardXp,
   checkSiteAchievements, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
+import { recordGameResult } from "@/lib/games/game-scores";
 import { STARTER_DECKS } from "@/lib/games/cards/cards";
 import { STATUS_META, STATUS_ORDER, faceOf, type CardDef, type Statuses } from "@/lib/games/cards/model";
 import { useCardBattle, type EnemyState } from "@/lib/games/cards/use-card-battle";
@@ -93,6 +94,12 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
     }
     if (banked.current) return;
     banked.current = true;
+    recordGameResult("card-battle", {
+      score: state.score,
+      cleared: state.node,
+      bestCombo: 0,
+      survivedMs: 0,
+    });
     bumpStat("card-battle", "runs");
     grantAchievement("card-battle:first-run");
     if (state.node >= 3) grantAchievement("card-battle:first-boss");

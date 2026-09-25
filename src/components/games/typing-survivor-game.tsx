@@ -33,6 +33,7 @@ import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/au
 import { FxSystem } from "@/lib/fx/particles";
 import { awardXp,
   checkSiteAchievements, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
+import { recordGameResult } from "@/lib/games/game-scores";
 import { CHARACTERS } from "@/lib/games/survivor/content";
 import { useSurvivor, type Enemy } from "@/lib/games/survivor/use-survivor";
 import {
@@ -186,6 +187,12 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     }
     if (banked.current) return;
     banked.current = true;
+    recordGameResult("typing-survivor", {
+      score: state.score,
+      cleared: state.wave,
+      bestCombo: state.bestCombo,
+      survivedMs: 0,
+    });
     bumpStat("typing-survivor", "runs");
     grantAchievement("typing-survivor:first-run");
     if (state.wave >= 5) grantAchievement("typing-survivor:wave-5");

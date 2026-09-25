@@ -1,10 +1,12 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { TestStatus } from "@/lib/typing-engine/engine-types";
 
-// Signals "a test just finished" to page-level siblings of the typing island
-// (PageIntro's h1/subtitle, SiteFooter) so the results screen isn't crowded
-// by page chrome.
+// Signals typing test lifecycle states ("idle" | "running" | "finished") to
+// page-level siblings of the typing island (PageIntro, SiteHeader, SiteFooter,
+// feature nav cards, SEO sections) so a typist enters a clean, distraction-free
+// Zen mode while typing and results aren't crowded by page chrome.
 //
 // The state deliberately lives on `window`, NOT in a module-level variable.
 // `TypingTest` is loaded through next/dynamic({ ssr: false }), and the bundler
@@ -27,24 +29,38 @@ const STATE_KEY = "__herotyping_test_status__";
 const CHANGE_EVENT = "herotyping:test-status-change";
 
 interface TestStatusState {
+  status: TestStatus;
+  isRunning: boolean;
   isFinished: boolean;
 }
 
 type WindowWithState = Window & { [STATE_KEY]?: TestStatusState };
 
 function getState(): TestStatusState {
-  if (typeof window === "undefined") return { isFinished: false };
+  if (typeof window === "undefined") {
+    return { status: "idle", isRunning: false, isFinished: false };
+  }
   const w = window as WindowWithState;
-  w[STATE_KEY] ??= { isFinished: false };
+  w[STATE_KEY] ??= { status: "idle", isRunning: false, isFinished: false };
   return w[STATE_KEY];
 }
 
-export function setTestFinished(isFinished: boolean): void {
+export function setTestStatus(status: TestStatus): void {
   if (typeof window === "undefined") return;
   const state = getState();
-  if (state.isFinished === isFinished) return;
+  const isRunning = status === "running";
+  const isFinished = status === "finished";
+  if (state.status === status && state.isRunning === isRunning && state.isFinished === isFinished) {
+    return;
+  }
+  state.status = status;
+  state.isRunning = isRunning;
   state.isFinished = isFinished;
   window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+export function setTestFinished(isFinished: boolean): void {
+  setTestStatus(isFinished ? "finished" : "idle");
 }
 
 function subscribe(onStoreChange: () => void): () => void {
@@ -53,19 +69,36 @@ function subscribe(onStoreChange: () => void): () => void {
   return () => window.removeEventListener(CHANGE_EVENT, onStoreChange);
 }
 
-// Returns a primitive, so React's snapshot identity check compares by value
-// and can't loop.
-function getSnapshot(): boolean {
+// Return primitives so React's snapshot identity check compares by value
+// and never loops.
+function getSnapshotRunning(): boolean {
+  return getState().isRunning;
+}
+
+function getSnapshotFinished(): boolean {
   return getState().isFinished;
 }
 
-// A test can never be "finished" in server-rendered HTML — the engine only
-// exists client-side — so the server snapshot is always false. This keeps the
-// h1/footer present in the initial HTML for crawlers.
-function getServerSnapshot(): boolean {
+function getSnapshotStatus(): TestStatus {
+  return getState().status;
+}
+
+function getServerSnapshotFalse(): boolean {
   return false;
 }
 
+function getServerSnapshotIdle(): TestStatus {
+  return "idle";
+}
+
+export function useIsTestRunning(): boolean {
+  return useSyncExternalStore(subscribe, getSnapshotRunning, getServerSnapshotFalse);
+}
+
 export function useIsTestFinished(): boolean {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshotFinished, getServerSnapshotFalse);
+}
+
+export function useTestStatus(): TestStatus {
+  return useSyncExternalStore(subscribe, getSnapshotStatus, getServerSnapshotIdle);
 }

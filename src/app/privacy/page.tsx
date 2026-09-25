@@ -11,7 +11,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function PrivacyPage() {
   return (
-    <ContentPage title="Privacy Policy" subtitle="Last updated: September 14, 2026">
+    <ContentPage title="Privacy Policy" subtitle="Last updated: September 25, 2026">
       <p>
         {SITE_NAME} is designed to work without collecting personal information. This page
         explains exactly what is and isn&apos;t stored, and will be updated if that ever changes.
@@ -42,11 +42,32 @@ export default function PrivacyPage() {
       </p>
 
       <h2>Analytics</h2>
-      <p>{SITE_NAME} does not currently use any analytics or tracking service.</p>
+      <p>
+        {SITE_NAME} uses Google Analytics 4 (GA4) in production to collect anonymized usage
+        statistics — including pageviews, session duration, general device type, and approximate
+        geographic location (country/region) — to understand site traffic and improve our features.
+      </p>
+      <p>
+        No personally identifiable information (PII), passwords, or keystroke contents are ever sent
+        to Google Analytics. All keystroke data and typing performance metrics stay entirely within your
+        browser.
+      </p>
+      <p>
+        You can block analytics tracking at any time by enabling standard browser content blockers
+        (such as uBlock Origin), using browser privacy protections, or installing Google&apos;s official{" "}
+        <a
+          href="https://tools.google.com/dlpage/gaoptout"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Google Analytics Opt-out Browser Add-on
+        </a>
+        .
+      </p>
 
       <h2>Changes to this policy</h2>
       <p>
-        If this policy changes — for example when advertising or analytics are introduced — this
+        If this policy changes — for example when advertising is introduced — this
         page will be updated and the &ldquo;last updated&rdquo; date above will change accordingly.
       </p>
 

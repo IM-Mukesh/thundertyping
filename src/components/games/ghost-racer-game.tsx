@@ -32,6 +32,7 @@ import { sound } from "@/lib/audio/game-sounds";
 import { playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
 import { awardXp,
   checkSiteAchievements, bumpStat, grantAchievement, recordDaily } from "@/lib/profile/player-profile";
+import { recordGameResult } from "@/lib/games/game-scores";
 import { createRng, dailySeed, dailySeedFor, msUntilNextDaily } from "@/lib/rng/seeded-rng";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
@@ -201,6 +202,13 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
         record = !bestRun || run.durationMs < bestRun.durationMs;
         void localGhostStore.save(run);
 
+        recordGameResult("ghost-racer", {
+          score: Math.round(finalWpm),
+          cleared: won ? 1 : 0,
+          bestCombo: Math.round(finalAcc),
+          survivedMs: 0,
+        });
+
         // "runs" as well as "races": the profile totals runs across games, and
         // a race that did not count there read as a bug rather than a naming
         // detail.
@@ -208,11 +216,13 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
         bumpStat("ghost-racer", "races");
         if (won) bumpStat("ghost-racer", "wins");
         awardXp(Math.round(finalWpm) + (won ? 40 : 10));
-        checkSiteAchievements(GAME_LIST.map((g) => g.id));
         grantAchievement("ghost-racer:first-race");
         if (won) grantAchievement("ghost-racer:first-win");
         if (finalAcc === 100) grantAchievement("ghost-racer:flawless");
+        if (finalWpm >= 100) grantAchievement("ghost-racer:legend");
+        if (won && ghost && ghost.wpm > (bestRun?.wpm ?? 0)) grantAchievement("ghost-racer:revenge");
         if (mode === "daily") recordDaily(dailySeed(), Math.round(finalWpm));
+        checkSiteAchievements(GAME_LIST.map((g) => g.id));
       }
 
       setResult({ won, wpm: finalWpm, acc: finalAcc, record });

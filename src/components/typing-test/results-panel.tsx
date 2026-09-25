@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import { RotateCcw, Sparkles } from "lucide-react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
@@ -20,6 +21,16 @@ interface ResultsPanelProps {
 }
 
 export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        onRestart();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onRestart]);
   const {
     correctKeystrokes,
     incorrectKeystrokes,

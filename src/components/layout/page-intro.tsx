@@ -1,32 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useIsTestFinished } from "@/lib/typing-engine/test-status-store";
+import { useIsTestFinished, useIsTestRunning } from "@/lib/typing-engine/test-status-store";
 import { cn } from "@/lib/utils/cn";
 
 // Renders on the server like any other client component (no random or
 // non-deterministic content, so there's no hydration-mismatch risk) — the
-// h1/subtitle stay in the initial HTML for SEO, then collapse client-side
-// once a test finishes so the results screen isn't crowded by page chrome.
-//
-// The collapse is a pure-CSS grid-template-rows 1fr -> 0fr transition rather
-// than an AnimatePresence height animation. Two reasons: it matches how the
-// config bar and language selector already hide (a plain CSS transition), and
-// it doesn't depend on JS animation frames, so it still collapses correctly
-// in environments where requestAnimationFrame is throttled or never fires
-// (a backgrounded/hidden tab, a headless pane, reduced-motion setups).
-// AnimatePresence is rAF-driven: with no frames it never starts its exit,
-// never finishes it, and therefore never unmounts the child at all.
+// h1/subtitle stay in the initial HTML for SEO.
+// While typing (isRunning), it smoothly fades to opacity-0 without collapsing
+// height, preventing any layout shift or vertical jitter.
+// Once the test finishes (isFinished), it collapses 1fr -> 0fr so the results
+// screen fits comfortably without extra page scroll.
 export function PageIntro() {
   const isFinished = useIsTestFinished();
+  const isRunning = useIsTestRunning();
 
   return (
     <div
       data-finished={isFinished}
-      aria-hidden={isFinished}
+      data-running={isRunning}
+      aria-hidden={isFinished || isRunning}
       className={cn(
         "grid w-full max-w-2xl transition-all duration-300 ease-in-out",
-        isFinished ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
+        isFinished
+          ? "grid-rows-[0fr] opacity-0 pointer-events-none"
+          : isRunning
+            ? "grid-rows-[1fr] opacity-0 pointer-events-none"
+            : "grid-rows-[1fr] opacity-100",
       )}
     >
       {/* min-h-0 + overflow-hidden is what lets the 1fr -> 0fr row actually

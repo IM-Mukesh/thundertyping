@@ -7,6 +7,7 @@ import { splitOnCommit } from "@/lib/typing-engine/input-commit";
 interface HiddenInputProps {
   value: string;
   status: TestStatus;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onCommitWord: () => void;
   onRestart: () => void;
@@ -18,6 +19,7 @@ interface HiddenInputProps {
 export function HiddenInput({
   value,
   status,
+  disabled = false,
   onChange,
   onCommitWord,
   onRestart,
@@ -26,16 +28,23 @@ export function HiddenInput({
   focusToken,
 }: HiddenInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const isDisabled = status === "finished" || disabled;
 
   useEffect(() => {
-    if (status !== "finished") inputRef.current?.focus();
-  }, [focusToken, status]);
+    if (isDisabled) return;
+    const isTouch =
+      typeof window !== "undefined" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    // On touch devices, never auto-focus on initial mount when token is 0
+    if (isTouch && focusToken === 0) return;
+    inputRef.current?.focus();
+  }, [focusToken, isDisabled]);
 
   return (
     <input
       ref={inputRef}
       value={value}
-      disabled={status === "finished"}
+      disabled={isDisabled}
       onChange={(e) => {
         // A space reaching the value means a mobile keyboard delivered it
         // without a usable keydown; see splitOnCommit for why.

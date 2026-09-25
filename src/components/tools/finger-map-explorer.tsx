@@ -57,10 +57,10 @@ export function FingerMapExplorer() {
       : "Hover, tap, or click a finger below to see which keys it owns.";
 
   return (
-    <div className="flex flex-col items-center gap-5 rounded-2xl border border-accent/25 bg-sub-alt/15 p-3 sm:p-7">
+    <div className="flex w-full max-w-full flex-col items-center gap-4 sm:gap-5 rounded-2xl border border-accent/25 bg-sub-alt/15 p-2.5 sm:p-7 overflow-hidden">
       <HandDiagram activeFinger={effectiveFinger} />
 
-      <div className="flex flex-col gap-0.5 sm:gap-1.5">
+      <div className="flex w-full max-w-full flex-col items-center gap-0.5 sm:gap-1.5 py-1">
         {KEY_ROWS.map((row, i) => (
           <div key={i} className="flex justify-center gap-0.5 sm:gap-1.5">
             {row.map((k) => (
@@ -74,7 +74,7 @@ export function FingerMapExplorer() {
             ))}
           </div>
         ))}
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center pt-0.5 sm:pt-1">
           <ExplorerKey
             keyDef={SPACE_KEY}
             active={highlightedKeys.has(" ")}
@@ -138,9 +138,11 @@ function ExplorerKey({
       onTouchStart={onHover}
       aria-label={`${keyDef.key === " " ? "Space bar" : keyDef.key} — ${FINGER_LABELS[keyDef.finger]}`}
       className={cn(
-        "relative flex items-center justify-center rounded-md border font-mono text-[9px] uppercase transition-all duration-150 sm:text-[11px]",
-        wide ? "h-7 w-32 sm:h-9 sm:w-40" : "h-7 w-7 sm:h-9 sm:w-9",
-        active ? "scale-110 border-transparent text-background" : "border-border/60 text-sub",
+        "relative flex items-center justify-center rounded border font-mono uppercase transition-all duration-150 sm:rounded-md",
+        wide
+          ? "h-7 w-28 min-[360px]:w-32 min-[400px]:w-36 sm:h-9 sm:w-40 text-[9px] sm:text-[11px]"
+          : "h-7 w-[23px] text-[8px] min-[360px]:w-[25px] min-[360px]:text-[9px] min-[400px]:w-7 sm:h-9 sm:w-9 sm:text-[11px]",
+        active ? "scale-110 border-transparent text-background z-10" : "border-border/60 text-sub",
       )}
       style={{
         backgroundColor: active ? color : `color-mix(in srgb, ${color} 22%, transparent)`,
@@ -150,7 +152,7 @@ function ExplorerKey({
       {keyDef.key === " " ? "space" : keyDef.key}
       {keyDef.homeRow && (
         <span
-          className="absolute bottom-1.5 h-0.5 w-3 rounded-full"
+          className="absolute bottom-0.5 sm:bottom-1.5 h-0.5 w-2 sm:w-3 rounded-full"
           style={{ backgroundColor: active ? "var(--background)" : "var(--sub)" }}
         />
       )}

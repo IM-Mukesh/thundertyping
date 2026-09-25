@@ -38,7 +38,7 @@ export function GuideLayout({ title, subtitle, breadcrumbItems, toc, hasFaq, has
   ];
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-6 py-12 sm:px-10 min-[1150px]:grid-cols-[minmax(0,800px)_1fr]">
+    <div className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-4 py-8 sm:px-10 sm:py-12 min-[1150px]:grid-cols-[minmax(0,800px)_1fr] overflow-hidden">
       <div className="flex min-w-0 flex-col gap-6">
         <Breadcrumbs items={breadcrumbItems} />
         <div className="flex flex-col gap-2">
@@ -53,7 +53,9 @@ export function GuideLayout({ title, subtitle, breadcrumbItems, toc, hasFaq, has
             [&_li]:ml-4 [&_li]:list-disc
             [&_ol_li]:list-decimal
             [&_strong]:font-medium [&_strong]:text-foreground
-            [&_code]:rounded [&_code]:bg-sub-alt/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-foreground"
+            [&_code]:rounded [&_code]:bg-sub-alt/50 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-foreground
+            [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:max-w-full [&_table]:my-2
+            [&_pre]:overflow-x-auto [&_pre]:max-w-full"
         >
           {children}
         </div>

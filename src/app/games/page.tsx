@@ -88,29 +88,29 @@ export default function GamesHubPage() {
           </footer>
         </blockquote>
 
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-6 py-14 sm:px-10 sm:py-20">
-          <span className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/5 px-3.5 py-1.5 font-display text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
-            <Zap size={12} aria-hidden="true" />
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3.5 sm:gap-6 px-4 py-6 sm:px-10 sm:py-20">
+          <span className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/5 px-3 py-1 font-display text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
+            <Zap size={11} aria-hidden="true" />
             Games
           </span>
 
-          <h1 className="max-w-3xl font-display text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+          <h1 className="max-w-3xl font-display text-3xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
             A universe of
             <br />
             <span className="text-accent text-glow">typing games</span>
           </h1>
 
-          <p className="font-display text-[11px] font-medium uppercase tracking-[0.35em] text-sub sm:text-xs">
+          <p className="font-display text-[10px] font-medium uppercase tracking-[0.3em] text-sub sm:text-xs">
             Type. Play. Level up. Be legendary.
           </p>
 
-          <p className="max-w-xl text-sm leading-relaxed text-sub sm:text-base">
+          <p className="hidden sm:block max-w-xl text-sm leading-relaxed text-sub sm:text-base">
             Turn your typing practice into an adventure. Explore different
             worlds, battle enemies, race against time and build real typing
             skills — all while having fun.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="hidden sm:flex flex-wrap items-center gap-3">
             <Link
               href={`/games/${featured.id}`}
               className="btn-chevron flex h-12 items-center gap-2 bg-accent px-8 font-display text-xs font-bold uppercase tracking-[0.16em] text-background transition-[filter] duration-200 hover:brightness-110"
@@ -131,21 +131,25 @@ export default function GamesHubPage() {
             </Link>
           </div>
 
-          {/* Real numbers only. There is no backend and no user accounts, so a
-              global player count here would be invented -- two of these four
-              are static site facts (game/mode counts), the other two are the
-              player's own figures, read as zeroes until they play. */}
-          <PlayerSummary />
+          {/* Real numbers only. */}
+          <div className="pt-1">
+            <PlayerSummary />
+          </div>
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-[1440px] px-6 sm:px-10">
-        <div className="mb-10 mt-2">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-10">
+        <div className="mb-10 mt-2 hidden sm:block">
           <AdSlot id="games-hub-leaderboard" format="horizontal" />
         </div>
 
         <h2 id="all-games" className="sr-only scroll-mt-24">All typing games</h2>
         <GameHubFilters games={[...GAME_LIST]} art={art} characters={characters} />
+
+        {/* Mobile Leaderboard Ad below games */}
+        <div className="mt-8 block sm:hidden">
+          <AdSlot id="games-hub-leaderboard-mobile" format="horizontal" />
+        </div>
 
         {/* Promo strip pointing back at the grid above. Text lives in the
             gradient's dark two-thirds by design -- the art is anchored left,

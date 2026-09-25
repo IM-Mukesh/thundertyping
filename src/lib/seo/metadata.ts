@@ -27,10 +27,12 @@ export function pageMetadata({
   title,
   description,
   path,
+  robots,
 }: {
   title: string;
   description: string;
   path: string;
+  robots?: Metadata["robots"];
 }): Metadata {
   return {
     title,
@@ -38,5 +40,6 @@ export function pageMetadata({
     alternates: { canonical: path },
     openGraph: { title, description },
     twitter: { title, description },
+    ...(robots ? { robots } : {}),
   };
 }

@@ -27,6 +27,7 @@ import {
 } from "@/lib/games/cards/model";
 import { CARDS_BY_ID, REWARD_POOL, STARTER_DECKS } from "@/lib/games/cards/cards";
 import { ENCOUNTERS, type EnemyDef } from "@/lib/games/cards/encounters";
+import { grantAchievement } from "@/lib/profile/player-profile";
 
 const HAND_SIZE = 5;
 const BASE_ENERGY = 3;
@@ -314,6 +315,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
           if (t) {
             const b = t.statuses.blight;
             if (b > 0) {
+              if (b >= 20) grantAchievement("card-battle:combo");
               dealTo(t, b, true);
               t.statuses = { ...t.statuses, blight: 0 };
             }

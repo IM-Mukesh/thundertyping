@@ -18,12 +18,11 @@ export function LiveStatsBar({ state }: LiveStatsBarProps) {
       : `${Math.min(activeWordIndex + 1, words.length)}/${words.length}`;
 
   return (
-    <div className="flex items-center justify-center gap-5 font-mono" aria-live="polite">
+    <div className="flex items-center justify-start font-mono" aria-live="polite">
       {/* The countdown/progress keeps the large flip treatment: it steps once
           per second (or once per word), so the animation reads as a clock
           rather than as flicker, and it's information you act on. */}
-      <FlipNumber value={primary} className="text-4xl text-accent sm:text-5xl" />
-
+      <FlipNumber value={primary} className="text-3xl text-accent sm:text-4xl" />
     </div>
   );
 }
@@ -32,10 +31,11 @@ export function LiveStatsBar({ state }: LiveStatsBarProps) {
 // split-flap display when its value changes. A perspective on the slot gives
 // the rotateX transform real depth instead of a flat squash.
 function FlipNumber({ value, className }: { value: string; className?: string }) {
+  const len = value.length;
   return (
     <span className={cn("inline-flex", className)}>
       {value.split("").map((char, i) => (
-        <FlipChar key={i} char={char} />
+        <FlipChar key={len - 1 - i} char={char} />
       ))}
     </span>
   );

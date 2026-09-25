@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { ProfileClient } from "@/components/profile/profile-client";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Your Profile",
   description:
     "Your typing progress across every HeroTyping game — level, XP, achievements, best scores and per-game statistics. Stored on your own device, no sign-up needed.",
-  alternates: { canonical: "/profile" },
-  // Nothing here is the same for two visitors, so there is nothing for a
-  // crawler to usefully index -- but the route must still be reachable and
-  // must not 404, so it is indexed shallowly rather than blocked outright.
+  path: "/profile",
   robots: { index: false, follow: true },
-};
+});
 
 export default function ProfilePage() {
   return (

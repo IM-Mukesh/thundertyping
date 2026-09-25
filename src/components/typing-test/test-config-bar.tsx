@@ -55,102 +55,119 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
 
   const showTextToggles = mode === "time" || mode === "words";
 
-  // One row, split left/right, rather than the mode pills stacked above the
-  // mode-specific options on a second row -- the two groups are different
-  // kinds of choice (what to type vs. how much of it), so left/right reads
-  // as two controls rather than a sequence to read top-to-bottom.
+  // Divided into 3 distinct parts for larger screens (laptops, monitors, large devices):
+  // Part 1: Modifiers (punctuation, numbers)
+  // Divider: |
+  // Part 2: Modes (time, words, quote, custom, vocabulary)
+  // Divider: |
+  // Part 3: Options (15s, 30s, 1m, 2m, edit icon / word counts / etc.)
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-2 py-2 text-sm sm:justify-between sm:px-4 sm:py-3">
-      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
-        {showTextToggles && (
-          <>
-            <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation" icon={<AtSign size={14} />}>
-              punctuation
-            </Pill>
-            <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers" icon={<Hash size={14} />}>
-              numbers
-            </Pill>
-            <span className="h-4 w-px bg-border" aria-hidden="true" />
-          </>
-        )}
-        {MODES.map((m) => (
-          <Pill
-            key={m.id}
-            active={mode === m.id}
-            onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
-            ariaLabel={m.label}
-            icon={m.icon}
-          >
-            {m.label.toLowerCase()}
-          </Pill>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4">
-        {mode === "time" && (
-          <>
-            {TIME_DURATIONS.map((d) => (
-              <Pill
-                key={d}
-                active={timeDuration === d}
-                onClick={() => setTimeDuration(d)}
-                ariaLabel={formatDuration(d)}
-              >
-                {formatDuration(d)}
+    <div className="w-full max-w-4xl mx-auto rounded-xl bg-sub-alt/40 border border-border/60 px-3 py-1.5 sm:px-4 sm:py-2 shadow-xs backdrop-blur-xs">
+      <div className="flex items-center justify-between text-sm overflow-x-auto scrollbar-none">
+        {/* Part 1: Modifiers (punctuation, numbers) */}
+        <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 min-h-9">
+          {showTextToggles ? (
+            <>
+              <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation" icon={<AtSign size={14} />}>
+                punctuation
               </Pill>
-            ))}
-            <CustomDurationInput
-              value={timeDuration}
-              isCustom={!TIME_DURATIONS.includes(timeDuration)}
-              onApply={setTimeDuration}
-            />
-          </>
-        )}
+              <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers" icon={<Hash size={14} />}>
+                numbers
+              </Pill>
+            </>
+          ) : (
+            <span className="text-xs text-sub/40 font-mono select-none px-2">—</span>
+          )}
+        </div>
 
-        {mode === "words" &&
-          WORD_COUNTS.map((w) => (
-            <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
-              {w}
+        {/* Divider 1 */}
+        <div className="h-4 w-px bg-border/80 shrink-0 mx-2 lg:mx-3 select-none" aria-hidden="true" />
+
+        {/* Part 2: Modes (time, words, quote, custom, vocabulary) */}
+        <div className="shrink-0 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2.5 min-h-9">
+          {MODES.map((m) => (
+            <Pill
+              key={m.id}
+              active={mode === m.id}
+              onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
+              ariaLabel={m.label}
+              icon={m.icon}
+            >
+              {m.label.toLowerCase()}
             </Pill>
           ))}
+        </div>
 
-        {mode === "quote" &&
-          QUOTE_LENGTHS.map((l) => (
-            <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
-              {l}
-            </Pill>
-          ))}
+        {/* Divider 2 */}
+        <div className="h-4 w-px bg-border/80 shrink-0 mx-2 lg:mx-3 select-none" aria-hidden="true" />
 
-        {mode === "custom" && (
-          <button
-            type="button"
-            onClick={onOpenCustomText}
-            className="text-xs text-sub underline decoration-dotted hover:text-foreground"
-          >
-            Edit custom text
-          </button>
-        )}
+        {/* Part 3: Mode Options (15s, 30s, 1m, 2m, edit icon / word counts / quote lengths / etc.) */}
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0 min-h-9">
+          {mode === "time" && (
+            <>
+              {TIME_DURATIONS.map((d) => (
+                <Pill
+                  key={d}
+                  active={timeDuration === d}
+                  onClick={() => setTimeDuration(d)}
+                  ariaLabel={formatDuration(d)}
+                >
+                  {formatDuration(d)}
+                </Pill>
+              ))}
+              <CustomDurationInput
+                value={timeDuration}
+                isCustom={!TIME_DURATIONS.includes(timeDuration)}
+                onApply={setTimeDuration}
+              />
+            </>
+          )}
 
-        {mode === "vocabulary" && (
-          <>
-            {VOCAB_DIFFICULTIES.map((d) => (
-              <Pill
-                key={d}
-                active={vocabDifficulty === d}
-                onClick={() => setVocabDifficulty(d)}
-                ariaLabel={VOCAB_DIFFICULTY_LABEL[d]}
-              >
-                {VOCAB_DIFFICULTY_LABEL[d]}
-              </Pill>
-            ))}
-            <span className="h-4 w-px bg-border" aria-hidden="true" />
-            {WORD_COUNTS.map((w) => (
+          {mode === "words" &&
+            WORD_COUNTS.map((w) => (
               <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
                 {w}
               </Pill>
             ))}
-          </>
-        )}
+
+          {mode === "quote" &&
+            QUOTE_LENGTHS.map((l) => (
+              <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
+                {l}
+              </Pill>
+            ))}
+
+          {mode === "custom" && (
+            <button
+              type="button"
+              onClick={onOpenCustomText}
+              className="text-xs font-mono text-sub hover:text-accent transition-colors underline decoration-dotted"
+            >
+              edit custom text
+            </button>
+          )}
+
+          {mode === "vocabulary" && (
+            <>
+              {VOCAB_DIFFICULTIES.map((d) => (
+                <Pill
+                  key={d}
+                  active={vocabDifficulty === d}
+                  onClick={() => setVocabDifficulty(d)}
+                  ariaLabel={VOCAB_DIFFICULTY_LABEL[d]}
+                >
+                  {VOCAB_DIFFICULTY_LABEL[d]}
+                </Pill>
+              ))}
+              <span className="h-4 w-px bg-border/80 shrink-0 mx-1" aria-hidden="true" />
+              {WORD_COUNTS.map((w) => (
+                <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
+                  {w}
+                </Pill>
+              ))}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -251,9 +268,9 @@ function CustomDurationInput({
       onClick={() => setEditing(true)}
       aria-label="Set a custom duration"
       title="Set a custom duration"
-      className="flex min-h-11 min-w-11 items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground sm:min-h-0 sm:min-w-0"
+      className="flex min-h-8 sm:min-h-9 items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground shrink-0"
     >
-      <Pencil size={16} />
+      <Pencil size={14} />
     </button>
   );
 }
@@ -289,10 +306,10 @@ function Pill({
         //
         // gap-1 rather than gap-2 because the label sits tight to its icon:
         // the pair has to read as one control, not an icon next to a word.
-        "flex min-h-11 items-center justify-center gap-1 rounded px-1.5 py-1 sm:gap-1.5 sm:px-2.5",
-        "font-mono text-[11px] lowercase tracking-wide transition-colors",
+        "flex min-h-8 sm:min-h-9 items-center justify-center gap-1 rounded px-2 py-1 sm:gap-1.5 sm:px-2.5",
+        "font-mono text-[11px] lowercase tracking-wide transition-colors shrink-0",
         "pointer-fine:min-h-9",
-        active ? "text-accent" : "text-sub hover:text-foreground",
+        active ? "text-accent font-semibold" : "text-sub hover:text-foreground",
       )}
     >
       {SHOW_ICONS && icon}

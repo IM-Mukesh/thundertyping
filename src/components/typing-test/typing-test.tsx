@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
@@ -18,8 +18,9 @@ import { ResultsPanel } from "@/components/typing-test/results-panel";
 import { TestConfigBar } from "@/components/typing-test/test-config-bar";
 import { CustomTextModal } from "@/components/typing-test/custom-text-modal";
 import { LanguageSelector } from "@/components/typing-test/language-selector";
+import { MobileTestSettingsModal } from "@/components/typing-test/mobile-test-settings-modal";
 import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
-import { setTestFinished } from "@/lib/typing-engine/test-status-store";
+import { setTestStatus } from "@/lib/typing-engine/test-status-store";
 
 export function TypingTest() {
   const mode = useSettingsStore((s) => s.mode);
@@ -36,9 +37,19 @@ export function TypingTest() {
   const [focusToken, setFocusToken] = useState(0);
   const [isNewBest, setIsNewBest] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
+  const [isMobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   // Diagnostic only -- never subtracted from the test duration. See
   // docs/typing-engine.md for why the clock deliberately keeps running.
   const focusLossCountRef = useRef(0);
+
+  const modeBadge = useMemo(() => {
+    if (mode === "time") return `${timeDuration}s`;
+    if (mode === "words") return `${wordCount}w`;
+    if (mode === "quote") return `quote · ${quoteLength}`;
+    if (mode === "vocabulary") return `vocab · ${vocabDifficulty}`;
+    if (mode === "custom") return "custom";
+    return mode;
+  }, [mode, timeDuration, wordCount, quoteLength, vocabDifficulty]);
 
   const config = useMemo<TestConfig>(
     () => ({
@@ -73,7 +84,6 @@ export function TypingTest() {
     lastAppliedConfigRef.current = config;
     engine.applyConfig(config);
     setIsNewBest(false);
-    setFocusToken((t) => t + 1);
     // config identity changes whenever any setting above changes; engine.applyConfig is stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -88,14 +98,14 @@ export function TypingTest() {
   ]);
 
   useEffect(() => {
-    setTestFinished(engine.state.status === "finished");
+    setTestStatus(engine.state.status);
   }, [engine.state.status]);
 
   // Clears the signal when the whole test unmounts (e.g. navigating to
-  // /about after finishing a test) so the footer doesn't stay hidden on
+  // /about after finishing a test) so header/footer don't stay hidden on
   // pages that have no typing test at all. Mount-only, so its cleanup runs
   // at unmount rather than on every status change.
-  useEffect(() => () => setTestFinished(false), []);
+  useEffect(() => () => setTestStatus("idle"), []);
 
   const recordedRef = useRef(false);
   useEffect(() => {
@@ -183,23 +193,45 @@ export function TypingTest() {
   const showIdleChrome = engine.state.status === "idle";
 
   return (
-    <div className="flex w-full flex-col items-center gap-4 sm:gap-8">
-      {/* Both children stay mounted and share this grid cell (both placed at
-          grid-area 1/1) so the slot always sizes to the taller of the two and
-          only their opacity crossfades — keeps the word-stream below from
-          jumping when this row's content swaps (see PROGRESS.md). */}
-      <div className="grid w-full place-items-center">
+    <div className="flex w-full flex-col items-center gap-4 sm:gap-5">
+      {/* Both children share this grid cell and align to bottom (items-end)
+          so the top of the word-stream below never shifts when the test starts. */}
+      <div className="grid w-full items-end">
+        {/* Idle Chrome */}
         <div
           className={cn(
-            "[grid-area:1/1] transition duration-200",
+            "[grid-area:1/1] w-full transition duration-200",
             showIdleChrome ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         >
-          <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
+          {/* Desktop Config Bar & Language Selector */}
+          <div className="hidden sm:flex sm:flex-col sm:items-center sm:gap-2 w-full">
+            <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
+            <LanguageSelector />
+          </div>
+
+          {/* Mobile Single "Test Settings" Button */}
+          <div className="flex sm:hidden justify-center py-1">
+            <button
+              type="button"
+              onClick={() => setMobileSettingsOpen(true)}
+              className="flex items-center gap-2 rounded-xl border border-border bg-sub-alt/40 px-3.5 py-2 font-mono text-xs text-sub transition-colors hover:border-accent hover:text-foreground active:scale-95"
+            >
+              <SlidersHorizontal size={14} className="text-accent" />
+              <span className="font-display text-xs font-semibold uppercase tracking-wider text-foreground">
+                Test Settings
+              </span>
+              <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase text-accent">
+                {modeBadge}
+              </span>
+            </button>
+          </div>
         </div>
+
+        {/* Live Timer during test: left-aligned, exactly ~20px above typing area */}
         <div
           className={cn(
-            "[grid-area:1/1] transition-opacity duration-200",
+            "[grid-area:1/1] w-full flex items-end justify-start pb-0.5 transition-opacity duration-200",
             isRunning ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         >
@@ -207,17 +239,8 @@ export function TypingTest() {
         </div>
       </div>
 
-      <div
-        className={cn(
-          "transition duration-200",
-          showIdleChrome ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      >
-        <LanguageSelector />
-      </div>
-
       {engine.state.status !== "finished" ? (
-        <div className="flex w-full flex-col items-center gap-6">
+        <div className="flex w-full flex-col items-center gap-5 sm:gap-6">
           <div
             className="relative w-full cursor-pointer"
             onClick={() => setFocusToken((t) => t + 1)}
@@ -229,6 +252,7 @@ export function TypingTest() {
             <HiddenInput
               value={activeWord?.typed ?? ""}
               status={engine.state.status}
+              disabled={isMobileSettingsOpen || isCustomModalOpen}
               onChange={engine.setTyped}
               onCommitWord={engine.commitWord}
               onRestart={handleRestart}
@@ -289,8 +313,17 @@ export function TypingTest() {
         onSubmit={handleCustomTextSubmit}
         onClose={() => {
           setCustomModalOpen(false);
-          setFocusToken((t) => t + 1);
+          const isTouch =
+            typeof window !== "undefined" &&
+            window.matchMedia("(pointer: coarse)").matches;
+          if (!isTouch) setFocusToken((t) => t + 1);
         }}
+      />
+
+      <MobileTestSettingsModal
+        open={isMobileSettingsOpen}
+        onClose={() => setMobileSettingsOpen(false)}
+        onOpenCustomText={() => setCustomModalOpen(true)}
       />
     </div>
   );

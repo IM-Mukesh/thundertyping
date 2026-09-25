@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { TypingTestClient } from "@/components/typing-test/typing-test-client";
 import { PageIntro } from "@/components/layout/page-intro";
 import { AdRail } from "@/components/layout/ad-rail";
-import { HomepageSeoContent } from "@/components/layout/homepage-seo-content";
-import { HomepageFeatureNav } from "@/components/layout/homepage-feature-nav";
+import { HomepageExploreSection } from "@/components/layout/homepage-explore-section";
 import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
 import { SITE_URL } from "@/lib/seo/constants";
 
@@ -55,10 +54,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex w-full flex-col items-center gap-3">
-        <HomepageFeatureNav />
-        <HomepageSeoContent />
-      </div>
+      <HomepageExploreSection />
     </div>
   );
 }

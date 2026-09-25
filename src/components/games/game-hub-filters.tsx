@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Gamepad2, Grid3x3, Swords, Flag, Brain } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { GameHubCard } from "@/components/games/game-hub-card";
+import { MobileGamesHub } from "@/components/games/mobile-games-hub";
 import { SortControl } from "@/components/games/sort-control";
 import { useGameSearchQuery } from "@/lib/games/game-search-store";
 import { cn } from "@/lib/utils/cn";
@@ -76,91 +77,107 @@ export function GameHubFilters({
 
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-center gap-2">
-        <div
-          role="tablist"
-          aria-label="Filter games by category"
-          className="flex flex-wrap gap-1.5"
-        >
-          {TABS.filter((t) => t.id === "all" || counts[t.id]).map((tab) => {
-            const active = filter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setFilter(tab.id)}
-                className={cn(
-                  "group/tab relative flex min-h-11 items-center gap-1.5 rounded-lg border px-3",
-                  "font-display text-[11px] uppercase tracking-wider transition-all duration-200 sm:min-h-9",
-                  active
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-border/60 bg-sub-alt/40 text-sub hover:border-accent/50 hover:text-foreground",
-                )}
-                style={
-                  active
-                    ? {
-                        boxShadow:
-                          "0 0 18px -6px color-mix(in srgb, var(--accent) 70%, transparent)",
-                      }
-                    : undefined
-                }
-              >
-                {tab.icon}
-                {tab.label}
-                <span
+      {/* MOBILE EXPERIENCE (< sm): 3D Featured Showcase + Horizontal Scrolling Rail */}
+      <div className="block sm:hidden">
+        <MobileGamesHub
+          games={games}
+          art={art}
+          characters={characters}
+          selectedCategory={filter}
+          onSelectCategory={setFilter}
+          counts={counts}
+          searchQuery={searchQuery}
+        />
+      </div>
+
+      {/* TABLET / DESKTOP EXPERIENCE (>= sm): Original Tabs, Sort Control & Interactive 4-Col Grid */}
+      <div className="hidden sm:block">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div
+            role="tablist"
+            aria-label="Filter games by category"
+            className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:flex-wrap sm:pb-0 no-scrollbar"
+          >
+            {TABS.filter((t) => t.id === "all" || counts[t.id]).map((tab) => {
+              const active = filter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setFilter(tab.id)}
                   className={cn(
-                    "rounded px-1 font-display text-[10px] tabular-nums",
-                    active ? "bg-accent/25 text-accent" : "bg-border/40 text-sub",
+                    "group/tab relative flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3",
+                    "font-display text-[11px] uppercase tracking-wider transition-all duration-200",
+                    active
+                      ? "border-accent bg-accent/15 text-accent"
+                      : "border-border/60 bg-sub-alt/40 text-sub hover:border-accent/50 hover:text-foreground",
                   )}
+                  style={
+                    active
+                      ? {
+                          boxShadow:
+                            "0 0 18px -6px color-mix(in srgb, var(--accent) 70%, transparent)",
+                        }
+                      : undefined
+                  }
                 >
-                  {counts[tab.id] ?? 0}
-                </span>
-              </button>
-            );
-          })}
+                  {tab.icon}
+                  {tab.label}
+                  <span
+                    className={cn(
+                      "rounded px-1 font-display text-[10px] tabular-nums",
+                      active ? "bg-accent/25 text-accent" : "bg-border/40 text-sub",
+                    )}
+                  >
+                    {counts[tab.id] ?? 0}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="ml-auto">
+            <SortControl
+              value={sort}
+              onChange={setSort}
+              options={[
+                { id: "featured", label: "Featured" },
+                { id: "name", label: "Name" },
+                { id: "shortest", label: "Shortest run" },
+              ]}
+            />
+          </div>
         </div>
 
-        <div className="ml-auto">
-          <SortControl
-            value={sort}
-            onChange={setSort}
-            options={[
-              { id: "featured", label: "Featured" },
-              { id: "name", label: "Name" },
-              { id: "shortest", label: "Shortest run" },
-            ]}
-          />
+        <div className={cn(
+            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+            // Row gap is deliberately much larger than the column gap. At full
+            // hover the character stands ~330px tall against a 232px art box, so
+            // roughly 100px of it rises above the card. The row gap is what keeps
+            // that from landing on the card above.
+            // The big row gap only earns its space where a character can rise
+            // into it. Touch has no hover, so on one column it is dead space.
+            "gap-x-6 gap-y-6 sm:gap-y-28",
+          )}>
+          {visible.map((game, i) => (
+            <GameHubCard
+              key={game.id}
+              game={game}
+              art={art[game.id] ?? null}
+              character={characters[game.id] ?? null}
+              priority={i < 4}
+            />
+          ))}
         </div>
-      </div>
 
-      <div className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-          // Row gap is deliberately much larger than the column gap. At full
-          // hover the character stands ~330px tall against a 232px art box, so
-          // roughly 100px of it rises above the card. The row gap is what keeps
-          // that from landing on the card above.
-          // The big row gap only earns its space where a character can rise
-          // into it. Touch has no hover, so on one column it is dead space.
-          "gap-x-6 gap-y-6 sm:gap-y-28",
-        )}>
-        {visible.map((game, i) => (
-          <GameHubCard
-            key={game.id}
-            game={game}
-            art={art[game.id] ?? null}
-            character={characters[game.id] ?? null}
-            priority={i < 4}
-          />
-        ))}
+        {visible.length === 0 && (
+          <p className="py-12 text-center font-mono text-sm text-sub">
+            {searchQuery.trim() ? `No games match "${searchQuery.trim()}".` : "No games in that category yet."}
+          </p>
+        )}
       </div>
-
-      {visible.length === 0 && (
-        <p className="py-12 text-center font-mono text-sm text-sub">
-          {searchQuery.trim() ? `No games match "${searchQuery.trim()}".` : "No games in that category yet."}
-        </p>
-      )}
     </>
   );
 }

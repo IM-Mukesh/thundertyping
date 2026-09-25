@@ -17,7 +17,7 @@ export function LessonSidebar({ activeTier, onSelect }: LessonSidebarProps) {
   return (
     <nav
       aria-label="Lesson tiers"
-      className="flex gap-2 overflow-x-auto pb-1 lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-visible lg:pb-0"
+      className="flex gap-2 overflow-x-auto pb-1 no-scrollbar lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-visible lg:pb-0"
     >
       {LESSON_TIERS.map((tier) => {
         const tierUnits = LESSON_LIST.filter((l) => l.tier === tier.id);

@@ -3,13 +3,18 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Globe } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 // Single-entry on purpose: English is the only supported language right now
 // (see PROGRESS.md). This is a real, working selector — not a decorative
 // placeholder — so adding a second language later is just a second row here.
 const LANGUAGES = [{ id: "english", label: "English" }] as const;
 
-export function LanguageSelector() {
+interface LanguageSelectorProps {
+  compact?: boolean;
+}
+
+export function LanguageSelector({ compact }: LanguageSelectorProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -29,10 +34,15 @@ export function LanguageSelector() {
         aria-label="Language: English"
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex min-h-11 items-center gap-1.5 rounded-md px-2 py-1 text-xs text-sub transition-colors hover:text-foreground sm:min-h-0"
+        className={cn(
+          "flex items-center text-xs text-sub transition-colors hover:text-foreground",
+          compact
+            ? "h-10 w-10 items-center justify-center rounded-lg border border-border bg-sub-alt/30 hover:border-accent active:scale-95"
+            : "min-h-11 gap-1.5 rounded-md px-2 py-1 sm:min-h-0",
+        )}
       >
-        <Globe size={13} />
-        English
+        <Globe size={compact ? 18 : 13} />
+        {!compact && <span>English</span>}
       </button>
 
       <AnimatePresence>
@@ -46,7 +56,10 @@ export function LanguageSelector() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ duration: 0.12 }}
-              className="absolute left-1/2 top-9 z-50 flex w-36 -translate-x-1/2 flex-col gap-0.5 rounded-lg border border-border bg-background p-1.5 shadow-lg"
+              className={cn(
+                "absolute z-50 flex w-36 flex-col gap-0.5 rounded-lg border border-border bg-background p-1.5 shadow-lg",
+                compact ? "right-0 top-12" : "left-1/2 top-9 -translate-x-1/2",
+              )}
             >
               {LANGUAGES.map((lang) => (
                 <button

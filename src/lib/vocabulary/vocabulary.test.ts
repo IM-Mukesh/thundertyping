@@ -86,6 +86,20 @@ describe("vocabulary: round reducer", () => {
     assert.equal(state.results[0].correct, true);
   });
 
+  it("advances with a trailing space without penalizing accuracy", () => {
+    const words = [
+      { word: "brave", pos: "adj.", definition: "showing courage" },
+      { word: "calm", pos: "adj.", definition: "free from excitement" },
+    ];
+    let state = reducer(createInitialState(), { type: "START", difficulty: "easy", words });
+    state = reducer(state, { type: "SET_TYPED", value: "brave " });
+    assert.equal(state.index, 1);
+    assert.equal(state.typed, "");
+    assert.equal(state.results[0].correct, true);
+    assert.equal(state.incorrectKeystrokes, 0);
+    assert.equal(state.correctKeystrokes, 5);
+  });
+
   it("marks a word incorrect (not just slow) the instant a wrong character is typed", () => {
     const words = [{ word: "calm", pos: "adj.", definition: "free from excitement" }];
     let state = reducer(createInitialState(), { type: "START", difficulty: "easy", words });
