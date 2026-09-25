@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono, Orbitron } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
@@ -7,6 +8,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SITE_NAME, SITE_URL, SITE_TAGLINE, SITE_DESCRIPTION } from "@/lib/seo/constants";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/json-ld";
+import { GA_MEASUREMENT_ID } from "@/lib/analytics/constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -107,6 +109,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <SiteFooter />
         </ThemeProvider>
       </body>
+      {/* Production only -- local/dev traffic would otherwise pollute real
+          visitor data. Loaded via @next/third-parties, which fetches gtag.js
+          after hydration and tracks client-side route changes automatically
+          (History API pushState/popstate), so no manual pageview wiring is
+          needed per-route. No PII is sent -- default pageview + IDs only. */}
+      {process.env.NODE_ENV === "production" && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
     </html>
   );
 }
