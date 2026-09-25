@@ -233,7 +233,7 @@ export default function WpmCpmKphCalculatorPage() {
           {MISTAKES.map((row) => (
             <div key={row.mistake} className="rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.mistake}</p>
-              <p className="mt-1 text-sm leading-relaxed text-sub">{row.fix}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.fix}</p>
             </div>
           ))}
         </div>

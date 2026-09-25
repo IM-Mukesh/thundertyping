@@ -262,7 +262,7 @@ export default function HowToImproveTypingSpeedPage() {
                 {step.range}
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">{step.focus}</p>
-              <p className="mt-1 text-sm leading-relaxed text-sub">{step.detail}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{step.detail}</p>
             </div>
           ))}
         </div>

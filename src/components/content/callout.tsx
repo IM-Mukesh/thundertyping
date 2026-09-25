@@ -14,7 +14,7 @@ export function Callout({ label, children, className }: CalloutProps) {
       {label && (
         <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-accent">{label}</p>
       )}
-      <div className="flex flex-col gap-2 text-sm leading-relaxed text-sub [&_strong]:font-medium [&_strong]:text-foreground">
+      <div className="flex flex-col gap-2 text-sm leading-relaxed text-foreground/90 [&_strong]:font-medium [&_strong]:text-foreground">
         {children}
       </div>
     </div>

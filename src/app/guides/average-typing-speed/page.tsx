@@ -158,7 +158,7 @@ export default function AverageTypingSpeedPage() {
           {IS_X_GOOD.map((row) => (
             <div key={row.wpm} className="rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.wpm}</p>
-              <p className="mt-1 text-sm leading-relaxed text-sub">{row.verdict}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.verdict}</p>
             </div>
           ))}
         </div>

@@ -21,10 +21,10 @@ export function ContentPage({ title, subtitle, breadcrumbItems, children }: Cont
       {breadcrumbItems && <Breadcrumbs items={breadcrumbItems} />}
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
-        {subtitle && <p className="text-sm text-sub">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-foreground/85">{subtitle}</p>}
       </div>
       <div
-        className="flex flex-col gap-4 text-sm leading-relaxed text-sub
+        className="flex flex-col gap-4 text-sm leading-relaxed text-foreground/90
           [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2
           [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground
           [&_h3]:mt-2 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-foreground

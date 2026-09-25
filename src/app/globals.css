@@ -13,7 +13,12 @@
 :root {
   --background: #323437;
   --foreground: #d1d0c5;
-  --sub: #646669;
+  /* Was #646669 -- 2.17:1 against --background, well under WCAG AA's 4.5:1
+     for normal text. #9ca3af holds ~4.9:1, so every "secondary" UI role
+     built on this token (breadcrumbs, the guide TOC, nav labels, muted
+     captions via text-sub/NN opacity) reads clearly instead of faded,
+     without touching --foreground, --accent, or the theme's hue. */
+  --sub: #9ca3af;
   --sub-alt: #2c2e31;
   --accent: #e2b714;
   --caret: #e2b714;
@@ -25,7 +30,8 @@
 [data-theme="light"] {
   --background: #fafaf8;
   --foreground: #17171a;
-  --sub: #9a9a94;
+  /* Was #9a9a94 (2.71:1 against --background); #6b6b66 holds ~5.1:1. */
+  --sub: #6b6b66;
   --sub-alt: #ececea;
   --accent: #ca8a04;
   --caret: #ca8a04;
@@ -37,7 +43,8 @@
 [data-theme="midnight"] {
   --background: #12141c;
   --foreground: #e2e5f1;
-  --sub: #5b6178;
+  /* Was #5b6178 (3.00:1 against --background); #8a90a8 holds ~5.8:1. */
+  --sub: #8a90a8;
   --sub-alt: #1c1f2b;
   --accent: #7dd3fc;
   --caret: #7dd3fc;
@@ -49,7 +56,8 @@
 [data-theme="forest"] {
   --background: #141a16;
   --foreground: #e3ece6;
-  --sub: #62786a;
+  /* Was #62786a (3.71:1 against --background); #7f9188 holds ~5.3:1. */
+  --sub: #7f9188;
   --sub-alt: #1d251f;
   --accent: #4ade80;
   --caret: #4ade80;
@@ -61,7 +69,8 @@
 [data-theme="sunset"] {
   --background: #1c1614;
   --foreground: #f0e6e0;
-  --sub: #7a6a63;
+  /* Was #7a6a63 (3.47:1 against --background); #998b83 holds ~5.4:1. */
+  --sub: #998b83;
   --sub-alt: #261e1b;
   --accent: #fb923c;
   --caret: #fb923c;

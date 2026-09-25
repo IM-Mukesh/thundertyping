@@ -238,7 +238,7 @@ export default function HowToTouchTypePage() {
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
                 {row.stage}
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-sub">{row.detail}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.detail}</p>
             </div>
           ))}
         </div>

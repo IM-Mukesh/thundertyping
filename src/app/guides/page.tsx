@@ -88,7 +88,7 @@ export default function GuidesIndexPage() {
       <Breadcrumbs items={[{ name: "Guides", path: "/guides" }]} />
       <div className="flex max-w-2xl flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Typing Guides</h1>
-        <p className="text-sm text-sub">
+        <p className="text-sm text-foreground/85">
           Practical technique and honest benchmarks — not shortcuts. Written to be read once and actually used, not
           skimmed for keywords.
         </p>
@@ -103,7 +103,7 @@ export default function GuidesIndexPage() {
           >
             <div className="flex flex-col gap-1">
               <h2 className="font-medium text-foreground">{guide.title}</h2>
-              <p className="text-sm text-sub">{guide.description}</p>
+              <p className="text-sm text-foreground/85">{guide.description}</p>
             </div>
             <ArrowRight
               size={16}

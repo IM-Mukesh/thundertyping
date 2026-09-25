@@ -180,7 +180,7 @@ export default function TypingResourcesForTeachersPage() {
           {ROUTINES.map((row) => (
             <div key={row.minutes} className="rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.minutes}</p>
-              <p className="mt-1 text-sm leading-relaxed text-sub">{row.plan}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.plan}</p>
             </div>
           ))}
         </div>
@@ -190,7 +190,7 @@ export default function TypingResourcesForTeachersPage() {
           {ACTIVITIES.map((row) => (
             <div key={row.title} className="rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-sub">{row.detail}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.detail}</p>
             </div>
           ))}
         </div>
