@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useIsTestFinished, useIsTestRunning } from "@/lib/typing-engine/test-status-store";
+import { useIsTestRunning } from "@/lib/typing-engine/test-status-store";
 import { cn } from "@/lib/utils/cn";
 
 // Renders on the server like any other client component (no random or
@@ -9,29 +9,19 @@ import { cn } from "@/lib/utils/cn";
 // h1/subtitle stay in the initial HTML for SEO.
 // While typing (isRunning), it smoothly fades to opacity-0 without collapsing
 // height, preventing any layout shift or vertical jitter.
-// Once the test finishes (isFinished), it collapses 1fr -> 0fr so the results
-// screen fits comfortably without extra page scroll.
+// When test finishes (results screen) or is idle, it stays fully visible.
 export function PageIntro() {
-  const isFinished = useIsTestFinished();
   const isRunning = useIsTestRunning();
 
   return (
     <div
-      data-finished={isFinished}
       data-running={isRunning}
-      aria-hidden={isFinished || isRunning}
+      aria-hidden={isRunning}
       className={cn(
-        "grid w-full max-w-2xl transition-all duration-300 ease-in-out",
-        isFinished
-          ? "grid-rows-[0fr] opacity-0 pointer-events-none"
-          : isRunning
-            ? "grid-rows-[1fr] opacity-0 pointer-events-none"
-            : "grid-rows-[1fr] opacity-100",
+        "w-full max-w-2xl transition-opacity duration-300 ease-in-out",
+        isRunning ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
-      {/* min-h-0 + overflow-hidden is what lets the 1fr -> 0fr row actually
-          clip its content instead of overflowing at its natural height. */}
-      <div className="min-h-0 overflow-hidden">
         {/* Hidden on phones, not deleted.
             A phone screen is mostly keyboard once typing starts, and this
             block pushed the words down into what little was left. But the h1
@@ -54,6 +44,5 @@ export function PageIntro() {
           </p>
         </div>
       </div>
-    </div>
   );
 }

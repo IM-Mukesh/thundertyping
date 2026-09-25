@@ -3,34 +3,25 @@
 import Link from "next/link";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { SITE_NAME } from "@/lib/seo/constants";
-import { useIsTestFinished, useIsTestRunning } from "@/lib/typing-engine/test-status-store";
+import { useIsTestRunning } from "@/lib/typing-engine/test-status-store";
 import { cn } from "@/lib/utils/cn";
 
-// Collapses once a test finishes so the results screen fits without a page
-// scroll — the footer's ad slot plus link row was the single biggest
-// contributor to results-page overflow.
 // While a test is running, it smoothly fades to opacity-0 without collapsing height
 // so there is zero layout jump or scrolling disruption during typing.
+// When displaying results or while idle, it stays fully visible.
 export function SiteFooter() {
-  const isFinished = useIsTestFinished();
   const isRunning = useIsTestRunning();
 
   return (
     <div
-      data-finished={isFinished}
       data-running={isRunning}
-      aria-hidden={isFinished || isRunning}
+      aria-hidden={isRunning}
       className={cn(
-        "mt-auto grid transition-all duration-300 ease-in-out",
-        isFinished
-          ? "grid-rows-[0fr] opacity-0 pointer-events-none"
-          : isRunning
-            ? "grid-rows-[1fr] opacity-0 pointer-events-none"
-            : "grid-rows-[1fr] opacity-100",
+        "mt-auto transition-opacity duration-300 ease-in-out",
+        isRunning ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
-      <div className="min-h-0 overflow-hidden">
-        <footer className="flex flex-col items-center gap-6 px-6 py-10 sm:px-10">
+      <footer className="flex flex-col items-center gap-6 px-6 py-10 sm:px-10">
           <AdSlot id="footer-leaderboard" format="horizontal" />
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-sub sm:gap-6 text-center">
             <span>
@@ -68,7 +59,6 @@ export function SiteFooter() {
             </Link>
           </div>
         </footer>
-      </div>
     </div>
   );
 }
