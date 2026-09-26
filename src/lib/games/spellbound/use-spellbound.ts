@@ -378,7 +378,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         enemies: spawnFor(rng, map[0].kind, 1, internal.current.uid),
       });
       internal.current.uid += 8;
-      cbRef.current.onPhase?.("combat");
+      queueMicrotask(() => cbRef.current.onPhase?.("combat"));
     },
     [],
   );
@@ -523,7 +523,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
             s.combo = 0;
             s.cleanFloor = false;
             pushEvent(s, "damage", `-${through}`, 0.5);
-            cbRef.current.onPlayerHit?.(through);
+            queueMicrotask(() => cbRef.current.onPlayerHit?.(through));
           } else {
             pushEvent(s, "block", "blocked", 0.5);
           }
@@ -531,7 +531,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
 
         if (s.hp <= 0) {
           s.phase = "defeat";
-          cbRef.current.onPhase?.("defeat");
+          queueMicrotask(() => cbRef.current.onPhase?.("defeat"));
           return s;
         }
 
@@ -813,13 +813,22 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         }
 
         internal.current.mirrorLast = spell;
-        cbRef.current.onCast?.({ spell, damage, crit, killed });
-        for (const e of s.enemies) {
-          if (e.hp === 0 && killed.includes(e.def.name)) cbRef.current.onEnemyKilled?.(e);
-        }
+        const castResult = { spell, damage, crit, killed };
+        const enemiesKilled = s.enemies.filter((e) => e.hp === 0 && killed.includes(e.def.name));
+        const roomCleared = s.enemies.every((e) => e.hp <= 0);
+
+        queueMicrotask(() => {
+          cbRef.current.onCast?.(castResult);
+          for (const e of enemiesKilled) {
+            cbRef.current.onEnemyKilled?.(e);
+          }
+          if (roomCleared) {
+            cbRef.current.onPhase?.("reward");
+          }
+        });
 
         // room cleared?
-        if (s.enemies.every((e) => e.hp <= 0)) {
+        if (roomCleared) {
           s.gold += 18 + s.floor * 6;
           const wasBoss = s.roomKind === "boss";
           s.phase = "reward";
@@ -827,7 +836,6 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
             spells: rng.sample(Object.keys(SPELLS), 3),
             relics: wasBoss ? rng.sample(RELICS.map((r) => r.id), 3) : [],
           };
-          cbRef.current.onPhase?.("reward");
         }
 
         return s;
@@ -841,9 +849,13 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
     (value: string) => {
       setState((prev) => {
         if (prev.phase !== "combat") return prev;
-        const lower = value.toLowerCase();
+        const raw = value.toLowerCase();
+        const trimmed = raw.trim();
         const match = prev.slots.findIndex(
-          (sl) => sl.cooldown <= 0 && sl.sealed <= 0 && sl.word === lower,
+          (sl) =>
+            sl.cooldown <= 0 &&
+            sl.sealed <= 0 &&
+            (sl.word === raw || (trimmed.length > 0 && sl.word === trimmed)),
         );
         if (match >= 0) {
           // defer the cast so this setState stays pure
@@ -851,25 +863,28 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           return { ...prev, typed: "" };
         }
         const viable = prev.slots.some(
-          (sl) => sl.cooldown <= 0 && sl.sealed <= 0 && sl.word.startsWith(lower),
+          (sl) =>
+            sl.cooldown <= 0 &&
+            sl.sealed <= 0 &&
+            (sl.word.startsWith(raw) || (trimmed.length > 0 && sl.word.startsWith(trimmed))),
         );
         // Arcane Focus: the Apprentice is paid for keeping the streak alive.
         if (
           viable &&
           prev.characterId === "apprentice" &&
-          lower.length > prev.typed.length
+          raw.length > prev.typed.length
         ) {
           return {
             ...prev,
-            typed: lower,
+            typed: raw,
             mana: Math.min(prev.maxMana, prev.mana + 0.5),
           };
         }
-        if (!viable && lower.length > 0) {
-          cbRef.current.onMiss?.();
+        if (!viable && raw.length > 0) {
+          queueMicrotask(() => cbRef.current.onMiss?.());
           return { ...prev, typed: "", combo: 0 };
         }
-        return { ...prev, typed: lower };
+        return { ...prev, typed: raw };
       });
     },
     [cast],
@@ -903,7 +918,8 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           }
         }
         s = enterRoom(s);
-        cbRef.current.onPhase?.(s.phase);
+        const nextPhase = s.phase;
+        queueMicrotask(() => cbRef.current.onPhase?.(nextPhase));
         return s;
       });
     },
@@ -935,7 +951,8 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         }
         s.event = null;
         s = enterRoom(s);
-        cbRef.current.onPhase?.(s.phase);
+        const nextPhase = s.phase;
+        queueMicrotask(() => cbRef.current.onPhase?.(nextPhase));
         return s;
       });
     },
@@ -963,7 +980,8 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
   const leaveShop = useCallback(() => {
     setState((prev) => {
       const s = enterRoom(prev);
-      cbRef.current.onPhase?.(s.phase);
+      const nextPhase = s.phase;
+      queueMicrotask(() => cbRef.current.onPhase?.(nextPhase));
       return s;
     });
   }, [enterRoom]);

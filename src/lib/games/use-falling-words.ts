@@ -336,16 +336,17 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
     case "SET_TYPED": {
       if (state.status !== "running") return state;
-      const value = action.value;
+      const rawValue = action.value;
+      const value = rawValue.trim();
 
-      if (value.length < state.typed.length) {
+      if (rawValue.length < state.typed.length) {
         // Backspace: allowed, and deliberately not counted as a mistake.
         return { ...state, typed: value, lockedId: value === "" ? null : state.lockedId };
       }
-      if (value === state.typed) return state;
+      if (value === state.typed && rawValue.length <= state.typed.length) return state;
 
       const target = findTarget(state.words, value, state.lockedId);
-      const added = value.length - state.typed.length;
+      const added = Math.max(1, rawValue.length - state.typed.length);
 
       if (!target) {
         // No word on screen starts with this — reject the character outright
@@ -402,8 +403,17 @@ export function reducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-export function useFallingWords(definition: GameDefinition) {
+export interface UseFallingWordsOptions {
+  laneCount?: number;
+}
+
+export function useFallingWords(definition: GameDefinition, options?: UseFallingWordsOptions) {
   const [state, dispatch] = useReducer(reducer, definition, createInitialState);
+  const laneCount = options?.laneCount ?? LANE_COUNT;
+  const laneCountRef = useRef(laneCount);
+  useEffect(() => {
+    laneCountRef.current = laneCount;
+  }, [laneCount]);
 
   // Read by the spawn timer without making it a dependency, so changing
   // difficulty mid-run doesn't tear down and restart the timer chain. Synced
@@ -443,7 +453,8 @@ export function useFallingWords(definition: GameDefinition) {
           }
           if (!active.has(text)) {
             const usedLanes = new Set(current.words.map((w) => w.lane));
-            const freeLanes = Array.from({ length: LANE_COUNT }, (_, i) => i).filter(
+            const currentLanes = laneCountRef.current;
+            const freeLanes = Array.from({ length: currentLanes }, (_, i) => i).filter(
               (l) => !usedLanes.has(l),
             );
             // MAX_ACTIVE_WORDS (7) can exceed LANE_COUNT (6), so all lanes

@@ -104,7 +104,9 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
           crit ? 26 : 18,
         );
       }
-      if (spell.band === "long") grantAchievement(ACHIEVEMENTS.longCast);
+      if (spell.band === "long") {
+        queueMicrotask(() => grantAchievement(ACHIEVEMENTS.longCast));
+      }
     },
     onEnemyKilled: () => {
       sound("enemy-death", soundEnabled, { vary: 80 });
@@ -118,19 +120,21 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
       }
     },
     onMiss: () => sound("key-wrong", soundEnabled),
-    onPhase: (phase) => {
-      if (phase === "combat") {
-        void playMusic(game.isBossRoom ? MUSIC.boss : MUSIC.combat);
-      } else if (phase === "victory") {
-        void playMusic(null);
-        sound("new-record", soundEnabled);
-      } else if (phase === "defeat") {
-        void playMusic(null);
-      }
-    },
   });
 
   const { state } = game;
+
+  // Music & sound effects driven by state transitions
+  useEffect(() => {
+    if (state.phase === "combat") {
+      void playMusic(state.roomKind === "boss" ? MUSIC.boss : MUSIC.combat);
+    } else if (state.phase === "victory") {
+      void playMusic(null);
+      sound("new-record", soundEnabled);
+    } else if (state.phase === "defeat") {
+      void playMusic(null);
+    }
+  }, [state.phase, state.roomKind, soundEnabled]);
 
   // Preload only this game's audio, on mount, so the first cast is not silent
   // while a file downloads.
@@ -216,6 +220,21 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
     window.setTimeout(() => inputRef.current?.focus(), 30);
   };
 
+  const [isFocused, setIsFocused] = useState(true);
+
+  // Restart on Enter / Space when game is over
+  useEffect(() => {
+    if (state.phase !== "victory" && state.phase !== "defeat") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        game.reset();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.phase, game]);
+
   const background =
     state.phase === "shop"
       ? ART.bgShop
@@ -234,7 +253,10 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
 
       <div
         ref={boardRef}
-        className="relative w-full overflow-hidden rounded-xl border border-border bg-background [--board-h:360px] sm:[--board-h:440px] arcade-scanlines"
+        onClick={() => {
+          if (state.phase === "combat") inputRef.current?.focus();
+        }}
+        className="relative w-full overflow-hidden rounded-xl border border-border bg-background [--board-h:clamp(340px,58dvh,480px)] sm:[--board-h:440px] arcade-scanlines cursor-pointer"
         style={{ height: "var(--board-h)" }}
       >
         <Image
@@ -256,12 +278,41 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
         {state.phase === "select" && (
           <CharacterSelect onPick={handleStart} />
         )}
-        {state.phase === "combat" && <Combat game={game} />}
+        {state.phase === "combat" && (
+          <Combat
+            game={game}
+            onSlotClick={(word) => {
+              game.setTyped(word);
+              inputRef.current?.focus();
+            }}
+          />
+        )}
         {state.phase === "reward" && <Reward game={game} />}
         {state.phase === "shop" && <Shop game={game} />}
         {state.phase === "event" && <EventRoom game={game} />}
         {(state.phase === "victory" || state.phase === "defeat") && (
           <RunEnd game={game} onAgain={() => game.reset()} />
+        )}
+
+        {/* Lost focus prompt */}
+        {state.phase === "combat" && !isFocused && !game.paused && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              inputRef.current?.focus();
+            }}
+            className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm transition-all"
+            aria-label="Tap to resume casting spells"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent animate-bounce">
+              <Sparkles size={24} />
+            </div>
+            <span className="font-mono text-sm font-semibold tracking-wide text-foreground">
+              Tap to resume casting
+            </span>
+            <span className="font-mono text-xs text-sub">Focus lost</span>
+          </button>
         )}
       </div>
 
@@ -271,6 +322,8 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
             ref={inputRef}
             value={state.typed}
             onChange={(e) => game.setTyped(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             aria-label="Type a spell"
             autoComplete="off"
             autoCapitalize="off"
@@ -306,63 +359,70 @@ function Hud({
   const manaPct = (state.mana / Math.max(1, state.maxMana)) * 100;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-sub">
-      <span className="flex items-center gap-1.5">
-        <Heart size={13} className="text-error" aria-hidden="true" />
-        <span className="tabular-nums text-foreground">
-          {Math.ceil(state.hp)}/{state.maxHp}
-        </span>
-      </span>
-      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-sub-alt" aria-hidden="true">
-        <div className="h-full bg-error transition-[width]" style={{ width: `${hpPct}%` }} />
-      </div>
-
-      <span className="flex items-center gap-1.5">
-        <Zap size={13} className="text-accent" aria-hidden="true" />
-        <span className="tabular-nums text-foreground">{Math.floor(state.mana)}</span>
-      </span>
-      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-sub-alt" aria-hidden="true">
-        <div className="h-full bg-accent transition-[width]" style={{ width: `${manaPct}%` }} />
-      </div>
-
-      {state.shield > 0 && (
-        <span className="tabular-nums text-cyan-300">shield {state.shield}</span>
-      )}
-
-      <span className="tabular-nums">
-        floor {state.floor} · room {state.room + 1}/{state.map.length}
-      </span>
-      <span className="tabular-nums text-accent">{state.score}</span>
-      {state.combo > 1 && (
-        <span className="tabular-nums text-warning">×{state.combo}</span>
-      )}
-      <span className="tabular-nums">{state.gold}g</span>
-
-      <div className="ml-auto flex items-center gap-1">
-        {state.relics.length > 0 && (
-          <span className="flex items-center gap-1" title="Relics">
-            <Sparkles size={12} aria-hidden="true" />
-            <span className="tabular-nums">{state.relics.length}</span>
+    <div className="flex flex-col gap-1.5 font-mono text-xs text-sub sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+      {/* Primary stats row on mobile */}
+      <div className="flex items-center justify-between gap-2 sm:contents">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <Heart size={13} className="text-error" aria-hidden="true" />
+            <span className="tabular-nums text-foreground">
+              {Math.ceil(state.hp)}/{state.maxHp}
+            </span>
           </span>
-        )}
-        {state.phase === "combat" && (
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-sub-alt sm:w-20" aria-hidden="true">
+            <div className="h-full bg-error transition-[width]" style={{ width: `${hpPct}%` }} />
+          </div>
+
+          <span className="flex items-center gap-1">
+            <Zap size={13} className="text-accent" aria-hidden="true" />
+            <span className="tabular-nums text-foreground">{Math.floor(state.mana)}</span>
+          </span>
+          <div className="h-1.5 w-12 overflow-hidden rounded-full bg-sub-alt sm:w-16" aria-hidden="true">
+            <div className="h-full bg-accent transition-[width]" style={{ width: `${manaPct}%` }} />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 sm:order-last sm:ml-auto">
+          {state.relics.length > 0 && (
+            <span className="flex items-center gap-1" title="Relics">
+              <Sparkles size={12} aria-hidden="true" />
+              <span className="tabular-nums">{state.relics.length}</span>
+            </span>
+          )}
+          {state.phase === "combat" && (
+            <button
+              type="button"
+              onClick={() => game.setPaused(!game.paused)}
+              aria-label={game.paused ? "Resume" : "Pause"}
+              className="flex min-h-8 min-w-8 items-center justify-center p-1 text-sub/60 transition-colors hover:text-foreground sm:min-h-0 sm:min-w-0 sm:p-0"
+            >
+              {game.paused ? <Play size={15} /> : <Pause size={15} />}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => game.setPaused(!game.paused)}
-            aria-label={game.paused ? "Resume" : "Pause"}
-            className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
+            onClick={onToggleSound}
+            aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
+            className="flex min-h-8 min-w-8 items-center justify-center p-1 text-sub/60 transition-colors hover:text-foreground sm:min-h-0 sm:min-w-0 sm:p-0"
           >
-            {game.paused ? <Play size={15} /> : <Pause size={15} />}
+            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
+        </div>
+      </div>
+
+      {/* Secondary stats row on mobile */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:contents sm:text-xs">
+        {state.shield > 0 && (
+          <span className="tabular-nums text-cyan-300">shield {Math.round(state.shield)}</span>
         )}
-        <button
-          type="button"
-          onClick={onToggleSound}
-          aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
-          className="-m-2 flex min-h-11 min-w-11 items-center justify-center p-2 text-sub/60 transition-colors hover:text-foreground sm:m-0 sm:min-h-0 sm:min-w-0 sm:p-0"
-        >
-          {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-        </button>
+        <span className="tabular-nums">
+          fl {state.floor} · rm {state.room + 1}/{state.map.length}
+        </span>
+        <span className="tabular-nums text-accent">{state.score}</span>
+        {state.combo > 1 && (
+          <span className="tabular-nums text-warning">×{state.combo}</span>
+        )}
+        <span className="tabular-nums">{state.gold}g</span>
       </div>
     </div>
   );
@@ -416,7 +476,7 @@ function CharacterSelect({ onPick }: { onPick: (id: string) => void }) {
   );
 }
 
-function Combat({ game }: { game: Game }) {
+function Combat({ game, onSlotClick }: { game: Game; onSlotClick?: (word: string) => void }) {
   const { state } = game;
   return (
     <div className="relative z-10 flex h-full flex-col justify-between p-3">
@@ -425,18 +485,20 @@ function Combat({ game }: { game: Game }) {
         {state.enemies
           .filter((e) => e.hp > 0)
           .map((e) => (
-            <EnemyCard key={e.uid} enemy={e} />
+            <EnemyCard
+              key={e.uid}
+              enemy={e}
+              isTargeted={state.hexTargetUid === e.uid}
+            />
           ))}
       </div>
 
-      {/* Mechanic banner. A Void King rule change or a sealed spell has to be
-          readable before the player types into it, so it sits over the board
-          with a live region rather than only tinting something. */}
+      {/* Mechanic banner. Positioned between enemies and spell slots so it never hides enemy bars */}
       {state.telegraph && (
         <div
           role="status"
           aria-live="polite"
-          className="pointer-events-none absolute inset-x-3 top-3 z-30 rounded-lg border border-accent/60 bg-background/90 px-3 py-2 text-center font-mono text-[11px] uppercase tracking-wider text-accent backdrop-blur-sm"
+          className="pointer-events-none absolute inset-x-3 top-20 z-30 rounded-lg border border-accent/60 bg-background/95 px-3 py-2 text-center font-mono text-[11px] uppercase tracking-wider text-accent shadow-lg backdrop-blur-sm sm:top-24"
         >
           {state.telegraph}
         </div>
@@ -456,36 +518,46 @@ function Combat({ game }: { game: Game }) {
           const locked = slot.cooldown > 0 || sealed;
           const matches = !locked && slot.word.startsWith(state.typed) && state.typed.length > 0;
           return (
-            <div
+            <button
               key={`${slot.spellId}-${i}`}
+              type="button"
+              disabled={locked}
+              onClick={() => onSlotClick?.(slot.word)}
               className={cn(
-                "relative overflow-hidden rounded-lg border px-2 py-1.5 transition-colors",
+                "relative overflow-hidden rounded-lg border px-2 py-1.5 text-left transition-colors",
                 sealed
                   ? "border-error/50 bg-error/5 opacity-70"
                   : locked
                   ? "border-border/50 bg-sub-alt/30 opacity-50"
                   : matches
-                    ? "border-accent bg-accent/10"
-                    : "border-border bg-sub-alt/40",
+                    ? "border-accent bg-accent/10 ring-1 ring-accent"
+                    : "border-border bg-sub-alt/40 hover:border-accent/60",
               )}
             >
               <div className="flex items-baseline justify-between gap-2">
                 <span className="truncate font-mono text-[10px] uppercase tracking-wide text-sub">
-                  {/* Sealed is labelled, not merely dimmed: a greyed card alone
-                      does not say why it cannot be used. */}
                   {sealed ? "sealed" : spell.name}
                 </span>
                 <span className="shrink-0 font-mono text-[10px] text-accent">
                   {sealed ? `${Math.ceil(slot.sealed / 1000)}s` : spell.mana}
                 </span>
               </div>
-              <p className="font-mono text-base tracking-tight sm:text-lg">
+              <p
+                className={cn(
+                  "font-mono tracking-tight",
+                  slot.word.length > 9
+                    ? "text-xs sm:text-base"
+                    : slot.word.length > 6
+                      ? "text-sm sm:text-lg"
+                      : "text-base sm:text-xl",
+                )}
+              >
                 {slot.word.split("").map((ch, j) => (
                   <span
                     key={j}
                     className={
                       matches && j < state.typed.length
-                        ? "text-accent"
+                        ? "text-accent font-bold"
                         : "text-foreground"
                     }
                   >
@@ -496,13 +568,13 @@ function Combat({ game }: { game: Game }) {
               {locked && (
                 <div
                   aria-hidden="true"
-                  className="absolute bottom-0 left-0 h-0.5 bg-sub/60"
+                  className="absolute bottom-0 left-0 h-1 bg-accent/70 transition-[width]"
                   style={{
                     width: `${(slot.cooldown / Math.max(1, spell.cooldownMs)) * 100}%`,
                   }}
                 />
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -510,16 +582,20 @@ function Combat({ game }: { game: Game }) {
   );
 }
 
-function EnemyCard({ enemy }: { enemy: EnemyState }) {
+function EnemyCard({ enemy, isTargeted }: { enemy: EnemyState; isTargeted?: boolean }) {
   const hpPct = (enemy.hp / Math.max(1, enemy.maxHp)) * 100;
   const windPct =
     100 - (enemy.windup / Math.max(1, enemy.def.windupMs)) * 100;
   return (
-    <div className="flex w-20 flex-col items-center gap-1 sm:w-28">
+    <div className={cn("flex w-20 flex-col items-center gap-1 transition-all sm:w-28", isTargeted && "scale-105")}>
       <div
         className={cn(
           "relative h-16 w-16 overflow-hidden rounded-lg border transition-colors sm:h-24 sm:w-24",
-          enemy.hitFlash > 0 ? "border-warning" : "border-border",
+          enemy.hitFlash > 0
+            ? "border-warning ring-2 ring-warning/60"
+            : isTargeted
+              ? "border-accent ring-2 ring-accent/60 shadow-lg shadow-accent/20"
+              : "border-border",
         )}
       >
         <Image
@@ -539,8 +615,7 @@ function EnemyCard({ enemy }: { enemy: EnemyState }) {
       <div className="h-1 w-full overflow-hidden rounded-full bg-sub-alt" aria-hidden="true">
         <div className="h-full bg-error" style={{ width: `${hpPct}%` }} />
       </div>
-      {/* Wind-up is the information the player is actually reading. It has a
-          label as well as a colour so it is not communicated by hue alone. */}
+      {/* Wind-up charge progress bar */}
       <div
         className="h-1 w-full overflow-hidden rounded-full bg-sub-alt"
         role="progressbar"
@@ -709,6 +784,9 @@ function RunEnd({ game, onAgain }: { game: Game; onAgain: () => void }) {
         >
           run again
         </button>
+        <p className="font-mono text-[10px] text-sub">
+          Press Space or Enter to restart
+        </p>
       </div>
     </div>
   );

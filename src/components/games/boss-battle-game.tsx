@@ -194,6 +194,20 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
     focusInput();
   }, [start, focusInput, soundEnabled]);
 
+  const [isFocused, setIsFocused] = useState(true);
+
+  useEffect(() => {
+    if (state.status !== "over") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, handleStart]);
+
   const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
   const isPlaying = state.status === "running";
   const { chargeMs: chargeDuration, requiredClears } = phaseTuning(state.phase);
@@ -214,7 +228,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
           "relative w-full overflow-hidden rounded-2xl border border-border bg-background transition-transform",
           state.phaseFlashMs > 0 && "boss-shake",
         )}
-        style={{ height: "clamp(480px, 82vh, 780px)" }}
+        style={{ height: "clamp(340px, 68dvh, 760px)", maxHeight: "min(760px, 86vh)" }}
       >
         {/* Battlefield backdrop. */}
         {bgArt && (
@@ -358,7 +372,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
           {/* --------------------------------------------------- Arena --- */}
           <div className="relative flex flex-1 items-end justify-between gap-2 py-2">
             {/* Player, lower-left. */}
-            <div className="relative flex h-full w-[34%] max-w-[220px] items-end justify-start sm:w-[30%]">
+            <div className="relative flex h-full w-[26%] max-w-[220px] items-end justify-start sm:w-[30%]">
               {playerArt ? (
                 <div
                   className={cn(
@@ -381,7 +395,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
             </div>
 
             {/* Boss, upper-right of the arena. */}
-            <div className="relative flex h-full w-[54%] max-w-[420px] items-start justify-end sm:w-[52%]">
+            <div className="relative flex h-full w-[44%] max-w-[420px] items-start justify-end sm:w-[52%]">
               {bossArt ? (
                 <div
                   className={cn(
@@ -397,7 +411,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
                     priority
                     sizes="(max-width: 768px) 60vw, 480px"
                     className={cn(
-                      "object-contain object-top transition-[filter] duration-150",
+                       "object-contain object-top transition-[filter] duration-150",
                       state.bossHitMs > 0 && "brightness-150",
                     )}
                   />
@@ -434,15 +448,13 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
               <div
                 aria-hidden="true"
                 className={cn(
-                  "pointer-events-none absolute bottom-[10%] right-[18%] rounded-full border-2 transition-[transform,opacity] ease-linear",
-                  quotaMet ? "border-accent" : "border-error",
+                  "pointer-events-none absolute bottom-[10%] right-[18%] aspect-square w-[22%] min-w-[70px] max-w-[130px] rounded-full border-2 transition-[transform,opacity] ease-linear",
+                  quotaMet ? "border-accent shadow-[0_0_12px_rgba(var(--accent-rgb),0.5)]" : "border-error shadow-[0_0_12px_rgba(239,68,68,0.5)]",
                 )}
                 style={{
-                  width: 130,
-                  height: 130,
                   transitionDuration: `${TICK_MS}ms`,
                   transform: `translate(50%, 50%) scale(${1.5 - 0.5 * chargeRatio})`,
-                  opacity: isPlaying ? 0.2 + 0.6 * chargeRatio : 0,
+                  opacity: isPlaying ? 0.35 + 0.65 * chargeRatio : 0,
                 }}
               />
             </div>
@@ -528,6 +540,18 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
           </span>
         </div>
 
+        {/* Lost focus alert */}
+        {isPlaying && !isFocused && (
+          <button
+            type="button"
+            onClick={focusInput}
+            className="absolute inset-x-6 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center gap-2 rounded-xl border border-accent bg-background/95 px-4 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-accent arcade-pulse shadow-xl backdrop-blur-md transition-transform hover:scale-105"
+          >
+            <Zap size={14} className="animate-bounce" />
+            Tap to resume combat
+          </button>
+        )}
+
         {!isPlaying && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 p-6 backdrop-blur-sm">
             {state.status === "idle" && (
@@ -573,6 +597,8 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
             setTyped(e.target.value.replace(/ /g, "").toLowerCase());
           }}
           onPaste={(e) => e.preventDefault()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={(e) => {
             if (e.key === " ") e.preventDefault();
             if (e.key === "Tab" && state.status === "over") {
@@ -585,6 +611,9 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          inputMode="text"
+          enterKeyHint="go"
+          data-gramm="false"
           aria-label={`${definition.name} typing input`}
           className="absolute inset-0 h-full w-full cursor-text opacity-0"
           style={{ fontSize: 16 }}
@@ -794,6 +823,10 @@ function ResultCard({
           <RotateCcw size={15} />
           Play again
         </ArcadeButton>
+
+        <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+          Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to battle again
+        </p>
       </div>
     </div>
   );

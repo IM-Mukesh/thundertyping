@@ -18,7 +18,6 @@ import {
 import { GAME_LIST, type GameDefinition } from "@/lib/games/game-types";
 import {
   DESTROY_EFFECT_MS,
-  LANE_COUNT,
   MISS_FLASH_MS,
   useFallingWords,
   type WordKind,
@@ -36,6 +35,9 @@ import { cn } from "@/lib/utils/cn";
 // of a fixed per-breakpoint value, so it scales to the window instead of
 // overflowing a shorter laptop screen or looking small on a tall monitor.
 const FLOOR_INSET_PCT = 10.5;
+/** Keeps newly spawned words below the HUD row so text is never obscured. */
+const TOP_INSET_PCT = 14;
+const PLAYABLE_HEIGHT_PCT = 100 - FLOOR_INSET_PCT - TOP_INSET_PCT;
 
 /** Words past this fraction are in the danger strip and get a warning colour. */
 const DANGER_FROM = 0.74;
@@ -85,10 +87,21 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
   const bgArt = art?.hero ?? art?.cover ?? null;
   const playerArt = art?.["char-fg"] ?? null;
 
+  const [laneCount, setLaneCount] = useState(6);
+  useEffect(() => {
+    const updateLanes = () => {
+      setLaneCount(window.innerWidth < 640 ? 4 : 6);
+    };
+    updateLanes();
+    window.addEventListener("resize", updateLanes);
+    return () => window.removeEventListener("resize", updateLanes);
+  }, []);
+
   // `start` already rebuilds the initial state, so "Play again" needs it
   // rather than a separate reset.
-  const { state, start, resume, setTyped } = useFallingWords(definition);
+  const { state, start, resume, setTyped } = useFallingWords(definition, { laneCount });
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isFocused, setIsFocused] = useState(true);
 
   const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
   const [isNewBest, setIsNewBest] = useState(false);
@@ -99,6 +112,8 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
   const now = state.elapsedMs;
   const missFlash = state.lastMissMs !== null && now - state.lastMissMs < MISS_FLASH_MS;
   const overdriveActive = state.overdriveMs > 0;
+  const hasDangerWord = state.words.some((w) => w.progress >= DANGER_FROM);
+  const urgentAlert = (state.lives === 1 || definition.id === "word-rain") && hasDangerWord;
 
   // ---- live performance ----------------------------------------------------
 
@@ -230,6 +245,18 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
     focusInput();
   }, [start, focusInput, soundEnabled]);
 
+  useEffect(() => {
+    if (state.status !== "over") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, handleStart]);
+
   const seconds = Math.round(state.elapsedMs / 1000);
   const headline = definition.scoreBy === "time" ? `${seconds}` : state.score.toLocaleString();
   const isPlaying = state.status === "running";
@@ -239,10 +266,11 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
       <div
         onClick={focusInput}
         className={cn(
-          "relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge",
-          overdriveActive && "border-accent",
+          "relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge transition-all duration-300",
+          overdriveActive && "border-accent ring-2 ring-accent/30",
+          urgentAlert && "border-error ring-2 ring-error/60 arcade-pulse",
         )}
-        style={{ height: "clamp(440px, 76vh, 720px)" }}
+        style={{ height: "clamp(320px, 68dvh, 720px)", maxHeight: "min(720px, 86vh)" }}
       >
         {bgArt && (
           <Image
@@ -377,18 +405,12 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                 <span
                   key={word.id}
                   className={cn(
-                    "absolute whitespace-nowrap font-mono text-sm tracking-tight transition-[top] ease-linear sm:text-lg",
-                    "rounded-md border bg-background/70 px-1.5 py-0.5 backdrop-blur-[1px]",
+                    "absolute whitespace-nowrap font-mono text-xs tracking-tight transition-[top] ease-linear sm:text-base md:text-lg",
+                    "rounded-md border bg-background/85 px-1.5 py-0.5 shadow-sm backdrop-blur-[2px]",
                     // The border/glow says "this is locked in" — the text
                     // colour is reserved for "this character is typed",
-                    // never for the word as a whole. Colouring the whole chip
-                    // accent the instant it locks made the untyped remainder
-                    // (which has no colour of its own here) inherit that same
-                    // bright colour, so the moment you typed the first letter
-                    // the entire word looked "done" and there was no visual
-                    // answer to "what do I type next" beyond a faint
-                    // underline.
-                    isTarget ? "border-accent arcade-glow" : inDanger ? "border-error/60" : kindStyle.chip,
+                    // never for the word as a whole.
+                    isTarget ? "border-accent ring-2 ring-accent/40 arcade-glow" : inDanger ? "border-error/70" : kindStyle.chip,
                     inDanger ? "text-error" : "text-foreground",
                     !isTarget && !inDanger && kindStyle.text,
                     word.kind === "golden" && !isTarget && "arcade-pulse",
@@ -397,14 +419,14 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                     // Matches the engine tick so stepped updates read as
                     // continuous motion without running the loop at frame rate.
                     transitionDuration: "50ms",
-                    top: `${word.progress * (100 - FLOOR_INSET_PCT)}%`,
-                    left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / LANE_COUNT)}%`,
+                    top: `${TOP_INSET_PCT + word.progress * PLAYABLE_HEIGHT_PCT}%`,
+                    left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / laneCount)}%`,
                     transform: "translateX(-50%)",
                   }}
                 >
                   {word.kind === "elite" && !isTarget && <Flame size={10} className="mr-1 inline text-error" aria-hidden="true" />}
                   {matched > 0 && (
-                    <span className="text-accent arcade-glow">{word.text.slice(0, matched)}</span>
+                    <span className="text-accent font-semibold arcade-glow">{word.text.slice(0, matched)}</span>
                   )}
                   {word.text.slice(matched)}
                 </span>
@@ -414,8 +436,8 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
             {/* Destroy bursts + real per-word score popups. */}
             {state.destroyed.map((hit) => {
               const t = (now - hit.bornMs) / DESTROY_EFFECT_MS;
-              const y = hit.progress * (100 - FLOOR_INSET_PCT);
-              const x = LANE_INSET_PCT + (hit.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / LANE_COUNT);
+              const y = TOP_INSET_PCT + hit.progress * PLAYABLE_HEIGHT_PCT;
+              const x = LANE_INSET_PCT + (hit.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / laneCount);
               const color = hit.kind === "golden" ? "var(--accent)" : hit.kind === "elite" ? "var(--error)" : "var(--correct)";
               return (
                 <div key={hit.seq} aria-hidden="true" className="pointer-events-none absolute" style={{ left: `${x}%`, top: `${y}%` }}>
@@ -459,9 +481,21 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
 
         {/* Player, anchored to the defense line. */}
         {playerArt && (
-          <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 h-[22%] w-24 -translate-x-1/2 opacity-95 sm:w-32">
+          <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 h-[22%] w-20 -translate-x-1/2 opacity-95 sm:w-28 md:w-32">
             <Image src={playerArt} alt="" fill sizes="160px" className="object-contain object-bottom" />
           </div>
+        )}
+
+        {/* Lost focus indicator */}
+        {isPlaying && !isFocused && (
+          <button
+            type="button"
+            onClick={focusInput}
+            className="absolute inset-x-6 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center gap-2 rounded-xl border border-accent bg-background/95 px-4 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-accent arcade-pulse shadow-xl backdrop-blur-md transition-transform hover:scale-105"
+          >
+            <Zap size={14} className="animate-bounce" />
+            Tap to resume typing
+          </button>
         )}
 
         {!isPlaying && (
@@ -508,6 +542,8 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
           value={state.typed}
           onChange={(e) => setTyped(e.target.value.toLowerCase())}
           onPaste={(e) => e.preventDefault()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={(e) => {
             // Space never commits here — a word clears the instant it matches —
             // so swallow it rather than letting it scroll the page.
@@ -522,6 +558,9 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          inputMode="text"
+          enterKeyHint="go"
+          data-gramm="false"
           aria-label={`${definition.name} typing input`}
           className="absolute inset-0 h-full w-full cursor-text opacity-0"
           style={{ fontSize: 16 }}
@@ -673,6 +712,10 @@ function GameOverCard({
           <RotateCcw size={15} />
           Play again
         </ArcadeButton>
+
+        <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+          Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to restart
+        </p>
       </div>
     </div>
   );

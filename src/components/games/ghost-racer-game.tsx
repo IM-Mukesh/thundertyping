@@ -50,6 +50,7 @@ import {
   RuleCard,
   StartButton,
   StatTile,
+  UpNext,
   WordDisplay,
 } from "@/components/games/ui/game-chrome";
 import { GAME_LIST } from "@/lib/games/game-types";
@@ -274,12 +275,33 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
     setPhase("countdown");
   };
 
+  const [isFocused, setIsFocused] = useState(true);
+
+  // Restart on Enter / Space when game is over
+  useEffect(() => {
+    if (phase !== "done") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        begin();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase]);
+
   const rank = rankFor(bestRun?.wpm ?? 0);
   // Anchored to the car's position rather than the buffer's spaces, so the
   // word on screen is always the word the car is standing on.
   const wordStart = wordStartAt(text, racePosition);
   const currentWord = text.slice(wordStart).split(" ")[0] ?? "";
   const typedInWord = typed.slice(wordStart);
+
+  const upcomingWords = useMemo(() => {
+    const afterCurrent = text.slice(wordStart + currentWord.length).trim();
+    if (!afterCurrent) return [];
+    return afterCurrent.split(" ").slice(0, 4);
+  }, [text, wordStart, currentWord]);
 
   return (
     <div
@@ -320,99 +342,141 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
         </button>
       </div>
 
-      <GameStage art={phase === "done" ? (result?.won ? ART.victory : ART.defeat) : ART.neoncity}>
-        {phase === "idle" && (
-          <div className="flex h-full flex-col justify-between gap-3 overflow-y-auto p-4">
-            <div className="flex items-start gap-3">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-accent/40 sm:h-16 sm:w-16">
-                <Image src={rank.art} alt="" fill sizes="64px" className="object-cover" />
+      <GameStage
+        art={phase === "done" ? (result?.won ? ART.victory : ART.defeat) : ART.neoncity}
+        className="[--board-h:clamp(340px,64dvh,520px)] cursor-pointer"
+      >
+        <div
+          onClick={() => {
+            if (phase === "racing") inputRef.current?.focus();
+          }}
+          className="relative h-full w-full"
+        >
+          {phase === "idle" && (
+            <div className="flex h-full flex-col justify-between gap-3 overflow-y-auto p-4">
+              <div className="flex items-start gap-3">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-accent/40 sm:h-16 sm:w-16">
+                  <Image src={rank.art} alt="" fill sizes="64px" className="object-cover" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-mono text-lg font-bold uppercase tracking-tight text-foreground sm:text-2xl">
+                    {rank.name} <span className="text-accent">rank</span>
+                  </p>
+                  <p className="text-xs text-sub">
+                    {mode === "daily"
+                      ? "Everyone races the same text today. Resets in " +
+                        Math.round(msUntilNextDaily() / 3_600_000) +
+                        "h."
+                      : "Race your fastest recorded run on a fresh word list."}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="font-mono text-lg font-bold uppercase tracking-tight text-foreground sm:text-2xl">
-                  {rank.name} <span className="text-accent">rank</span>
-                </p>
-                <p className="text-xs text-sub">
-                  {mode === "daily"
-                    ? "Everyone races the same text today. Resets in " +
-                      Math.round(msUntilNextDaily() / 3_600_000) +
-                      "h."
-                    : "Race your fastest recorded run on a fresh word list."}
-                </p>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <StatTile icon={<Trophy size={13} />} label="Best WPM" value={bestRun?.wpm ?? "—"} tone="accent" />
+                <StatTile icon={<Target size={13} />} label="Best acc" value={bestRun ? `${bestRun.accuracy}%` : "—"} />
+                <StatTile icon={<Ghost size={13} />} label="Opponent" value={ghost ? (isPacer(ghost) ? "Pacer" : "Your ghost") : "—"} />
+                <StatTile icon={<Keyboard size={13} />} label="Words" value={WORD_COUNT} />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <StatTile icon={<Trophy size={13} />} label="Best WPM" value={bestRun?.wpm ?? "—"} tone="accent" />
-              <StatTile icon={<Target size={13} />} label="Best acc" value={bestRun ? `${bestRun.accuracy}%` : "—"} />
-              <StatTile icon={<Ghost size={13} />} label="Opponent" value={ghost ? (isPacer(ghost) ? "Pacer" : "Your ghost") : "—"} />
-              <StatTile icon={<Keyboard size={13} />} label="Words" value={WORD_COUNT} />
-            </div>
+              {ghost && isPacer(ghost) && (
+                <p className="rounded-lg border border-border bg-background/60 px-3 py-2 text-[11px] text-sub">
+                  No recorded run for this text yet, so you are racing a steady{" "}
+                  {ghost.wpm} WPM pacer rather than a real player. Finish once and
+                  your own run becomes the ghost.
+                </p>
+              )}
 
-            {ghost && isPacer(ghost) && (
-              <p className="rounded-lg border border-border bg-background/60 px-3 py-2 text-[11px] text-sub">
-                No recorded run for this text yet, so you are racing a steady{" "}
-                {ghost.wpm} WPM pacer rather than a real player. Finish once and
-                your own run becomes the ghost.
+              <div className="grid gap-2 sm:grid-cols-3">
+                <RuleCard icon={<Keyboard size={13} />} title="Type to move" body="Your racer advances with every correct character." />
+                <RuleCard icon={<Ghost size={13} />} title="Real timing" body="The ghost replays a real run, hesitations and all." />
+                <RuleCard icon={<Flag size={13} />} title="Beat the time" body="Cross first and your run becomes the next ghost." />
+              </div>
+
+              <StartButton onClick={begin} label={mode === "daily" ? "Start daily race" : "Start race"} />
+            </div>
+          )}
+
+          {phase === "countdown" && (
+            <div className="flex h-full items-center justify-center">
+              <p
+                key={countdown}
+                className="font-mono text-7xl font-bold text-accent arcade-glow motion-safe:animate-ping"
+                style={{ animationDuration: "0.6s", animationIterationCount: 1 }}
+              >
+                {countdown > 0 ? countdown : "GO"}
               </p>
-            )}
-
-            <div className="grid gap-2 sm:grid-cols-3">
-              <RuleCard icon={<Keyboard size={13} />} title="Type to move" body="Your racer advances with every correct character." />
-              <RuleCard icon={<Ghost size={13} />} title="Real timing" body="The ghost replays a real run, hesitations and all." />
-              <RuleCard icon={<Flag size={13} />} title="Beat the time" body="Cross first and your run becomes the next ghost." />
             </div>
+          )}
 
-            <StartButton onClick={begin} label={mode === "daily" ? "Start daily race" : "Start race"} />
-          </div>
-        )}
+          {phase === "racing" && (
+            <div className="flex h-full flex-col justify-between gap-3 p-3 sm:p-4">
+              <div className="flex flex-col gap-2">
+                <Lane label="You" pct={playerPct} art={ART.bike} tone="accent" />
+                <Lane label={ghost && isPacer(ghost) ? "Pacer" : "Ghost"} pct={ghostPct} art={ART.bikeGhost} tone="ghost" />
+              </div>
 
-        {phase === "countdown" && (
-          <div className="flex h-full items-center justify-center">
-            <p
-              key={countdown}
-              className="font-mono text-7xl font-bold text-accent arcade-glow motion-safe:animate-ping"
-              style={{ animationDuration: "0.6s", animationIterationCount: 1 }}
-            >
-              {countdown > 0 ? countdown : "GO"}
-            </p>
-          </div>
-        )}
+              <div className="flex flex-col items-center gap-2">
+                <WordDisplay word={currentWord} typed={typedInWord} />
+                {typedInWord.length >= currentWord.length && (
+                  <span className="font-mono text-xs font-bold text-accent animate-pulse">
+                    Press ␣ Space
+                  </span>
+                )}
+                <UpNext words={upcomingWords} />
+              </div>
 
-        {phase === "racing" && (
-          <div className="flex h-full flex-col justify-between gap-3 p-3 sm:p-4">
-            <div className="flex flex-col gap-2">
-              <Lane label="You" pct={playerPct} art={ART.bike} tone="accent" />
-              <Lane label={ghost && isPacer(ghost) ? "Pacer" : "Ghost"} pct={ghostPct} art={ART.bikeGhost} tone="ghost" />
+              <div className="grid grid-cols-3 gap-2">
+                <StatTile icon={<Timer size={13} />} label="Time" value={(elapsed / 1000).toFixed(1) + "s"} />
+                <StatTile icon={<Gauge size={13} />} label="WPM" value={wpm} tone="accent" />
+                <StatTile icon={<Target size={13} />} label="Accuracy" value={`${accuracy}%`} tone={accuracy >= 95 ? "good" : "default"} />
+              </div>
+
+              {/* Lost focus alert */}
+              {!isFocused && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm transition-all"
+                  aria-label="Tap to resume racing"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent animate-bounce">
+                    <Gauge size={24} />
+                  </div>
+                  <span className="font-mono text-sm font-semibold tracking-wide text-foreground">
+                    Tap to resume racing
+                  </span>
+                  <span className="font-mono text-xs text-sub">Focus lost</span>
+                </button>
+              )}
             </div>
+          )}
 
-            <WordDisplay word={currentWord} typed={typedInWord} />
-
-            <div className="grid grid-cols-3 gap-2">
-              <StatTile icon={<Timer size={13} />} label="Time" value={(elapsed / 1000).toFixed(1) + "s"} />
-              <StatTile icon={<Gauge size={13} />} label="WPM" value={wpm} tone="accent" />
-              <StatTile icon={<Target size={13} />} label="Accuracy" value={`${accuracy}%`} tone={accuracy >= 95 ? "good" : "default"} />
-            </div>
-          </div>
-        )}
-
-        {phase === "done" && result && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
-            <p className="font-mono text-2xl font-bold uppercase text-foreground arcade-glow">
-              {result.won ? "You win" : "Ghost wins"}
-            </p>
-            {result.record && (
-              <p className="font-mono text-xs uppercase tracking-wider text-accent">
-                New personal record
+          {phase === "done" && result && (
+            <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
+              <p className="font-mono text-2xl font-bold uppercase text-foreground arcade-glow">
+                {result.won ? "You win" : "Ghost wins"}
               </p>
-            )}
-            <div className="grid w-full max-w-sm grid-cols-3 gap-2">
-              <StatTile icon={<Gauge size={13} />} label="WPM" value={result.wpm} tone="accent" />
-              <StatTile icon={<Target size={13} />} label="Accuracy" value={`${result.acc}%`} />
-              <StatTile icon={<Trophy size={13} />} label="Rank" value={rankFor(result.wpm).name} />
+              {result.record && (
+                <p className="font-mono text-xs uppercase tracking-wider text-accent">
+                  New personal record
+                </p>
+              )}
+              <div className="grid w-full max-w-sm grid-cols-3 gap-2">
+                <StatTile icon={<Gauge size={13} />} label="WPM" value={result.wpm} tone="accent" />
+                <StatTile icon={<Target size={13} />} label="Accuracy" value={`${result.acc}%`} />
+                <StatTile icon={<Trophy size={13} />} label="Rank" value={rankFor(result.wpm).name} />
+              </div>
+              <StartButton onClick={begin} label="Race again" />
+              <p className="font-mono text-[10px] text-sub">
+                Press Space or Enter to race again
+              </p>
             </div>
-            <StartButton onClick={begin} label="Race again" />
-          </div>
-        )}
+          )}
+        </div>
       </GameStage>
 
       {(phase === "racing" || phase === "countdown") && (
@@ -420,18 +484,14 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
           ref={inputRef}
           value={typed}
           onChange={(e) => handleInput(e.target.value)}
-          // Every other typing surface on this site blocks paste (a whole
-          // race pasted in one event finishes at a near-zero duration, and
-          // that run then gets saved as the new ghost -- an unbeatable
-          // phantom for everyone who races this text afterward). This was
-          // the one game missing the guard.
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onPaste={(e) => e.preventDefault()}
           aria-label="Type the race text"
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          // 16px minimum, or iOS zooms the page on focus.
           className="w-full rounded-lg border border-border bg-sub-alt px-3 py-3 text-center font-mono text-base text-foreground outline-none focus:border-accent"
           placeholder="type here…"
         />
@@ -468,15 +528,9 @@ function Lane({
           )}
           style={{ width: `${clamped}%` }}
         />
-        {/* The machine rides the track.
-            The horizontal anchor interpolates with progress: at 0% it is
-            left-aligned, at 100% it is pulled back by exactly its own width.
-            Subtracting a fixed pixel amount instead only works for one sprite
-            size -- it was tuned to the 48px mobile sprite and let the 64px
-            desktop one overhang the finish by 16px, clipping the bike at the
-            single most important moment of the race. */}
+        {/* The machine rides the track with responsive sprite sizing */}
         <div
-          className="absolute top-1/2 h-7 w-12 transition-[left,transform] duration-100 sm:h-9 sm:w-16"
+          className="absolute top-1/2 h-6 w-9 transition-[left,transform] duration-100 min-[400px]:h-7 min-[400px]:w-12 sm:h-9 sm:w-16"
           style={{
             left: `${clamped}%`,
             transform: `translate(-${clamped}%, -50%)`,

@@ -315,7 +315,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
           if (t) {
             const b = t.statuses.blight;
             if (b > 0) {
-              if (b >= 20) grantAchievement("card-battle:combo");
+              if (b >= 20) queueMicrotask(() => grantAchievement("card-battle:combo"));
               dealTo(t, b, true);
               t.statuses = { ...t.statuses, blight: 0 };
             }

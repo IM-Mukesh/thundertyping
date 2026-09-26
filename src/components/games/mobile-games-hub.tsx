@@ -62,15 +62,15 @@ export function MobileGamesHub({
   // Top showcase features marquee games with cut-out character art & signature mechanics
   const featuredGames = useMemo(() => {
     const marqueeIds = [
-      "spellbound",
+      "fruit-fury",
       "typing-survivor",
       "ghost-racer",
       "card-battle",
       "boss-battle",
       "combo-rush",
     ];
-    const marquee = games.filter((g) => marqueeIds.includes(g.id));
-    return marquee.length > 0 ? marquee : games.slice(0, 6);
+    const marquee = games.filter((g) => marqueeIds.includes(g.id) && !g.upcoming);
+    return marquee.length > 0 ? marquee : games.filter((g) => !g.upcoming).slice(0, 6);
   }, [games]);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -99,7 +99,9 @@ export function MobileGamesHub({
     if (q) {
       list = list.filter((g) => g.name.toLowerCase().includes(q) || g.tagline.toLowerCase().includes(q));
     }
-    return list;
+    const filtered = [...list];
+    filtered.sort((a, b) => Number(Boolean(a.upcoming)) - Number(Boolean(b.upcoming)));
+    return filtered;
   }, [games, selectedCategory, searchQuery]);
 
   // Clean trigger for complete swipe transition (left or right)
@@ -615,9 +617,15 @@ export function MobileGamesHub({
                   )}
 
                   {/* Category Pill */}
-                  <span className="absolute top-2.5 left-2.5 z-20 rounded bg-background/85 border border-border/70 px-2 py-0.5 font-display text-[8px] font-bold uppercase tracking-wider text-accent backdrop-blur-xs">
-                    {game.category}
-                  </span>
+                  {game.upcoming ? (
+                    <span className="absolute top-2.5 left-2.5 z-20 rounded bg-amber-500/20 border border-amber-500/50 px-2 py-0.5 font-display text-[8px] font-bold uppercase tracking-wider text-amber-300 backdrop-blur-xs shadow">
+                      Upcoming
+                    </span>
+                  ) : (
+                    <span className="absolute top-2.5 left-2.5 z-20 rounded bg-background/85 border border-border/70 px-2 py-0.5 font-display text-[8px] font-bold uppercase tracking-wider text-accent backdrop-blur-xs">
+                      {game.category}
+                    </span>
+                  )}
 
                   {/* Duration */}
                   <span className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 rounded bg-background/85 px-1.5 py-0.5 font-mono text-[8px] text-sub backdrop-blur-xs">
@@ -649,17 +657,29 @@ export function MobileGamesHub({
                       <GameBestBadge definition={game} />
                     </div>
 
-                    <Link
-                      href={`/games/${game.id}`}
-                      className={cn(
-                        "flex h-8 w-full items-center justify-center gap-1.5 rounded-lg",
-                        "bg-accent/20 border border-accent/40 font-display text-[10px] font-bold uppercase tracking-wider text-accent",
-                        "transition-all duration-200 active:scale-95 hover:bg-accent hover:text-background",
-                      )}
-                    >
-                      <Play size={10} className="fill-current" />
-                      Play Game
-                    </Link>
+                    {game.upcoming ? (
+                      <div
+                        className={cn(
+                          "flex h-8 w-full items-center justify-center gap-1.5 rounded-lg select-none",
+                          "bg-sub-alt/40 border border-border/60 font-display text-[10px] font-bold uppercase tracking-wider text-sub cursor-not-allowed",
+                        )}
+                      >
+                        <Clock size={10} />
+                        Upcoming
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/games/${game.id}`}
+                        className={cn(
+                          "flex h-8 w-full items-center justify-center gap-1.5 rounded-lg",
+                          "bg-accent/20 border border-accent/40 font-display text-[10px] font-bold uppercase tracking-wider text-accent",
+                          "transition-all duration-200 active:scale-95 hover:bg-accent hover:text-background",
+                        )}
+                      >
+                        <Play size={10} className="fill-current" />
+                        Play Game
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

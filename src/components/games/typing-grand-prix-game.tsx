@@ -207,13 +207,14 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
 
+  const [isFocused, setIsFocused] = useState(true);
+
   const handleStart = useCallback(() => {
     setIsNewBest(false);
     playSound("start", soundEnabled);
     sound("race-start", soundEnabled);
     start();
-    focusInput();
-  }, [start, focusInput, soundEnabled]);
+  }, [start, soundEnabled]);
 
   const accuracy = round(
     calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes, state.missedChars),
@@ -225,6 +226,24 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   const countdown = Math.max(1, Math.ceil(state.leadInMs / LEAD_IN_BEAT_MS));
   const charsToFinish = Math.max(0, Math.round((1 - state.playerProgress) * state.totalChars));
 
+  useEffect(() => {
+    if (state.status === "running" && !inLeadIn) {
+      focusInput();
+    }
+  }, [state.status, inLeadIn, focusInput]);
+
+  useEffect(() => {
+    if (state.status !== "over") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, handleStart]);
+
   const standings = [
     { id: -1, name: "You", isPlayer: true, progress: state.playerProgress },
     ...state.opponents.map((o, i) => ({ id: o.id, name: OPPONENT_IDENTITY[i]?.name ?? `Rival ${i + 1}`, isPlayer: false, progress: o.progress })),
@@ -234,7 +253,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     <div className="flex w-full max-w-5xl flex-col gap-3" onClick={focusInput}>
       <div
         className="relative w-full overflow-hidden rounded-2xl border border-border bg-background"
-        style={{ height: "clamp(480px, 80vh, 760px)" }}
+        style={{ height: "clamp(340px, 64dvh, 720px)", maxHeight: "min(720px, 86vh)" }}
       >
         {bgArt && (
           <Image
@@ -262,10 +281,16 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           {/* Top row */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-1.5">
-              <span className="flex items-center gap-1.5 rounded-md border border-border/60 bg-background/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-sub backdrop-blur-sm">
-                <Flag size={11} className="text-accent" aria-hidden="true" />
-                Lap {lap} / {LAP_COUNT}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 rounded-md border border-border/60 bg-background/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-sub backdrop-blur-sm">
+                  <Flag size={11} className="text-accent" aria-hidden="true" />
+                  Lap {lap} / {LAP_COUNT}
+                </span>
+                <span className="flex items-center gap-1 rounded-md border border-border/60 bg-background/70 px-2 py-1 font-mono text-[10px] font-bold text-accent sm:hidden">
+                  <Gauge size={10} className={speedTier(liveWpm)} />
+                  {Math.round(liveWpm * 2.6)} <span className="text-[8px] font-normal text-sub">km/h</span>
+                </span>
+              </div>
               <span
                 className="flex items-center gap-1.5 font-mono text-lg font-bold tabular-nums text-accent arcade-glow sm:text-xl"
                 aria-label={`Position ${position} of ${LANE_COUNT}`}
@@ -506,6 +531,18 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           </div>
         )}
 
+        {/* Lost focus alert */}
+        {isPlaying && !inLeadIn && !isFocused && (
+          <button
+            type="button"
+            onClick={focusInput}
+            className="absolute inset-x-6 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center gap-2 rounded-xl border border-accent bg-background/95 px-4 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-accent arcade-pulse shadow-xl backdrop-blur-md transition-transform hover:scale-105"
+          >
+            <Zap size={14} className="animate-bounce" />
+            Tap to resume steering
+          </button>
+        )}
+
         {!isPlaying && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 p-6 backdrop-blur-sm">
             {state.status === "idle" && (
@@ -557,6 +594,8 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
             setTyped(value);
           }}
           onPaste={(e) => e.preventDefault()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={(e) => {
             if (e.key === " ") {
               e.preventDefault();
@@ -572,6 +611,9 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          inputMode="text"
+          enterKeyHint="go"
+          data-gramm="false"
           aria-label={`${definition.name} typing input`}
           className="absolute inset-0 h-full w-full cursor-text opacity-0"
           style={{ fontSize: 16 }}
@@ -636,10 +678,10 @@ function WordStrip({ state, dimmed }: { state: GrandPrixState; dimmed: boolean }
     >
       <p className="text-center font-mono text-[9px] uppercase tracking-[0.3em] text-sub">Type to accelerate</p>
       <div
-        className="flex h-9 items-baseline gap-3 overflow-hidden whitespace-nowrap font-mono text-xl leading-none sm:text-2xl"
+        className="flex h-9 items-baseline gap-3 overflow-hidden whitespace-nowrap font-mono text-base min-[400px]:text-lg sm:text-2xl leading-none"
         style={{
-          maskImage: "linear-gradient(to right, black 72%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to right, black 72%, transparent 100%)",
+          maskImage: "linear-gradient(to right, black 80%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to right, black 80%, transparent 100%)",
         }}
       >
         {active !== undefined && <ActiveWord target={active} typed={state.typed} />}
@@ -850,6 +892,10 @@ function ResultCard({
           <RotateCcw size={15} />
           Race again
         </ArcadeButton>
+
+        <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+          Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to race again
+        </p>
       </div>
     </div>
   );

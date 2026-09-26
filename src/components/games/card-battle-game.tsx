@@ -14,7 +14,7 @@
  */
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Coins,
   Heart,
@@ -122,6 +122,21 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
     [game, soundEnabled],
   );
 
+  const [isFocused, setIsFocused] = useState(true);
+
+  // Restart on Enter / Space when game is over
+  useEffect(() => {
+    if (state.phase !== "victory" && state.phase !== "defeat") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        game.reset();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.phase, game]);
+
   return (
     <div className="flex w-full max-w-3xl flex-col gap-3" style={{ ["--accent" as string]: ACCENT }}>
       {state.phase !== "select" && (
@@ -145,147 +160,180 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
       <GameStage
         art={game.encounter?.background}
         danger={state.hp / Math.max(1, state.maxHp) < 0.3}
+        className="[--board-h:clamp(360px,64dvh,540px)] cursor-pointer"
       >
-        {state.banner && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="pointer-events-none absolute inset-x-3 top-3 z-40 rounded-lg border border-accent/60 bg-background/90 px-3 py-2 text-center font-mono text-[11px] uppercase tracking-wider text-accent backdrop-blur-sm"
-          >
-            {state.banner}
-          </div>
-        )}
-
-        {state.phase === "select" && (
-          <div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
-            <h2 className="text-center font-mono text-sm uppercase tracking-widest text-accent">
-              Choose a deck
-            </h2>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {STARTER_DECKS.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => handleStart(d.id)}
-                  className="flex min-h-11 flex-col gap-1 rounded-lg border border-border bg-sub-alt/40 p-3 text-left transition-colors hover:border-accent"
-                >
-                  <span className="font-mono text-xs font-bold text-foreground">{d.name}</span>
-                  <span className="text-[11px] leading-snug text-sub">{d.blurb}</span>
-                </button>
-              ))}
+        <div
+          onClick={() => {
+            if (state.phase === "combat") inputRef.current?.focus();
+          }}
+          className="relative h-full w-full"
+        >
+          {state.banner && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="pointer-events-none absolute inset-x-3 top-3 z-40 rounded-lg border border-accent/60 bg-background/90 px-3 py-2 text-center font-mono text-[11px] uppercase tracking-wider text-accent backdrop-blur-sm"
+            >
+              {state.banner}
             </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <RuleCard icon={<Swords size={13} />} title="Type to play" body="Every card has a word. Type it to play the card." />
-              <RuleCard icon={<Zap size={13} />} title="Spend energy" body="Cards cost energy. End your turn when it runs out." />
-              <RuleCard icon={<Sparkles size={13} />} title="Build combos" body="Weak cards win together. Blight, double it, then rupture." />
-            </div>
-          </div>
-        )}
+          )}
 
-        {state.phase === "combat" && (
-          <div className="flex h-full flex-col justify-between gap-2 p-3">
-            <div className="flex items-start justify-center gap-2 sm:gap-4">
-              {game.aliveEnemies.map((e) => (
-                <EnemyCard
-                  key={e.uid}
-                  enemy={e}
-                  focused={e.uid === state.focus}
-                  onFocus={() => game.setFocus(e.uid)}
-                />
-              ))}
-            </div>
-
-            {(state.minions.length > 0 || hasAnyStatus(state.statuses)) && (
-              <div className="flex flex-wrap items-center justify-center gap-1.5">
-                <StatusRow statuses={state.statuses} />
-                {state.minions.map((m) => (
-                  <span key={m.uid} className="rounded border border-accent/40 px-1.5 py-0.5 font-mono text-[9px] text-accent">
-                    {m.name} {m.turns}t
-                  </span>
+          {state.phase === "select" && (
+            <div className="flex h-full flex-col gap-3 overflow-y-auto p-4">
+              <h2 className="text-center font-mono text-sm uppercase tracking-widest text-accent">
+                Choose a deck
+              </h2>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {STARTER_DECKS.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => handleStart(d.id)}
+                    className="flex min-h-11 flex-col gap-1 rounded-lg border border-border bg-sub-alt/40 p-3 text-left transition-colors hover:border-accent"
+                  >
+                    <span className="font-mono text-xs font-bold text-foreground">{d.name}</span>
+                    <span className="text-[11px] leading-snug text-sub">{d.blurb}</span>
+                  </button>
                 ))}
               </div>
-            )}
+              <div className="grid gap-2 sm:grid-cols-3">
+                <RuleCard icon={<Swords size={13} />} title="Type to play" body="Every card has a word. Type it to play the card." />
+                <RuleCard icon={<Zap size={13} />} title="Spend energy" body="Cards cost energy. End your turn when it runs out." />
+                <RuleCard icon={<Sparkles size={13} />} title="Build combos" body="Weak cards win together. Blight, double it, then rupture." />
+              </div>
+            </div>
+          )}
 
-            {/* The hand scrolls rather than shrinking: a card that no longer
-                fits its own rules text is not a smaller card, it is a broken
-                one. */}
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-              {game.handDefs.map(({ inst, def, face }) =>
-                def && face ? (
-                  <HandCard
-                    key={inst.uid}
-                    def={def}
-                    upgraded={inst.upgraded}
-                    text={face.text}
-                    cost={face.cost}
-                    typed={state.typed}
-                    affordable={state.energy >= face.cost || state.nextFree}
-                    onClick={() => game.playCard(inst.uid)}
+          {state.phase === "combat" && (
+            <div className="flex h-full flex-col justify-between gap-2 p-3">
+              <div className="flex items-start justify-center gap-2 sm:gap-4">
+                {game.aliveEnemies.map((e) => (
+                  <EnemyCard
+                    key={e.uid}
+                    enemy={e}
+                    focused={e.uid === state.focus}
+                    onFocus={() => game.setFocus(e.uid)}
                   />
-                ) : null,
+                ))}
+              </div>
+
+              {(state.minions.length > 0 || hasAnyStatus(state.statuses)) && (
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <StatusRow statuses={state.statuses} />
+                  {state.minions.map((m) => (
+                    <span key={m.uid} className="rounded border border-accent/40 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+                      {m.name} {m.turns}t
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Hand cards with smooth scroll and touch swipe protection */}
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {game.handDefs.map(({ inst, def, face }) =>
+                  def && face ? (
+                    <HandCard
+                      key={inst.uid}
+                      def={def}
+                      upgraded={inst.upgraded}
+                      text={face.text}
+                      cost={face.cost}
+                      typed={state.typed}
+                      affordable={state.energy >= face.cost || state.nextFree}
+                      onClick={() => game.playCard(inst.uid)}
+                    />
+                  ) : null,
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-sub">
+                  Draw {state.draw.length} · Discard {state.discard.length}
+                </span>
+                <span className="hidden font-mono text-[10px] text-sub/70 sm:inline">
+                  (Tap card or type keyword)
+                </span>
+                <button
+                  type="button"
+                  onClick={game.endTurn}
+                  className="ml-auto min-h-11 rounded-lg border border-accent bg-accent/10 px-4 font-mono text-xs uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-background sm:min-h-9"
+                >
+                  End turn
+                </button>
+              </div>
+
+              {/* Lost focus alert */}
+              {!isFocused && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm transition-all"
+                  aria-label="Tap to resume combat"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent animate-bounce">
+                    <Swords size={24} />
+                  </div>
+                  <span className="font-mono text-sm font-semibold tracking-wide text-foreground">
+                    Tap to resume typing
+                  </span>
+                  <span className="font-mono text-xs text-sub">Or tap cards directly to play</span>
+                </button>
               )}
             </div>
+          )}
 
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-sub">
-                Draw {state.draw.length} · Discard {state.discard.length}
-              </span>
+          {state.phase === "reward" && (
+            <div className="flex h-full flex-col justify-center gap-3 overflow-y-auto p-4">
+              <h2 className="text-center font-mono text-sm uppercase tracking-widest text-accent">
+                Add a card
+              </h2>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {game.offerDefs.map((def) => (
+                  <button
+                    key={def.id}
+                    type="button"
+                    onClick={() => game.takeReward(def.id)}
+                    className="flex min-h-11 flex-col gap-1.5 rounded-lg border border-border bg-sub-alt/40 p-3 text-left transition-colors hover:border-accent"
+                  >
+                    <span className="flex items-center gap-2">
+                      <CardSigil type={def.type} rarity={def.rarity} size={26} />
+                      <span className="font-mono text-xs font-bold text-foreground">{def.name}</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-accent">type: {def.word}</span>
+                    <span className="text-[11px] leading-snug text-sub">{faceOf(def, false).text}</span>
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
-                onClick={game.endTurn}
-                className="ml-auto min-h-11 rounded-lg border border-accent px-4 font-mono text-xs uppercase tracking-wider text-accent transition-colors hover:bg-accent hover:text-background sm:min-h-9"
+                onClick={() => game.takeReward(null)}
+                className="mx-auto min-h-11 px-4 font-mono text-xs text-sub underline decoration-dotted hover:text-foreground"
               >
-                End turn
+                skip — a smaller deck draws its combo more often
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {state.phase === "reward" && (
-          <div className="flex h-full flex-col justify-center gap-3 overflow-y-auto p-4">
-            <h2 className="text-center font-mono text-sm uppercase tracking-widest text-accent">
-              Add a card
-            </h2>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {game.offerDefs.map((def) => (
-                <button
-                  key={def.id}
-                  type="button"
-                  onClick={() => game.takeReward(def.id)}
-                  className="flex min-h-11 flex-col gap-1.5 rounded-lg border border-border bg-sub-alt/40 p-3 text-left transition-colors hover:border-accent"
-                >
-                  <span className="flex items-center gap-2">
-                    <CardSigil type={def.type} rarity={def.rarity} size={26} />
-                    <span className="font-mono text-xs font-bold text-foreground">{def.name}</span>
-                  </span>
-                  <span className="font-mono text-[10px] text-accent">type: {def.word}</span>
-                  <span className="text-[11px] leading-snug text-sub">{faceOf(def, false).text}</span>
-                </button>
-              ))}
+          {(state.phase === "victory" || state.phase === "defeat") && (
+            <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
+              <p className="font-mono text-xl font-bold uppercase text-foreground arcade-glow">
+                {state.phase === "victory" ? "The house rises" : "The curtain falls"}
+              </p>
+              <div className="grid w-full max-w-sm grid-cols-3 gap-2">
+                <StatTile icon={<Swords size={13} />} label="Fights won" value={state.node} />
+                <StatTile icon={<Sparkles size={13} />} label="Deck size" value={state.deck.length} tone="accent" />
+                <StatTile icon={<Coins size={13} />} label="Score" value={state.score} />
+              </div>
+              <StartButton onClick={() => game.reset()} label="New run" />
+              <p className="font-mono text-[10px] text-sub">
+                Press Space or Enter to restart
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => game.takeReward(null)}
-              className="mx-auto min-h-11 px-4 font-mono text-xs text-sub underline decoration-dotted hover:text-foreground"
-            >
-              skip — a smaller deck draws its combo more often
-            </button>
-          </div>
-        )}
-
-        {(state.phase === "victory" || state.phase === "defeat") && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
-            <p className="font-mono text-xl font-bold uppercase text-foreground arcade-glow">
-              {state.phase === "victory" ? "The house rises" : "The curtain falls"}
-            </p>
-            <div className="grid w-full max-w-sm grid-cols-3 gap-2">
-              <StatTile icon={<Swords size={13} />} label="Fights won" value={state.node} />
-              <StatTile icon={<Sparkles size={13} />} label="Deck size" value={state.deck.length} tone="accent" />
-              <StatTile icon={<Coins size={13} />} label="Score" value={state.score} />
-            </div>
-            <StartButton onClick={() => game.reset()} label="New run" />
-          </div>
-        )}
+          )}
+        </div>
       </GameStage>
 
       {state.phase === "combat" && (
@@ -293,6 +341,8 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
           ref={inputRef}
           value={state.typed}
           onChange={(e) => game.setTyped(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           aria-label="Type a card name"
           autoComplete="off"
           autoCapitalize="off"
@@ -319,7 +369,7 @@ function StatusRow({ statuses }: { statuses: Statuses }) {
         <span
           key={k}
           title={STATUS_META[k].description}
-          className="rounded border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] text-sub"
+          className="rounded border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[10px] text-sub"
         >
           {/* Glyph plus name plus number, never a bare coloured dot: a status
               the player cannot name is one they cannot play around. */}
@@ -358,7 +408,7 @@ function EnemyCard({
       <div
         className={cn(
           "relative h-16 w-16 overflow-hidden rounded-lg border transition-colors sm:h-20 sm:w-20",
-          enemy.hitFlash > 0 ? "border-warning" : focused ? "border-accent" : "border-border",
+          enemy.hitFlash > 0 ? "border-warning" : focused ? "border-accent ring-2 ring-accent/50 shadow-md shadow-accent/20" : "border-border",
         )}
       >
         <Image src={enemy.def.art} alt={enemy.def.name} fill sizes="80px" className="object-cover" />
@@ -399,23 +449,34 @@ function HandCard({
   affordable: boolean;
   onClick: () => void;
 }) {
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const matching = typed.length > 0 && def.word.startsWith(typed);
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onPointerDown={(e) => {
+        pointerStart.current = { x: e.clientX, y: e.clientY };
+      }}
+      onClick={() => {
+        if (pointerStart.current) {
+          const dx = Math.abs(window.event && "clientX" in window.event ? (window.event as MouseEvent).clientX - pointerStart.current.x : 0);
+          if (dx > 12) return;
+        }
+        onClick();
+      }}
       className={cn(
-        "flex w-32 shrink-0 flex-col gap-1 rounded-lg border p-2 text-left transition-all sm:w-36",
+        "flex w-28 min-[400px]:w-32 shrink-0 flex-col gap-1 rounded-lg border p-2 text-left transition-all sm:w-36 select-none",
         matching
-          ? "-translate-y-1 border-accent bg-accent/10"
+          ? "-translate-y-1.5 border-accent bg-accent/15 ring-2 ring-accent shadow-md shadow-accent/20"
           : affordable
-            ? "border-border bg-sub-alt/50 hover:border-accent/60"
+            ? "border-border bg-sub-alt/60 hover:border-accent/60 active:scale-95"
             : "border-border/50 bg-sub-alt/20 opacity-55",
       )}
     >
       <div className="flex items-center justify-between gap-1">
         <CardSigil type={def.type} rarity={def.rarity} size={22} />
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent font-mono text-[10px] font-bold text-background">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent font-mono text-[10px] font-bold text-background shadow">
           {cost}
         </span>
       </div>
@@ -425,7 +486,7 @@ function HandCard({
       </span>
       <span className="font-mono text-[10px] leading-none">
         {def.word.split("").map((ch, i) => (
-          <span key={i} className={matching && i < typed.length ? "text-accent" : "text-sub"}>
+          <span key={i} className={matching && i < typed.length ? "text-accent font-bold" : "text-sub"}>
             {ch}
           </span>
         ))}

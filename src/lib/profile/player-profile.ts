@@ -137,7 +137,9 @@ export function parseProfile(raw: string | null): PlayerProfile {
 function write(profile: PlayerProfile): void {
   setStorageItem(KEY, JSON.stringify(profile));
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(CHANGE_EVENT));
+    queueMicrotask(() => {
+      window.dispatchEvent(new Event(CHANGE_EVENT));
+    });
   }
 }
 

@@ -72,6 +72,10 @@ export function GameHubFilters({
         (a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)),
       );
     }
+    // Always place upcoming/in-development games at the very end of any sort
+    sorted.sort(
+      (a, b) => Number(Boolean(a.upcoming)) - Number(Boolean(b.upcoming)),
+    );
     return sorted;
   }, [games, filter, sort, searchQuery]);
 

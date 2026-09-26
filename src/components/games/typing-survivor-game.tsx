@@ -206,6 +206,21 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     checkSiteAchievements(GAME_LIST.map((g) => g.id));
   }, [state.phase, state.wave, state.score, state.bestCombo]);
 
+  const [isFocused, setIsFocused] = useState(true);
+
+  // Restart on Enter / Space when game is over
+  useEffect(() => {
+    if (state.phase !== "over" && state.phase !== "won") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        game.reset();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.phase, game]);
+
   const handleStart = (id: string) => {
     resumeAudio();
     sound("select", soundEnabled);
@@ -248,8 +263,18 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
         </div>
       )}
 
-      <GameStage art={background} danger={state.hp / Math.max(1, state.maxHp) < 0.3}>
-        <div ref={boardRef} className="relative h-full w-full">
+      <GameStage
+        art={background}
+        danger={state.hp / Math.max(1, state.maxHp) < 0.3}
+        className="[--board-h:clamp(320px,58dvh,500px)] cursor-pointer"
+      >
+        <div
+          ref={boardRef}
+          onClick={() => {
+            if (state.phase === "playing") inputRef.current?.focus();
+          }}
+          className="relative h-full w-full"
+        >
           <canvas
             ref={canvasRef}
             aria-hidden="true"
@@ -300,8 +325,47 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
 
           {state.phase === "playing" && (
             <>
+              {/* Targeting laser beam connecting player to locked enemy */}
+              {state.lockedUid && (() => {
+                const lockedEnemy = game.alive.find((e) => e.uid === state.lockedUid);
+                if (!lockedEnemy) return null;
+                const radius = 0.5 - 0.5 * lockedEnemy.progress;
+                const rawTargetX = 50 + Math.cos(lockedEnemy.angle) * radius * 82;
+                const rawTargetY = 50 + Math.sin(lockedEnemy.angle) * radius * 78;
+                const targetX = Math.max(8, Math.min(92, rawTargetX));
+                const targetY = Math.max(8, Math.min(92, rawTargetY));
+                return (
+                  <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
+                    <defs>
+                      <linearGradient id="survivorLaser" x1="50%" y1="50%" x2={`${targetX}%`} y2={`${targetY}%`}>
+                        <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.9" />
+                        <stop offset="100%" stopColor="#fde68a" stopOpacity="0.4" />
+                      </linearGradient>
+                    </defs>
+                    <line
+                      x1="50%"
+                      y1="50%"
+                      x2={`${targetX}%`}
+                      y2={`${targetY}%`}
+                      stroke="url(#survivorLaser)"
+                      strokeWidth="2.5"
+                      strokeDasharray="4 3"
+                      className="animate-pulse"
+                    />
+                  </svg>
+                );
+              })()}
+
               {game.alive.map((e) => (
-                <EnemySprite key={e.uid} enemy={e} locked={e.uid === state.lockedUid} />
+                <EnemySprite
+                  key={e.uid}
+                  enemy={e}
+                  locked={e.uid === state.lockedUid}
+                  onSelect={() => {
+                    game.setTyped(e.word.slice(0, 1));
+                    inputRef.current?.focus();
+                  }}
+                />
               ))}
               {/* The player sits at the centre; everything converges on it. */}
               <div
@@ -313,6 +377,27 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
                 <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 font-mono text-sm text-sub">
                   paused
                 </div>
+              )}
+
+              {/* Lost focus prompt */}
+              {!isFocused && !game.paused && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm transition-all"
+                  aria-label="Tap to resume firing"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent animate-bounce">
+                    <Swords size={24} />
+                  </div>
+                  <span className="font-mono text-sm font-semibold tracking-wide text-foreground">
+                    Tap to resume firing
+                  </span>
+                  <span className="font-mono text-xs text-sub">Focus lost</span>
+                </button>
               )}
             </>
           )}
@@ -357,6 +442,9 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
                 </p>
               )}
               <StartButton onClick={() => game.reset()} label="Run again" />
+              <p className="font-mono text-[10px] text-sub">
+                Press Space or Enter to restart
+              </p>
             </div>
           )}
         </div>
@@ -367,6 +455,8 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
           ref={inputRef}
           value={state.typed}
           onChange={(e) => game.setTyped(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           aria-label="Type an enemy's word"
           autoComplete="off"
           autoCapitalize="off"
@@ -391,21 +481,37 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
  */
 function placeEnemy(e: Enemy, w: number, h: number): { x: number; y: number } {
   const radius = 0.5 - 0.5 * e.progress;
+  const rawX = w / 2 + Math.cos(e.angle) * radius * w * 0.82;
+  const rawY = h / 2 + Math.sin(e.angle) * radius * h * 0.78;
   return {
-    x: w / 2 + Math.cos(e.angle) * radius * w * 0.82,
-    y: h / 2 + Math.sin(e.angle) * radius * h * 0.78,
+    x: Math.max(w * 0.08, Math.min(w * 0.92, rawX)),
+    y: Math.max(h * 0.08, Math.min(h * 0.92, rawY)),
   };
 }
 
-function EnemySprite({ enemy, locked }: { enemy: Enemy; locked: boolean }) {
+function EnemySprite({
+  enemy,
+  locked,
+  onSelect,
+}: {
+  enemy: Enemy;
+  locked: boolean;
+  onSelect?: () => void;
+}) {
   const radius = 0.5 - 0.5 * enemy.progress;
-  const left = 50 + Math.cos(enemy.angle) * radius * 82;
-  const top = 50 + Math.sin(enemy.angle) * radius * 78;
+  const rawLeft = 50 + Math.cos(enemy.angle) * radius * 82;
+  const rawTop = 50 + Math.sin(enemy.angle) * radius * 78;
+  const left = Math.max(8, Math.min(92, rawLeft));
+  const top = Math.max(8, Math.min(92, rawTop));
   const danger = enemy.progress > 0.72;
 
   return (
     <div
-      className="absolute z-10 flex flex-col items-center gap-0.5"
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.();
+      }}
+      className="absolute z-10 flex flex-col items-center gap-0.5 cursor-pointer select-none transition-transform hover:scale-105 active:scale-95"
       style={{
         left: `${left}%`,
         top: `${top}%`,
@@ -414,13 +520,13 @@ function EnemySprite({ enemy, locked }: { enemy: Enemy; locked: boolean }) {
     >
       <div
         className={cn(
-          "relative h-8 w-8 overflow-hidden rounded-md border transition-colors sm:h-11 sm:w-11",
+          "relative h-8 w-8 overflow-hidden rounded-md border transition-all sm:h-11 sm:w-11",
           enemy.hitFlash > 0
-            ? "border-warning"
+            ? "border-warning ring-2 ring-warning/60"
             : locked
-              ? "border-accent"
+              ? "border-accent ring-2 ring-accent/60 shadow-lg shadow-accent/30 scale-105"
               : danger
-                ? "border-error"
+                ? "border-error ring-1 ring-error/40"
                 : "border-border/70",
         )}
       >
@@ -430,13 +536,13 @@ function EnemySprite({ enemy, locked }: { enemy: Enemy; locked: boolean }) {
           legible over whatever art it happens to be crossing. */}
       <span
         className={cn(
-          "whitespace-nowrap rounded px-1 py-0.5 font-mono text-[10px] leading-none backdrop-blur-sm sm:text-xs",
-          locked ? "bg-accent/20" : "bg-background/80",
+          "whitespace-nowrap rounded px-1.5 py-0.5 font-mono text-[10px] leading-none backdrop-blur-sm sm:text-xs shadow",
+          locked ? "bg-accent/25 ring-1 ring-accent font-bold" : "bg-background/85",
           danger && !locked && "text-error",
         )}
       >
         {enemy.word.split("").map((ch, i) => (
-          <span key={i} className={i < enemy.typed ? "text-accent" : undefined}>
+          <span key={i} className={i < enemy.typed ? "text-accent font-bold" : undefined}>
             {ch}
           </span>
         ))}

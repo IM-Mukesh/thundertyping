@@ -38,6 +38,13 @@ import { cn } from "@/lib/utils/cn";
 export default function FruitFuryGame({ definition }: GameComponentProps) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>("medium");
   const [selectedTypingMode, setSelectedTypingMode] = useState<TypingMode>("all");
+  const [sliceMode, setSliceMode] = useState<"touch" | "type">(() => {
+    if (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) {
+      return "touch";
+    }
+    return "type";
+  });
+
   const {
     state,
     canvasRef,
@@ -65,12 +72,12 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const recordedGameOverRef = useRef(false);
 
-  // Focus hidden input when running
+  // Focus hidden input when running in type mode
   useEffect(() => {
-    if (state.status === "running") {
+    if (state.status === "running" && sliceMode === "type") {
       inputRef.current?.focus();
     }
-  }, [state.status]);
+  }, [state.status, sliceMode]);
 
   // Global keydown handler
   useEffect(() => {
@@ -347,16 +354,16 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
         {/* HTML5 Canvas Surface */}
         <div
           className="relative w-full cursor-crosshair overflow-hidden touch-none"
-          style={{ height: "clamp(520px, 72vh, 640px)" }}
+          style={{ height: "clamp(340px, 60dvh, 640px)" }}
           onClick={(e) => {
             handleCanvasClick(e.clientX, e.clientY);
-            inputRef.current?.focus();
+            if (sliceMode === "type") inputRef.current?.focus();
           }}
           onTouchStart={(e) => {
             const touch = e.touches[0];
             if (touch) {
               handleTouchStart(touch.clientX, touch.clientY);
-              inputRef.current?.focus();
+              if (sliceMode === "type") inputRef.current?.focus();
             }
           }}
           onTouchMove={(e) => {
@@ -420,6 +427,39 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 <p className="mb-2 sm:mb-3 text-xs sm:text-sm font-medium text-stone-300 max-w-md">
                   Type letters or swipe to slice flying fruits in mid-air. Defuse fatal bombs and unleash the Fever Mode frenzy!
                 </p>
+
+                {/* Control Style Toggle */}
+                <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">
+                  <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-stone-400 uppercase">
+                    Control Style
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSliceMode("type")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 rounded-xl border p-2 transition-all",
+                        sliceMode === "type"
+                          ? "border-rose-500 bg-rose-500/20 text-rose-200 shadow-md ring-2 ring-rose-500/30"
+                          : "border-stone-800 bg-stone-900/60 text-stone-400 hover:text-stone-200",
+                      )}
+                    >
+                      <span className="text-xs sm:text-sm font-bold">⌨️ Keyboard Typing</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSliceMode("touch")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 rounded-xl border p-2 transition-all",
+                        sliceMode === "touch"
+                          ? "border-rose-500 bg-rose-500/20 text-rose-200 shadow-md ring-2 ring-rose-500/30"
+                          : "border-stone-800 bg-stone-900/60 text-stone-400 hover:text-stone-200",
+                      )}
+                    >
+                      <span className="text-xs sm:text-sm font-bold">⚔️ Touch Blade (Swipe)</span>
+                    </button>
+                  </div>
+                </div>
 
                 {/* Difficulty Selector */}
                 <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">

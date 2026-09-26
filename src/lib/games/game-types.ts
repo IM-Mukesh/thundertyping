@@ -93,6 +93,8 @@ export interface GameDefinition {
   replayability: "Medium" | "High" | "Very High";
   /** One game carries the hub's featured slot. */
   featured?: boolean;
+  /** Mark game as upcoming/in-development (cannot be played yet). */
+  upcoming?: boolean;
   /** Longer pitch for the expanded hover card. */
   pitch?: string;
   /** Bullet features shown when the hub card expands. */
@@ -280,7 +282,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tags: ["Roguelite", "RPG", "Single Player"],
     duration: "5-15 min",
     replayability: "High",
-    featured: true,
+    upcoming: true,
     pitch:
       "Cast spells, defeat enemies, collect relics and build your ultimate typing mage. Every run is unique.",
     highlights: ["5 unique characters", "16 spells", "15 relics", "Procedural floors", "4 boss fights", "Endless replayability"],  },
@@ -389,15 +391,15 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
 };
 
 export const GAME_LIST: GameDefinition[] = [
+  GAME_DEFINITIONS["fruit-fury"],
   GAME_DEFINITIONS["falling-words"],
   GAME_DEFINITIONS["word-rain"],
   GAME_DEFINITIONS["word-blaster"],
   GAME_DEFINITIONS["typing-grand-prix"],
   GAME_DEFINITIONS["boss-battle"],
   GAME_DEFINITIONS["combo-rush"],
-  GAME_DEFINITIONS["spellbound"],
   GAME_DEFINITIONS["typing-survivor"],
   GAME_DEFINITIONS["ghost-racer"],
   GAME_DEFINITIONS["card-battle"],
-  GAME_DEFINITIONS["fruit-fury"],
+  GAME_DEFINITIONS["spellbound"],
 ];

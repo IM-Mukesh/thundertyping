@@ -402,11 +402,14 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
     (value: string) => {
       setState((prev) => {
         if (prev.phase !== "playing") return prev;
-        const lower = value.toLowerCase();
-        if (lower === "") return { ...prev, typed: "", lockedUid: null };
+        const raw = value.toLowerCase();
+        const trimmed = raw.trim();
+        if (raw === "") return { ...prev, typed: "", lockedUid: null };
 
         const candidates = prev.enemies.filter(
-          (e) => e.hp > 0 && e.word.startsWith(lower),
+          (e) =>
+            e.hp > 0 &&
+            (e.word.startsWith(raw) || (trimmed.length > 0 && e.word.startsWith(trimmed))),
         );
         if (candidates.length === 0) {
           cbRef.current.onMiss?.();
@@ -418,26 +421,25 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
           candidates.find((e) => e.uid === prev.lockedUid) ??
           candidates.reduce((a, b) => (b.progress > a.progress ? b : a));
 
-        if (locked.word === lower) {
+        if (locked.word === raw || (trimmed.length > 0 && locked.word === trimmed)) {
           queueMicrotask(() => strike(locked.uid));
-          // Perfectionist reads target.typed === word.length to know the
-          // word was typed clean -- previously never set on this, the only
-          // path that actually completes a word, so the check was always
-          // false and the upgrade's crit bonus could never apply.
           return {
             ...prev,
             typed: "",
             lockedUid: null,
-            enemies: prev.enemies.map((e) => (e.uid === locked.uid ? { ...e, typed: lower.length } : e)),
+            enemies: prev.enemies.map((e) =>
+              e.uid === locked.uid ? { ...e, typed: locked.word.length } : e,
+            ),
           };
         }
 
+        const matchLen = locked.word.startsWith(raw) ? raw.length : trimmed.length;
         return {
           ...prev,
-          typed: lower,
+          typed: raw,
           lockedUid: locked.uid,
           enemies: prev.enemies.map((e) =>
-            e.uid === locked.uid ? { ...e, typed: lower.length } : { ...e, typed: 0 },
+            e.uid === locked.uid ? { ...e, typed: matchLen } : { ...e, typed: 0 },
           ),
         };
       });

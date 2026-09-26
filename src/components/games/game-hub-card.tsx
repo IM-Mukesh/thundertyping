@@ -205,11 +205,15 @@ export function GameHubCard({
           style={{ background: "color-mix(in srgb, var(--accent) 70%, transparent)" }}
         />
 
-        {game.featured && (
+        {game.upcoming ? (
+          <span className="absolute left-3 top-3 z-20 rounded bg-amber-500/20 border border-amber-500/50 px-2 py-0.5 font-display text-[9px] font-bold uppercase tracking-[0.14em] text-amber-300 backdrop-blur-sm shadow">
+            Upcoming
+          </span>
+        ) : game.featured ? (
           <span className="absolute left-3 top-3 z-20 rounded bg-accent px-2 py-0.5 font-display text-[9px] font-bold uppercase tracking-[0.12em] text-background">
             Featured
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* L4 character — a SIBLING of the art box, not a child of it.
@@ -337,23 +341,35 @@ export function GameHubCard({
           <Metric icon={<Trophy size={11} />} label="Your best" value={bestLabel} />
         </dl>
 
-        <Link
-          href={`/games/${game.id}`}
-          className={cn(
-            "btn-chevron mt-auto flex h-11 items-center justify-center gap-2",
-            "bg-accent font-display text-[11px] font-bold uppercase tracking-[0.16em] text-background",
-            "transition-[filter] duration-200 hover:brightness-110",
-          )}
-          style={{
-            filter: active
-              ? "drop-shadow(0 0 20px color-mix(in srgb, var(--accent) 85%, transparent))"
-              : "drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 55%, transparent))",
-          }}
-        >
-          <Play size={12} aria-hidden="true" />
-          Play now
-          <span aria-hidden="true">→</span>
-        </Link>
+        {game.upcoming ? (
+          <div
+            className={cn(
+              "mt-auto flex h-11 items-center justify-center gap-2 rounded-lg select-none",
+              "border border-border/70 bg-sub-alt/60 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-sub cursor-not-allowed",
+            )}
+          >
+            <Clock size={12} aria-hidden="true" />
+            Upcoming
+          </div>
+        ) : (
+          <Link
+            href={`/games/${game.id}`}
+            className={cn(
+              "btn-chevron mt-auto flex h-11 items-center justify-center gap-2",
+              "bg-accent font-display text-[11px] font-bold uppercase tracking-[0.16em] text-background",
+              "transition-[filter] duration-200 hover:brightness-110",
+            )}
+            style={{
+              filter: active
+                ? "drop-shadow(0 0 20px color-mix(in srgb, var(--accent) 85%, transparent))"
+                : "drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 55%, transparent))",
+            }}
+          >
+            <Play size={12} aria-hidden="true" />
+            Play now
+            <span aria-hidden="true">→</span>
+          </Link>
+        )}
       </div>
     </motion.article>
   );

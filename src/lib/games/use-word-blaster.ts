@@ -396,16 +396,17 @@ export function reducer(state: WordBlasterState, action: GameAction): WordBlaste
 
     case "SET_TYPED": {
       if (state.status !== "running") return state;
-      const value = action.value;
+      const rawValue = action.value;
+      const value = rawValue.trim().toLowerCase();
 
-      if (value.length < state.typed.length) {
+      if (rawValue.length < state.typed.length) {
         // Backspace: allowed, and deliberately not counted as a mistake.
         // Emptying the buffer releases the lock, which is the only way out of a
         // target you committed to by mistake.
         return { ...state, typed: value, lockedId: value === "" ? null : state.lockedId };
       }
-      if (value === state.typed) return state;
-      const added = value.length - state.typed.length;
+      if (value === state.typed && rawValue.length <= state.typed.length) return state;
+      const added = Math.max(1, rawValue.length - state.typed.length);
 
       if (state.boss) {
         const boss = state.boss;

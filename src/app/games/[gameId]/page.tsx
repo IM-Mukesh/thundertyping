@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Gamepad2, Heart } from "lucide-react";
+import { Clock, Gamepad2, Heart } from "lucide-react";
 import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
 import { getArt, getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
@@ -200,6 +200,12 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
                 <Gamepad2 size={12} />
                 {game.scoreBy === "time" ? "survival" : "score attack"}
               </span>
+              {game.upcoming && (
+                <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 px-2.5 py-0.5 text-amber-300 font-bold">
+                  <Clock size={11} />
+                  Upcoming
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -207,8 +213,40 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
 
       {/* CABINET — the board sits flush under the marquee so the two read as
           one unit rather than a banner with a stray panel beneath it. */}
-      <div className="theme-transition flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-6 pt-6 sm:px-8">
-        <GameClient definition={game} art={boardArt} />
+      <div className="theme-transition flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-12 pt-10 sm:px-8">
+        {game.upcoming ? (
+          <div className="flex flex-col items-center justify-center py-10 px-6 text-center max-w-lg">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-400 mb-5 shadow-lg shadow-amber-500/10 animate-pulse">
+              <Clock size={32} />
+            </div>
+            <span className="rounded-full bg-amber-500/20 border border-amber-500/40 px-3 py-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300 mb-3">
+              Upcoming Release
+            </span>
+            <h2 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground mb-3">
+              {game.name} is in Development
+            </h2>
+            <p className="font-sans text-sm sm:text-base text-sub leading-relaxed mb-8">
+              Spellbound is currently being re-engineered with balanced spell mechanics, legendary visual effects, and optimized mobile touch controls. Stay tuned for the upcoming release!
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/games"
+                className="btn-chevron flex h-11 items-center gap-2 bg-accent px-6 font-display text-xs font-bold uppercase tracking-[0.16em] text-background transition-all hover:brightness-110"
+              >
+                Explore All Games
+                <span aria-hidden="true">→</span>
+              </Link>
+              <Link
+                href="/games/fruit-fury"
+                className="flex h-11 items-center gap-2 rounded-lg border border-border px-5 font-display text-xs uppercase tracking-[0.14em] text-sub transition-colors hover:border-accent hover:text-foreground"
+              >
+                Play Fruit Fury
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <GameClient definition={game} art={boardArt} />
+        )}
       </div>
 
       {/* Below the cabinet, never beside or above it — an ad next to an active

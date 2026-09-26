@@ -143,6 +143,20 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
     focusInput();
   }, [start, focusInput, soundEnabled]);
 
+  const [isFocused, setIsFocused] = useState(true);
+
+  useEffect(() => {
+    if (state.status !== "over") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, handleStart]);
+
   const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
   const seconds = Math.round(state.elapsedMs / 1000);
   const isPlaying = state.status === "running";
@@ -173,21 +187,21 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
         is still announced through aria-label, so dropping the visible text
         costs nothing for screen readers.
       */}
-      <div className="flex items-center justify-between gap-4 font-mono">
+      <div className="flex items-center justify-between gap-2 font-mono sm:gap-4">
         <span
-          className="text-3xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
+          className="text-2xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
           aria-label={`Score ${state.score}`}
         >
           {state.score.toLocaleString()}
         </span>
 
-        <div className="flex items-center gap-4 text-sm text-sub">
+        <div className="flex items-center gap-2 text-xs text-sub sm:gap-4 sm:text-sm">
           <Stat icon={<Target size={13} />} value={state.cleared} label={`${state.cleared} words cleared`} />
           <Stat icon={<Crosshair size={13} />} value={`${accuracy}%`} label={`${accuracy} percent accuracy`} />
 
           <span
             className={cn(
-              "flex w-20 items-center justify-end gap-1 tabular-nums transition-opacity",
+              "flex w-16 items-center justify-end gap-1 tabular-nums transition-opacity sm:w-20",
               state.combo > 0 ? "text-accent opacity-100" : "opacity-0",
             )}
             aria-label={
@@ -228,7 +242,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
           style={{ opacity: isLow && isPlaying ? 1 : 0 }}
         />
 
-        <div className="relative flex h-full flex-col items-center justify-center gap-9 px-6">
+        <div className="relative flex h-full flex-col items-center justify-center gap-5 sm:gap-9 px-4 sm:px-6">
           {/* The clock is the whole game, so it is the largest thing here. */}
           <div className="flex w-full max-w-sm flex-col items-center gap-2.5">
             <div className="relative flex items-center gap-2.5">
@@ -250,13 +264,11 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
               {gain && (
                 // Keyed on the award so a new clear restarts the animation, and
                 // plain conditional rendering so React removes the node the
-                // moment it expires. No AnimatePresence: it has been observed
-                // in this project leaking nodes it never unmounts when a key
-                // changes faster than its transition.
+                // moment it expires.
                 <span
                   key={gain.seq}
                   aria-hidden="true"
-                  className="cr-gain pointer-events-none absolute left-full top-2 ml-3 whitespace-nowrap font-mono text-lg font-semibold tabular-nums text-accent arcade-glow"
+                  className="cr-gain pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-base font-semibold tabular-nums text-accent arcade-glow sm:left-full sm:top-2 sm:ml-3 sm:translate-x-0 sm:text-lg"
                 >
                   +{(gain.ms / 1000).toFixed(1)}s
                 </span>
@@ -278,9 +290,9 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-4 sm:gap-5">
             <span
-              className="font-mono text-4xl tracking-tight sm:text-5xl"
+              className="font-mono text-2xl min-[400px]:text-3xl sm:text-5xl tracking-tight text-center break-keep"
               aria-label={word ? `Type ${word}` : undefined}
             >
               {mistakeFlash ? (
@@ -295,7 +307,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
             </span>
 
             {/* Look-ahead: enough to set a rhythm, not enough to read a page. */}
-            <div className="flex items-center gap-4 font-mono text-base" aria-hidden="true">
+            <div className="flex items-center gap-3 sm:gap-4 font-mono text-sm sm:text-base" aria-hidden="true">
               {upcoming.map((queued, i) => (
                 <span key={i} className={i === 0 ? "text-sub" : "text-sub/50"}>
                   {queued}
@@ -304,6 +316,35 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
             </div>
           </div>
         </div>
+
+        {/* Mobile touch Skip button */}
+        {isPlaying && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              skip();
+              focusInput();
+            }}
+            className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-lg border border-border/70 bg-background/80 px-2.5 py-1 font-mono text-xs text-sub backdrop-blur-sm transition-colors hover:text-foreground active:scale-95 sm:hidden"
+            aria-label="Skip current word"
+          >
+            <SkipForward size={12} />
+            Skip
+          </button>
+        )}
+
+        {/* Lost focus alert */}
+        {isPlaying && !isFocused && (
+          <button
+            type="button"
+            onClick={focusInput}
+            className="absolute inset-x-6 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center gap-2 rounded-xl border border-accent bg-background/95 px-4 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-accent arcade-pulse shadow-xl backdrop-blur-md transition-transform hover:scale-105"
+          >
+            <Zap size={14} className="animate-bounce" />
+            Tap to resume rush
+          </button>
+        )}
 
         {!isPlaying && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/85 p-6 backdrop-blur-sm">
@@ -346,15 +387,6 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
           value={state.typed}
           onChange={(e) => {
             const value = e.target.value;
-            // onKeyDown below normally swallows the space before it reaches
-            // the value, so this branch is the fallback for input that
-            // arrives without a matching keydown at all -- IME composition
-            // and predictive-text acceptance on mobile keyboards, which
-            // report keydown as keyCode 229 / key "Unidentified" rather than
-            // a real space. Previously that meant "space skips" (advertised
-            // on this game's own start screen) silently did nothing there:
-            // the space just landed in the buffer, failed to match any
-            // word, and scored as a wrong keystroke instead of a skip.
             if (value.includes(" ")) {
               setTyped(value.slice(0, value.indexOf(" ")).toLowerCase());
               skip();
@@ -363,6 +395,8 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
             setTyped(value.toLowerCase());
           }}
           onPaste={(e) => e.preventDefault()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={(e) => {
             // Space never commits a word here — a word clears the instant it
             // is complete — so it is free to mean "skip this one".
@@ -380,6 +414,9 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          inputMode="text"
+          enterKeyHint="go"
+          data-gramm="false"
           aria-label={`${definition.name} typing input`}
           className="absolute inset-0 h-full w-full cursor-text opacity-0"
           style={{ fontSize: 16 }}
@@ -529,6 +566,10 @@ function GameOverCard({
         <RotateCcw size={15} />
         Play again
       </ArcadeButton>
+
+      <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+        Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to play again
+      </p>
     </div>
   );
 }

@@ -31,11 +31,6 @@ import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 import { HealthBar, IncomingWarning, WordDisplay } from "@/components/games/ui/game-chrome";
 
-// Reference height for the turret's aim-angle trig only — the board's real
-// height varies by breakpoint via the `--board-h` CSS var below, and this
-// constant being slightly stale just points the barrel a few degrees off,
-// same tolerance the original geometry comment already accepted.
-const BOARD_HEIGHT = 620;
 
 /**
  * Horizontal geometry, in percent of the board width. Percentages rather than
@@ -171,13 +166,15 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
   // The width is set exclusively from the ResizeObserver callback (which fires
   // once on observe), so the default covers the frame before the first
   // measurement and a mis-aimed barrel is the worst case.
-  const [boardWidth, setBoardWidth] = useState(720);
+  const [boardSize, setBoardSize] = useState({ width: 720, height: 440 });
   useEffect(() => {
     const el = boardRef.current;
     if (!el) return;
     const observer = new ResizeObserver(() => {
-      const width = el.getBoundingClientRect().width;
-      if (width > 0) setBoardWidth(width);
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setBoardSize({ width: rect.width, height: rect.height });
+      }
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -197,12 +194,12 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
 
   let aimAngle = 0;
   if (state.boss) {
-    const dx = ((78 - MUZZLE_X) / 100) * boardWidth;
-    const dy = ((46 - 50) / 100) * BOARD_HEIGHT;
+    const dx = ((78 - MUZZLE_X) / 100) * boardSize.width;
+    const dy = ((46 - 50) / 100) * boardSize.height;
     aimAngle = (Math.atan2(dy, Math.max(dx, 1)) * 180) / Math.PI;
   } else if (aimTarget) {
-    const dx = ((enemyX(aimTarget.progress) - MUZZLE_X) / 100) * boardWidth;
-    const dy = ((laneY(aimTarget.lane) - 50) / 100) * BOARD_HEIGHT;
+    const dx = ((enemyX(aimTarget.progress) - MUZZLE_X) / 100) * boardSize.width;
+    const dy = ((laneY(aimTarget.lane) - 50) / 100) * boardSize.height;
     // Clamped so an enemy level with or behind the muzzle can't swing the
     // barrel backwards through the base.
     aimAngle = Math.max(-72, Math.min(72, (Math.atan2(dy, Math.max(dx, 1)) * 180) / Math.PI));
@@ -274,9 +271,32 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
   // ---- lifecycle -----------------------------------------------------------
 
   const focusInput = useCallback(() => inputRef.current?.focus(), []);
+  const [isFocused, setIsFocused] = useState(true);
+
   useEffect(() => {
     if (state.status === "running") focusInput();
   }, [state.status, focusInput]);
+
+  const handleStart = useCallback(() => {
+    setIsNewBest(false);
+    // Also the user gesture that unlocks the audio context, so the first
+    // keystroke of a run is already audible.
+    playSound("start", soundEnabled);
+    start();
+    focusInput();
+  }, [start, focusInput, soundEnabled]);
+
+  useEffect(() => {
+    if (state.status !== "over") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, handleStart]);
 
   const recordedRef = useRef(false);
   useEffect(() => {
@@ -305,15 +325,6 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
     // settle the run once, on the transition into "over"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
-
-  const handleStart = useCallback(() => {
-    setIsNewBest(false);
-    // Also the user gesture that unlocks the audio context, so the first
-    // keystroke of a run is already audible.
-    playSound("start", soundEnabled);
-    start();
-    focusInput();
-  }, [start, focusInput, soundEnabled]);
 
   const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
   const isPlaying = state.status === "running";
@@ -388,7 +399,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
       <div
         ref={boardRef}
         onClick={focusInput}
-        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:clamp(320px,65vh,440px)] sm:[--board-h:clamp(360px,70vh,560px)] lg:[--board-h:clamp(400px,72vh,680px)]"
+        className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:clamp(300px,62dvh,440px)] sm:[--board-h:clamp(360px,68dvh,560px)] lg:[--board-h:clamp(400px,72vh,680px)]"
         style={{ height: "var(--board-h)" }}
       >
         {heroArt && (
@@ -469,7 +480,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
                 }}
               >
                 {craftArt ? (
-                  <span className="relative -my-2 h-7 w-9 shrink-0 sm:h-9 sm:w-12" style={{ transform: "scaleX(-1)" }}>
+                  <span className="relative -my-2 h-6 w-7 shrink-0 sm:h-9 sm:w-12" style={{ transform: "scaleX(-1)" }}>
                     <Image src={craftArt} alt="" fill sizes="48px" className="object-contain" />
                   </span>
                 ) : (
@@ -482,14 +493,14 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
                     already relies on. */}
                 <span
                   className={cn(
-                    "rounded-md border bg-background/80 px-1.5 py-0.5 font-mono text-sm font-semibold tracking-tight backdrop-blur-[1px] sm:text-lg",
+                    "rounded-md border bg-background/85 px-1 py-0.25 font-mono text-xs font-semibold tracking-tight shadow-sm backdrop-blur-[1px] sm:px-1.5 sm:py-0.5 sm:text-base md:text-lg",
                     // The border/glow signals "locked in"; text colour is
                     // reserved for "this character is typed" and must never
                     // apply to the whole word, or the untyped remainder
                     // (which owns no colour of its own) inherits it and the
                     // entire word reads as "done" after just one keystroke —
                     // leaving only a faint underline to show what's left.
-                    isTarget ? "border-accent arcade-glow" : inDanger ? "border-error/60" : "border-border/60",
+                    isTarget ? "border-accent ring-2 ring-accent/40 arcade-glow" : inDanger ? "border-error/70" : "border-border/60",
                     inDanger ? "text-error" : "text-foreground",
                   )}
                 >
@@ -714,7 +725,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
                 tone="error"
               />
               <div
-                className="h-1 w-full overflow-hidden rounded-full bg-sub-alt/60"
+                className="h-2 w-full overflow-hidden rounded-full bg-sub-alt/60"
                 role="progressbar"
                 aria-label="Time remaining on this word"
                 aria-valuenow={Math.round(bossTimeFraction * 100)}
@@ -724,7 +735,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
                 <div
                   className={cn(
                     "h-full transition-[width] ease-linear",
-                    bossTimeLeftMs < 1500 ? "bg-error" : "bg-accent",
+                    bossTimeLeftMs < 1500 ? "bg-error arcade-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" : "bg-accent",
                   )}
                   style={{
                     width: `${bossTimeFraction * 100}%`,
@@ -738,7 +749,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
             {bossArt && (
               <div
                 className={cn(
-                  "pointer-events-none absolute right-[4%] top-1/2 h-[70%] w-[42%] -translate-y-1/2 opacity-90 transition-transform duration-100 sm:w-[38%]",
+                  "pointer-events-none absolute right-[2%] top-1/2 h-[60%] w-[32%] -translate-y-1/2 opacity-75 transition-transform duration-100 sm:right-[4%] sm:h-[70%] sm:w-[38%] sm:opacity-90",
                   bossHitFlash ? "translate-x-[-6px]" : "translate-x-0",
                 )}
               >
@@ -765,10 +776,22 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
               </div>
             )}
 
-            <div className="relative z-10">
+            <div className="relative z-10 rounded-xl bg-background/70 p-2 shadow-md backdrop-blur-[2px]">
               <WordDisplay word={boss.word} typed={state.typed} shake={false} />
             </div>
           </div>
+        )}
+
+        {/* Lost focus alert */}
+        {isPlaying && !isFocused && (
+          <button
+            type="button"
+            onClick={focusInput}
+            className="absolute inset-x-6 top-1/2 z-20 flex -translate-y-1/2 items-center justify-center gap-2 rounded-xl border border-accent bg-background/95 px-4 py-3 font-mono text-xs font-semibold uppercase tracking-wider text-accent arcade-pulse shadow-xl backdrop-blur-md transition-transform hover:scale-105"
+          >
+            <Zap size={14} className="animate-bounce" />
+            Tap to resume firing
+          </button>
         )}
 
         {!isPlaying && (
@@ -813,6 +836,8 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
           value={state.typed}
           onChange={(e) => setTyped(e.target.value.toLowerCase())}
           onPaste={(e) => e.preventDefault()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={(e) => {
             // Space never commits here — an enemy dies the instant its word
             // matches — so swallow it rather than letting it scroll the page.
@@ -827,6 +852,9 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          inputMode="text"
+          enterKeyHint="go"
+          data-gramm="false"
           aria-label={`${definition.name} typing input`}
           className="absolute inset-0 h-full w-full cursor-text opacity-0"
           style={{ fontSize: 16 }}
@@ -989,6 +1017,10 @@ function GameOverCard({
           <RotateCcw size={15} />
           Play again
         </ArcadeButton>
+
+        <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+          Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to restart
+        </p>
       </div>
     </div>
   );
