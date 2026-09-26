@@ -3,7 +3,13 @@ import type { CharState, CharTally, TestConfig, TestState, WordState } from "@/l
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
 import { pickPracticeWords } from "@/lib/vocabulary/vocabulary-content";
-import { calculateNetWpm, calculateRawWpm, emptyCharTally, MIN_LIVE_WPM_WINDOW_MS } from "@/lib/typing-engine/stats";
+import {
+  calculateNetWpm,
+  calculateNetWpmCharacters,
+  calculateRawWpm,
+  emptyCharTally,
+  MIN_LIVE_WPM_WINDOW_MS,
+} from "@/lib/typing-engine/stats";
 
 const TIME_MODE_BATCH = 40;
 const TIME_MODE_LOOKAHEAD = 15;
@@ -62,6 +68,7 @@ export function createInitialState(config: TestConfig): TestState {
     elapsedMs: 0,
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
+    netWpmCharacters: 0,
     totalTyped: 0,
     totalKeypresses: 0,
     correctedErrors: 0,
@@ -203,11 +210,18 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       const isExactMatch = newTyped === target;
       const shouldAutoFinish = state.config.mode !== "time" && isLastWord && isExactMatch;
 
+      const nextNetWpmCharacters = calculateNetWpmCharacters(
+        state.words,
+        nextWordStates,
+        activeIndex,
+      );
+
       const nextState: TestState = {
         ...state,
         wordStates: nextWordStates,
         correctKeystrokes,
         incorrectKeystrokes,
+        netWpmCharacters: nextNetWpmCharacters,
         totalTyped,
         correctedErrors,
         totalKeypresses: state.totalKeypresses + 1,
@@ -230,27 +244,26 @@ export function reducer(state: TestState, action: EngineAction): TestState {
 
       const tally = tallyWord(state.charTally, wordState);
       const isLastWord = activeIndex === state.words.length - 1;
+      const isWordCorrect = wordState.typed === wordState.target;
 
-      // THE SPACE IS A CHARACTER.
+      // The space between two words is part of the target text and standard
+      // 5-character word normalization.
       //
-      // This was the engine's single biggest measurement error. Pressing space
-      // only ever advanced the word cursor -- it was never counted as a
-      // keystroke -- so on a 15s run of ~18 words, ~18 characters vanished
-      // from both correctKeystrokes and incorrectKeystrokes. Net and raw WPM
-      // were therefore understated by roughly the space ratio of English
-      // prose, about 18%.
-      //
-      // It also explains why the symptom looked so strange: accuracy is
-      // correct/(correct+incorrect+missed), and a space is almost always
-      // correct, so dropping it from numerator and denominator alike barely
-      // moved that ratio. Accuracy read a truthful 100% while WPM read ~18%
-      // low, which made the two figures look like they disagreed.
-      //
-      // The separator between two words is part of the target text, so typing
-      // it is a correct character attempt. The final word has no trailing
-      // separator and so is not credited one.
+      // HOWEVER, a space must NEVER receive correct-character credit merely
+      // because Space was pressed:
+      // 1. If the word was completed with 100% accuracy (no errors, not
+      //    incomplete, no extra characters), the space is a valid separator
+      //    attempt and is credited as a correct keystroke.
+      // 2. If the word had typos, extra characters, or was incomplete, the
+      //    space is an invalid separator attempt / skipping an erroneous word,
+      //    so it is counted as an incorrect keystroke.
+      // 3. The final word has no trailing separator in the target text and so is
+      //    not credited one either way.
       const typedSeparator = !isLastWord;
-      const correctKeystrokes = state.correctKeystrokes + (typedSeparator ? 1 : 0);
+      const correctKeystrokes =
+        state.correctKeystrokes + (typedSeparator && isWordCorrect ? 1 : 0);
+      const incorrectKeystrokes =
+        state.incorrectKeystrokes + (typedSeparator && !isWordCorrect ? 1 : 0);
       const totalTyped = state.totalTyped + (typedSeparator ? 1 : 0);
       const totalKeypresses = state.totalKeypresses + 1;
 
@@ -260,8 +273,21 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       committedStates[activeIndex] = markMissedChars(wordState);
 
       if (state.config.mode !== "time" && isLastWord) {
+        const finalNetWpmCharacters = calculateNetWpmCharacters(
+          state.words,
+          committedStates,
+          activeIndex + 1,
+        );
         return finalize(
-          { ...state, wordStates: committedStates, correctKeystrokes, totalTyped, totalKeypresses },
+          {
+            ...state,
+            wordStates: committedStates,
+            correctKeystrokes,
+            incorrectKeystrokes,
+            netWpmCharacters: finalNetWpmCharacters,
+            totalTyped,
+            totalKeypresses,
+          },
           tally,
           action.now,
         );
@@ -280,6 +306,12 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         wordStates = [...wordStates, ...more.map((w) => ({ target: w, typed: "", chars: [] as CharState[] }))];
       }
 
+      const nextNetWpmCharacters = calculateNetWpmCharacters(
+        words,
+        wordStates,
+        nextIndex,
+      );
+
       return {
         ...state,
         words,
@@ -287,6 +319,8 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         activeWordIndex: nextIndex,
         charTally: tally,
         correctKeystrokes,
+        incorrectKeystrokes,
+        netWpmCharacters: nextNetWpmCharacters,
         totalTyped,
         totalKeypresses,
       };
@@ -304,7 +338,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
               ...state.wpmSamples,
               {
                 t: elapsedMs,
-                wpm: calculateNetWpm(state.correctKeystrokes, elapsedMs),
+                wpm: calculateNetWpm(state.netWpmCharacters, elapsedMs),
                 rawWpm: calculateRawWpm(state.correctKeystrokes, state.incorrectKeystrokes, elapsedMs),
                 correct: state.correctKeystrokes,
                 typed: state.totalTyped,

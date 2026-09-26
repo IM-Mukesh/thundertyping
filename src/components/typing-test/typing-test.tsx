@@ -124,7 +124,7 @@ export function TypingTest() {
     // values, and rounding first turns a real 65.6 -> 66.4 improvement into a
     // tie at 66. The results screen rounds them again for display.
     const wpm = calculateNetWpm(
-      engine.state.correctKeystrokes,
+      engine.state.netWpmCharacters,
       engine.state.elapsedMs,
     );
     const accuracy = calculateAccuracy(

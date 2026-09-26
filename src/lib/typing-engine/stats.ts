@@ -1,6 +1,55 @@
-import type { CharTally, WpmSample } from "@/lib/typing-engine/engine-types";
+import type { CharTally, WordState, WpmSample } from "@/lib/typing-engine/engine-types";
 
 const CHARS_PER_WORD = 5;
+
+/**
+ * Net WPM scoring characters (Concept F).
+ *
+ * In accordance with standard typing test rules (e.g. Monkeytype):
+ * - Characters in a committed word only contribute to Net WPM if the word was
+ *   typed completely correctly without uncorrected errors.
+ * - An inter-word separator (space) only contributes if the word it follows
+ *   was completed correctly.
+ * - For an uncommitted active word (e.g. during live typing or upon time-mode
+ *   expiration), typed characters contribute only if they match the target
+ *   prefix without error (i.e. target.startsWith(typed)). If there are any
+ *   errors or extra characters, the active word contributes 0.
+ */
+export function calculateNetWpmCharacters(
+  words: readonly string[],
+  wordStates: readonly WordState[],
+  activeWordIndex: number,
+): number {
+  let chars = 0;
+  const lastIndex = words.length - 1;
+
+  // 1. Committed words (0 through activeWordIndex - 1)
+  const committedCount = Math.min(activeWordIndex, wordStates.length);
+  for (let i = 0; i < committedCount; i++) {
+    const ws = wordStates[i];
+    if (ws && ws.typed === ws.target) {
+      chars += ws.target.length;
+      if (i < lastIndex) {
+        chars += 1; // Inter-word separator for correctly completed word
+      }
+    }
+  }
+
+  // 2. Active word (if in-progress and within range)
+  if (activeWordIndex < wordStates.length) {
+    const active = wordStates[activeWordIndex];
+    if (active && active.typed.length > 0) {
+      if (active.typed === active.target) {
+        chars += active.target.length;
+      } else if (active.target.startsWith(active.typed)) {
+        // Clean prefix in progress without errors
+        chars += active.typed.length;
+      }
+    }
+  }
+
+  return chars;
+}
 
 // A WPM figure computed from a few keystrokes over a handful of milliseconds
 // is mathematically unstable (one correct char at 5ms elapsed implies a

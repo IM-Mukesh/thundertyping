@@ -91,7 +91,7 @@ export function PracticeDrill() {
     return activeWord.typed.length < activeWord.target.length ? activeWord.target[activeWord.typed.length] : " ";
   }, [isFinished, activeWord]);
 
-  const wpm = round(calculateNetWpm(engine.state.correctKeystrokes, engine.state.elapsedMs));
+  const wpm = round(calculateNetWpm(engine.state.netWpmCharacters, engine.state.elapsedMs));
   const accuracy = round(
     calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.charTally.missed),
   );

@@ -59,7 +59,7 @@ export function TypingEngineDebug() {
   });
   const active = s.wordStates[s.activeWordIndex];
 
-  const netWpm = calculateNetWpm(s.correctKeystrokes, s.elapsedMs);
+  const netWpm = calculateNetWpm(s.netWpmCharacters, s.elapsedMs);
   const rawWpm = calculateRawWpm(s.correctKeystrokes, s.incorrectKeystrokes, s.elapsedMs);
   const accuracy = calculateAccuracy(s.correctKeystrokes, s.incorrectKeystrokes, s.charTally.missed);
   const consistency = calculateConsistency(s.wpmSamples);

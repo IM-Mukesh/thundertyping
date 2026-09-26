@@ -375,3 +375,191 @@ describe("custom mode fallback", () => {
     assert.equal(s.words[0], "The");
   });
 });
+
+describe("scoring integrity and Monkeytype-parity regression tests", () => {
+  // 1. Perfect typing
+  it("1. Perfect typing has 100% accuracy and standard WPM with correct separators", () => {
+    const words = ["the", "quick", "brown", "fox", "jumps"];
+    const s = type(stateFor(words), "the quick brown fox jumps");
+    // "the " (3+1) + "quick " (5+1) + "brown " (5+1) + "fox " (3+1) + "jumps" (5) = 25 chars = 5 words
+    assert.equal(s.correctKeystrokes, 25);
+    assert.equal(s.incorrectKeystrokes, 0);
+    assert.equal(s.totalTyped, 25);
+    assert.equal(s.charTally.missed, 0);
+    assert.equal(s.charTally.extra, 0);
+    assert.equal(s.netWpmCharacters, 25);
+    const acc = calculateAccuracy(s.correctKeystrokes, s.incorrectKeystrokes, s.charTally.missed);
+    assert.equal(acc, 100);
+    // 25 chars / 5 chars/word / 0.25 min = 20 WPM
+    const netWpm = calculateNetWpm(s.netWpmCharacters, 15_000);
+    assert.equal(round(netWpm), 20);
+    const rawWpm = calculateRawWpm(s.correctKeystrokes, s.incorrectKeystrokes, 15_000);
+    assert.equal(round(rawWpm), 20);
+  });
+
+  // 2. Completely wrong word + Space
+  it("2. Completely wrong word + Space never credits the space or characters to Net WPM", () => {
+    const words = ["hello", "world"];
+    const s = type(stateFor(words), "zzzzz ");
+    assert.equal(s.correctKeystrokes, 0, "no correct keystrokes");
+    assert.equal(s.incorrectKeystrokes, 6, "5 wrong letters + 1 wrong space separator");
+    assert.equal(s.totalTyped, 6);
+    assert.equal(s.netWpmCharacters, 0, "net WPM characters must be 0");
+    const netWpm = calculateNetWpm(s.netWpmCharacters, 15_000);
+    assert.equal(netWpm, 0);
+  });
+
+  // 3. Random letters + frequent spaces
+  it("3. Random letters + frequent spaces produces 0 Net WPM and no inflation from spaces", () => {
+    const words = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"];
+    const s = type(stateFor(words), "xyz abcde qwerty mnop asdfgh qwer tyui opas dfgh ");
+    assert.equal(s.netWpmCharacters, 0, "net WPM must be 0 for gibberish words");
+    const netWpm = calculateNetWpm(s.netWpmCharacters, 15_000);
+    assert.equal(netWpm, 0);
+    assert.ok(s.incorrectKeystrokes > 30);
+    assert.ok(s.totalTyped > 30);
+  });
+
+  // 4. Correct word + Space
+  it("4. Correct word + Space gives intended credit for characters plus separator", () => {
+    const words = ["first", "second"];
+    const s = type(stateFor(words), "first ");
+    assert.equal(s.correctKeystrokes, 6, "5 letters + 1 separator space");
+    assert.equal(s.incorrectKeystrokes, 0);
+    assert.equal(s.netWpmCharacters, 6);
+  });
+
+  // 5. Incomplete word + Space
+  it("5. Incomplete word committed with Space gives no Net WPM credit", () => {
+    const words = ["complete", "next"];
+    const s = type(stateFor(words), "com ");
+    assert.equal(s.correctKeystrokes, 3);
+    assert.equal(s.incorrectKeystrokes, 1, "space after incomplete word is incorrect");
+    assert.equal(s.charTally.missed, 5, "5 skipped characters");
+    assert.equal(s.netWpmCharacters, 0, "incomplete word must NOT contribute to Net WPM");
+  });
+
+  // 6. Extra characters + Space
+  it("6. Extra characters + Space remain errors/extra and give no Net WPM credit", () => {
+    const words = ["fox", "next"];
+    const s = type(stateFor(words), "foxes ");
+    assert.equal(s.correctKeystrokes, 3, "f, o, x");
+    assert.equal(s.incorrectKeystrokes, 3, "e (extra), s (extra), space (invalid)");
+    assert.equal(s.charTally.extra, 2, "2 extra chars");
+    assert.equal(s.netWpmCharacters, 0, "word with extra chars must NOT contribute to Net WPM");
+  });
+
+  // 7. Backspace behavior and historical accounting
+  it("7. Backspace preserves historical keystroke accounting while fixing Net WPM credit", () => {
+    const words = ["hello", "world"];
+    let s = stateFor(words);
+    // Type "helx"
+    s = reducer(s, { type: "SET_TYPED", value: "helx", now: 10 });
+    assert.equal(s.correctKeystrokes, 3);
+    assert.equal(s.incorrectKeystrokes, 1);
+    assert.equal(s.netWpmCharacters, 0, "uncorrected error prevents net WPM credit");
+
+    // Backspace to "hel"
+    s = reducer(s, { type: "SET_TYPED", value: "hel", now: 20 });
+    assert.equal(s.correctKeystrokes, 3, "correct keystrokes preserved");
+    assert.equal(s.incorrectKeystrokes, 1, "mistake remains in history");
+    assert.equal(s.correctedErrors, 1, "deletion recorded as corrected error");
+    assert.equal(s.netWpmCharacters, 3, "clean prefix now contributes to in-progress Net WPM");
+
+    // Finish typing "hello "
+    s = reducer(s, { type: "SET_TYPED", value: "hello", now: 30 });
+    s = reducer(s, { type: "COMMIT_WORD", now: 40 });
+    assert.equal(s.correctKeystrokes, 6, "5 letters + 1 valid space separator");
+    assert.equal(s.incorrectKeystrokes, 1, "1 deleted mistake");
+    assert.equal(s.totalTyped, 7, "3+1+2+1 = 7 physical printable keys");
+    assert.equal(s.netWpmCharacters, 6, "completely corrected word awards full Net WPM credit");
+  });
+
+  // 8. Timer expiration during partially typed word
+  it("8a. Timer expiration credits clean prefix characters of active word to Net WPM", () => {
+    let s = stateFor(["the", "running"], { mode: "time", timeDuration: 15 });
+    s = type(s, "the ");
+    assert.equal(s.netWpmCharacters, 4); // 3 + 1
+
+    s = reducer(s, { type: "SET_TYPED", value: "runn", now: 1000 });
+    assert.equal(s.netWpmCharacters, 8); // 4 + 4
+
+    const start = s.startedAt ?? 0;
+    s = reducer(s, { type: "TICK", now: start + 15_000 });
+    assert.equal(s.status, "finished");
+    assert.equal(s.netWpmCharacters, 8, "clean partial word characters credited");
+    assert.equal(s.charTally.missed, 0, "partial word at expiry not marked as missed");
+  });
+
+  it("8b. Timer expiration does NOT credit partial word if it contains an error", () => {
+    let s = stateFor(["the", "running"], { mode: "time", timeDuration: 15 });
+    s = type(s, "the ");
+    s = reducer(s, { type: "SET_TYPED", value: "ruxx", now: 1000 });
+    assert.equal(s.netWpmCharacters, 4, "error in active word yields 0 credit for that word");
+
+    const start = s.startedAt ?? 0;
+    s = reducer(s, { type: "TICK", now: start + 15_000 });
+    assert.equal(s.status, "finished");
+    assert.equal(s.netWpmCharacters, 4, "erroneous active word yields 0 Net WPM credit");
+  });
+
+  // 9. 15s, 30s, 60s, 120s modes
+  it("9. Handles 15s, 30s, 60s, and 120s time mode durations correctly", () => {
+    for (const duration of [15, 30, 60, 120]) {
+      let s = stateFor(["word", "test", "time", "clock"], { mode: "time", timeDuration: duration });
+      s = type(s, "word ");
+      assert.equal(s.netWpmCharacters, 5);
+      const start = s.startedAt ?? 0;
+      s = reducer(s, { type: "TICK", now: start + duration * 1000 });
+      assert.equal(s.status, "finished");
+      assert.equal(s.elapsedMs, duration * 1000);
+    }
+  });
+
+  // 10. punctuation, numbers, quote, custom, vocabulary modes
+  it("10. Scoring holds consistently across modes (punctuation, numbers, quote, custom, vocabulary)", () => {
+    let sQuote = createInitialState({ ...BASE, mode: "quote", quoteLength: "short" });
+    const firstWord = sQuote.words[0];
+    sQuote = type(sQuote, firstWord + " ");
+    assert.equal(sQuote.netWpmCharacters, firstWord.length + 1);
+
+    let sCustom = createInitialState({ ...BASE, mode: "custom", customText: "special-case 1234 test" });
+    sCustom = type(sCustom, "special-case ");
+    assert.equal(sCustom.netWpmCharacters, 13); // 12 + 1
+
+    let sPunct = createInitialState({ ...BASE, mode: "words", punctuation: true, numbers: true, wordCount: 10 });
+    const pWord = sPunct.words[0];
+    sPunct = type(sPunct, pWord + " ");
+    assert.equal(sPunct.netWpmCharacters, pWord.length + 1);
+  });
+
+  // 11. Mobile / splitOnCommit space delivery
+  it("11. Mobile splitOnCommit space delivery scores identical to desktop keydown", () => {
+    const words = ["alpha", "beta"];
+    let s = stateFor(words);
+    const { value, commit } = splitOnCommit("alpha ");
+    s = reducer(s, { type: "SET_TYPED", value, now: 100 });
+    if (commit) s = reducer(s, { type: "COMMIT_WORD", now: 101 });
+
+    assert.equal(s.correctKeystrokes, 6);
+    assert.equal(s.incorrectKeystrokes, 0);
+    assert.equal(s.netWpmCharacters, 6);
+    assert.equal(s.activeWordIndex, 1);
+  });
+
+  // 12. Single physical keystroke is counted exactly once
+  it("12. Single physical keystroke is counted exactly once in totalTyped and totalKeypresses", () => {
+    let s = stateFor(["ab"]);
+    s = reducer(s, { type: "SET_TYPED", value: "a", now: 10 });
+    assert.equal(s.totalTyped, 1);
+    assert.equal(s.totalKeypresses, 1);
+    assert.equal(s.correctKeystrokes, 1);
+    assert.equal(s.incorrectKeystrokes, 0);
+
+    s = reducer(s, { type: "SET_TYPED", value: "ab", now: 20 });
+    assert.equal(s.totalTyped, 2);
+    assert.equal(s.totalKeypresses, 2);
+    assert.equal(s.correctKeystrokes, 2);
+    assert.equal(s.incorrectKeystrokes, 0);
+  });
+});

@@ -76,6 +76,14 @@ export interface TestState {
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   /**
+   * Net WPM scoring characters (Concept F).
+   *
+   * Characters from completely correct words + valid inter-word separators
+   * (plus clean uncorrupted prefixes of the active word), which drives Net WPM
+   * scoring according to standard 5-character word normalization.
+   */
+  netWpmCharacters: number;
+  /**
    * Every printable character attempt, including the spaces between words.
    *
    * Kept alongside correct/incorrect because those two are what the WPM

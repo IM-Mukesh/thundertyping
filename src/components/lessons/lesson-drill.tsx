@@ -124,7 +124,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     if (recordedRef.current) return;
     recordedRef.current = true;
 
-    const wpm = calculateNetWpm(engine.state.correctKeystrokes, engine.state.elapsedMs);
+    const wpm = calculateNetWpm(engine.state.netWpmCharacters, engine.state.elapsedMs);
     const accuracy = calculateAccuracy(
       engine.state.correctKeystrokes,
       engine.state.incorrectKeystrokes,
@@ -167,7 +167,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       : " ";
   }, [isFinished, activeWord]);
 
-  const wpm = round(calculateNetWpm(engine.state.correctKeystrokes, engine.state.elapsedMs));
+  const wpm = round(calculateNetWpm(engine.state.netWpmCharacters, engine.state.elapsedMs));
   const accuracy = round(
     calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.charTally.missed),
   );
