@@ -34,6 +34,10 @@ export function GameCoverArt({ gameId, className }: GameCoverArtProps) {
       return <BossBattleArt className={className} />;
     case "combo-rush":
       return <ComboRushArt className={className} />;
+    case "fruit-fury":
+      return <FruitFuryArt className={className} />;
+    default:
+      return null;
   }
 }
 
@@ -425,6 +429,70 @@ function ComboRushArt({ className }: { className?: string }) {
       {/* multiplier chevrons */}
       {[0, 1, 2].map((i) => (
         <path key={i} d={`M${170 + i * 22} ${168} l10 -11 l-10 -11`} fill="none" stroke="var(--accent)" strokeOpacity={0.35 + i * 0.25} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+      ))}
+    </svg>
+  );
+}
+
+function FruitFuryArt({ className }: { className?: string }) {
+  const p = "ff";
+  return (
+    <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className={className} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id={`${p}-glow`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${p}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--background)" />
+          <stop offset="50%" stopColor="var(--sub-alt)" />
+          <stop offset="100%" stopColor="var(--background)" />
+        </linearGradient>
+        <linearGradient id={`${p}-floorfade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.3" />
+        </linearGradient>
+        <filter id={`${p}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+      </defs>
+
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-sky)`} />
+      <PerspectiveFloor idPrefix={p} />
+      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-glow)`} />
+
+      {/* Floating Fruit: Watermelon Half */}
+      <g transform="translate(140, 100) rotate(-20)">
+        <path d="M-40 0 A40 40 0 0 0 40 0 Z" fill="var(--accent)" />
+        <path d="M-42 0 A42 42 0 0 0 42 0" fill="none" stroke="#22c55e" strokeWidth="5" />
+        {/* Letter Badge */}
+        <circle cx="0" cy="14" r="12" fill="#0f172a" stroke="#ffffff" strokeWidth="2" />
+        <text x="0" y="18" fill="#ffffff" fontSize="13" fontWeight="900" textAnchor="middle">F</text>
+      </g>
+
+      {/* Golden Dragonfruit */}
+      <g transform="translate(270, 75) rotate(15)">
+        <circle cx="0" cy="0" r="32" fill="#f59e0b" stroke="#fde047" strokeWidth="3" />
+        <circle cx="0" cy="0" r="12" fill="#0f172a" stroke="#ffffff" strokeWidth="2" />
+        <text x="0" y="4" fill="#ffffff" fontSize="13" fontWeight="900" textAnchor="middle">K</text>
+      </g>
+
+      {/* Neon Slicing Blade Trail */}
+      <g filter={`url(#${p}-bloom)`}>
+        <line x1="40" y1="180" x2="360" y2="40" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+        <line x1="40" y1="180" x2="360" y2="40" stroke="var(--accent)" strokeWidth="10" strokeLinecap="round" opacity="0.8" />
+      </g>
+      <line x1="40" y1="180" x2="360" y2="40" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
+
+      {/* Splatter particles */}
+      {[
+        { x: 210, y: 110, r: 4 },
+        { x: 230, y: 95, r: 3 },
+        { x: 190, y: 130, r: 5 },
+        { x: 250, y: 80, r: 3.5 },
+        { x: 170, y: 125, r: 2.5 },
+      ].map((pt, i) => (
+        <circle key={i} cx={pt.x} cy={pt.y} r={pt.r} fill="var(--accent)" />
       ))}
     </svg>
   );

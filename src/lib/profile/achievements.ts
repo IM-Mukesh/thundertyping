@@ -14,7 +14,7 @@ export interface AchievementDef {
   name: string;
   description: string;
   /** Which game's page to link to. "site" for cross-game ones. */
-  game: "spellbound" | "typing-survivor" | "ghost-racer" | "card-battle" | "site";
+  game: "spellbound" | "typing-survivor" | "ghost-racer" | "card-battle" | "fruit-fury" | "site";
   /** Hidden until earned, for endings and surprises. */
   secret?: boolean;
 }
@@ -49,6 +49,15 @@ export const ACHIEVEMENT_LIST: readonly AchievementDef[] = [
   { id: "card-battle:combo", name: "It All Comes Together", description: "Rupture an enemy for 20 or more Blight.", game: "card-battle" },
   { id: "card-battle:win", name: "The House Rises", description: "Defeat the Crimson Choir.", game: "card-battle", secret: true },
 
+  // ------------------------------------------------------------ Fruit Fury
+  { id: "fruit-fury:first-slice", name: "First Splash", description: "Slice your first fruit in Fruit Fury.", game: "fruit-fury" },
+  { id: "fruit-fury:combo-10", name: "Blade Master", description: "Reach a 10x combo without missing.", game: "fruit-fury" },
+  { id: "fruit-fury:fever", name: "Fever Frenzy", description: "Trigger Fever Mode.", game: "fruit-fury" },
+  { id: "fruit-fury:golden", name: "Golden Harvest", description: "Slice a Golden Dragon Fruit.", game: "fruit-fury" },
+  { id: "fruit-fury:bomb-dodger", name: "Defusal Expert", description: "Safely let 10 bombs fall past without detonating.", game: "fruit-fury" },
+  { id: "fruit-fury:level-5", name: "High Velocity", description: "Reach Level 5 in Fruit Fury.", game: "fruit-fury" },
+  { id: "fruit-fury:score-10000", name: "Fruit Overlord", description: "Score 10,000 or more points in a single run.", game: "fruit-fury", secret: true },
+
   // -------------------------------------------------------------- site-wide
   { id: "site:all-games", name: "Full Arcade", description: "Play every game at least once.", game: "site" },
   { id: "site:level-10", name: "Regular", description: "Reach player level 10.", game: "site" },
@@ -65,5 +74,6 @@ export const GAME_LABELS: Record<AchievementDef["game"], string> = {
   "typing-survivor": "Typing Survivor",
   "ghost-racer": "Ghost Racer",
   "card-battle": "Card Battle",
+  "fruit-fury": "Fruit Fury",
   site: "Across the site",
 };

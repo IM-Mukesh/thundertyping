@@ -70,6 +70,7 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
   "typing-survivor": lazyGame(() => import("@/components/games/typing-survivor-game")),
   "ghost-racer": lazyGame(() => import("@/components/games/ghost-racer-game")),
   "card-battle": lazyGame(() => import("@/components/games/card-battle-game")),
+  "fruit-fury": lazyGame(() => import("@/components/games/fruit-fury-game")),
 };
 
 export function GameClient({

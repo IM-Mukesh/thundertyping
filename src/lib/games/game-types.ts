@@ -23,7 +23,8 @@ export type GameId =
   | "spellbound"
   | "typing-survivor"
   | "ghost-racer"
-  | "card-battle";
+  | "card-battle"
+  | "fruit-fury";
 
 export type GameStatus = "idle" | "running" | "paused" | "over";
 
@@ -358,6 +359,33 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     pitch:
       "Build your deck, type to play cards, defeat mighty foes and discover powerful combos.",
     highlights: ["3 characters", "40+ cards", "Deck archetypes", "Card combos", "3 bosses", "Turn-based"],  },
+  "fruit-fury": {
+    id: "fruit-fury",
+    name: "Fruit Fury",
+    tagline: "Slice flying fruits with swift typing. Avoid the bombs.",
+    rules: [
+      "Fruits launch into the air carrying letters — type the matching key to slice them.",
+      "Bombs also carry letters: typing a bomb letter detonates it and immediately ends the run.",
+      "Three lives (❤️❤️❤️). Any fruit that slips past the bottom edge costs one life.",
+      "Consecutive slices build combo multipliers; filling the meter activates 2X Fever Mode.",
+    ],
+    about: [
+      "Fruit Fury turns rapid single-letter recognition into an exhilarating arcade slice-fest. Instead of reading sequential text in a line, fruits burst upward with authentic parabolic arcs, reaching a float apex before falling back down. Every fruit displays a high-contrast letter that requires instant reflex typing.",
+      "The signature tension comes from bombs mixed into the fruit volleys. Bombs also display letters, transforming mechanical reflex into high-stakes decision making. A single mistype on a bomb immediately triggers detonation and ends the run, while ignoring it allows it to harmlessly fall off-screen.",
+      "Clean, consecutive slices rapidly fill the Fever meter. When maxed out, 8 seconds of Fever Mode triggers with 2X score multipliers, rainbow visual bursts, energetic synth music, and a frenzy of bomb-free fruit showers.",
+    ],
+    lives: 3,
+    scoreBy: "points",
+    accent: "#f43f5e",
+    category: "Arcade",
+    tags: ["Arcade", "Reflex", "Action"],
+    duration: "2-5 min",
+    replayability: "Very High",
+    featured: true,
+    pitch:
+      "Slice launching fruit with lightning-fast typing reflexes. Chain combos, unleash Fever Mode, and steer clear of fatal bombs!",
+    highlights: ["Parabolic physics arcs", "Fatal bomb defusal", "Fever Frenzy 2X Mode", "Golden & Frost Specials", "Combo multipliers", "Procedural dynamic audio"],
+  },
 };
 
 export const GAME_LIST: GameDefinition[] = [
@@ -371,4 +399,5 @@ export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["typing-survivor"],
   GAME_DEFINITIONS["ghost-racer"],
   GAME_DEFINITIONS["card-battle"],
+  GAME_DEFINITIONS["fruit-fury"],
 ];
