@@ -14,11 +14,11 @@ const routes: {
   changeFrequency: "daily" | "monthly";
   lastModified: string;
 }[] = [
-  { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-09-15" },
+  { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-09-26" },
   { path: "/about", priority: 0.5, changeFrequency: "monthly", lastModified: "2026-09-14" },
   { path: "/privacy", priority: 0.3, changeFrequency: "monthly", lastModified: "2026-09-14" },
   { path: "/terms", priority: 0.3, changeFrequency: "monthly", lastModified: "2026-09-14" },
-  { path: "/guides", priority: 0.6, changeFrequency: "monthly", lastModified: "2026-09-24" },
+  { path: "/guides", priority: 0.8, changeFrequency: "daily", lastModified: "2026-09-26" },
   {
     path: "/guides/how-to-improve-typing-speed",
     priority: 0.6,
@@ -97,16 +97,72 @@ const routes: {
     changeFrequency: "monthly",
     lastModified: "2026-09-25",
   },
-  { path: "/games", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-15" },
-  // Generated from GAME_LIST rather than hand-listed -- a hand-maintained
-  // copy of this list previously drifted out of sync and silently dropped 4
-  // of 10 live game routes from the sitemap. Bump a specific game's date by
-  // pulling it out into its own entry if its content changes independently.
+  {
+    path: "/guides/proper-typing-posture-and-ergonomics",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/typing-stretches-and-hand-warmups",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/how-to-break-a-typing-speed-plateau",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/qwerty-vs-dvorak-vs-colemak",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/best-keyboard-switches-for-typing",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/911-dispatcher-typing-test",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/typing-for-programmers",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/one-handed-typing-guide",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  {
+    path: "/guides/how-to-type-numbers-and-symbols-without-looking",
+    priority: 0.7,
+    changeFrequency: "monthly",
+    lastModified: "2026-09-26",
+  },
+  { path: "/games", priority: 0.8, changeFrequency: "daily", lastModified: "2026-09-26" },
   ...GAME_LIST.map((game) => ({
     path: `/games/${game.id}`,
-    priority: 0.7,
+    priority: game.id === "fruit-fury" ? 0.8 : 0.7,
     changeFrequency: "monthly" as const,
-    lastModified: "2026-09-15",
+    lastModified: game.id === "fruit-fury" ? "2026-09-26" : "2026-09-15",
   })),
   { path: "/lessons", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-22" },
   { path: "/lessons/practice", priority: 0.4, changeFrequency: "monthly", lastModified: "2026-09-24" },

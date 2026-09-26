@@ -49,7 +49,7 @@ const PRIMARY_LINKS = [
   {
     href: "/games",
     label: "Arcade Games",
-    badge: "10 Games",
+    badge: "11 Games",
     icon: Gamepad2,
   },
   {
@@ -61,7 +61,7 @@ const PRIMARY_LINKS = [
   {
     href: "/guides",
     label: "Guides & Tools",
-    badge: "Calculator & Maps",
+    badge: "23 Guides",
     icon: Library,
   },
   {

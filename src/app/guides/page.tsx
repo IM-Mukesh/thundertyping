@@ -80,6 +80,66 @@ const GUIDES = [
     title: "Free Typing Resources for Teachers",
     description: "A week-by-week curriculum built from 28 real lessons, classroom activities, and assessment ideas.",
   },
+  {
+    href: "/guides/proper-typing-posture-and-ergonomics",
+    title: "Proper Typing Posture & Ergonomics",
+    description:
+      "A complete desk setup guide: 90-degree elbow angles, neutral wrists, monitor distance, and carpal tunnel prevention.",
+  },
+  {
+    href: "/guides/typing-stretches-and-hand-warmups",
+    title: "8 Essential Typing Stretches & Hand Warmups",
+    description:
+      "Physical therapist-recommended tendon glides and mobility stretches to relieve wrist pain and prevent RSI.",
+  },
+  {
+    href: "/guides/how-to-break-a-typing-speed-plateau",
+    title: "How to Break a Typing Speed Plateau",
+    description:
+      "Stuck at 50, 70, or 90 WPM? Motor learning protocols, word chunking, and burst training to push past your ceiling.",
+  },
+  {
+    href: "/guides/qwerty-vs-dvorak-vs-colemak",
+    title: "QWERTY vs. Dvorak vs. Colemak",
+    description:
+      "Finger travel, same-finger bigrams, and ergonomics: real data on which keyboard layout is actually fastest.",
+  },
+  {
+    href: "/guides/best-keyboard-switches-for-typing",
+    title: "Best Keyboard Switches for Typing",
+    description:
+      "Linear vs. tactile vs. clicky compared: actuation force, travel distance, and eliminating bottoming-out fatigue.",
+  },
+  {
+    href: "/guides/911-dispatcher-typing-test",
+    title: "911 Dispatcher Typing Test & CritiCall Prep",
+    description:
+      "Passing benchmarks, audio-to-CAD transcription, alphanumeric data entry, and how to train for public safety tests.",
+  },
+  {
+    href: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
+    title: "Typing for Dyslexia and Dysgraphia",
+    description:
+      "How multi-sensory touch typing and motor memory liberate neurodivergent learners from handwriting barriers.",
+  },
+  {
+    href: "/guides/typing-for-programmers",
+    title: "Typing for Programmers",
+    description:
+      "Master brackets, braces, and logic operators without looking, plus Vim modal editing and Caps Lock remapping.",
+  },
+  {
+    href: "/guides/one-handed-typing-guide",
+    title: "One-Handed Typing Guide",
+    description:
+      "Adaptive layouts, Half-QWERTY mirror typing, and radial touch zones for stroke recovery, amputees, and injury.",
+  },
+  {
+    href: "/guides/how-to-type-numbers-and-symbols-without-looking",
+    title: "How to Type Numbers & Symbols Blind",
+    description:
+      "Conquer the top number row with anchor fingers, diagonal reach vectors, and the opposite-hand Shift rule.",
+  },
 ];
 
 export default function GuidesIndexPage() {

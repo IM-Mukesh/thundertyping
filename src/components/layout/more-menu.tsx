@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { BookOpen, LayoutGrid, Trophy } from "lucide-react";
+import { BookOpen, LayoutGrid, Library, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 // The header's primary pills (Lessons, Games, Profile) are budget-constrained
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils/cn";
 // a new feature page (a new game mode's own route, a future hub, etc.) means
 // appending one entry here, not adding another header icon.
 const MORE_LINKS = [
+  { href: "/guides", label: "Guides", icon: Library },
   { href: "/vocabulary", label: "Vocabulary", icon: BookOpen },
   { href: "/achievements", label: "Achievements", icon: Trophy },
 ];
