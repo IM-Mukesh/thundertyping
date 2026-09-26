@@ -48,7 +48,7 @@ export function MoreMenu() {
         aria-haspopup="true"
         className="hidden h-9 w-9 items-center justify-center rounded-md text-sub transition-colors hover:bg-sub-alt hover:text-foreground sm:flex"
       >
-        <LayoutGrid size={18} />
+        <LayoutGrid size={16} />
       </button>
 
       <AnimatePresence>

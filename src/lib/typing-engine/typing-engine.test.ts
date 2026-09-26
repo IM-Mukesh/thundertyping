@@ -356,3 +356,22 @@ describe("mobile keyboards deliver the space in the value", () => {
     assert.equal(s.activeWordIndex, 2, "the cursor advanced through the words");
   });
 });
+
+describe("custom mode fallback", () => {
+  it("provides fallback words when custom text is empty or whitespace", () => {
+    const config = {
+      mode: "custom" as const,
+      timeDuration: 30 as const,
+      wordCount: 25 as const,
+      quoteLength: "medium" as const,
+      customText: "   ",
+      punctuation: false,
+      numbers: false,
+      vocabDifficulty: "easy" as const,
+    };
+    const s = createInitialState(config);
+    assert.ok(s.words.length > 0, "must provide fallback words rather than an empty array");
+    assert.ok(s.wordStates.length > 0, "wordStates must have entries");
+    assert.equal(s.words[0], "The");
+  });
+});

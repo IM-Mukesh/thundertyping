@@ -16,7 +16,7 @@ const FEATURES = [
 
 export function HomepageFeatureNav() {
   return (
-    <nav aria-label="Explore HeroTyping" className="mx-auto hidden w-full max-w-2xl grid-cols-2 gap-2 sm:grid sm:grid-cols-4">
+    <nav aria-label="Explore HeroTyping" className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
       {FEATURES.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}

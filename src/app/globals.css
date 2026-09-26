@@ -30,8 +30,8 @@
 [data-theme="light"] {
   --background: #fafaf8;
   --foreground: #17171a;
-  /* Was #9a9a94 (2.71:1 against --background); #6b6b66 holds ~5.1:1. */
-  --sub: #6b6b66;
+  /* #52524e provides 6.8:1 contrast against #fafaf8 so even 70% opacity passes WCAG AA (4.5:1) */
+  --sub: #52524e;
   --sub-alt: #ececea;
   --accent: #ca8a04;
   --caret: #ca8a04;
@@ -127,6 +127,20 @@
 
 * {
   border-color: var(--border);
+}
+
+body,
+header,
+footer,
+nav,
+button,
+a,
+input,
+select,
+textarea,
+[role="dialog"],
+[role="menu"],
+.theme-transition {
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease,

@@ -178,7 +178,7 @@ export default function TypingForProgrammersPage() {
         </p>
         <div className="flex flex-col gap-4">
           {SYMBOL_MAPPINGS.map((item) => (
-            <div key={item.symbol} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={item.symbol} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <div className="flex items-center justify-between border-b border-border/50 pb-2">
                 <code className="text-sm font-bold text-accent">{item.symbol}</code>
                 <span className="text-xs font-semibold text-foreground/80">{item.finger}</span>

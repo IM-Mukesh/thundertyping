@@ -163,7 +163,7 @@ export default function TypingPracticeForBeginnersPage() {
         <h2 id="routines">Practice routines by time available</h2>
         <div className="flex flex-col gap-3">
           {ROUTINES.map((row) => (
-            <div key={row.minutes} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.minutes} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.minutes}</p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.plan}</p>
             </div>

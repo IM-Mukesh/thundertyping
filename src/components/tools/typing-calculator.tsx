@@ -19,7 +19,7 @@ const labelClass = "font-mono text-[10px] uppercase tracking-wider text-sub";
 
 function StatTile({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-sub-alt/20 px-4 py-4 text-center">
+    <div className="theme-transition flex flex-col items-center gap-1 rounded-xl border border-border bg-sub-alt/20 px-4 py-4 text-center">
       <span className="font-display text-2xl font-black text-accent sm:text-3xl">
         {value}
         {unit && <span className="ml-1 text-sm font-medium text-sub">{unit}</span>}
@@ -231,7 +231,7 @@ export function TypingCalculator() {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("test");
 
   return (
-    <div className="rounded-2xl border border-accent/25 bg-sub-alt/15 p-5 sm:p-7">
+    <div className="theme-transition rounded-2xl border border-accent/25 bg-sub-alt/15 p-5 sm:p-7">
       <div className="mb-5 flex gap-2">
         {TABS.map((t) => (
           <button

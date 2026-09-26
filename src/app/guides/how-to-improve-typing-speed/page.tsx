@@ -257,7 +257,7 @@ export default function HowToImproveTypingSpeedPage() {
         />
         <div className="flex flex-col gap-3">
           {LADDER.map((step) => (
-            <div key={step.range} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={step.range} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
                 {step.range}
               </p>

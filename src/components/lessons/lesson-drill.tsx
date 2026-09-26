@@ -228,7 +228,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   if (!unlocked) {
     const previousUnit = currentIndex > 0 ? LESSON_LIST[currentIndex - 1] : undefined;
     return (
-      <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-10 text-center">
+      <div className="theme-transition flex w-full max-w-3xl flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-10 text-center">
         <Lock size={28} className="text-sub" aria-hidden="true" />
         <p className="font-display text-sm font-bold uppercase tracking-wide text-foreground">Unit locked</p>
         <p className="max-w-sm text-sm text-sub">
@@ -252,7 +252,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
         <span className="whitespace-nowrap font-bold text-foreground">
           Step {sessionStep} of {subLessons.length}
         </span>
-        <div className="h-2 flex-1 max-w-48 overflow-hidden rounded-full border border-border bg-sub-alt">
+        <div className="theme-transition h-2 flex-1 max-w-48 overflow-hidden rounded-full border border-border bg-sub-alt">
           <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${progressPct}%` }} />
         </div>
         <button
@@ -295,7 +295,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       <VirtualKeyboard nextKey={nextKey} />
 
       {isFinished && result && (
-        <div className="flex w-full flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-6 text-center">
+        <div className="theme-transition flex w-full flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-6 text-center">
           <p
             className={cn(
               "flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide",

@@ -234,7 +234,7 @@ export default function HowToTouchTypePage() {
         </p>
         <div className="flex flex-col gap-3">
           {MILESTONES.map((row) => (
-            <div key={row.stage} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.stage} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
                 {row.stage}
               </p>

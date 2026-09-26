@@ -102,7 +102,7 @@ export function PracticeDrill() {
 
   if (weakKeys.length === 0) {
     return (
-      <div className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-10 text-center">
+      <div className="theme-transition flex w-full max-w-3xl flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-10 text-center">
         <p className="font-display text-sm font-bold uppercase tracking-wide text-foreground">Nothing to drill yet</p>
         <p className="max-w-sm text-sm text-sub">
           Keep practicing lessons — once a key shows a real pattern of trouble, a drill for it will appear here.
@@ -149,7 +149,7 @@ export function PracticeDrill() {
       <VirtualKeyboard nextKey={nextKey} />
 
       {isFinished && (
-        <div className="flex w-full flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-6 text-center">
+        <div className="theme-transition flex w-full flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-6 text-center">
           <p className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-correct">
             <CheckCircle2 size={16} aria-hidden="true" />
             Drill complete

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { RotateCcw, SlidersHorizontal } from "lucide-react";
+import { RotateCcw, SlidersHorizontal, Volume2, VolumeX, Wrench } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
@@ -21,6 +21,7 @@ import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { MobileTestSettingsModal } from "@/components/typing-test/mobile-test-settings-modal";
 import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
 import { setTestStatus } from "@/lib/typing-engine/test-status-store";
+import { playSound } from "@/lib/games/game-audio";
 
 export function TypingTest() {
   const mode = useSettingsStore((s) => s.mode);
@@ -30,6 +31,8 @@ export function TypingTest() {
   const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const toggleSound = useSettingsStore((s) => s.toggleSound);
   const setMode = useSettingsStore((s) => s.setMode);
 
   const [customText, setCustomText] = useState("");
@@ -41,6 +44,7 @@ export function TypingTest() {
   // Diagnostic only -- never subtracted from the test duration. See
   // docs/typing-engine.md for why the clock deliberately keeps running.
   const focusLossCountRef = useRef(0);
+  const prevKeystrokesRef = useRef({ correct: 0, incorrect: 0 });
 
   const modeBadge = useMemo(() => {
     if (mode === "time") return `${timeDuration}s`;
@@ -129,7 +133,15 @@ export function TypingTest() {
       engine.state.charTally.missed,
     );
     const param =
-      config.mode === "time" ? config.timeDuration : config.wordCount;
+      config.mode === "time"
+        ? config.timeDuration
+        : config.mode === "words"
+          ? config.wordCount
+          : config.mode === "quote"
+            ? config.quoteLength
+            : config.mode === "vocabulary"
+              ? config.vocabDifficulty
+              : "custom";
     const { isNewBest: newBest } = recordResult(
       config.mode,
       param,
@@ -139,9 +151,30 @@ export function TypingTest() {
       accuracy,
     );
     setIsNewBest(newBest);
+    playSound(newBest ? "clear" : "lesson-clear", soundEnabled);
     // intentionally narrow: only re-evaluate when the test transitions to "finished"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine.state.status]);
+
+  useEffect(() => {
+    if (engine.state.status !== "running") {
+      prevKeystrokesRef.current = {
+        correct: engine.state.correctKeystrokes,
+        incorrect: engine.state.incorrectKeystrokes,
+      };
+      return;
+    }
+    const prev = prevKeystrokesRef.current;
+    if (engine.state.correctKeystrokes > prev.correct) {
+      playSound("lesson-key", soundEnabled);
+    } else if (engine.state.incorrectKeystrokes > prev.incorrect) {
+      playSound("lesson-typo", soundEnabled);
+    }
+    prevKeystrokesRef.current = {
+      correct: engine.state.correctKeystrokes,
+      incorrect: engine.state.incorrectKeystrokes,
+    };
+  }, [engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.status, soundEnabled]);
 
   const handleFocusChange = useCallback((focused: boolean) => {
     setIsFocused(focused);
@@ -190,14 +223,14 @@ export function TypingTest() {
   const activeWord = engine.state.wordStates[engine.state.activeWordIndex];
 
   const isRunning = engine.state.status === "running";
-  const showIdleChrome = engine.state.status === "idle";
+  const showIdleChrome = engine.state.status !== "running";
 
   return (
     <div className="flex w-full flex-col items-center gap-4 sm:gap-5">
       {/* Both children share this grid cell and align to bottom (items-end)
           so the top of the word-stream below never shifts when the test starts. */}
       <div className="grid w-full items-end">
-        {/* Idle Chrome */}
+        {/* Idle & Results Chrome (Config bar and mode settings) */}
         <div
           className={cn(
             "[grid-area:1/1] w-full transition duration-200",
@@ -228,14 +261,24 @@ export function TypingTest() {
           </div>
         </div>
 
-        {/* Live Timer during test: left-aligned, exactly ~20px above typing area */}
+        {/* Live Timer during test: left-aligned timer, with mobile restart button on right */}
         <div
           className={cn(
-            "[grid-area:1/1] w-full flex items-end justify-start pb-0.5 transition-opacity duration-200",
+            "[grid-area:1/1] w-full flex items-end justify-between pb-0.5 transition-opacity duration-200",
             isRunning ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         >
           <LiveStatsBar state={engine.state} />
+          {/* Mobile-only restart button during running test */}
+          <button
+            type="button"
+            onClick={handleRestart}
+            aria-label="Restart test"
+            className="flex sm:hidden h-8 w-8 items-center justify-center rounded-lg border border-border/80 bg-sub-alt/40 text-sub active:scale-95"
+            title="Restart test"
+          >
+            <RotateCcw size={14} />
+          </button>
         </div>
       </div>
 
@@ -249,6 +292,15 @@ export function TypingTest() {
               wordStates={engine.state.wordStates}
               activeWordIndex={engine.state.activeWordIndex}
             />
+            {engine.state.quoteSource && (
+              <p className="mt-2 text-center text-xs text-sub">— {engine.state.quoteSource}</p>
+            )}
+            {mode === "custom" && (
+              <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-accent">
+                <Wrench size={13} />
+                <span>Custom text active &middot; {engine.state.words.length} words</span>
+              </div>
+            )}
             <HiddenInput
               value={activeWord?.typed ?? ""}
               status={engine.state.status}
@@ -274,7 +326,7 @@ export function TypingTest() {
             {isRunning && !isFocused && (
               <div
                 role="status"
-                className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-[2px]"
+                className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-[2px]"
               >
                 <span className="font-display text-sm uppercase tracking-wider text-sub">
                   Click or press a key to resume &mdash; the clock is still running
@@ -282,18 +334,32 @@ export function TypingTest() {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleRestart}
-            aria-label="Restart test"
-            title="Restart (Tab)"
-            className={cn(
-              "flex h-11 w-11 items-center justify-center rounded-full text-sub transition-opacity duration-200 hover:bg-sub-alt hover:text-foreground sm:h-9 sm:w-9",
-              isRunning ? "pointer-events-none opacity-0" : "opacity-100",
-            )}
-          >
-            <RotateCcw size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRestart}
+              aria-label="Restart test"
+              title="Restart (Tab)"
+              className={cn(
+                "flex h-11 w-11 items-center justify-center rounded-full text-sub transition-opacity duration-200 hover:bg-sub-alt hover:text-foreground sm:h-9 sm:w-9",
+                isRunning ? "pointer-events-none opacity-0" : "opacity-100",
+              )}
+            >
+              <RotateCcw size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={soundEnabled ? "Mute typing sound" : "Enable typing sound"}
+              title={soundEnabled ? "Mute typing sound" : "Enable typing sound"}
+              className={cn(
+                "flex h-11 w-11 items-center justify-center rounded-full text-sub transition-opacity duration-200 hover:bg-sub-alt hover:text-foreground sm:h-9 sm:w-9",
+                isRunning ? "pointer-events-none opacity-0" : "opacity-100",
+              )}
+            >
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+          </div>
         </div>
       ) : (
         <ResultsPanel
@@ -301,10 +367,6 @@ export function TypingTest() {
           isNewBest={isNewBest}
           onRestart={handleRestart}
         />
-      )}
-
-      {engine.state.quoteSource && engine.state.status !== "finished" && (
-        <p className="text-xs text-sub">— {engine.state.quoteSource}</p>
       )}
 
       <CustomTextModal

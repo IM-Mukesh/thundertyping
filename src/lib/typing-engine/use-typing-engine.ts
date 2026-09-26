@@ -40,8 +40,11 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
       const quote = pickRandomQuote(config.quoteLength);
       return { words: quote.text.split(" ").filter(Boolean), quoteSource: quote.source };
     }
-    case "custom":
-      return { words: config.customText.trim().split(/\s+/).filter(Boolean), quoteSource: null };
+    case "custom": {
+      const parsed = config.customText.trim().split(/\s+/).filter(Boolean);
+      const fallback = ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"];
+      return { words: parsed.length > 0 ? parsed : fallback, quoteSource: null };
+    }
     case "vocabulary":
       return { words: pickPracticeWords(config.vocabDifficulty, config.wordCount), quoteSource: null };
   }

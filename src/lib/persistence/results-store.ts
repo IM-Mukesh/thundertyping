@@ -22,8 +22,8 @@ export interface PersonalBest {
   achievedAt: number;
 }
 
-function isTrackableMode(mode: TestMode): mode is "time" | "words" {
-  return mode === "time" || mode === "words";
+function isTrackableMode(mode: TestMode): mode is "time" | "words" | "quote" | "vocabulary" {
+  return mode === "time" || mode === "words" || mode === "quote" || mode === "vocabulary";
 }
 
 // Finite, non-negative, and (for accuracy) capped at 100 -- `typeof ===

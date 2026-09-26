@@ -460,7 +460,7 @@ function Lane({
       <span className="w-12 shrink-0 font-mono text-[10px] uppercase tracking-wider text-sub sm:w-14">
         {label}
       </span>
-      <div className="relative h-8 flex-1 overflow-hidden rounded-lg border border-border/60 bg-sub-alt/60 sm:h-10">
+      <div className="theme-transition relative h-8 flex-1 overflow-hidden rounded-lg border border-border/60 bg-sub-alt/60 sm:h-10">
         <div
           className={cn(
             "absolute inset-y-0 left-0 transition-[width] duration-100",

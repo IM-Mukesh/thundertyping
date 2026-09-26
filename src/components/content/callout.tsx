@@ -10,7 +10,7 @@ interface CalloutProps {
 /** A bordered box for a quick-answer, formula, or worked-example block that should stand apart from surrounding prose -- same card language as the rest of the site (border-border, bg-sub-alt/20, rounded-xl). */
 export function Callout({ label, children, className }: CalloutProps) {
   return (
-    <div className={cn("rounded-xl border border-border bg-sub-alt/20 p-4 sm:p-5", className)}>
+    <div className={cn("theme-transition rounded-xl border border-border bg-sub-alt/20 p-4 sm:p-5", className)}>
       {label && (
         <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-accent">{label}</p>
       )}

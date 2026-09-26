@@ -151,7 +151,7 @@ export default function EnglishTypingTestPage() {
         </p>
         <div className="flex flex-col gap-3">
           {EXAMPLES.map((example) => (
-            <div key={example.level} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={example.level} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
                 {example.level}
               </p>

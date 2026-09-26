@@ -231,7 +231,7 @@ export default function WpmCpmKphCalculatorPage() {
         <h2 id="mistakes">Common mistakes</h2>
         <div className="flex flex-col gap-3">
           {MISTAKES.map((row) => (
-            <div key={row.mistake} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.mistake} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.mistake}</p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.fix}</p>
             </div>

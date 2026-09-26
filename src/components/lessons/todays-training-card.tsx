@@ -40,7 +40,7 @@ export function TodaysTrainingCard() {
   const primary = actions[0];
 
   return (
-    <div className="flex w-full flex-col gap-4 rounded-xl border border-accent/30 bg-sub-alt/30 p-4 sm:p-5">
+    <div className="theme-transition flex w-full flex-col gap-4 rounded-xl border border-accent/30 bg-sub-alt/30 p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-xs font-bold uppercase tracking-wider text-accent">Today&apos;s training</h2>
         <span className="font-mono text-[11px] text-sub">~{totalMinutes} min</span>

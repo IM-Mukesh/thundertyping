@@ -161,7 +161,7 @@ export default function TypingResourcesForTeachersPage() {
         </p>
         <div className="flex flex-col gap-2">
           {WEEKLY_PLAN.map((row) => (
-            <div key={row.week} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.week} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
                 Week {row.week}
               </p>
@@ -178,7 +178,7 @@ export default function TypingResourcesForTeachersPage() {
         <h2 id="routines">Classroom routines by time available</h2>
         <div className="flex flex-col gap-3">
           {ROUTINES.map((row) => (
-            <div key={row.minutes} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.minutes} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.minutes}</p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.plan}</p>
             </div>
@@ -188,7 +188,7 @@ export default function TypingResourcesForTeachersPage() {
         <h2 id="activities">Activities</h2>
         <div className="flex flex-col gap-3">
           {ACTIVITIES.map((row) => (
-            <div key={row.title} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.title} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.title}</p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.detail}</p>
             </div>

@@ -156,7 +156,7 @@ export default function AverageTypingSpeedPage() {
         <h2 id="is-my-wpm-good">&ldquo;Is my WPM good?&rdquo;</h2>
         <div className="flex flex-col gap-3">
           {IS_X_GOOD.map((row) => (
-            <div key={row.wpm} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={row.wpm} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="text-sm font-medium text-foreground">{row.wpm}</p>
               <p className="mt-1 text-sm leading-relaxed text-foreground/90">{row.verdict}</p>
             </div>

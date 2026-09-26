@@ -375,14 +375,14 @@ export default function HowToBreakPlateauPage() {
         </p>
         <div className="flex flex-col gap-4">
           {DIAGNOSTIC_TABLE.map((row) => (
-            <div key={row.meaning} className="rounded-xl border border-border bg-sub-alt/20 p-5">
+            <div key={row.meaning} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/50 pb-2">
                 <h3 className="text-base font-semibold text-accent">{row.meaning}</h3>
               </div>
               <p className="mt-2 text-sm text-foreground/90">
                 <strong>Symptom:</strong> {row.symptom}
               </p>
-              <div className="mt-2 rounded-lg border border-border/60 bg-background/50 p-3 text-xs text-foreground/85">
+              <div className="theme-transition mt-2 rounded-lg border border-border/60 bg-background/50 p-3 text-xs text-foreground/85">
                 <p><strong>Practical Mini-Test:</strong> {row.miniTest}</p>
               </div>
               <p className="mt-3 text-sm text-foreground/90">

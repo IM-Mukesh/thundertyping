@@ -184,7 +184,7 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4" onClick={focusInput}>
-      <div className="relative flex min-h-[24rem] flex-col justify-center overflow-hidden rounded-2xl border border-border bg-sub-alt/20 p-6 sm:p-10">
+      <div className="theme-transition relative flex min-h-[24rem] flex-col justify-center overflow-hidden rounded-2xl border border-border bg-sub-alt/20 p-6 sm:p-10">
         {state.status === "idle" && (
           <IntroCard
             difficulty={difficulty}
@@ -370,7 +370,7 @@ function IntroCard({
         A definition appears — type the word it describes. {SESSION_WORD_COUNT} words a round, words you haven&apos;t
         mastered yet come first.
       </p>
-      <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-sub-alt/30 px-3 py-1 font-mono text-[11px] text-sub">
+      <div className="theme-transition flex items-center gap-1.5 rounded-full border border-border/60 bg-sub-alt/30 px-3 py-1 font-mono text-[11px] text-sub">
         <Volume2 size={12} className="text-accent" />
         <span>Pronunciation &amp; explanations supported (Alt+P / Alt+E)</span>
       </div>
@@ -427,7 +427,7 @@ function ResultsCard({
       </div>
 
       {missed.length > 0 && (
-        <div className="flex w-full max-w-md flex-col gap-1.5 rounded-xl border border-border bg-background/50 p-4 text-left">
+        <div className="theme-transition flex w-full max-w-md flex-col gap-1.5 rounded-xl border border-border bg-background/50 p-4 text-left">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-sub">Review these words (click 🔊 to hear)</p>
           {missed.map((m) => (
             <div key={m.word} className="flex items-center justify-between font-mono text-xs text-sub">

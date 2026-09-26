@@ -11,6 +11,8 @@ import {
   Quote as QuoteIcon,
   SlidersHorizontal,
   Type,
+  Volume2,
+  VolumeX,
   Wrench,
   X,
 } from "lucide-react";
@@ -74,6 +76,8 @@ export function MobileTestSettingsModal({
   const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const toggleSound = useSettingsStore((s) => s.toggleSound);
 
   const setMode = useSettingsStore((s) => s.setMode);
   const setTimeDuration = useSettingsStore((s) => s.setTimeDuration);
@@ -432,6 +436,30 @@ export function MobileTestSettingsModal({
                   </div>
                 </div>
               )}
+              {/* Audio Feedback */}
+              <div>
+                <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
+                  Audio Feedback
+                </span>
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={toggleSound}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl border px-3 py-2.5 font-mono text-xs transition-colors",
+                      soundEnabled
+                        ? "border-accent bg-accent/15 text-accent font-bold"
+                        : "border-border/70 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                      <span>Typing Sounds</span>
+                    </span>
+                    <span className="font-sans text-[11px]">{soundEnabled ? "Enabled" : "Muted"}</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Footer */}

@@ -222,7 +222,7 @@ export default function TypingStretchesPage() {
         <h2 id="the-8-stretches">The 8 essential typing stretches</h2>
         <div className="flex flex-col gap-5">
           {STRETCHES.map((item) => (
-            <div key={item.name} className="rounded-xl border border-border bg-sub-alt/20 p-5">
+            <div key={item.name} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/50 pb-2">
                 <h3 className="text-base font-semibold text-foreground">{item.name}</h3>
                 <span className="rounded bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent">

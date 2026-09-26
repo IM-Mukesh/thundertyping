@@ -102,7 +102,7 @@ export default async function LessonPage({ params }: PageProps<"/lessons/[lesson
 
           <div className="mt-10 flex w-full flex-col gap-6">
             {practiceKeys.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-sub-alt/20 p-4">
+              <div className="theme-transition flex flex-wrap items-center gap-2 rounded-xl border border-border bg-sub-alt/20 p-4">
                 <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-sub">
                   <Keyboard size={13} aria-hidden="true" />
                   Keys you&apos;ll practice

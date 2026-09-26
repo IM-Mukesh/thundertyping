@@ -155,8 +155,8 @@ export default function GamesHubPage() {
             gradient's dark two-thirds by design -- the art is anchored left,
             same crop logic as the hero -- so it reads at any viewport without
             the copy ever sitting on top of the busiest part of the image. */}
-        <section className="relative mt-16 overflow-hidden rounded-2xl border border-accent/25">
-          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-sub-alt/40">
+        <section className="theme-transition relative mt-16 overflow-hidden rounded-2xl border border-accent/25">
+          <div aria-hidden="true" className="theme-transition absolute inset-0 -z-10 bg-sub-alt/40">
             {ctaArt && (
               <Image
                 src={ctaArt}
@@ -176,7 +176,7 @@ export default function GamesHubPage() {
                 copy at some viewport widths. A solid backdrop behind the text
                 itself guarantees contrast regardless of what any future
                 replacement image looks like. */}
-            <div className="max-w-xl rounded-xl bg-background/80 p-4 backdrop-blur-sm sm:p-5">
+            <div className="theme-transition max-w-xl rounded-xl bg-background/80 p-4 backdrop-blur-sm sm:p-5">
               <span className="mb-3 flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-background/70 px-3 py-1 font-display text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
                 <Compass size={12} aria-hidden="true" />
                 Not sure where to start?
@@ -206,7 +206,7 @@ export default function GamesHubPage() {
         {/* Mission briefing rather than an article box: corner ticks, a rule
             under the heading and a HUD label, so it reads as part of the same
             interface as the cards instead of a essay pasted underneath them. */}
-        <section className="neon-corners relative mt-20 overflow-hidden rounded-2xl border border-accent/25 bg-sub-alt/15 p-6 sm:p-9">
+        <section className="theme-transition neon-corners relative mt-20 overflow-hidden rounded-2xl border border-accent/25 bg-sub-alt/15 p-6 sm:p-9">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 opacity-[0.07]"

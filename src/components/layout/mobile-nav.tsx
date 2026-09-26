@@ -8,6 +8,7 @@ import {
   BookOpen,
   Check,
   Gamepad2,
+  Globe,
   GraduationCap,
   Keyboard,
   Library,
@@ -199,7 +200,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
 
             {/* Profile XP Progress (if player has XP) */}
             {profile.xp > 0 && (
-              <div className="mt-3 rounded-xl border border-border/70 bg-sub-alt/20 p-3">
+              <div className="theme-transition mt-3 rounded-xl border border-border/70 bg-sub-alt/20 p-3">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-foreground font-bold">Level {level}</span>
                   <span className="text-accent tabular-nums text-[11px]">
@@ -287,6 +288,20 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Language Section */}
+            <div className="mt-4 border-t border-border pt-4">
+              <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
+                Language
+              </span>
+              <div className="theme-transition mt-2 flex items-center justify-between rounded-lg border border-border/60 bg-sub-alt/30 px-3 py-2 text-xs">
+                <span className="flex items-center gap-2 font-mono text-foreground">
+                  <Globe size={14} className="text-accent" />
+                  English
+                </span>
+                <span className="rounded bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-accent">Active</span>
               </div>
             </div>
 

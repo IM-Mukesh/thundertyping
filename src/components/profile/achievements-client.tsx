@@ -190,7 +190,7 @@ function AchievementCard({
   return (
     <li
       className={cn(
-        "flex items-start gap-3 rounded-xl border p-3 transition-colors",
+        "theme-transition flex items-start gap-3 rounded-xl border p-3 transition-colors",
         got ? "border-accent/50 bg-accent/5" : "border-border bg-sub-alt/20",
       )}
     >

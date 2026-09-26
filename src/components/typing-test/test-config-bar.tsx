@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
@@ -53,6 +53,50 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 6);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 6);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [checkScroll, mode]);
+
+  const maskStyle = useMemo(() => {
+    if (!canScrollLeft && !canScrollRight) return undefined;
+    if (canScrollLeft && canScrollRight) {
+      return {
+        maskImage: "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+        WebkitMaskImage: "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+      };
+    }
+    if (canScrollLeft) {
+      return {
+        maskImage: "linear-gradient(to right, transparent, black 24px, black 100%)",
+        WebkitMaskImage: "linear-gradient(to right, transparent, black 24px, black 100%)",
+      };
+    }
+    return {
+      maskImage: "linear-gradient(to left, transparent, black 24px, black 100%)",
+      WebkitMaskImage: "linear-gradient(to left, transparent, black 24px, black 100%)",
+    };
+  }, [canScrollLeft, canScrollRight]);
+
   const showTextToggles = mode === "time" || mode === "words";
 
   // Divided into 3 distinct parts for larger screens (laptops, monitors, large devices):
@@ -62,8 +106,12 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   // Divider: |
   // Part 3: Options (15s, 30s, 1m, 2m, edit icon / word counts / etc.)
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-xl bg-sub-alt/40 border border-border/60 px-3 py-1.5 sm:px-4 sm:py-2 shadow-xs backdrop-blur-xs">
-      <div className="flex items-center justify-between text-sm overflow-x-auto scrollbar-none">
+    <div className="theme-transition w-full max-w-4xl mx-auto rounded-xl bg-sub-alt/40 border border-border/60 px-3 py-1.5 sm:px-4 sm:py-2 shadow-xs backdrop-blur-xs">
+      <div
+        ref={scrollRef}
+        style={maskStyle}
+        className="flex items-center justify-between text-sm overflow-x-auto scrollbar-none transition-all duration-150"
+      >
         {/* Part 1: Modifiers (punctuation, numbers) */}
         <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 min-h-9">
           {showTextToggles ? (

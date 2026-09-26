@@ -67,7 +67,12 @@ function FlipChar({ char }: { char: string }) {
   return (
     <span
       className="relative inline-block text-center tabular-nums"
-      style={{ width: char === "/" ? "0.45em" : "0.65em", perspective: "240px" }}
+      style={{
+        width: char === "/" ? "0.45em" : "0.65em",
+        perspective: "240px",
+        transformStyle: "preserve-3d",
+        WebkitTransformStyle: "preserve-3d",
+      }}
     >
       <span aria-hidden="true" className="invisible">
         {char}
@@ -78,7 +83,11 @@ function FlipChar({ char }: { char: string }) {
           animate={{ rotateX: 100, opacity: 0 }}
           transition={{ duration: FLIP_DURATION_S, ease: "easeInOut" }}
           className="absolute inset-0"
-          style={{ transformOrigin: "50% 50%", backfaceVisibility: "hidden" }}
+          style={{
+            transformOrigin: "50% 50%",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
         >
           {prevChar}
         </motion.span>
@@ -89,7 +98,11 @@ function FlipChar({ char }: { char: string }) {
         animate={{ rotateX: 0, opacity: 1 }}
         transition={{ duration: FLIP_DURATION_S, ease: "easeInOut" }}
         className="absolute inset-0"
-        style={{ transformOrigin: "50% 50%", backfaceVisibility: "hidden" }}
+        style={{
+            transformOrigin: "50% 50%",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+        }}
       >
         {char}
       </motion.span>

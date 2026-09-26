@@ -158,7 +158,7 @@ export default function HowToTypeNumbersSymbolsPage() {
           You can type 80 WPM with your eyes closed on standard prose. But the moment a complex password,
           street address, currency figure, or programming block appears:
         </p>
-        <div className="rounded-lg border border-border/80 bg-sub-alt/30 p-3 font-mono text-xs text-foreground">
+        <div className="theme-transition rounded-lg border border-border/80 bg-sub-alt/30 p-3 font-mono text-xs text-foreground">
           User: admin_2026! | Pass: $ecur3#K99 | Total: $1,429.50 (incl. 8.25% tax)
         </div>
         <p>

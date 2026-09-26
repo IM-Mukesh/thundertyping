@@ -45,7 +45,7 @@ export function ProfileClient() {
   return (
     <div className="flex flex-col gap-8">
       {/* level */}
-      <section className="rounded-2xl border border-border bg-sub-alt/20 p-5 sm:p-6">
+      <section className="theme-transition rounded-2xl border border-border bg-sub-alt/20 p-5 sm:p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-mono text-lg font-bold text-foreground">
             Level {level}
@@ -125,7 +125,7 @@ export function ProfileClient() {
       {/* audio */}
       <section>
         <h2 className="mb-3 font-mono text-lg font-bold text-foreground">Audio</h2>
-        <div className="rounded-2xl border border-border bg-sub-alt/20 p-5">
+        <div className="theme-transition rounded-2xl border border-border bg-sub-alt/20 p-5">
           <AudioSettings />
         </div>
       </section>
@@ -135,7 +135,7 @@ export function ProfileClient() {
         <h2 className="mb-3 font-mono text-lg font-bold text-foreground">
           Reset
         </h2>
-        <div className="flex flex-col gap-3 rounded-2xl border border-error/40 bg-error/5 p-5">
+        <div className="theme-transition flex flex-col gap-3 rounded-2xl border border-error/40 bg-error/5 p-5">
           <p className="text-sm text-sub">
             Clears your level, XP, achievements, unlocks and per-game statistics
             on this device. Best scores and recorded ghosts are kept separately

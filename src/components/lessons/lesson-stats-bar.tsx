@@ -22,7 +22,7 @@ export function LessonStatsBar() {
   const hasData = totals.timeMs > 0;
 
   return (
-    <div className="grid w-full grid-cols-3 gap-2 rounded-xl border border-border bg-sub-alt/30 p-4 sm:gap-4 sm:p-5">
+    <div className="theme-transition grid w-full grid-cols-3 gap-2 rounded-xl border border-border bg-sub-alt/30 p-4 sm:gap-4 sm:p-5">
       <Tile icon={<Zap size={14} />} label="Avg speed" value={hasData ? `${avgWpm} wpm` : "—"} />
       <Tile icon={<Target size={14} />} label="Avg accuracy" value={hasData ? `${avgAccuracy}%` : "—"} />
       <Tile icon={<Clock size={14} />} label="Typing time" value={hasData ? formatTotalTime(totals.timeMs) : "—"} />

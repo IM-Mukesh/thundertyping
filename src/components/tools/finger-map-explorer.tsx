@@ -57,7 +57,7 @@ export function FingerMapExplorer() {
       : "Hover, tap, or click a finger below to see which keys it owns.";
 
   return (
-    <div className="flex w-full max-w-full flex-col items-center gap-4 sm:gap-5 rounded-2xl border border-accent/25 bg-sub-alt/15 p-2.5 sm:p-7 overflow-hidden">
+    <div className="theme-transition flex w-full max-w-full flex-col items-center gap-4 sm:gap-5 rounded-2xl border border-accent/25 bg-sub-alt/15 p-2.5 sm:p-7 overflow-hidden">
       <HandDiagram activeFinger={effectiveFinger} />
 
       <div className="flex w-full max-w-full flex-col items-center gap-0.5 sm:gap-1.5 py-1">

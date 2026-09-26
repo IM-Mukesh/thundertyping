@@ -138,7 +138,7 @@ export default function HowToTypeWithoutLookingPage() {
         <h2 id="the-plan">The day-by-day plan</h2>
         <div className="flex flex-col gap-3">
           {PLAN.map((step) => (
-            <div key={step.when} className="rounded-xl border border-border bg-sub-alt/20 p-4">
+            <div key={step.when} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
                 {step.when}
               </p>

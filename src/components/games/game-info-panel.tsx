@@ -85,7 +85,7 @@ export function GameInfoPanel({ game, others }: GameInfoPanelProps) {
           </button>
         </div>
 
-        <ul className="mb-6 flex flex-col gap-2 rounded-xl border border-border bg-sub-alt/30 p-4">
+        <ul className="theme-transition mb-6 flex flex-col gap-2 rounded-xl border border-border bg-sub-alt/30 p-4">
           {game.rules.map((rule) => (
             <li key={rule} className="flex gap-2.5 text-sm text-sub">
               <span aria-hidden="true" className="mt-0.5 text-accent">

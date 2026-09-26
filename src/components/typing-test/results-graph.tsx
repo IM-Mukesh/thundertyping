@@ -146,6 +146,9 @@ export function ResultsGraph({ samples }: ResultsGraphProps) {
           width={plot.innerW}
           height={plot.innerH}
           fill="transparent"
+          className="touch-none cursor-crosshair"
+          style={{ touchAction: "none" }}
+          onPointerDown={handleMove}
           onPointerMove={handleMove}
           onPointerLeave={() => setHoverIndex(null)}
         />

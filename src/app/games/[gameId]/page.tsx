@@ -207,7 +207,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
 
       {/* CABINET — the board sits flush under the marquee so the two read as
           one unit rather than a banner with a stray panel beneath it. */}
-      <div className="flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-6 pt-6 sm:px-8">
+      <div className="theme-transition flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-6 pt-6 sm:px-8">
         <GameClient definition={game} art={boardArt} />
       </div>
 

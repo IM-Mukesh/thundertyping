@@ -170,12 +170,12 @@ export default function TouchTypingDyslexiaPage() {
         <h2 id="dyslexia-vs-dysgraphia">Adaptive solutions for core learning challenges</h2>
         <div className="flex flex-col gap-5">
           {ADAPTIVE_STRATEGIES.map((item) => (
-            <div key={item.challenge} className="rounded-xl border border-border bg-sub-alt/20 p-5">
+            <div key={item.challenge} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-5">
               <h3 className="text-base font-semibold text-accent">{item.challenge}</h3>
               <p className="mt-1 text-xs text-sub">
                 <strong>Neurological Root:</strong> {item.neuroBasis}
               </p>
-              <div className="mt-3 rounded-lg border border-border/60 bg-background/50 p-3">
+              <div className="theme-transition mt-3 rounded-lg border border-border/60 bg-background/50 p-3">
                 <p className="text-sm font-medium text-foreground">💡 How Touch Typing Solves It:</p>
                 <p className="mt-1 text-sm text-foreground/90 leading-relaxed">{item.typingSolution}</p>
               </div>

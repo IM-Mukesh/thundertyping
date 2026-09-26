@@ -61,33 +61,39 @@ interface WordStreamProps {
 export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeWordElRef = useRef<HTMLSpanElement | null>(null);
+  const linePitchRef = useRef(LINE_HEIGHT_FALLBACK);
   const [offset, setOffset] = useState(0);
   const [linePitch, setLinePitch] = useState(LINE_HEIGHT_FALLBACK);
 
+  // Measure line pitch only when layout dimensions change or fonts load
   useLayoutEffect(() => {
-    const recalc = () => {
-      const el = activeWordElRef.current;
+    const measure = () => {
       const container = containerRef.current;
-      if (!el || !container) return;
+      if (!container) return;
       const pitch = measureLinePitch(container);
       setLinePitch(pitch);
-      const currentLine = Math.round(el.offsetTop / pitch);
-      const targetLine = Math.max(0, currentLine - 1);
-      setOffset(targetLine * pitch);
+      linePitchRef.current = pitch;
     };
-    recalc();
+    measure();
 
-    // Self-hosted fonts (next/font) resolve fast, but a late swap could still
-    // shift line height slightly before the observer below has anything to
-    // react to — re-measure once fonts are actually ready.
-    document.fonts?.ready?.then(recalc).catch(() => {});
+    document.fonts?.ready?.then(measure).catch(() => {});
 
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(recalc);
+    const observer = new ResizeObserver(measure);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [activeWordIndex]);
+  }, []);
+
+  // Update scroll offset when activeWordIndex advances (reads only the single active element's offsetTop)
+  useLayoutEffect(() => {
+    const el = activeWordElRef.current;
+    if (!el) return;
+    const pitch = linePitchRef.current || linePitch;
+    const currentLine = Math.round(el.offsetTop / pitch);
+    const targetLine = Math.max(0, currentLine - 1);
+    setOffset(targetLine * pitch);
+  }, [activeWordIndex, linePitch]);
 
   return (
     <div className="relative w-full overflow-hidden" style={{ height: linePitch * VISIBLE_LINES }}>
@@ -149,7 +155,7 @@ function Caret() {
   return (
     <motion.span
       layoutId="typing-caret"
-      transition={{ type: "spring", stiffness: 500, damping: 32 }}
+      transition={{ type: "spring", stiffness: 850, damping: 45 }}
       className="relative inline-flex items-center w-0 self-center pointer-events-none"
       style={{ height: "1.2em" }}
     >

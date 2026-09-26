@@ -97,7 +97,7 @@ export function StatTile({
           ? "text-correct"
           : "text-foreground";
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-background/70 px-2.5 py-1.5 backdrop-blur-sm">
+    <div className="theme-transition flex items-center gap-2 rounded-lg border border-border/70 bg-background/70 px-2.5 py-1.5 backdrop-blur-sm">
       {icon && <span className={cn("shrink-0", toneClass)}>{icon}</span>}
       <div className="min-w-0">
         <p className={cn("font-mono text-sm font-bold tabular-nums leading-none", toneClass)}>
@@ -147,7 +147,7 @@ export function HealthBar({
         </span>
       )}
       <div
-        className="h-2.5 flex-1 overflow-hidden rounded-full border border-border/60 bg-sub-alt"
+        className="theme-transition h-2.5 flex-1 overflow-hidden rounded-full border border-border/60 bg-sub-alt"
         role="progressbar"
         aria-valuenow={Math.round(pct)}
         aria-valuemin={0}
@@ -311,7 +311,7 @@ export function RuleCard({
   body: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-background/70 p-3 backdrop-blur-sm">
+    <div className="theme-transition flex flex-col gap-1.5 rounded-xl border border-border bg-background/70 p-3 backdrop-blur-sm">
       <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-foreground">
         <span className="text-accent">{icon}</span>
         {title}
