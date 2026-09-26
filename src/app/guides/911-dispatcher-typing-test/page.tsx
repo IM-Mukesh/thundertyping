@@ -49,16 +49,16 @@ const FAQ_ITEMS = [
   {
     question: "What WPM typing speed is required for a 911 dispatcher?",
     answer:
-      "Most emergency communications agencies require a baseline typing speed between 35 and 45 Net WPM. However, passing the hiring test is not just about raw speed: the CritiCall test evaluates your ability to type accurately while listening to emergency audio and inputting complex alphanumeric strings (addresses, license plates, phone numbers).",
+      "Many emergency communications agencies require a baseline typing speed between 35 and 45 Net WPM, though exact benchmarks vary by agency and jurisdiction. Passing the hiring test is not just about raw speed: candidate evaluations test your ability to type accurately while listening to emergency audio and inputting complex alphanumeric strings (addresses, license plates, phone numbers).",
     plainAnswer:
-      "Most agencies require 35 to 45 Net WPM, but candidates must also pass audio transcription and alphanumeric data-entry modules (3,500–5,000 KPH).",
+      "Many agencies require 35 to 45 Net WPM (varying by jurisdiction), alongside audio transcription and alphanumeric data-entry modules (3,500–5,000 KPH).",
   },
   {
     question: "What is the CritiCall test?",
     answer:
-      "CritiCall is the gold-standard computerized pre-employment test used by over 80% of public safety and 911 communications centers across North America. It tests multi-tasking skills including audio data entry, reading comprehension, address cross-referencing, map reading, memory recall, and priority dispatch decision-making.",
+      "CritiCall is a widely used computerized pre-employment testing battery developed for public safety and 911 emergency communications centers. It assesses multitasking skills including audio data entry, reading comprehension, address cross-referencing, map reading, memory recall, and priority dispatch decision-making.",
     plainAnswer:
-      "CritiCall is the standardized computerized examination used by public safety agencies to test typing, audio transcription, memory recall, and data entry under pressure.",
+      "CritiCall is a standardized pre-employment testing battery used by many public safety agencies to test typing, audio transcription, memory recall, and data entry under pressure.",
   },
   {
     question: "Why do so many candidates fail the 911 dispatcher typing test?",
@@ -112,6 +112,12 @@ export default function DispatcherTypingTestPage() {
         hasFaq
         hasSources
       >
+        <Callout label="Agency Hiring Disclaimer">
+          <p>
+            Specific WPM cutoffs, computerized testing systems (such as CritiCall, TypingTest, or custom CAD simulations), and passing thresholds vary significantly by municipality, county, state/provincial agency, and dispatch center. Always consult the specific civil service job announcement or recruitment department for the exact testing requirements in your jurisdiction.
+          </p>
+        </Callout>
+
         <Callout label="Public Safety Accuracy Rule">
           <p>
             In civilian typing, a typo is a minor inconvenience. In 911 emergency dispatch,
@@ -138,9 +144,9 @@ export default function DispatcherTypingTestPage() {
           and dispatched units via a Computer-Aided Dispatch (CAD) console.
         </p>
         <p>
-          To ensure candidates can handle high-stress data entry without freezing, nearly all municipal,
-          county, and state agencies administer rigorous pre-employment typing exams, most notably the{" "}
-          <strong>CritiCall</strong> examination battery.
+          To ensure candidates can handle high-stress data entry without freezing, many municipal,
+          county, and state agencies administer rigorous pre-employment typing exams, frequently utilizing the{" "}
+          <strong>CritiCall</strong> examination battery or agency-specific CAD simulations.
         </p>
 
         <h2 id="why-unique">Why 911 typing is fundamentally different from everyday typing</h2>

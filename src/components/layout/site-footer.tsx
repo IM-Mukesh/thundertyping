@@ -15,14 +15,15 @@ export function SiteFooter() {
   return (
     <div
       data-running={isRunning}
-      aria-hidden={isRunning}
+      aria-hidden={isRunning || undefined}
+      inert={isRunning ? true : undefined}
       className={cn(
         "mt-auto transition-opacity duration-300 ease-in-out",
         isRunning ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
       <footer className="flex flex-col items-center gap-6 px-6 py-10 sm:px-10">
-          <AdSlot id="footer-leaderboard" format="horizontal" />
+          <AdSlot placementId="footer-leaderboard" format="horizontal" />
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-sub sm:gap-6 text-center">
             <span>
               &copy; {new Date().getFullYear()} {SITE_NAME}

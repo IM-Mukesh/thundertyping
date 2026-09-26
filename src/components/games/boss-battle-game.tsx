@@ -238,7 +238,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 1100px"
-            quality={60}
+            quality={45}
             className="object-cover opacity-70"
           />
         )}
@@ -772,7 +772,7 @@ function ResultCard({
     >
       {resultArt && (
         <>
-          <Image src={resultArt} alt="" fill sizes="448px" quality={65} className="object-cover opacity-55" />
+          <Image src={resultArt} alt="" fill sizes="448px" quality={45} className="object-cover opacity-55" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/40" />
         </>
       )}

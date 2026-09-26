@@ -9,7 +9,7 @@
 // unrelated concerns that every game has to ignore most of.
 //
 // To add a game: add its id here, add a definition below, and register its
-// component in `game-registry.ts`. Nothing else in the app needs to change —
+// component in `src/components/games/game-client.tsx`. Nothing else in the app needs to change —
 // the hub, the /games/[gameId] route, the sitemap and the best-score badge all
 // derive from GAME_LIST.
 
@@ -403,3 +403,11 @@ export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["card-battle"],
   GAME_DEFINITIONS["spellbound"],
 ];
+
+/**
+ * Filtered list of games that are currently playable (non-upcoming).
+ * Used for sitemap inclusion, featured fallback, and all-games achievement tracking.
+ */
+export const PLAYABLE_GAME_LIST: GameDefinition[] = GAME_LIST.filter(
+  (game) => !game.upcoming,
+);

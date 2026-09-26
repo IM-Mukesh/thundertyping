@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -55,6 +55,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const onGamesPage = pathname === "/games";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
   const toggleMobileNav = useCallback(() => setMobileNavOpen((prev) => !prev), []);
 
@@ -118,18 +119,21 @@ export function SiteHeader() {
           <LevelBadge showOnMobile />
           <LanguageSelector compact />
           <button
+            ref={hamburgerRef}
+            id="mobile-nav-trigger"
             type="button"
             onClick={toggleMobileNav}
             aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileNavOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-sub-alt/30 text-sub transition-colors hover:border-accent hover:text-foreground active:scale-95"
+            aria-controls="mobile-navigation-dialog"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-sub-alt/30 text-sub transition-colors hover:border-accent hover:text-foreground active:scale-95 focus-visible:outline-2 focus-visible:outline-accent"
           >
             <Menu size={20} aria-hidden="true" />
           </button>
         </div>
       </header>
 
-      <MobileNav open={mobileNavOpen} onClose={closeMobileNav} />
+      <MobileNav open={mobileNavOpen} onClose={closeMobileNav} triggerRef={hamburgerRef} />
     </>
   );
 }

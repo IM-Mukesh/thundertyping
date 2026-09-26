@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "motion/react";
 import { RotateCcw, Sparkles } from "lucide-react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
@@ -21,16 +20,6 @@ interface ResultsPanelProps {
 }
 
 export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps) {
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        onRestart();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onRestart]);
   const {
     correctKeystrokes,
     incorrectKeystrokes,
@@ -102,14 +91,13 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       <button
         type="button"
         onClick={onRestart}
-        className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground"
+        className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
       >
         <RotateCcw size={16} />
         Restart
-        <kbd className="text-xs opacity-60">Tab</kbd>
       </button>
 
-      <AdSlot id="results-rectangle" format="rectangle" />
+      <AdSlot placementId="results-rectangle" format="rectangle" />
     </motion.div>
   );
 }

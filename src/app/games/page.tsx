@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Compass, Keyboard, Sparkles, Zap } from "lucide-react";
-import { GAME_LIST } from "@/lib/games/game-types";
+import { GAME_LIST, PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
 import { getArt, getGameArt, getHubHeroArt } from "@/lib/games/game-art-assets";
 import { GameHubFilters } from "@/components/games/game-hub-filters";
 import { PlayerSummary } from "@/components/games/player-summary";
@@ -27,7 +27,8 @@ export default function GamesHubPage() {
   const footerArt = getArt("hub", "footer");
   // Resolves public/games/games-cta-banner.webp when it exists.
   const ctaArt = getArt("games", "cta-banner");
-  const featured = GAME_LIST.find((g) => g.featured) ?? GAME_LIST[0];
+  const featured =
+    PLAYABLE_GAME_LIST.find((g) => g.featured) ?? PLAYABLE_GAME_LIST[0] ?? GAME_LIST[0];
 
   // Art is resolved on the server -- getGameArt reads the filesystem at build
   // time -- and handed to the client grid as a plain map.
@@ -163,7 +164,7 @@ export default function GamesHubPage() {
                 alt=""
                 fill
                 sizes="100vw"
-                quality={60}
+                quality={45}
                 className="object-cover object-left opacity-70"
               />
             )}

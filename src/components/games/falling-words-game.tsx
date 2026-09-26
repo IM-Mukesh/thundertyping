@@ -279,7 +279,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 1000px"
-            quality={60}
+            quality={45}
             className={cn("object-cover transition-[opacity,filter] duration-500", overdriveActive ? "opacity-90 saturate-150" : "opacity-55")}
           />
         )}
@@ -669,7 +669,7 @@ function GameOverCard({
     >
       {resultArt && (
         <>
-          <Image src={resultArt} alt="" fill sizes="448px" quality={65} className="object-cover opacity-50" />
+          <Image src={resultArt} alt="" fill sizes="448px" quality={45} className="object-cover opacity-50" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/45" />
         </>
       )}

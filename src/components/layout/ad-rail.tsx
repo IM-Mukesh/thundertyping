@@ -9,18 +9,27 @@ import { cn } from "@/lib/utils/cn";
  * a game -- rather than only below the content.
  * Fades out smoothly while typing is running to maintain zero distraction.
  */
-export function AdRail({ id }: { id: string }) {
+interface AdRailProps {
+  id?: string;
+  placementId?: string;
+  slotId?: string;
+}
+
+export function AdRail({ id, placementId, slotId }: AdRailProps) {
   const isRunning = useIsTestRunning();
+  const placement = placementId ?? id;
 
   return (
     <aside
       aria-label="Advertisement"
+      aria-hidden={isRunning || undefined}
+      inert={isRunning ? true : undefined}
       className={cn(
         "sticky top-24 w-[280px] transition-opacity duration-300 ease-in-out",
         isRunning ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
-      <AdSlot id={id} format="vertical" />
+      <AdSlot id={placement} slotId={slotId} format="vertical" />
     </aside>
   );
 }

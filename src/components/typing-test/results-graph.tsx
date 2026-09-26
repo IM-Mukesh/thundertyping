@@ -79,8 +79,14 @@ export function ResultsGraph({ samples }: ResultsGraphProps) {
   const hovered = hoverIndex !== null ? samples[hoverIndex] : null;
   const active = hovered ?? last;
 
+  const peakWpm = Math.max(...samples.map((s) => s.wpm));
+  const peakRaw = Math.max(...samples.map((s) => s.rawWpm));
+  const totalSeconds = Math.max(1, Math.round(last.t / 1000));
+  const summaryText = `Test performance graph over ${totalSeconds} seconds: Started at ${round(samples[0].wpm)} WPM, reached a peak of ${round(peakWpm)} WPM (peak raw ${round(peakRaw)} WPM), and finished at ${round(last.wpm)} WPM.`;
+
   return (
     <div className="w-full">
+      <p className="sr-only">{summaryText}</p>
       <div className="mb-1 flex items-center justify-center gap-5 text-xs text-sub">
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-0.5 w-4 bg-accent" aria-hidden="true" />
@@ -96,7 +102,7 @@ export function ResultsGraph({ samples }: ResultsGraphProps) {
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="w-full touch-none"
         role="img"
-        aria-label={`Words per minute over the test. Started around ${round(samples[0].wpm)}, ended at ${round(last.wpm)}.`}
+        aria-label={summaryText}
       >
         {plot.yTicks.map((tick) => (
           <g key={tick}>

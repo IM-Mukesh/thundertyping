@@ -14,6 +14,7 @@ import {
   getStorageItem,
   setStorageItem,
 } from "@/lib/persistence/storage";
+import { PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
 
 // Storage key deliberately left unrenamed on the HeroTyping (formerly
 // ThunderTyping) rebrand -- it's what every existing player's XP,
@@ -111,7 +112,7 @@ export function parseProfile(raw: string | null): PlayerProfile {
     if (!isRecord(parsed)) return { ...EMPTY };
     const streak = isRecord(parsed.streak) ? parsed.streak : {};
     return {
-      xp: typeof parsed.xp === "number" && parsed.xp >= 0 ? parsed.xp : 0,
+      xp: typeof parsed.xp === "number" && Number.isFinite(parsed.xp) && parsed.xp >= 0 ? parsed.xp : 0,
       achievements: isRecord(parsed.achievements)
         ? (parsed.achievements as Record<string, string>)
         : {},
@@ -125,7 +126,7 @@ export function parseProfile(raw: string | null): PlayerProfile {
         ? (parsed.dailies as Record<string, number>)
         : {},
       streak: {
-        count: typeof streak.count === "number" ? streak.count : 0,
+        count: typeof streak.count === "number" && Number.isFinite(streak.count) && streak.count >= 0 ? streak.count : 0,
         lastDate: typeof streak.lastDate === "string" ? streak.lastDate : "",
       },
     };
@@ -261,14 +262,23 @@ export function recordDaily(dateKey: string, score: number): {
  * definition instead of four partial ones, and so adding a game does not mean
  * remembering to update four call sites. Safe to call often: every grant is
  * already idempotent.
+ *
+ * Checks only currently playable (non-upcoming) games so upcoming releases like
+ * Spellbound do not render the achievement impossible to earn.
  */
-export function checkSiteAchievements(allGameIds: readonly string[]): string[] {
+export function checkSiteAchievements(playableGameIds?: readonly string[]): string[] {
   const profile = readProfile();
   const granted: string[] = [];
 
+  const playableSet = new Set(PLAYABLE_GAME_LIST.map((g) => g.id as string));
+  const targets =
+    playableGameIds && playableGameIds.length > 0
+      ? playableGameIds.filter((id) => playableSet.has(id))
+      : PLAYABLE_GAME_LIST.map((g) => g.id);
+
   const playedAll =
-    allGameIds.length > 0 &&
-    allGameIds.every((id) => (profile.stats[id]?.runs ?? 0) > 0);
+    targets.length > 0 &&
+    targets.every((id) => (profile.stats[id]?.runs ?? 0) > 0);
   if (playedAll && grantAchievement("site:all-games")) granted.push("site:all-games");
 
   if (levelForXp(profile.xp) >= 10 && grantAchievement("site:level-10")) {

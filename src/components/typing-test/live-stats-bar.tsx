@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
+import { formatCountdown } from "@/lib/typing-engine/format-countdown";
 import { cn } from "@/lib/utils/cn";
 
 interface LiveStatsBarProps {
@@ -14,7 +15,7 @@ export function LiveStatsBar({ state }: LiveStatsBarProps) {
 
   const primary =
     config.mode === "time"
-      ? String(Math.max(0, Math.ceil((config.timeDuration * 1000 - elapsedMs) / 1000)))
+      ? formatCountdown(Math.max(0, Math.ceil((config.timeDuration * 1000 - elapsedMs) / 1000)))
       : `${Math.min(activeWordIndex + 1, words.length)}/${words.length}`;
 
   return (
@@ -68,7 +69,7 @@ function FlipChar({ char }: { char: string }) {
     <span
       className="relative inline-block text-center tabular-nums"
       style={{
-        width: char === "/" ? "0.45em" : "0.65em",
+        width: char === "/" || char === ":" ? "0.45em" : char === "s" ? "0.55em" : "0.65em",
         perspective: "240px",
         transformStyle: "preserve-3d",
         WebkitTransformStyle: "preserve-3d",

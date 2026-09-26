@@ -458,9 +458,10 @@ function HandCard({
       onPointerDown={(e) => {
         pointerStart.current = { x: e.clientX, y: e.clientY };
       }}
-      onClick={() => {
+      onClick={(e) => {
         if (pointerStart.current) {
-          const dx = Math.abs(window.event && "clientX" in window.event ? (window.event as MouseEvent).clientX - pointerStart.current.x : 0);
+          const dx = Math.abs(e.clientX - pointerStart.current.x);
+          pointerStart.current = null;
           if (dx > 12) return;
         }
         onClick();

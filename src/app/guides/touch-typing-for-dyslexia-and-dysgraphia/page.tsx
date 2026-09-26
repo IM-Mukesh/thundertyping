@@ -23,7 +23,7 @@ const ADAPTIVE_STRATEGIES = [
     challenge: "Letter Reversals (b vs d, p vs q)",
     neuroBasis: "Visual disorientation where symmetric letterforms are confused in 2D space.",
     typingSolution:
-      "On a keyboard, 'B' is pressed exclusively by the left index finger reaching down, while 'D' is pressed by the left middle finger resting on the home row. Physical spatial separation completely replaces visual symmetry.",
+      "On a keyboard, 'B' is pressed exclusively by the left index finger reaching down, while 'D' is pressed by the left middle finger resting on the home row. Physical spatial separation helps decouple motor memory from visual symmetry.",
   },
   {
     challenge: "Hand Cramping & Motor Fatigue (Dysgraphia)",
@@ -112,12 +112,18 @@ export default function TouchTypingDyslexiaPage() {
         hasFaq
         hasSources
       >
-        <Callout label="Cognitive Bandwidth Liberation">
+        <Callout label="Educational Note">
           <p>
-            When a student with dysgraphia writes by hand, up to <strong>80% of their conscious working memory</strong>{" "}
-            is consumed by the mechanical chore of gripping the pen, sizing letters, and staying on the line.
-            By automating keystrokes through <strong>touch typing</strong>, that working memory is liberated for
-            creative thought, storytelling, and complex reasoning.
+            This guide provides educational strategies and adaptive keyboarding methods. It is not formal medical or diagnostic advice. Individual learning plans, typing accommodations, and assistive technology assessments should be tailored with qualified educators, occupational therapists, or learning specialists.
+          </p>
+        </Callout>
+
+        <Callout label="Cognitive Bandwidth Support">
+          <p>
+            When a student with dysgraphia writes by hand, a significant portion of their conscious working memory
+            can be consumed by the mechanical chore of gripping the pen, sizing letters, and staying on the line.
+            By developing fluent <strong>touch typing</strong>, cognitive load is substantially reduced, freeing
+            mental energy for vocabulary, storytelling, and complex reasoning.
           </p>
         </Callout>
 

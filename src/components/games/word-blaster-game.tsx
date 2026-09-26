@@ -409,7 +409,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 900px"
-            quality={55}
+            quality={45}
             className="object-cover opacity-45"
           />
         )}
@@ -967,7 +967,7 @@ function GameOverCard({
     >
       {defeatArt && (
         <>
-          <Image src={defeatArt} alt="" fill sizes="384px" quality={60} className="object-cover opacity-50" />
+          <Image src={defeatArt} alt="" fill sizes="384px" quality={45} className="object-cover opacity-50" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/40" />
         </>
       )}

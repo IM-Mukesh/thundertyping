@@ -984,8 +984,9 @@ export function useFruitFury(
       ctx.save();
       ctx.scale(dpr, dpr);
 
-      // Screen shake translation
-      if (s.screenShake.intensity > 0) {
+      // Screen shake translation (disabled if prefers-reduced-motion)
+      const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!prefersReducedMotion && s.screenShake.intensity > 0) {
         ctx.translate(s.screenShake.offsetX, s.screenShake.offsetY);
       }
 
@@ -1213,16 +1214,41 @@ export function useFruitFury(
 
       ctx.restore();
 
-      animFrameIdRef.current = requestAnimationFrame(gameLoop);
+      if (s.status === "running" && typeof document !== "undefined" && !document.hidden) {
+        animFrameIdRef.current = requestAnimationFrame(gameLoop);
+      }
     };
 
-    animFrameIdRef.current = requestAnimationFrame(gameLoop);
+    if (gameState.status === "running") {
+      lastFrameTimeRef.current = performance.now();
+      animFrameIdRef.current = requestAnimationFrame(gameLoop);
+    } else {
+      // Paint single frame when idle, paused, or over without burning a permanent 60fps loop
+      gameLoop(performance.now());
+    }
+
+    const handleVisibility = () => {
+      if (typeof document === "undefined") return;
+      if (document.hidden) {
+        if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+      } else if (stateRef.current.status === "running") {
+        lastFrameTimeRef.current = performance.now();
+        animFrameIdRef.current = requestAnimationFrame(gameLoop);
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
 
     return () => {
       isSubscribed = false;
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
     };
-  }, [sliceFruit, spawnFruitWave]);
+  }, [gameState.status, sliceFruit, spawnFruitWave]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils/cn";
 interface MobileNavProps {
   open: boolean;
   onClose: () => void;
+  triggerRef?: React.RefObject<HTMLButtonElement | HTMLElement | null>;
 }
 
 const PRIMARY_LINKS = [
@@ -79,7 +80,7 @@ const PRIMARY_LINKS = [
   },
 ];
 
-export function MobileNav({ open, onClose }: MobileNavProps) {
+export function MobileNav({ open, onClose, triggerRef }: MobileNavProps) {
   const pathname = usePathname();
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
@@ -92,6 +93,10 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
   const profile = useMemo(() => parseProfile(raw), [raw]);
   const { level, fraction } = levelProgress(profile.xp);
 
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
+
   // Close only when the user actually navigates to a different route
   const prevPathname = useRef(pathname);
   useEffect(() => {
@@ -101,7 +106,19 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
     }
   }, [pathname, onClose]);
 
-  const drawerRef = useRef<HTMLDivElement>(null);
+  // Focus management: move focus into drawer on open, restore focus to trigger on close
+  useEffect(() => {
+    if (open) {
+      wasOpenRef.current = true;
+      const frame = requestAnimationFrame(() => {
+        closeButtonRef.current?.focus();
+      });
+      return () => cancelAnimationFrame(frame);
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      triggerRef?.current?.focus();
+    }
+  }, [open, triggerRef]);
 
   // Lock body scroll, handle Escape key, and trap Tab focus while mobile nav is open
   useEffect(() => {
@@ -149,6 +166,17 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
     };
   }, [open, onClose]);
 
+  // Ensure body scroll is always restored even if unmounted while open
+  useEffect(() => {
+    const trigger = triggerRef?.current;
+    return () => {
+      document.body.style.overflow = "";
+      if (wasOpenRef.current) {
+        trigger?.focus();
+      }
+    };
+  }, [triggerRef]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -167,15 +195,18 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
           {/* Drawer Panel */}
           <motion.div
             ref={drawerRef}
+            id="mobile-navigation-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation Menu"
+            aria-labelledby="mobile-nav-heading"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
             className="relative z-10 ml-auto flex h-full w-[85%] max-w-sm flex-col border-l border-border bg-background p-5 shadow-2xl overflow-y-auto"
           >
+            <h2 id="mobile-nav-heading" className="sr-only">Navigation Menu</h2>
+
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-2">
@@ -189,12 +220,13 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                 )}
               </div>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={onClose}
                 aria-label="Close menu"
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-sub transition-colors hover:bg-sub-alt hover:text-foreground"
+                className="flex h-11 w-11 items-center justify-center rounded-lg border border-border text-sub transition-colors hover:bg-sub-alt hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
               >
-                <X size={18} />
+                <X size={18} aria-hidden="true" />
               </button>
             </div>
 
@@ -243,7 +275,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon size={18} className={active ? "text-accent" : "text-sub"} />
+                        <Icon size={18} className={active ? "text-accent" : "text-sub"} aria-hidden="true" />
                         <span className="font-display text-sm uppercase tracking-wide">
                           {label}
                         </span>
@@ -281,10 +313,11 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                         <span
                           className="h-3 w-3 rounded-full border border-black/20"
                           style={{ backgroundColor: t.swatch.accent }}
+                          aria-hidden="true"
                         />
                         {t.label}
                       </span>
-                      {isCurrent && <Check size={12} className="text-accent" />}
+                      {isCurrent && <Check size={12} className="text-accent" aria-hidden="true" />}
                     </button>
                   );
                 })}
@@ -298,7 +331,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
               </span>
               <div className="theme-transition mt-2 flex items-center justify-between rounded-lg border border-border/60 bg-sub-alt/30 px-3 py-2 text-xs">
                 <span className="flex items-center gap-2 font-mono text-foreground">
-                  <Globe size={14} className="text-accent" />
+                  <Globe size={14} className="text-accent" aria-hidden="true" />
                   English
                 </span>
                 <span className="rounded bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-accent">Active</span>

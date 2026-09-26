@@ -37,6 +37,7 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
     alternates: { canonical: `/games/${game.id}` },
     openGraph: { title, description },
     twitter: { title, description },
+    robots: game.upcoming ? { index: false, follow: true } : undefined,
   };
 }
 
@@ -129,14 +130,16 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
       </div>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildGameSchema({ name: game.name, description: game.about[0], path: `/games/${game.id}` }),
-          ),
-        }}
-      />
+      {!game.upcoming && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              buildGameSchema({ name: game.name, description: game.about[0], path: `/games/${game.id}` }),
+            ),
+          }}
+        />
+      )}
 
       <div className="flex w-full max-w-4xl items-center justify-between gap-4 pb-4">
         <Breadcrumbs items={[{ name: "Games", path: "/games" }, { name: game.name, path: `/games/${game.id}` }]} />
@@ -286,9 +289,16 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
                 </div>
-                <span className="relative p-3 font-mono text-xs font-semibold leading-tight text-foreground transition-colors group-hover:text-accent">
-                  {other.name}
-                </span>
+                <div className="relative flex flex-col justify-end p-3">
+                  {other.upcoming && (
+                    <span className="mb-1 w-fit rounded border border-accent/40 bg-accent/15 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent">
+                      Upcoming
+                    </span>
+                  )}
+                  <span className="font-mono text-xs font-semibold leading-tight text-foreground transition-colors group-hover:text-accent">
+                    {other.name}
+                  </span>
+                </div>
               </Link>
             );
           })}

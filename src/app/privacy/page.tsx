@@ -11,7 +11,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function PrivacyPage() {
   return (
-    <ContentPage title="Privacy Policy" subtitle="Last updated: September 25, 2026">
+    <ContentPage title="Privacy Policy" subtitle="Last updated: September 27, 2026">
       <p>
         {SITE_NAME} is designed to work without collecting personal information. This page
         explains exactly what is and isn&apos;t stored, and will be updated if that ever changes.

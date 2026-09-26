@@ -38,7 +38,7 @@ export function GuideLayout({ title, subtitle, breadcrumbItems, toc, hasFaq, has
   ];
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-4 py-8 sm:px-10 sm:py-12 min-[1150px]:grid-cols-[minmax(0,800px)_1fr] overflow-hidden">
+    <div className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-4 py-8 sm:px-10 sm:py-12 min-[1150px]:grid-cols-[minmax(0,800px)_1fr]">
       <div className="flex min-w-0 flex-col gap-6">
         <Breadcrumbs items={breadcrumbItems} />
         <div className="flex flex-col gap-2">

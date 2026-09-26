@@ -159,9 +159,24 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    if (state.phase !== "playing") {
+      const w = board.clientWidth;
+      const h = board.clientHeight;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      fx().draw(ctx, w, h);
+      return;
+    }
+
     let raf = 0;
     let last = performance.now();
     const loop = (now: number) => {
+      if (typeof document !== "undefined" && document.hidden) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const w = board.clientWidth;

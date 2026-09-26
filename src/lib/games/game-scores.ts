@@ -42,15 +42,19 @@ export function parseGameBest(raw: string | null): GameBest | null {
   }
 }
 
+function isFiniteNonNegative(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
 function isValidGameBest(value: unknown): value is GameBest {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Partial<GameBest>;
   return (
-    typeof v.score === "number" &&
-    typeof v.cleared === "number" &&
-    typeof v.bestCombo === "number" &&
-    typeof v.survivedMs === "number" &&
-    typeof v.achievedAt === "number"
+    isFiniteNonNegative(v.score) &&
+    isFiniteNonNegative(v.cleared) &&
+    isFiniteNonNegative(v.bestCombo) &&
+    isFiniteNonNegative(v.survivedMs) &&
+    isFiniteNonNegative(v.achievedAt)
   );
 }
 

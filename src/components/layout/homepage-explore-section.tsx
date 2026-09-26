@@ -19,7 +19,8 @@ export function HomepageExploreSection() {
   return (
     <div
       data-running={isRunning}
-      aria-hidden={isRunning}
+      aria-hidden={isRunning || undefined}
+      inert={isRunning ? true : undefined}
       className={cn(
         "flex w-full flex-col items-center gap-3 transition-opacity duration-300 ease-in-out",
         isRunning ? "opacity-0 pointer-events-none" : "opacity-100",

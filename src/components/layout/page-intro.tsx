@@ -16,7 +16,8 @@ export function PageIntro() {
   return (
     <div
       data-running={isRunning}
-      aria-hidden={isRunning}
+      aria-hidden={isRunning || undefined}
+      inert={isRunning ? true : undefined}
       className={cn(
         "w-full max-w-2xl transition-opacity duration-300 ease-in-out",
         isRunning ? "opacity-0 pointer-events-none" : "opacity-100",

@@ -11,7 +11,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "8 Essential Typing Stretches & Hand Warmups for RSI & Wrist Pain",
   description:
-    "Physical therapist-recommended typing warmups and tendon glides to relieve wrist pain, prevent carpal tunnel syndrome, and loosen stiff fingers.",
+    "Physical therapist-recommended typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and reduce repetitive strain.",
   path: "/guides/typing-stretches-and-hand-warmups",
 });
 
@@ -133,7 +133,7 @@ export default function TypingStretchesPage() {
   const schema = buildArticleSchema({
     headline: "8 Essential Typing Stretches & Hand Warmups for RSI & Wrist Pain",
     description:
-      "Physical therapist-recommended typing warmups and tendon glides to relieve wrist pain, prevent carpal tunnel syndrome, and loosen stiff fingers.",
+      "Physical therapist-recommended typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and reduce repetitive strain.",
     path: "/guides/typing-stretches-and-hand-warmups",
     datePublished: PUBLISHED,
   });
@@ -164,6 +164,12 @@ export default function TypingStretchesPage() {
         hasFaq
         hasSources
       >
+        <Callout label="Informational Disclaimer">
+          <p>
+            This guide provides general ergonomic and warmup exercises for educational purposes and is not a substitute for professional medical advice, diagnosis, or treatment. If you experience persistent wrist pain, tingling, numbness, or weakness, consult a qualified healthcare provider or certified hand therapist.
+          </p>
+        </Callout>
+
         <Callout label="Warmup First, Stretch Second">
           <p>
             Never aggressively pull on cold, stiff tendons right after waking up or stepping into a
@@ -190,8 +196,8 @@ export default function TypingStretchesPage() {
         </p>
         <p>
           Combined with <Link href="/guides/proper-typing-posture-and-ergonomics">proper typing posture and ergonomics</Link>,
-          a disciplined daily mobility routine prevents repetitive strain injuries (RSI), tendonitis,
-          and carpal tunnel syndrome while keeping your finger reaction times crisp.
+          a disciplined daily mobility routine helps reduce the risk of repetitive strain injuries (RSI), tendonitis,
+          and wrist discomfort while keeping your finger reaction times crisp.
         </p>
 
         <h2 id="why-hands-hurt">Why typing strains your hands: The biomechanics of RSI</h2>
