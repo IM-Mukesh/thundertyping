@@ -67,6 +67,22 @@ describe("vocabulary: word selection", () => {
       }
     }
   });
+
+  it("satisfies user ratio requirements: 1300 words total, 50% easy (650), 30% medium (390), 20% hard (260), and 0 duplicates across all tiers", () => {
+    assert.equal(VOCAB_WORDS.easy.length, 650, "easy tier must have exactly 650 words (50%)");
+    assert.equal(VOCAB_WORDS.medium.length, 390, "medium tier must have exactly 390 words (30%)");
+    assert.equal(VOCAB_WORDS.hard.length, 260, "hard tier must have exactly 260 words (20%)");
+
+    const allWords = [
+      ...VOCAB_WORDS.easy.map((w) => w.word.toLowerCase()),
+      ...VOCAB_WORDS.medium.map((w) => w.word.toLowerCase()),
+      ...VOCAB_WORDS.hard.map((w) => w.word.toLowerCase()),
+    ];
+
+    assert.equal(allWords.length, 1300, "total vocabulary pool must be exactly 1300 words");
+    const uniqueWords = new Set(allWords);
+    assert.equal(uniqueWords.size, 1300, "all 1300 words across easy, medium, and hard must be distinct with zero duplicates anywhere");
+  });
 });
 
 describe("vocabulary: round reducer", () => {

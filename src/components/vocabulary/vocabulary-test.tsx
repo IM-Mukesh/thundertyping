@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Play, RotateCcw, Sparkles, Trophy, X } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Headphones, Play, RotateCcw, Sparkles, Trophy, Volume2, VolumeX, X } from "lucide-react";
 import { useVocabularyTest } from "@/lib/vocabulary/use-vocabulary-test";
 import { pickSessionWords, SESSION_WORD_COUNT } from "@/lib/vocabulary/vocabulary-content";
 import { VOCAB_WORDS, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 import { parseVocabProgress, recordVocabSession, vocabProgressKey } from "@/lib/vocabulary/vocabulary-progress";
-import { getStorageItem } from "@/lib/persistence/storage";
+import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import { calculateAccuracy, calculateLiveWpm, calculateNetWpm, round } from "@/lib/typing-engine/stats";
+import { isSpeechSupported, speakExplanation, speakWord, stopSpeaking } from "@/lib/vocabulary/vocabulary-speech";
 import { cn } from "@/lib/utils/cn";
 
 // A round only changes progress by finishing, which re-renders this
@@ -37,6 +38,13 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [outcome, setOutcome] = useState<{ newlyMastered: number; isNewBest: boolean } | null>(null);
   const recordedRef = useRef(false);
+  const lastSpokenIndexRef = useRef<number>(-1);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [autoPronounce, setAutoPronounce] = useState<boolean>(() => {
+    const stored = getStorageItem("herotyping:vocab-auto-pronounce");
+    return stored !== "false";
+  });
+  const speechAvailable = useMemo(() => isSpeechSupported(), []);
 
   // Null on the server and on first client render (matching), then the real
   // stored value once React reconciles — see GameBestBadge for the same
@@ -56,12 +64,25 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
   const focusInput = useCallback(() => inputRef.current?.focus(), []);
 
   const handleStart = useCallback(() => {
+    stopSpeaking();
+    setIsSpeaking(false);
     const mastered = new Set(progress[difficulty].mastered);
     const words = pickSessionWords(difficulty, mastered);
     setOutcome(null);
     recordedRef.current = false;
     start(difficulty, words);
-  }, [difficulty, progress, start]);
+
+    if (autoPronounce && words.length > 0) {
+      lastSpokenIndexRef.current = 0;
+      speakWord(words[0].word, {
+        onStart: () => setIsSpeaking(true),
+        onEnd: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
+      });
+    } else {
+      lastSpokenIndexRef.current = -1;
+    }
+  }, [difficulty, progress, start, autoPronounce]);
 
   useEffect(() => {
     if (state.status === "running") focusInput();
@@ -81,6 +102,85 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
   const isRunning = state.status === "running";
   const wpmLive = round(calculateLiveWpm(state.correctKeystrokes, state.elapsedMs));
   const accuracyLive = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
+
+  const handlePronounce = useCallback(() => {
+    if (!current) return;
+    speakWord(current.word, {
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  }, [current]);
+
+  const handleExplain = useCallback(() => {
+    if (!current) return;
+    speakExplanation(current.word, current.definition, current.pos, {
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  }, [current]);
+
+  const toggleAutoPronounce = useCallback(() => {
+    setAutoPronounce((prev) => {
+      const next = !prev;
+      setStorageItem("herotyping:vocab-auto-pronounce", String(next));
+      if (!next) {
+        stopSpeaking();
+      }
+      return next;
+    });
+  }, []);
+
+  // Auto-pronounce automatically on word advance when enabled
+  useEffect(() => {
+    if (!isRunning || !current || !autoPronounce) return;
+
+    if (lastSpokenIndexRef.current === state.index) return;
+    lastSpokenIndexRef.current = state.index;
+
+    speakWord(current.word, {
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  }, [isRunning, current, state.index, autoPronounce]);
+
+  // Clean up audio on round end and unmount
+  useEffect(() => {
+    if (state.status === "over") {
+      stopSpeaking();
+      lastSpokenIndexRef.current = -1;
+    }
+  }, [state.status]);
+
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+      lastSpokenIndexRef.current = -1;
+    };
+  }, []);
+
+  // Keyboard shortcuts: Alt+P to pronounce, Alt+E to explain, Alt+A to toggle auto
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === "p" || e.key === "P")) {
+        e.preventDefault();
+        handlePronounce();
+      } else if (e.altKey && (e.key === "e" || e.key === "E")) {
+        e.preventDefault();
+        handleExplain();
+      } else if (e.altKey && (e.key === "a" || e.key === "A")) {
+        e.preventDefault();
+        toggleAutoPronounce();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRunning, handlePronounce, handleExplain, toggleAutoPronounce]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4" onClick={focusInput}>
@@ -114,9 +214,81 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
               </div>
             </div>
 
-            <span className="rounded-full border border-accent/40 bg-accent/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.3em] text-accent">
-              {current.pos}
-            </span>
+            {/* Part of speech & speech pronunciation controls */}
+            <div className="relative z-10 flex flex-wrap items-center justify-center gap-2">
+              <span className="rounded-full border border-accent/40 bg-accent/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.3em] text-accent">
+                {current.pos}
+              </span>
+
+              {speechAvailable && (
+                <>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePronounce();
+                      focusInput();
+                    }}
+                    className={cn(
+                      "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all active:scale-95",
+                      isSpeaking
+                        ? "border-accent bg-accent/20 text-accent animate-pulse"
+                        : "border-border bg-sub-alt/40 text-sub hover:border-accent/50 hover:bg-sub-alt hover:text-foreground",
+                    )}
+                    title="Pronounce word (Alt+P)"
+                    aria-label="Pronounce word"
+                  >
+                    <Volume2 className={cn("h-3.5 w-3.5", isSpeaking && "text-accent")} />
+                    <span>Pronounce</span>
+                    <kbd className="hidden rounded bg-background/60 px-1 py-0.5 font-mono text-[9px] text-sub sm:inline-block">
+                      Alt+P
+                    </kbd>
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleExplain();
+                      focusInput();
+                    }}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-sub-alt/40 px-3 text-xs font-medium text-sub transition-all hover:border-accent/50 hover:bg-sub-alt hover:text-foreground active:scale-95"
+                    title="Explain & read definition aloud (Alt+E)"
+                    aria-label="Explain and read definition aloud"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    <span>Explain</span>
+                    <kbd className="hidden rounded bg-background/60 px-1 py-0.5 font-mono text-[9px] text-sub sm:inline-block">
+                      Alt+E
+                    </kbd>
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleAutoPronounce();
+                      focusInput();
+                    }}
+                    className={cn(
+                      "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-all active:scale-95",
+                      autoPronounce
+                        ? "border-accent/60 bg-accent/15 text-accent"
+                        : "border-border bg-sub-alt/20 text-sub/70 hover:border-border/80 hover:text-sub",
+                    )}
+                    title={`Auto-pronounce new words: ${autoPronounce ? "Enabled (Alt+A)" : "Disabled (Alt+A)"}`}
+                    aria-label="Toggle auto-pronounce"
+                  >
+                    {autoPronounce ? <Headphones className="h-3.5 w-3.5 text-accent" /> : <VolumeX className="h-3.5 w-3.5" />}
+                    <span className="text-[11px]">{autoPronounce ? "Auto: On" : "Auto: Off"}</span>
+                  </button>
+                </>
+              )}
+            </div>
+
             <p className="max-w-md text-lg leading-relaxed text-foreground sm:text-xl">{current.definition}</p>
 
             <WordReveal target={current.word} typed={state.typed} />
@@ -198,6 +370,10 @@ function IntroCard({
         A definition appears — type the word it describes. {SESSION_WORD_COUNT} words a round, words you haven&apos;t
         mastered yet come first.
       </p>
+      <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-sub-alt/30 px-3 py-1 font-mono text-[11px] text-sub">
+        <Volume2 size={12} className="text-accent" />
+        <span>Pronunciation &amp; explanations supported (Alt+P / Alt+E)</span>
+      </div>
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 font-mono text-xs uppercase tracking-wider text-sub">
         <span>{totalWords} words in this tier</span>
         <span>{masteredCount} mastered</span>
@@ -252,11 +428,22 @@ function ResultsCard({
 
       {missed.length > 0 && (
         <div className="flex w-full max-w-md flex-col gap-1.5 rounded-xl border border-border bg-background/50 p-4 text-left">
-          <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-sub">Review these</p>
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-sub">Review these words (click 🔊 to hear)</p>
           {missed.map((m) => (
-            <div key={m.word} className="flex items-center gap-2 font-mono text-xs text-sub">
-              <X size={12} className="shrink-0 text-error" />
-              <span className="font-semibold text-foreground">{m.word}</span>
+            <div key={m.word} className="flex items-center justify-between font-mono text-xs text-sub">
+              <div className="flex items-center gap-2">
+                <X size={12} className="shrink-0 text-error" />
+                <span className="font-semibold text-foreground">{m.word}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => speakWord(m.word)}
+                className="inline-flex h-6 w-6 items-center justify-center rounded text-sub transition-colors hover:bg-sub-alt hover:text-accent"
+                title={`Pronounce ${m.word}`}
+                aria-label={`Pronounce ${m.word}`}
+              >
+                <Volume2 size={12} />
+              </button>
             </div>
           ))}
         </div>
