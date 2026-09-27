@@ -34,11 +34,11 @@ export const LESSON_STAGES: { id: LessonStage; label: string }[] = [
   { id: "home-row", label: "Home Row" },
   { id: "top-row", label: "Top Row" },
   { id: "bottom-row", label: "Bottom Row" },
-  { id: "numbers", label: "Numbers" },
   { id: "review", label: "Full Keyboard" },
-  { id: "graduation", label: "Graduation" },
   { id: "intermediate-practice", label: "Sentences & Style" },
+  { id: "numbers", label: "Numbers" },
   { id: "advanced-practice", label: "Speed & Precision" },
+  { id: "graduation", label: "Graduation" },
 ];
 
 export type LessonId =
@@ -74,10 +74,21 @@ export type LessonId =
 // A unit's content is generated, not hand-typed, so the curriculum stays
 // cheap to extend -- see lesson-content.ts for how each kind is built, and
 // buildSubLessons for how one spec becomes `subLessonCount` graduated steps.
-export type DrillStyle = "random" | "warmup" | "pattern" | "accuracy";
+export type DrillStyle =
+  | "random"
+  | "warmup"
+  | "pattern"
+  | "accuracy"
+  | "discover-1"
+  | "discover-2"
+  | "pair-mix"
+  | "alternation"
+  | "integration"
+  | "challenge"
+  | "checkpoint";
 
 export type LessonContentSpec =
-  | { kind: "drill"; allowedKeys: string[]; wordCount: number; style?: DrillStyle }
+  | { kind: "drill"; allowedKeys: string[]; wordCount: number; style?: DrillStyle; focusKeys?: string[] }
   | { kind: "review"; allowedKeys: string[]; wordCount: number }
   | { kind: "graduation"; wordCount: number; numbers?: boolean };
 
@@ -88,11 +99,11 @@ export interface LessonDefinition {
   /** Position in the track -- LESSON_LIST is the source of truth for order and gating, this is only for display. */
   order: number;
   name: string;
-  /** Keys this unit introduces for the first time. Empty once new-key introduction gives way to combined/review/sentence practice. */
+  /** Keys this unit introduces for the first time. Maximum 2 new alphanumeric keys per unit. */
   newKeys: string[];
   /** Short, genuinely unit-specific copy -- avoids the templated-page thin-content pattern the SEO guardrail warns against. */
   instructions: string[];
-  /** 0-100. A sub-lesson must meet this to pass and advance to the next one. */
+  /** 0-100. A sub-lesson must meet this to pass and advance to the next one. Forgiving ~75% for initial key learning. */
   minAccuracy: number;
   /** The "full difficulty" content spec -- buildSubLessons scales wordCount down for earlier steps within the unit. */
   content: LessonContentSpec;
@@ -102,19 +113,34 @@ export interface LessonDefinition {
   isGraduation?: boolean;
 }
 
-const HOME_LEFT = ["a", "s", "d", "f"];
-const HOME_RIGHT = ["j", "k", "l", ";"];
-const HOME_ALL = [...HOME_LEFT, ...HOME_RIGHT];
-const TOP_LEFT = ["q", "w", "e", "r", "t"];
-const TOP_RIGHT = ["y", "u", "i", "o", "p"];
-const TOP_ALL = [...TOP_LEFT, ...TOP_RIGHT];
-const HOME_AND_TOP = [...HOME_ALL, ...TOP_ALL];
-const BOTTOM_LEFT = ["z", "x", "c", "v", "b"];
-const BOTTOM_RIGHT = ["n", "m", ",", ".", "/"];
-const BOTTOM_ALL = [...BOTTOM_LEFT, ...BOTTOM_RIGHT];
-const ALL_KEYS = [...HOME_AND_TOP, ...BOTTOM_ALL];
-const NUMBERS_LOW = ["1", "2", "3", "4", "5"];
-const NUMBERS_HIGH = ["6", "7", "8", "9", "0"];
+// Cumulative key sets guaranteeing each new lesson reinforces ALL prior keys:
+const KEYS_1 = ["f", "j"];
+const KEYS_2 = [...KEYS_1, "d", "k"];
+const KEYS_3 = [...KEYS_2, "s", "l"];
+const KEYS_4 = [...KEYS_3, "a", ";"];
+const KEYS_5 = [...KEYS_4, "g", "h"]; // All 10 home row keys
+const HOME_ROW_ALL = [...KEYS_5];
+
+const KEYS_7 = [...HOME_ROW_ALL, "e", "i"];
+const KEYS_8 = [...KEYS_7, "r", "u"];
+const KEYS_9 = [...KEYS_8, "t", "y"];
+const KEYS_10 = [...KEYS_9, "w", "o"];
+const KEYS_11 = [...KEYS_10, "q", "p"];
+const HOME_AND_TOP_ALL = [...KEYS_11];
+
+const KEYS_13 = [...HOME_AND_TOP_ALL, "v", "m"];
+const KEYS_14 = [...KEYS_13, "c", ","];
+const KEYS_15 = [...KEYS_14, "x", "."];
+const KEYS_16 = [...KEYS_15, "z", "/"];
+const KEYS_17 = [...KEYS_16, "b", "n"]; // All 26 letters of alphabet + 4 punctuation marks
+const ALPHABET_AND_BASIC_PUNCT = [...KEYS_17];
+
+const NUMBERS_PAIRS_1 = [...ALPHABET_AND_BASIC_PUNCT, "4", "7"];
+const NUMBERS_PAIRS_2 = [...NUMBERS_PAIRS_1, "3", "8"];
+const NUMBERS_PAIRS_3 = [...NUMBERS_PAIRS_2, "2", "9"];
+const NUMBERS_PAIRS_4 = [...NUMBERS_PAIRS_3, "1", "0"];
+const NUMBERS_PAIRS_5 = [...NUMBERS_PAIRS_4, "5", "6"];
+const ALL_KEYS_AND_NUMBERS = [...NUMBERS_PAIRS_5];
 
 export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   "home-row-left": {
@@ -122,14 +148,14 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
     tier: "beginner",
     stage: "home-row",
     order: 1,
-    name: "Home Row: Left Hand",
-    newKeys: HOME_LEFT,
+    name: "Home Row: F & J Anchors",
+    newKeys: ["f", "j"],
     instructions: [
-      "Rest your left index, middle, ring and pinky fingers on F, D, S and A. Don't look down -- feel for the small bump on the F key, that's how you find home row by touch alone.",
-      "Press each key with the finger it belongs to and return to the same resting spot every time.",
+      "Feel the small tactile bumps on the F and J keys -- these are your home-row anchors. Your left index finger rests on F, and your right index finger rests on J.",
+      "Keep both hands relaxed. Tap the spacebar with your thumb to advance between words. Return your index fingers to F and J after every stroke.",
     ],
-    minAccuracy: 90,
-    content: { kind: "drill", allowedKeys: HOME_LEFT, wordCount: 12 },
+    minAccuracy: 75,
+    content: { kind: "drill", allowedKeys: KEYS_1, wordCount: 12 },
     subLessonCount: 7,
   },
   "home-row-right": {
@@ -137,14 +163,14 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
     tier: "beginner",
     stage: "home-row",
     order: 2,
-    name: "Home Row: Right Hand",
-    newKeys: HOME_RIGHT,
+    name: "Home Row: D & K Middle Fingers",
+    newKeys: ["d", "k"],
     instructions: [
-      "Now the right hand: index on J (feel for its bump), middle on K, ring on L, pinky on the semicolon.",
-      "Same rule as before -- one finger per key, and back to rest after every press.",
+      "Your left middle finger rests on D; your right middle finger rests on K. Notice how your index fingers stay anchored on F and J.",
+      "Strike D and K with a clean vertical tap without lifting your entire hand from the keyboard.",
     ],
-    minAccuracy: 90,
-    content: { kind: "drill", allowedKeys: HOME_RIGHT, wordCount: 12 },
+    minAccuracy: 75,
+    content: { kind: "drill", allowedKeys: KEYS_2, wordCount: 12 },
     subLessonCount: 7,
   },
   "home-row-combined": {
@@ -152,307 +178,329 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
     tier: "beginner",
     stage: "home-row",
     order: 3,
-    name: "Home Row: Both Hands",
-    newKeys: [],
+    name: "Home Row: S & L Ring Fingers",
+    newKeys: ["s", "l"],
     instructions: [
-      "Both hands stay on home row for this one. The jump between hands is where beginners usually slow down -- let your eyes stay on the screen, not your fingers.",
+      "Your left ring finger owns S; your right ring finger owns L. Ring fingers take patience -- focus on gentle, deliberate taps.",
+      "Keep all other fingers hovering lightly in their home positions. Notice your hands alternating rhythmically between left and right.",
     ],
-    minAccuracy: 90,
-    content: { kind: "drill", allowedKeys: HOME_ALL, wordCount: 14 },
-    subLessonCount: 4,
+    minAccuracy: 75,
+    content: { kind: "drill", allowedKeys: KEYS_3, wordCount: 14 },
+    subLessonCount: 7,
   },
   "home-row-words": {
     id: "home-row-words",
     tier: "beginner",
     stage: "home-row",
     order: 4,
-    name: "Home Row: Real Words",
-    newKeys: [],
+    name: "Home Row: A & Semicolon Pinkies",
+    newKeys: ["a", ";"],
     instructions: [
-      "Every word here is a real English word built entirely from home-row letters -- your first taste of typing something you'd actually write.",
+      "Your left pinky strikes A; your right pinky strikes the semicolon ;. Semicolon is a fundamental home-row anchor key.",
+      "Keep your wrists steady and level. Do not twist your hands to reach the outer keys -- let the pinkies flex naturally.",
     ],
-    minAccuracy: 88,
-    content: { kind: "review", allowedKeys: HOME_ALL, wordCount: 10 },
-    subLessonCount: 5,
+    minAccuracy: 75,
+    content: { kind: "drill", allowedKeys: KEYS_4, wordCount: 14 },
+    subLessonCount: 7,
   },
   "top-row-left": {
     id: "top-row-left",
     tier: "beginner",
-    stage: "top-row",
+    stage: "home-row",
     order: 5,
-    name: "Top Row: Left Hand",
-    newKeys: TOP_LEFT,
+    name: "Home Row: G & H Center Reaches",
+    newKeys: ["g", "h"],
     instructions: [
-      "Q, W, E, R and T sit one row above home row, each reached by the same finger that owns its home-row key below it -- R and T both stretch from your index finger.",
+      "G stretches inward from your left index finger; H stretches inward from your right index finger.",
+      "Always snap immediately back to your F and J anchor bumps after typing G or H to maintain touch orientation.",
     ],
-    minAccuracy: 88,
-    content: { kind: "drill", allowedKeys: [...HOME_ALL, ...TOP_LEFT], wordCount: 14 },
-    subLessonCount: 8,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_5, wordCount: 14 },
+    subLessonCount: 7,
   },
   "top-row-right": {
     id: "top-row-right",
     tier: "beginner",
-    stage: "top-row",
+    stage: "home-row",
     order: 6,
-    name: "Top Row: Right Hand",
-    newKeys: TOP_RIGHT,
+    name: "Consolidation: Home Row Mastery",
+    newKeys: [],
     instructions: [
-      "Y and U stretch up from your right index finger, I from middle, O from ring, P from pinky -- the mirror image of the left hand's reach.",
+      "All ten home-row keys are now unlocked. No new keys here -- this consolidation unit reinforces smooth transitions.",
+      "Practice real English words formed entirely from home row: 'all', 'fall', 'salad', 'flask', 'glad', and 'dash'.",
     ],
-    minAccuracy: 88,
-    content: { kind: "drill", allowedKeys: [...HOME_ALL, ...TOP_ALL], wordCount: 14 },
-    subLessonCount: 8,
+    minAccuracy: 82,
+    content: { kind: "review", allowedKeys: HOME_ROW_ALL, wordCount: 14 },
+    subLessonCount: 6,
   },
   "top-row-combined": {
     id: "top-row-combined",
     tier: "beginner",
     stage: "top-row",
     order: 7,
-    name: "Top Row: Both Hands",
-    newKeys: [],
+    name: "Top Row: E & I Vowels",
+    newKeys: ["e", "i"],
     instructions: [
-      "Home row and top row together now. Notice your fingers returning to the home-row bump between reaches -- that return is the habit that makes touch typing fast.",
+      "E reaches up from your left middle finger (D); I reaches up from your right middle finger (K). Two of the most common letters in English!",
+      "Reach up, strike cleanly, and immediately return your middle fingers back to D and K.",
     ],
-    minAccuracy: 87,
-    content: { kind: "drill", allowedKeys: HOME_AND_TOP, wordCount: 16 },
-    subLessonCount: 4,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_7, wordCount: 14 },
+    subLessonCount: 7,
   },
   "top-row-words": {
     id: "top-row-words",
     tier: "beginner",
     stage: "top-row",
     order: 8,
-    name: "Top Row: Real Words",
-    newKeys: [],
+    name: "Top Row: R & U Index Reaches",
+    newKeys: ["r", "u"],
     instructions: [
-      "With eighteen letters learned, real words start to open up -- this set draws from the actual dictionary the main typing test uses.",
+      "R stretches upward from F (left index); U stretches upward from J (right index).",
+      "Because F and J are your home bumps, keeping your hands anchored makes the reach to R and U second nature.",
     ],
-    minAccuracy: 87,
-    content: { kind: "review", allowedKeys: HOME_AND_TOP, wordCount: 12 },
-    subLessonCount: 5,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_8, wordCount: 14 },
+    subLessonCount: 7,
   },
   "bottom-row-left": {
     id: "bottom-row-left",
     tier: "beginner",
-    stage: "bottom-row",
+    stage: "top-row",
     order: 9,
-    name: "Bottom Row: Left Hand",
-    newKeys: BOTTOM_LEFT,
+    name: "Top Row: T & Y Upper Center",
+    newKeys: ["t", "y"],
     instructions: [
-      "Z, X, C, V and B are the last left-hand reach, one row below home row -- B is the widest stretch on the keyboard for your index finger, so take it slow.",
+      "T reaches up and inward from F (left index); Y reaches up and inward from J (right index).",
+      "These are the widest diagonal reaches for your index fingers on the upper deck. Take them smoothly and return home.",
     ],
-    minAccuracy: 86,
-    content: { kind: "drill", allowedKeys: [...HOME_AND_TOP, ...BOTTOM_LEFT], wordCount: 14 },
-    subLessonCount: 8,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_9, wordCount: 14 },
+    subLessonCount: 7,
   },
   "bottom-row-right": {
     id: "bottom-row-right",
     tier: "beginner",
-    stage: "bottom-row",
+    stage: "top-row",
     order: 10,
-    name: "Bottom Row: Right Hand",
-    newKeys: BOTTOM_RIGHT,
+    name: "Top Row: W & O Ring Reaches",
+    newKeys: ["w", "o"],
     instructions: [
-      "N and M reach down from your right index finger, then comma, period and slash from middle, ring and pinky -- the last new keys in the alphabet.",
+      "W reaches upward from S (left ring); O reaches upward from L (right ring).",
+      "Maintain a light touch. Let your ring fingers extend upward without floating your entire hand off the keyboard.",
     ],
-    minAccuracy: 86,
-    content: { kind: "drill", allowedKeys: [...HOME_AND_TOP, ...BOTTOM_ALL], wordCount: 14 },
-    subLessonCount: 8,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_10, wordCount: 14 },
+    subLessonCount: 7,
   },
   "bottom-row-combined": {
     id: "bottom-row-combined",
     tier: "beginner",
-    stage: "bottom-row",
+    stage: "top-row",
     order: 11,
-    name: "Full Alphabet Drill",
-    newKeys: [],
+    name: "Top Row: Q & P Outer Pinkies",
+    newKeys: ["q", "p"],
     instructions: [
-      "Every letter key is now in play. This is the widest reach your hands will ever need to make -- if it feels slow, that's expected on the first pass.",
+      "Q reaches up from A (left pinky); P reaches up from semicolon ; (right pinky).",
+      "Completes all ten letters of the top row. Keep wrists level and strike with precision.",
     ],
-    minAccuracy: 85,
-    content: { kind: "drill", allowedKeys: ALL_KEYS, wordCount: 16 },
-    subLessonCount: 4,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_11, wordCount: 14 },
+    subLessonCount: 7,
   },
   "bottom-row-words": {
     id: "bottom-row-words",
     tier: "beginner",
-    stage: "bottom-row",
+    stage: "top-row",
     order: 12,
-    name: "Full Alphabet: Real Words",
+    name: "Consolidation: Top & Home Rows",
     newKeys: [],
     instructions: [
-      "The full alphabet unlocks almost the entire word list -- this is the first unit that reads like an ordinary sentence rather than a drill.",
+      "Twenty keys now unlocked! Consolidate both rows across hundreds of real English words and natural bigrams.",
+      "Notice your hands establishing an effortless flow between the upper deck and the home row anchors.",
     ],
-    minAccuracy: 85,
-    content: { kind: "review", allowedKeys: ALL_KEYS, wordCount: 14 },
-    subLessonCount: 5,
+    minAccuracy: 82,
+    content: { kind: "review", allowedKeys: HOME_AND_TOP_ALL, wordCount: 16 },
+    subLessonCount: 6,
   },
   "numbers-low": {
     id: "numbers-low",
     tier: "beginner",
-    stage: "numbers",
+    stage: "bottom-row",
     order: 13,
-    name: "Numbers: 1 to 5",
-    newKeys: NUMBERS_LOW,
+    name: "Bottom Row: V & M Index Curls",
+    newKeys: ["v", "m"],
     instructions: [
-      "The number row sits above the top row, reached by stretching the same fingers upward again -- 1 and 2 from your left pinky and ring, up through 5 from your left index.",
+      "V curls downward from left index (F); M curls downward from right index (J).",
+      "Curl your index finger beneath the home row to tap V and M, then relax straight back to home position.",
     ],
-    minAccuracy: 85,
-    content: { kind: "drill", allowedKeys: NUMBERS_LOW, wordCount: 10 },
-    subLessonCount: 8,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_13, wordCount: 14 },
+    subLessonCount: 7,
   },
   "numbers-high": {
     id: "numbers-high",
     tier: "beginner",
-    stage: "numbers",
+    stage: "bottom-row",
     order: 14,
-    name: "Numbers: 6 to 0",
-    newKeys: NUMBERS_HIGH,
+    name: "Bottom Row: C & Comma",
+    newKeys: ["c", ","],
     instructions: [
-      "6 through 0 mirror the left hand's reach on the right. Once these are comfortable you can type any number without glancing at the row.",
+      "C curls down from left middle (D); comma , curls down from right middle (K).",
+      "Comma is essential for sentence structure. Practice smooth pauses without breaking finger cadence.",
     ],
-    minAccuracy: 85,
-    content: { kind: "drill", allowedKeys: [...NUMBERS_LOW, ...NUMBERS_HIGH], wordCount: 12 },
-    subLessonCount: 8,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_14, wordCount: 14 },
+    subLessonCount: 7,
   },
   "full-keyboard-words": {
     id: "full-keyboard-words",
     tier: "beginner",
-    stage: "review",
+    stage: "bottom-row",
     order: 15,
-    name: "Full Keyboard: Words",
-    newKeys: [],
+    name: "Bottom Row: X & Period",
+    newKeys: ["x", "."],
     instructions: [
-      "Every letter and number you've learned, mixed together in real words -- a checkpoint before punctuation joins the mix.",
+      "X curls down from left ring (S); period . curls down from right ring (L).",
+      "Mastering the period key unlocks sentence endings. Strike cleanly with your right ring finger.",
     ],
-    minAccuracy: 85,
-    content: { kind: "review", allowedKeys: ALL_KEYS, wordCount: 16 },
-    subLessonCount: 5,
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_15, wordCount: 14 },
+    subLessonCount: 7,
   },
   "full-keyboard-punctuation": {
     id: "full-keyboard-punctuation",
     tier: "beginner",
-    stage: "review",
+    stage: "bottom-row",
     order: 16,
-    name: "Full Keyboard: Punctuation",
-    newKeys: [],
+    name: "Bottom Row: Z & Slash",
+    newKeys: ["z", "/"],
     instructions: [
-      "Capital letters and punctuation, drawn from the same generator the main typing test uses -- this is what ordinary writing actually looks like.",
+      "Z curls down from left pinky (A); slash / curls down from right pinky (semicolon ;).",
+      "Keep finger movements gentle and controlled -- pinkies curl downward with a relaxed wrist.",
     ],
-    minAccuracy: 82,
-    content: { kind: "graduation", wordCount: 20 },
+    minAccuracy: 78,
+    content: { kind: "drill", allowedKeys: KEYS_16, wordCount: 14 },
     subLessonCount: 7,
   },
   graduation: {
     id: "graduation",
     tier: "beginner",
-    stage: "graduation",
+    stage: "review",
     order: 17,
-    name: "Beginner Checkpoint",
-    newKeys: [],
+    name: "Alphabet Complete: B & N",
+    newKeys: ["b", "n"],
     instructions: [
-      "One passage, the full keyboard and real punctuation, no training wheels. Clear this and the whole keyboard is yours -- Intermediate is next, building real sentences and speed.",
+      "B stretches down-inward from left index (F); N stretches down-inward from right index (J).",
+      "With B and N, all 26 letters of the English alphabet are unlocked! You have completed foundational key acquisition.",
     ],
     minAccuracy: 80,
-    content: { kind: "graduation", wordCount: 30 },
-    subLessonCount: 10,
+    content: { kind: "drill", allowedKeys: KEYS_17, wordCount: 16 },
+    subLessonCount: 7,
   },
   "everyday-sentences": {
     id: "everyday-sentences",
     tier: "intermediate",
     stage: "intermediate-practice",
     order: 18,
-    name: "Everyday Sentences",
+    name: "Shift Mechanics & Capitalization",
     newKeys: [],
     instructions: [
-      "Full sentences now, capital letters and all -- the keyboard part is done, this tier is about rhythm across real prose instead of isolated words.",
+      "Opposite-hand Shift rule: hold Right Shift when typing left-hand letters; hold Left Shift for right-hand letters.",
+      "Type real, capitalized sentences with periods and commas. Experience the full cadence of natural English prose.",
     ],
-    minAccuracy: 85,
+    minAccuracy: 84,
     content: { kind: "graduation", wordCount: 20 },
     subLessonCount: 6,
   },
   "building-speed": {
     id: "building-speed",
     tier: "intermediate",
-    stage: "intermediate-practice",
+    stage: "numbers",
     order: 19,
-    name: "Building Speed",
-    newKeys: [],
+    name: "Number Row: 4 & 7",
+    newKeys: ["4", "7"],
     instructions: [
-      "Same kind of text, more of it per run. Longer passages punish a hesitant rhythm more than a short one does -- that's the point.",
+      "4 reaches two rows up from left index (past R); 7 reaches two rows up from right index (past U).",
+      "Keep your other fingers anchored on home row so you never lose your place when reaching into the number row.",
     ],
-    minAccuracy: 85,
-    content: { kind: "graduation", wordCount: 25 },
-    subLessonCount: 6,
+    minAccuracy: 80,
+    content: { kind: "drill", allowedKeys: NUMBERS_PAIRS_1, wordCount: 14 },
+    subLessonCount: 7,
   },
   "numbers-and-words": {
     id: "numbers-and-words",
     tier: "intermediate",
-    stage: "intermediate-practice",
+    stage: "numbers",
     order: 20,
-    name: "Numbers & Words",
-    newKeys: [],
+    name: "Number Row: 3 & 8",
+    newKeys: ["3", "8"],
     instructions: [
-      "Digits mixed into ordinary sentences -- the number row stops being a separate skill here and starts being part of normal typing, the way it actually gets used.",
+      "3 reaches up from left middle (past E); 8 reaches up from right middle (past I).",
+      "Straight vertical reach. Return immediately to D and K after striking.",
     ],
-    minAccuracy: 83,
-    content: { kind: "graduation", wordCount: 20, numbers: true },
-    subLessonCount: 6,
+    minAccuracy: 80,
+    content: { kind: "drill", allowedKeys: NUMBERS_PAIRS_2, wordCount: 14 },
+    subLessonCount: 7,
   },
   "longer-passages": {
     id: "longer-passages",
     tier: "intermediate",
-    stage: "intermediate-practice",
+    stage: "numbers",
     order: 21,
-    name: "Longer Passages",
-    newKeys: [],
+    name: "Number Row: 2 & 9",
+    newKeys: ["2", "9"],
     instructions: [
-      "A full paragraph's worth per run. This is where a shaky hand position starts to show -- if your accuracy drops here, it's a posture problem more often than a speed one.",
+      "2 reaches up from left ring (past W); 9 reaches up from right ring (past O).",
+      "Ring fingers require calm, deliberate movement. Keep your touch light and steady.",
     ],
-    minAccuracy: 85,
-    content: { kind: "graduation", wordCount: 30 },
+    minAccuracy: 80,
+    content: { kind: "drill", allowedKeys: NUMBERS_PAIRS_3, wordCount: 14 },
     subLessonCount: 7,
   },
   "mixed-practice": {
     id: "mixed-practice",
     tier: "intermediate",
-    stage: "intermediate-practice",
+    stage: "numbers",
     order: 22,
-    name: "Mixed Practice",
-    newKeys: [],
+    name: "Number Row: 1 & 0",
+    newKeys: ["1", "0"],
     instructions: [
-      "Punctuation and numbers together, at length -- everything Intermediate has taught, combined into one run instead of practiced in isolation.",
+      "1 reaches up from left pinky (past Q); 0 reaches up from right pinky (past P).",
+      "Corner reaches on the top-left and top-right of your keyboard.",
     ],
-    minAccuracy: 85,
-    content: { kind: "graduation", wordCount: 30, numbers: true },
+    minAccuracy: 80,
+    content: { kind: "drill", allowedKeys: NUMBERS_PAIRS_4, wordCount: 14 },
     subLessonCount: 7,
   },
   "intermediate-checkpoint": {
     id: "intermediate-checkpoint",
     tier: "intermediate",
-    stage: "intermediate-practice",
+    stage: "numbers",
     order: 23,
-    name: "Intermediate Checkpoint",
-    newKeys: [],
+    name: "Numbers Complete: 5 & 6",
+    newKeys: ["5", "6"],
     instructions: [
-      "The longest run yet, mixed punctuation and numbers, no easing in. Clear this and Advanced unlocks -- speed and precision under real pressure.",
+      "5 and 6 complete the entire number row! Practice mixed addresses, phone numbers, quantities, and dates.",
+      "Clear this checkpoint to complete Intermediate numbers and unlock Advanced mastery.",
     ],
-    minAccuracy: 87,
-    content: { kind: "graduation", wordCount: 35, numbers: true },
-    subLessonCount: 9,
+    minAccuracy: 82,
+    content: { kind: "drill", allowedKeys: ALL_KEYS_AND_NUMBERS, wordCount: 16 },
+    subLessonCount: 7,
   },
   "speed-endurance": {
     id: "speed-endurance",
     tier: "advanced",
     stage: "advanced-practice",
     order: 24,
-    name: "Speed Endurance",
+    name: "Symbols & Practical Punctuation",
     newKeys: [],
     instructions: [
-      "Long, sustained runs -- the goal here isn't a faster peak, it's holding your pace without it decaying over the length of the passage.",
+      "Practice exclamation points !, question marks ?, apostrophes ', quotes \", colons :, and hyphens -.",
+      "Condition reflex memory for quotes, contractions, and compound terms without hesitating on Shift.",
     ],
     minAccuracy: 88,
-    content: { kind: "graduation", wordCount: 40 },
+    content: { kind: "graduation", wordCount: 25, numbers: true },
     subLessonCount: 7,
   },
   "precision-under-pressure": {
@@ -460,10 +508,11 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
     tier: "advanced",
     stage: "advanced-practice",
     order: 25,
-    name: "Precision Under Pressure",
+    name: "High-Frequency Flow & Cadence",
     newKeys: [],
     instructions: [
-      "Shorter runs, a much higher accuracy bar. This one is about control, not endurance -- slow down if that's what it takes to clear it clean.",
+      "Zero-latency typing across the top 200 English bigrams and trigrams. Eliminate hesitation between syllables.",
+      "Focus on consistency -- a smooth, unbroken rhythm produces higher net speed than bursts of rushing.",
     ],
     minAccuracy: 92,
     content: { kind: "graduation", wordCount: 25, numbers: true },
@@ -474,13 +523,14 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
     tier: "advanced",
     stage: "advanced-practice",
     order: 26,
-    name: "Long-Form Typing",
+    name: "Natural Prose & Paragraph Stamina",
     newKeys: [],
     instructions: [
-      "The longest passages in the whole track. This is closer to what typing actually looks like outside a lesson -- an email, a document, a real page of text.",
+      "Multi-paragraph continuous typing. Condition physical stamina, zero wrist fatigue, and relaxed breathing.",
+      "This is what real-world professional typing feels like -- sustained, effortless output across complete passages.",
     ],
-    minAccuracy: 88,
-    content: { kind: "graduation", wordCount: 50 },
+    minAccuracy: 90,
+    content: { kind: "graduation", wordCount: 35 },
     subLessonCount: 8,
   },
   "numbers-and-symbols-mastery": {
@@ -488,10 +538,11 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
     tier: "advanced",
     stage: "advanced-practice",
     order: 27,
-    name: "Numbers & Symbols Mastery",
+    name: "Code Syntax & Technical Formats",
     newKeys: [],
     instructions: [
-      "Heavy on digits and punctuation together -- the combination that trips up even a fast typist, because it breaks the rhythm a plain word gives you.",
+      "Brackets {} [] (), operators += == != =>, camelCase, snake_case, and variable syntax.",
+      "Purpose-built for software engineers, data analysts, and technical professionals.",
     ],
     minAccuracy: 90,
     content: { kind: "graduation", wordCount: 30, numbers: true },
@@ -500,16 +551,17 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   "final-challenge": {
     id: "final-challenge",
     tier: "advanced",
-    stage: "advanced-practice",
+    stage: "graduation",
     order: 28,
-    name: "Final Challenge",
+    name: "Touch-Typing Graduation Assessment",
     newKeys: [],
     instructions: [
-      "Everything the track has taught, at full length and full difficulty. Clear this and you're done -- take the real typing test next and see where you actually land.",
+      "The comprehensive touch-typing evaluation. Full alphabet, numbers, punctuation, and mixed syntax under pressure.",
+      "Achieve 3 or more stars to earn your Touch-Typing Academy Master Certification!",
     ],
-    minAccuracy: 90,
-    content: { kind: "graduation", wordCount: 50, numbers: true },
-    subLessonCount: 11,
+    minAccuracy: 92,
+    content: { kind: "graduation", wordCount: 45, numbers: true },
+    subLessonCount: 10,
     isGraduation: true,
   },
 };

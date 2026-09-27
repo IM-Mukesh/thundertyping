@@ -19,7 +19,7 @@
 cd path/to/herotyping
 npm install       # only needed if node_modules isn't already present
 npm run dev        # starts Next.js on http://localhost:3000 by default
-npm test            # 234 unit tests (Node's built-in runner, no extra dependency)
+npm test            # 283 unit tests (Node's built-in runner, no extra dependency)
 npm run lint        # must be clean before you consider anything "done"
 npm run build       # must be clean before you consider anything "done"
 npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
@@ -27,13 +27,145 @@ npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
 
 Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now.
 
-**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, and 2026-09-27, 234 cases across 50 suites) covering the scoring engine, consistency metric calibration (Scenarios A through R), the mobile input path, the game anti-exploit rules, the countdown formatter, the game readiness/sitemap isolation rules, the lesson curriculum's content generation/gating, the vocabulary ratio & uniqueness rules, the TTS speech synthesis engine, the WPM/CPM/KPH calculator's conversion math, and sitemap route integrity — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
+**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, 2026-09-27, and 2026-09-28, 283 cases across 58 suites) covering the scoring engine, consistency metric calibration (Scenarios A through R), the mobile input path, the game anti-exploit rules, the countdown formatter, the game readiness/sitemap isolation rules, the lesson curriculum's 2-key motor progression and invariants, the touch-typing star system, the vocabulary ratio & uniqueness rules, the TTS speech synthesis engine, the WPM/CPM/KPH calculator's conversion math, and sitemap route integrity — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
 
 **Write a test for anything scoring-related.** Every scoring bug found so far was invisible through the UI — a dropped keystroke and a missed render look identical on screen. The tests drive the pure reducer directly for that reason.
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons`, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **234-test suite**.
+As of **2026-09-28**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons` rebuilt with a strict **<=2 new alphanumeric keys per unit** pedagogical sequence, a **1-5 star motor mastery rating system**, a **10/10 animated lesson completion modal** with sequential star reveals and crystal chimes, an adaptive practice lab, diagnostic placement engine, and Bayesian mastery scoring, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **283-test suite**.
+
+**Session 2026-09-28 (Part 3) — Lesson Completion & Star System Redesign (10/10 Human-Crafted UX):**
+- **Eliminated Surprise Auto-Restart (Bugs 2 & 37)**:
+  - Lessons never auto-restart or transition unexpectedly upon completion or mistake thresholds.
+  - The completion experience calmly opens a focused modal overlay explaining performance and letting learners intentionally choose Continue or Try Again.
+- **Visual Scale & Clarity (3× Larger Stars)**:
+  - Stars sized `w-10 h-10` on mobile to `w-14 h-14` on desktop (`size={44}` to `size={56}`) with generous breathing room.
+  - Ambient warm amber glow effects and distinct recessed empty star silhouettes for unearned stars.
+- **Synchronized Audio & Sequential Star Reveal Animation**:
+  - Empty star placeholders appear first; earned stars animate sequentially (~190ms interval) with rising crystal harmonic bell frequencies ($C_5, E_5, G_5, A_5, C_6$) using the Web Audio API.
+  - Final emotional resolution chord fires 140ms after all stars reveal (`lesson-perfect`, `lesson-pass`, or supportive `lesson-retry`).
+  - Graceful reduced-motion bypass via `prefers-reduced-motion`.
+- **Exact 60% Universal Progression Rule**:
+  - Accuracy $< 60\% \rightarrow 1–2$ stars (Cannot advance, constructive failure feedback, retry required).
+  - Accuracy $\ge 60\% \rightarrow 3+$ stars (Passes, next lesson/step unlocked).
+  - Explicit metric callout: `"Required to pass: 60% accuracy"`.
+- **Generous 5-Star Rule**:
+  - Accuracy $\ge 94\%$ AND Net WPM $\ge 25 = 5$ stars (or near-perfect $\ge 98\%$ accuracy in beginner tier).
+- **Actionable Weakness Diagnosis & Mistakes Callout**:
+  - Surfaces total mistake count, accuracy gap to 60%, and targeted finger positioning tips for problematic keys.
+  - Direct 1-click shortcut to Practice Lab when specific key weaknesses are detected.
+- **Command Hierarchy & Keyboard Navigation**:
+  - Primary button (`Continue` on pass, `Try Again` on fail) is autofocus-ready with keyboard badge `Enter ↵`.
+  - Secondary actions: `Space` or `R` for quick retry, Practice Lab shortcut for weak keys, and Curriculum overview.
+  - `isNavigating` flag prevents rapid repeated keystroke double-actions.
+  - Viewport overflow protection (`max-h-[92vh] overflow-y-auto`) for small laptop and mobile screens.
+- **Automated Verification & Zero Regressions**:
+  - Dedicated unit test suite `src/lib/lessons/star-system.test.ts` (10 tests) covering exact progression boundaries (59.9% vs 60%, 93.9% vs 94%, 24.9 WPM vs 25 WPM), 1-star through 5-star flows, and key diagnostics.
+  - Total test count expanded to **283 tests across 58 suites (100% passing)**.
+  - Clean ESLint (0 errors, 0 warnings), clean TypeScript (`tsc --noEmit`), and all 150 static pages successfully compiled via `next build`.
+
+**Session 2026-09-28 (Part 2) — Touch-Typing Curriculum Overhaul, 2-Key Motor Progression & Star System Rebuild:**
+- **Strict Pedagogical Architecture (2-Key Maximum & Anchors)**:
+  - `src/lib/lessons/lesson-types.ts`:
+    - Re-architected all 28 units: strictly **<= 2 new alphanumeric keys per unit** (Rule 3).
+    - Unit 1 introduces the fundamental F & J home-row tactile bumps (`home-row-left`).
+    - Unit 4 introduces semicolon `;` as an essential home-row anchor key.
+    - All units have cumulative `allowedKeys` reinforcing every previously introduced key.
+    - Preserves all 28 original route IDs, sitemap URLs, and guide backlinks without breaking changes.
+    - Scaled progressive accuracy thresholds: forgiving ~75% for initial key learning, scaling to 92% for advanced flow.
+  - `src/lib/lessons/content-generator.ts` & `src/lib/lessons/lesson-content.ts`:
+    - Implemented 7-phase deliberate motor progression for 2-key units:
+      - Phase A: Discover Key 1 (single-key tactile burst, >=10 characters, 75% accuracy threshold).
+      - Phase B: Discover Key 2 (single-key tactile burst, >=10 characters, 75% accuracy threshold).
+      - Phase C: Pair & Mix (rhythmic two-key pairing).
+      - Phase D: Rapid Alternation (hand-switching cadence drills).
+      - Phase E: Prior Key Integration (blends new reaches with full prior key set).
+      - Phase F: Flow Challenge (dynamic speed & cadence test).
+      - Phase G: Unit Checkpoint (full evaluation for stars and unit completion).
+    - Hardened invariant: **no lesson run or exercise contains fewer than 10 target characters** (Rule 6).
+- **Touch-Typing Star System (⭐ 1–5)**:
+  - `src/lib/lessons/star-system.ts`:
+    - Motor accuracy and finger control evaluation returning 1 to 5 stars.
+    - Passing rule: **3+ stars = PASS**; **1–2 stars = RETRY / NOT YET MASTERED**.
+    - For beginner units, speed is never penalized: accuracy and control award up to 5 stars.
+    - Targeted weakness diagnosis: analyzes single-key outcomes and finger biomechanics to provide actionable remediation advice and specific retry focus keys.
+  - `src/lib/games/game-audio.ts`:
+    - Added dedicated Web Audio chimes: `"lesson-star"` (sequential star reveal), `"lesson-pass"` (arpeggio), `"lesson-perfect"` (5-star harmony), and `"lesson-retry"` (supportive tone).
+  - `src/lib/lessons/lesson-progress-store.ts`:
+    - Extended unit progress with `bestStars` and `latestStars`.
+    - Unit advancement requires `stars >= 3`.
+    - Backward-compatible schema validation and migration.
+- **Full Completion Modal Overlay (`lesson-completion-modal.tsx`)**:
+  - Replaced inline results card with a full modal overlay featuring backdrop blur.
+  - Sequential star reveal animation (160ms interval with reduced-motion bypass).
+  - Metrics display: Net WPM, Accuracy, Required Accuracy, Total Errors, Time Elapsed, XP Gain.
+  - Weakness diagnosis callout highlighting problematic keys and finger placement.
+  - Keyboard navigation: `Enter` activates the primary action (Continue for pass, Retry for fail); `Space` or `R` for instant retry.
+  - Double-submission protection (`isNavigating` flag blocks accidental double clicks/keypresses).
+- **Dashboard Gamification & Star Badges (`lesson-dashboard.tsx`, `lesson-unit-row.tsx`, `lesson-stats-bar.tsx`)**:
+  - Rendered 5-star ratings (e.g. ⭐⭐⭐⭐☆) on every lesson unit row.
+  - Added "Stars earned" tile (tracking up to 140 stars across 28 units) in the stats bar.
+  - Dominant "Continue / Resume Lesson" action for returning typists.
+- **Automated Invariants Verification (`curriculum-invariants.test.ts`)**:
+  - 8 comprehensive invariant tests verifying:
+    - Never > 2 alphanumeric keys per unit.
+    - F & J anchors first.
+    - Semicolon `;` in home row.
+    - Cumulative key sets.
+    - Minimum >= 10 target characters per exercise across all seeds.
+    - All 28 route IDs preserved.
+    - 7-step motor progression with forgiving discovery thresholds.
+    - Star evaluation boundaries and weakness diagnosis.
+  - Total test count expanded to **280 tests across 57 suites (100% passing)**.
+
+**Session 2026-09-28 (Part 1) — Touch-Typing Curriculum Redesign, Adaptive Engine, Statistical Mastery & UX Rebuild:**
+- **Audited & Rebuilt Lesson Architecture**:
+  - `src/lib/lessons/keyboard-layout.ts`:
+    - Strict physical ANSI key-to-finger mapping with Opposite-Hand Shift enforcement (`shiftKeyFor(key): "left-shift" | "right-shift" | null`).
+    - Physical tactile bumps on 'f' and 'j' keys (`homeRow: true`).
+    - Digraph transition classifier (`classifyTransition(a, b)`: same-finger, hand-alternation, same-hand, rolling).
+  - `src/lib/lessons/content-generator.ts`:
+    - Mulberry32 deterministic seeded PRNG (`createRng`).
+    - Specialized drill generators: tactile anchor taps, home-row departure & return reach drills (`generateAnchorReachDrill`), rhythmic pattern drills, vocabulary drills constrained to unlocked keys, Bayesian weak-key remediation, digraph transition repetition, and finger isolation drills.
+  - `src/lib/lessons/mastery-engine.ts`:
+    - Statistical confidence model using Bayesian Wilson score lower bound (`calculateWilsonLowerBound`) to prevent false diagnoses on small sample sizes.
+    - Key status classification: `new` (<8 attempts), `struggling` (<88% acc), `developing` (<95% acc or <15 attempts), `mastered` (>=95% acc and >=15 attempts), and `stale` (>7 days since practice).
+    - Hand accuracy balance analysis and digraph transition breakdown.
+  - `src/lib/lessons/lesson-placement-engine.ts` & `src/lib/lessons/lesson-placement.ts`:
+    - Diagnostic passage evaluation measuring home, top, and bottom row finger coordination, pacing consistency, and speed.
+    - Generates 3 selectable pathways: `recommendedStart`, `startFromBeginning`, and `challengeTrack`.
+    - Integrated `unlockUpToLesson` so typists testing out immediately unlock their target lesson without lock-screen friction.
+  - `src/lib/lessons/recommendation-engine.ts`:
+    - Personalized, explainable learning coach analyzing weak keys, digraph bottlenecks, spaced reviews (>7 days stale), curriculum progression, and learner goals (`touch-typing`, `accuracy`, `speed-40`, `speed-60`, `speed-80`, `coding`).
+  - `src/lib/lessons/lesson-progress-store.ts`:
+    - Schema Version 2 with `learnerGoal`.
+    - Added data portability tools: `exportProgress()` (JSON export), `importProgress()` (sanitized JSON import), `resetProgress()`, and `unlockUpToLesson()`.
+  - `src/components/lessons/virtual-keyboard.tsx`:
+    - Dual physical Left/Right Shift keys with dynamic opposite-hand highlighting and pulse animation.
+    - Tactile live guidance pill with `aria-live="polite"` announcing key, hand, finger, and Shift state.
+  - `src/components/lessons/lesson-drill.tsx`:
+    - Seeded variation on retry (`100 + attempt * 37 + sessionStep * 13`).
+    - Real-time tactile guide pill.
+    - Keyboard shortcuts: `Enter` to advance on pass, `Space` or `R` to retry on miss.
+    - Comprehensive debrief screen with Net WPM, Accuracy, Required Accuracy, Consistency, and direct link to Practice Lab for diagnosed weak keys.
+  - `src/components/lessons/practice-drill.tsx` & `src/components/lessons/practice-client.tsx`:
+    - Multi-mode targeted practice lab: Weak Keys, Transitions, Finger Isolation, Accuracy Focus, Speed Sprint.
+    - Suspense boundary for Next.js App Router client safety.
+  - `src/components/lessons/lesson-dashboard.tsx`:
+    - Interactive Goal selector pills.
+    - Diagnostic Placement Assessment modal.
+    - Real-time Skill Health section (Mastery score %, Mastered/Developing/Struggling counts, Hand balance ratio).
+    - Data & Privacy management (Export JSON, Restore JSON, Reset progress).
+- **Test Suite**:
+  - Expanded from 234 tests across 50 suites to **265 tests across 55 suites** (31 new test cases across 5 new test files: `content-generator.test.ts`, `mastery-engine.test.ts`, `recommendation-engine.test.ts`, `lesson-placement-engine.test.ts`, `lesson-progress-store.test.ts`).
+  - 100% test pass rate (265/265).
+- **Quality Gates**:
+  - `npm test`: 265 passing unit tests across 55 test suites (0 failures).
+  - `npm run typecheck`: 0 TypeScript errors (`tsc --noEmit`).
+  - `npm run lint`: 0 ESLint errors and 0 warnings (`eslint`).
+  - `npm run build`: All 150 static routes prerendered cleanly.
+  - `git diff --check`: 0 whitespace errors.
 
 **Session 2026-09-27 (Part 6) — Homepage Link Safety & Benefit Copy Refinement:**
 - **Audited & Remediated Issue IDs**:

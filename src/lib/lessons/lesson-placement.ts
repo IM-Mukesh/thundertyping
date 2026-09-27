@@ -61,3 +61,12 @@ export function evaluatePlacement(wpm: number, accuracy: number): PlacementRecom
     },
   };
 }
+
+export {
+  evaluateComprehensivePlacement,
+  PLACEMENT_DIAGNOSTIC_PASSAGE,
+  type DetailedPlacementAnalysis,
+  type PlacementInputMetrics,
+  type SkillStageTier,
+  type StageRecommendationOption,
+} from "@/lib/lessons/lesson-placement-engine";

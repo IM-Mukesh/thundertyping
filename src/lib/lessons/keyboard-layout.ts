@@ -105,27 +105,123 @@ const KEY_FINGER_MAP: Record<string, FingerId> = Object.fromEntries(
   [...KEY_ROWS.flat(), SPACE_KEY].map((k) => [k.key, k.finger]),
 );
 
-// Punctuation the word generator can inject (see PUNCTUATION_MARKS in
-// word-generator.ts) that isn't its own physical key -- it's Shift plus a
-// key already on the grid. Without this, any Intermediate/Advanced lesson
-// (or the two Beginner ones with punctuation) that generates a "!", "?" or
-// ":" made the keyboard go completely blank -- no key lit, no finger lit,
-// label falling back to "Get ready" -- exactly when guidance mattered most.
-// Mapped to the physical key you'd actually hold Shift and press.
-const SHIFTED_SYMBOL_TO_BASE_KEY: Record<string, string> = {
-  "!": "1",
-  "?": "/",
-  ":": ";",
+export const HOME_KEY_FOR_FINGER: Record<FingerId, string> = {
+  "left-pinky": "a",
+  "left-ring": "s",
+  "left-middle": "d",
+  "left-index": "f",
+  "right-index": "j",
+  "right-middle": "k",
+  "right-ring": "l",
+  "right-pinky": ";",
+  thumb: " ",
 };
+
+/** Complete mapping of shifted characters on standard ANSI QWERTY to their unshifted base physical keys. */
+export const SHIFTED_SYMBOL_TO_BASE_KEY: Record<string, string> = {
+  "~": "`",
+  "!": "1",
+  "@": "2",
+  "#": "3",
+  "$": "4",
+  "%": "5",
+  "^": "6",
+  "&": "7",
+  "*": "8",
+  "(": "9",
+  ")": "0",
+  "_": "-",
+  "+": "=",
+  "{": "[",
+  "}": "]",
+  "|": "\\",
+  ":": ";",
+  '"': "'",
+  "<": ",",
+  ">": ".",
+  "?": "/",
+};
+
+/** Returns the hand that owns a given finger. */
+export function handForFinger(finger: FingerId | null): "left" | "right" | "thumb" | null {
+  if (!finger) return null;
+  if (finger === "thumb") return "thumb";
+  return finger.startsWith("left") ? "left" : "right";
+}
+
+/** Whether pressing `key` requires holding the Shift key (uppercase letters or shifted symbols). */
+export function isShiftRequired(key: string | null): boolean {
+  if (!key || key.length !== 1) return false;
+  if (key in SHIFTED_SYMBOL_TO_BASE_KEY) return true;
+  // Uppercase alphabet
+  return key >= "A" && key <= "Z";
+}
 
 /** The physical key someone actually presses (with Shift, for a symbol) to type `key`. Used to decide which grid key lights up, not just which finger. */
 export function physicalKeyFor(key: string | null): string | null {
   if (!key) return null;
-  const lower = key.toLowerCase();
-  return SHIFTED_SYMBOL_TO_BASE_KEY[lower] ?? lower;
+  if (key in SHIFTED_SYMBOL_TO_BASE_KEY) {
+    return SHIFTED_SYMBOL_TO_BASE_KEY[key];
+  }
+  return key.toLowerCase();
 }
 
+/** Returns the finger that physically presses `key`. */
 export function fingerForKey(key: string | null): FingerId | null {
   const physical = physicalKeyFor(key);
   return physical ? (KEY_FINGER_MAP[physical] ?? null) : null;
+}
+
+/** Returns the hand that presses `key`. */
+export function handForKey(key: string | null): "left" | "right" | "thumb" | null {
+  const finger = fingerForKey(key);
+  return handForFinger(finger);
+}
+
+/**
+ * Standard touch-typing rule: when typing an uppercase letter or shifted symbol with one hand,
+ * the OPPOSITE hand's pinky holds Shift.
+ * Returns "left-shift" if right hand strikes the key, "right-shift" if left hand strikes, or null if no Shift needed.
+ */
+export function shiftKeyFor(key: string | null): "left-shift" | "right-shift" | null {
+  if (!isShiftRequired(key)) return null;
+  const targetHand = handForKey(key);
+  if (targetHand === "left") return "right-shift";
+  if (targetHand === "right") return "left-shift";
+  return null;
+}
+
+export type TransitionType =
+  | "identical"
+  | "same-finger-hurdle"
+  | "same-hand-adjacent"
+  | "cross-hand-alternate"
+  | "space-boundary";
+
+/**
+ * Categorizes the biomechanical difficulty of transitioning from key A to key B.
+ * Used by the adaptive engine to detect and drill difficult finger patterns.
+ */
+export function classifyTransition(a: string, b: string): TransitionType {
+  if (!a || !b) return "space-boundary";
+  if (a === " " || b === " ") return "space-boundary";
+  if (a.toLowerCase() === b.toLowerCase()) return "identical";
+
+  const fingerA = fingerForKey(a);
+  const fingerB = fingerForKey(b);
+  if (!fingerA || !fingerB) return "space-boundary";
+
+  const handA = handForFinger(fingerA);
+  const handB = handForFinger(fingerB);
+
+  if (handA !== handB) {
+    return "cross-hand-alternate";
+  }
+
+  // Same hand
+  if (fingerA === fingerB) {
+    return "same-finger-hurdle"; // e.g. E to D, U to J, R to F
+  }
+
+  return "same-hand-adjacent"; // e.g. S to D, J to K
 }

@@ -1,36 +1,60 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  Activity,
   ArrowRight,
-  Award,
   CheckCircle2,
   Compass,
+  Download,
+  RotateCcw,
   Sparkles,
   Target,
+  Upload,
 } from "lucide-react";
 import {
   LESSON_LIST,
   LESSON_STAGES,
   LESSON_TIERS,
-  type LessonId,
   type LessonTier,
 } from "@/lib/lessons/lesson-types";
-import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
+import {
+  isLessonUnlocked,
+  useLessonProgressStore,
+  type LearnerGoal,
+} from "@/lib/lessons/lesson-progress-store";
 import { useKeyPerformanceStore, getKeyStats } from "@/lib/lessons/key-performance-store";
-import { getWeakKeys } from "@/lib/lessons/key-performance";
+import { evaluateDetailedMastery } from "@/lib/lessons/mastery-engine";
 import { LessonStatsBar } from "@/components/lessons/lesson-stats-bar";
 import { LessonUnitRow } from "@/components/lessons/lesson-unit-row";
 import { TodaysTrainingCard } from "@/components/lessons/todays-training-card";
 import { LessonPlacementModal } from "@/components/lessons/lesson-placement-modal";
 import { cn } from "@/lib/utils/cn";
 
+const GOAL_OPTIONS: { id: LearnerGoal; label: string; desc: string }[] = [
+  { id: "touch-typing", label: "Touch Typing", desc: "Build anchor discipline without looking down" },
+  { id: "accuracy", label: "Precision First", desc: "Target 98%+ clean muscle memory" },
+  { id: "speed-40", label: "40 WPM Sprint", desc: "Develop natural typing flow" },
+  { id: "speed-60", label: "60 WPM Fluency", desc: "Comfortable professional cadence" },
+  { id: "speed-80", label: "80+ WPM Elite", desc: "High-speed endurance and precision" },
+  { id: "coding", label: "Developer Syntax", desc: "Master brackets, symbols, and code flow" },
+];
+
 export function LessonDashboard() {
   const units = useLessonProgressStore((s) => s.units);
+  const learnerGoal = useLessonProgressStore((s) => s.learnerGoal);
+  const setLearnerGoal = useLessonProgressStore((s) => s.setLearnerGoal);
+  const exportProgress = useLessonProgressStore((s) => s.exportProgress);
+  const importProgress = useLessonProgressStore((s) => s.importProgress);
+  const resetProgress = useLessonProgressStore((s) => s.resetProgress);
+
   const keys = useKeyPerformanceStore((s) => s.keys);
+  const transitions = useKeyPerformanceStore((s) => s.transitions);
+
   const [selectedTier, setSelectedTier] = useState<LessonTier | "all">("all");
   const [placementOpen, setPlacementOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Overall journey metrics
   const completedCount = useMemo(() => {
@@ -51,13 +75,31 @@ export function LessonDashboard() {
   const isNewUser = completedCount === 0 && !inProgressUnit;
   const journeyProgressPct = Math.round((completedCount / LESSON_LIST.length) * 100);
 
-  // Weak keys for adaptive focus
-  const weakKeys = useMemo(() => {
+  // Key records and transition stats for mastery analysis
+  const keyRecords = useMemo(() => {
     const stats = getKeyStats(keys);
-    return getWeakKeys(stats, { minAttempts: 8, accuracyThreshold: 90 });
+    const recs: Record<string, { attempts: number; errors: number; lastPracticedAt: number }> = {};
+    for (const [k, s] of Object.entries(stats)) {
+      recs[k] = { attempts: s.attempts, errors: s.errors, lastPracticedAt: 0 };
+    }
+    return recs;
   }, [keys]);
 
-  // Stage grouping for the curriculum roadmap
+  const transitionStats = useMemo(() => {
+    const out: Record<string, { attempts: number; errors: number }> = {};
+    for (const [pair, bools] of Object.entries(transitions)) {
+      const attempts = bools.length;
+      const errors = bools.filter((b) => !b).length;
+      out[pair] = { attempts, errors };
+    }
+    return out;
+  }, [transitions]);
+
+  const mastery = useMemo(() => {
+    return evaluateDetailedMastery(keyRecords, transitionStats);
+  }, [keyRecords, transitionStats]);
+
+  // Stage grouping for curriculum roadmap
   const stages = useMemo(() => {
     return LESSON_STAGES.map((stageDef, index) => {
       const stageUnits = LESSON_LIST.filter((l) => l.stage === stageDef.id);
@@ -66,7 +108,6 @@ export function LessonDashboard() {
       const isStageCompleted = stageCompleted === stageUnits.length && stageUnits.length > 0;
       const tier = stageUnits[0]?.tier ?? "beginner";
 
-      // Collect keys taught in this stage
       const stageKeys: string[] = [];
       for (const u of stageUnits) {
         for (const k of u.newKeys) {
@@ -89,6 +130,41 @@ export function LessonDashboard() {
       };
     });
   }, [units, nextRecommendedUnit]);
+
+  function handleExport() {
+    const json = exportProgress();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `herotyping-lessons-progress-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        const ok = importProgress(text);
+        if (ok) {
+          alert("Progress restored successfully!");
+        } else {
+          alert("Could not restore file: format unrecognized.");
+        }
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function handleReset() {
+    if (confirm("Reset all lesson progress? Your typing history and completed units will be cleared.")) {
+      resetProgress();
+    }
+  }
 
   return (
     <div className="flex w-full flex-col gap-10">
@@ -183,96 +259,121 @@ export function LessonDashboard() {
                   <Compass size={13} aria-hidden="true" />
                   Placement test
                 </button>
-                {weakKeys.length > 0 && (
-                  <Link
-                    href="/lessons/practice"
-                    className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-4 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
-                  >
-                    <Target size={13} aria-hidden="true" />
-                    Practice weak keys
-                  </Link>
-                )}
+                <Link
+                  href="/lessons/practice"
+                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-4 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
+                >
+                  <Target size={13} aria-hidden="true" />
+                  Practice Lab
+                </Link>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* 2. ADAPTIVE COACH & TODAY'S TRAINING */}
+      {/* 2. LEARNER GOAL SELECTOR */}
+      <div className="flex flex-col gap-2.5 rounded-xl border border-border/80 bg-sub-alt/10 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-display text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+            <Target size={14} aria-hidden="true" /> Training Goal Focus
+          </span>
+          <span className="font-mono text-[11px] text-sub">Customizes daily recommendations & challenges</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5 font-display text-xs font-semibold">
+          {GOAL_OPTIONS.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setLearnerGoal(g.id)}
+              className={cn(
+                "rounded-lg px-3 py-1.5 transition-colors",
+                learnerGoal === g.id
+                  ? "bg-accent font-bold text-background shadow-sm"
+                  : "border border-border/80 bg-background/50 text-sub hover:border-accent hover:text-foreground",
+              )}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. ADAPTIVE COACH & SKILL HEALTH */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <TodaysTrainingCard />
 
-        {weakKeys.length > 0 ? (
-          <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-sub-alt/20 p-5">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wider text-accent">
-                <Target size={14} aria-hidden="true" /> Your focus keys
-              </span>
-              <span className="font-mono text-[11px] text-sub">Based on recent attempts</span>
-            </div>
+        {/* Skill Health Card */}
+        <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-sub-alt/20 p-5">
+          <div className="flex items-center justify-between border-b border-border/60 pb-3">
+            <span className="flex items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wider text-accent">
+              <Activity size={14} aria-hidden="true" /> Keyboard Skill Health
+            </span>
+            <span className="font-mono text-[11px] text-sub">
+              {mastery.overallMasteryScore}% Mastery Score
+            </span>
+          </div>
 
-            <p className="text-xs text-sub">
-              Your recent lesson attempts show occasional missed strikes on these keys. A short targeted
-              warm-up will tighten your finger returns.
+          <div className="grid grid-cols-3 gap-2 text-center font-mono">
+            <div className="rounded-lg bg-background/60 p-2.5">
+              <div className="text-lg font-bold text-correct">
+                {Object.values(mastery.keys).filter((k) => k.level === "mastered").length}
+              </div>
+              <div className="text-[10px] text-sub uppercase font-sans">Mastered</div>
+            </div>
+            <div className="rounded-lg bg-background/60 p-2.5">
+              <div className="text-lg font-bold text-foreground">
+                {Object.values(mastery.keys).filter((k) => k.level === "developing").length}
+              </div>
+              <div className="text-[10px] text-sub uppercase font-sans">Developing</div>
+            </div>
+            <div className="rounded-lg bg-background/60 p-2.5">
+              <div className="text-lg font-bold text-error">
+                {Object.values(mastery.keys).filter((k) => k.level === "struggling").length}
+              </div>
+              <div className="text-[10px] text-sub uppercase font-sans">Struggling</div>
+            </div>
+          </div>
+
+          {mastery.weakestKeys.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] text-sub font-mono">Keys needing reinforcement:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {mastery.weakestKeys.slice(0, 8).map((k) => (
+                  <span
+                    key={k}
+                    className="rounded border border-error/40 bg-error/10 px-2 py-0.5 font-mono text-xs font-bold text-error"
+                  >
+                    {k === " " ? "SPACE" : k.toUpperCase()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-sub leading-relaxed">
+              No severe key bottlenecks detected. Maintain steady rhythm and finger anchors.
             </p>
+          )}
 
-            <div className="flex flex-wrap gap-2">
-              {weakKeys.slice(0, 6).map((k) => (
-                <span
-                  key={k}
-                  className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1 font-mono text-xs font-bold text-foreground"
-                >
-                  <span className="text-accent">{k.toUpperCase()}</span>
-                </span>
-              ))}
-            </div>
-
+          <div className="flex items-center justify-between border-t border-border/40 pt-3">
+            <span className="font-mono text-[11px] text-sub">
+              Hand Acc: L {Math.round(mastery.hands.left.accuracy)}% &middot; R {Math.round(mastery.hands.right.accuracy)}%
+            </span>
             <Link
               href="/lessons/practice"
-              className="flex h-10 items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/10 text-xs font-bold text-accent transition-colors hover:bg-accent/20"
+              className="flex items-center gap-1.5 text-xs font-bold text-accent transition-colors hover:underline"
             >
-              Start weak key drill
-              <ArrowRight size={13} aria-hidden="true" />
+              Open Practice Lab
+              <ArrowRight size={12} aria-hidden="true" />
             </Link>
           </div>
-        ) : (
-          <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-sub-alt/20 p-5">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wider text-accent">
-                <Award size={14} aria-hidden="true" /> Lesson milestones
-              </span>
-              <span className="font-mono text-[11px] text-sub">Curriculum status</span>
-            </div>
-
-            <p className="text-xs leading-relaxed text-sub">
-              The HeroTyping curriculum spans 28 units across three progressive tiers.
-              Complete Beginner to master the full keyboard, Intermediate for sentence cadence, and Advanced for endurance.
-            </p>
-
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40 text-center">
-              {LESSON_TIERS.map((t) => {
-                const tierUnits = LESSON_LIST.filter((l) => l.tier === t.id);
-                const count = tierUnits.filter((l) => units[l.id]?.completed).length;
-                return (
-                  <div key={t.id} className="rounded-lg bg-background/50 p-2">
-                    <div className="font-mono text-sm font-bold text-foreground">
-                      {count}/{tierUnits.length}
-                    </div>
-                    <div className="font-display text-[9px] uppercase tracking-wider text-sub">
-                      {t.label}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* 3. AGGREGATE STATS OVERVIEW */}
+      {/* 4. AGGREGATE STATS OVERVIEW */}
       <LessonStatsBar />
 
-      {/* 4. CURRICULUM ROADMAP */}
+      {/* 5. CURRICULUM ROADMAP */}
       <section className="flex flex-col gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
           <div>
@@ -351,43 +452,46 @@ export function LessonDashboard() {
                           <CheckCircle2 size={11} aria-hidden="true" /> Complete
                         </span>
                       ) : stage.isCurrent ? (
-                        <span className="rounded-full bg-accent text-background px-2.5 py-0.5 font-display text-[9px] font-bold uppercase tracking-wider">
-                          Current Stage
+                        <span className="rounded-full bg-accent px-2.5 py-0.5 font-display text-[9px] font-bold uppercase tracking-wider text-background">
+                          Active Stage
                         </span>
                       ) : null}
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-sub">
-                      {stage.keys.length > 0 && (
-                        <div className="hidden sm:flex items-center gap-1 font-mono text-[10px]">
-                          <span>Keys:</span>
-                          <span className="text-foreground uppercase">{stage.keys.join(" ")}</span>
-                        </div>
-                      )}
-                      <span className="font-mono text-[11px]">
-                        {stage.completedCount} / {stage.totalCount} completed
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-sub">
+                        {stage.completedCount} of {stage.totalCount} completed
                       </span>
+                      <div className="h-2 w-20 overflow-hidden rounded-full bg-sub-alt border border-border/50">
+                        <div
+                          className="h-full bg-accent transition-[width] duration-300"
+                          style={{ width: `${stage.progressPct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Stage Progress Bar */}
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-sub-alt">
-                    <div
-                      className={cn(
-                        "h-full transition-[width] duration-300",
-                        stage.isCompleted ? "bg-accent" : "bg-accent/80",
-                      )}
-                      style={{ width: `${stage.progressPct}%` }}
-                    />
-                  </div>
+                  {stage.keys.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+                      <span className="font-display text-[10px] uppercase font-semibold text-sub">Focus Keys:</span>
+                      {stage.keys.map((k) => (
+                        <span
+                          key={k}
+                          className="rounded border border-border/70 bg-background/80 px-2 py-0.5 font-mono text-[11px] font-bold text-foreground"
+                        >
+                          {k === " " ? "space" : k.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Stage Lessons Grid */}
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {/* Units List */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {stage.units.map((unit) => {
                     const unlocked = isLessonUnlocked(unit.id, units);
                     const isCurrent = unit.id === nextRecommendedUnit.id;
-                    const lockedReason = unlocked ? undefined : lockedReasonFor(unit.id);
+                    const progress = units[unit.id];
 
                     return (
                       <LessonUnitRow
@@ -396,8 +500,8 @@ export function LessonDashboard() {
                         position={unit.order}
                         unlocked={unlocked}
                         isCurrent={isCurrent}
-                        progress={units[unit.id]}
-                        lockedReason={lockedReason}
+                        progress={progress}
+                        lockedReason="Complete previous unit to unlock"
                       />
                     );
                   })}
@@ -408,14 +512,55 @@ export function LessonDashboard() {
         </div>
       </section>
 
+      {/* 6. DATA & PRIVACY MANAGEMENT */}
+      <section className="flex flex-col gap-3 rounded-xl border border-border/60 bg-sub-alt/10 p-4 text-xs text-sub">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-foreground">
+              Learning Data & Privacy
+            </span>
+            <p className="mt-0.5 text-[11px] text-sub">
+              HeroTyping stores all lesson progress and key metrics locally in your browser.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-[11px] hover:border-accent hover:text-foreground"
+            >
+              <Download size={12} aria-hidden="true" /> Export Data
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-[11px] hover:border-accent hover:text-foreground"
+            >
+              <Upload size={12} aria-hidden="true" /> Restore Data
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleFileImport}
+            />
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-[11px] text-error/80 hover:border-error hover:text-error"
+            >
+              <RotateCcw size={12} aria-hidden="true" /> Reset
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Placement Modal */}
-      <LessonPlacementModal open={placementOpen} onClose={() => setPlacementOpen(false)} />
+      <LessonPlacementModal
+        open={placementOpen}
+        onClose={() => setPlacementOpen(false)}
+      />
     </div>
   );
-}
-
-function lockedReasonFor(unitId: LessonId): string {
-  const index = LESSON_LIST.findIndex((l) => l.id === unitId);
-  const previous = index > 0 ? LESSON_LIST[index - 1] : undefined;
-  return previous ? `Complete "${previous.name}" first to unlock this unit` : "Complete the previous unit first";
 }

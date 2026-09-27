@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Lock, Play, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronRight, Lock, Play, RotateCcw, Star } from "lucide-react";
 import type { LessonDefinition } from "@/lib/lessons/lesson-types";
 import type { UnitProgress } from "@/lib/lessons/lesson-progress-store";
 import { round } from "@/lib/typing-engine/stats";
@@ -26,6 +26,7 @@ export function LessonUnitRow({
   const inProgress = !completed && (progress?.currentStep ?? 0) > 0;
   const stepsDone = progress?.currentStep ?? 0;
   const progressPercent = Math.min(100, Math.round((stepsDone / unit.subLessonCount) * 100));
+  const bestStars = progress?.bestStars ?? (completed ? 3 : 0);
 
   const content = (
     <div
@@ -71,6 +72,21 @@ export function LessonUnitRow({
                 <span className="rounded-full bg-accent/20 px-2 py-0.5 font-display text-[9px] font-bold uppercase tracking-wider text-accent">
                   Up next
                 </span>
+              )}
+              {bestStars > 0 && (
+                <div className="flex items-center gap-0.5" aria-label={`${bestStars} of 5 stars earned`} title={`${bestStars}/5 stars`}>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      size={11}
+                      className={cn(
+                        s <= bestStars
+                          ? "fill-accent text-accent"
+                          : "fill-border/40 text-border/60",
+                      )}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Target, Zap } from "lucide-react";
+import { Clock, Star, Target, Zap } from "lucide-react";
 import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 
@@ -13,18 +13,22 @@ function formatTotalTime(ms: number): string {
   return `${totalSeconds}s`;
 }
 
-/** Three aggregate tiles across every lesson attempt ever recorded -- reads the same stats.ts formulas everything else on the site uses, just over the lesson store's cumulative totals instead of one run's counters. */
+/** Four aggregate tiles across every lesson attempt ever recorded -- speed, accuracy, stars, and time. */
 export function LessonStatsBar() {
   const totals = useLessonProgressStore((s) => s.totals);
+  const units = useLessonProgressStore((s) => s.units);
 
   const avgWpm = round(calculateNetWpm(totals.correctChars, totals.timeMs));
   const avgAccuracy = round(calculateAccuracy(totals.correctChars, totals.incorrectChars));
   const hasData = totals.timeMs > 0;
+  const totalStars = Object.values(units).reduce((acc, u) => acc + (u.bestStars ?? (u.completed ? 3 : 0)), 0);
+  const maxStars = 28 * 5;
 
   return (
-    <div className="theme-transition grid w-full grid-cols-3 gap-2 rounded-xl border border-border/60 bg-sub-alt/20 p-3 sm:gap-4 sm:p-4">
+    <div className="theme-transition grid w-full grid-cols-2 gap-2 rounded-xl border border-border/60 bg-sub-alt/20 p-3 sm:grid-cols-4 sm:gap-4 sm:p-4">
       <Tile icon={<Zap size={14} />} label="Aggregate speed" value={hasData ? `${avgWpm} wpm` : "—"} />
       <Tile icon={<Target size={14} />} label="Overall accuracy" value={hasData ? `${avgAccuracy}%` : "—"} />
+      <Tile icon={<Star size={14} />} label="Stars earned" value={hasData || totalStars > 0 ? `${totalStars} / ${maxStars}` : "—"} />
       <Tile icon={<Clock size={14} />} label="Practice time" value={hasData ? formatTotalTime(totals.timeMs) : "—"} />
     </div>
   );

@@ -6,13 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  Award,
-  CheckCircle2,
   HelpCircle,
   Lock,
-  RotateCcw,
-  Sparkles,
-  Target,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -22,25 +17,26 @@ import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/s
 import { HiddenInput } from "@/components/typing-test/hidden-input";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { VirtualKeyboard } from "@/components/lessons/virtual-keyboard";
+import { LessonCompletionModal } from "@/components/lessons/lesson-completion-modal";
 import { buildSubLessons, buildTextForContent, type SubLessonSpec } from "@/lib/lessons/lesson-content";
 import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
 import { LESSON_LIST, type LessonDefinition } from "@/lib/lessons/lesson-types";
-import { getWeakKeys, tallyKeyAttempt } from "@/lib/lessons/key-performance";
+import { evaluateLessonStars } from "@/lib/lessons/star-system";
 import { useKeyPerformanceStore } from "@/lib/lessons/key-performance-store";
+import { fingerForKey, handForKey, isShiftRequired, shiftKeyFor } from "@/lib/lessons/keyboard-layout";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { playSound } from "@/lib/games/game-audio";
 import { awardXp, bumpStat } from "@/lib/profile/player-profile";
 import { trackEvent } from "@/lib/analytics";
-import { cn } from "@/lib/utils/cn";
 
-function buildConfig(content: SubLessonSpec["content"]): TestConfig {
+function buildConfig(content: SubLessonSpec["content"], seed?: number): TestConfig {
   return {
     mode: "custom",
     timeDuration: 30,
     wordCount: 10,
     quoteLength: "short",
     vocabDifficulty: "easy",
-    customText: buildTextForContent(content),
+    customText: buildTextForContent(content, seed),
     punctuation: false,
     numbers: false,
   };
@@ -66,15 +62,25 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     return Math.min(existingProgress.currentStep + 1, subLessons.length);
   });
   const [attempt, setAttempt] = useState(0);
+  const [retryFocusKeys, setRetryFocusKeys] = useState<string[] | undefined>();
   const [focusToken, setFocusToken] = useState(0);
   const [isFocused, setIsFocused] = useState(true);
 
   const stepSpec = subLessons[sessionStep - 1] ?? subLessons[0];
 
+  const effectiveContent = useMemo(() => {
+    if (retryFocusKeys && retryFocusKeys.length > 0 && stepSpec.content.kind === "drill") {
+      return {
+        ...stepSpec.content,
+        focusKeys: retryFocusKeys,
+      };
+    }
+    return stepSpec.content;
+  }, [stepSpec, retryFocusKeys]);
+
   const config = useMemo(
-    () => buildConfig(stepSpec.content),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stepSpec, attempt],
+    () => buildConfig(effectiveContent, 100 + attempt * 37 + sessionStep * 13),
+    [effectiveContent, attempt, sessionStep],
   );
   const engine = useTypingEngine(config);
 
@@ -114,7 +120,17 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   }, [engine.state.status, definition]);
 
   const recordedRef = useRef(false);
-  const [result, setResult] = useState<{ passed: boolean; unitCompleted: boolean; xpAwarded: number } | null>(null);
+  const [result, setResult] = useState<{
+    passed: boolean;
+    unitCompleted: boolean;
+    xpAwarded: number;
+    stars: 1 | 2 | 3 | 4 | 5;
+    headline: string;
+    feedback: string;
+    mistakeSummary?: string;
+    weaknessFeedback?: string;
+    retryFocusKeys?: string[];
+  } | null>(null);
 
   useEffect(() => {
     if (!isFinished) {
@@ -131,6 +147,29 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       engine.state.charTally.missed,
     );
 
+    const keyOutcomes: Record<string, boolean[]> = {};
+    for (const word of engine.state.wordStates) {
+      for (let i = 0; i < word.target.length; i++) {
+        const char = word.target[i].toLowerCase();
+        if (!keyOutcomes[char]) keyOutcomes[char] = [];
+        const isCorrect = i < word.typed.length && word.typed[i] === word.target[i];
+        keyOutcomes[char].push(isCorrect);
+      }
+    }
+
+    const starRating = evaluateLessonStars({
+      accuracy,
+      wpm: netWpm,
+      minAccuracy: 60,
+      stage: definition.stage,
+      tier: definition.tier,
+      errorCount: engine.state.incorrectKeystrokes,
+      keyOutcomes,
+      newKeys: definition.newKeys,
+      stepNumber: sessionStep,
+      totalSteps: subLessons.length,
+    });
+
     const wasAlreadyCompleted = existingProgress?.completed ?? false;
     const outcome = recordAttempt(definition.id, {
       step: sessionStep,
@@ -141,7 +180,8 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       correctChars: engine.state.correctKeystrokes,
       incorrectChars: engine.state.incorrectKeystrokes,
       elapsedMs: engine.state.elapsedMs,
-      minAccuracy: stepSpec.minAccuracy,
+      minAccuracy: 60,
+      stars: starRating.stars,
     });
     recordKeyAttempt(engine.state.wordStates);
 
@@ -166,8 +206,17 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       });
     }
 
-    playSound(outcome.passed ? "lesson-clear" : "lesson-miss", soundEnabled);
-    setResult({ ...outcome, xpAwarded: xpGained });
+    setResult({
+      passed: starRating.passed,
+      unitCompleted: outcome.unitCompleted,
+      xpAwarded: xpGained,
+      stars: starRating.stars,
+      headline: starRating.headline,
+      feedback: starRating.feedback,
+      mistakeSummary: starRating.mistakeSummary,
+      weaknessFeedback: starRating.weaknessFeedback,
+      retryFocusKeys: starRating.retryFocusKeys,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFinished]);
 
@@ -185,46 +234,41 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.charTally.missed),
   );
 
-  const attemptWeakKeys = useMemo(() => {
-    if (!isFinished) return [];
-    const stats = tallyKeyAttempt(engine.state.wordStates);
-    return getWeakKeys(stats, { minAttempts: 3, accuracyThreshold: 90 });
-  }, [isFinished, engine.state.wordStates]);
-
   const currentIndex = LESSON_LIST.findIndex((l) => l.id === definition.id);
   const nextUnit = currentIndex >= 0 ? LESSON_LIST[currentIndex + 1] : undefined;
   const previousUnit = currentIndex > 0 ? LESSON_LIST[currentIndex - 1] : undefined;
   const stepsCompleted = isFinished && result?.passed ? sessionStep : sessionStep - 1;
   const progressPct = Math.round((stepsCompleted / subLessons.length) * 100);
 
-  function retryStep() {
-    setAttempt((a) => a + 1);
-  }
-
-  function continueToNextStep() {
-    setSessionStep((s) => Math.min(s + 1, subLessons.length));
-    setAttempt((a) => a + 1);
-  }
-
-  // Keyboard shortcut Enter advances on passed step
-  useEffect(() => {
-    if (!isFinished || !result?.passed) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "Enter") return;
-      e.preventDefault();
-      if (!result?.passed) return;
-      if (!result.unitCompleted) {
-        continueToNextStep();
-      } else if (nextUnit) {
-        router.push(`/lessons/${nextUnit.id}`);
-      } else {
-        router.push("/");
-      }
+  function handleContinue() {
+    if (!result?.passed) return;
+    if (!result.unitCompleted) {
+      setSessionStep((s) => Math.min(s + 1, subLessons.length));
+      setRetryFocusKeys(undefined);
+      setAttempt((a) => a + 1);
+      setResult(null);
+    } else if (nextUnit) {
+      router.push(`/lessons/${nextUnit.id}`);
+    } else {
+      router.push("/lessons");
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFinished, result, nextUnit, router]);
+  }
+
+  function handleRetry() {
+    if (result?.retryFocusKeys && result.retryFocusKeys.length > 0) {
+      setRetryFocusKeys(result.retryFocusKeys);
+    }
+    setAttempt((a) => a + 1);
+    setResult(null);
+  }
+
+  function handlePracticeLab() {
+    if (result?.retryFocusKeys && result.retryFocusKeys.length > 0) {
+      router.push(`/lessons/practice?mode=weak-keys&keys=${encodeURIComponent(result.retryFocusKeys.join(","))}`);
+    } else {
+      router.push("/lessons/practice");
+    }
+  }
 
   // Locked unit guard
   if (!unlocked) {
@@ -286,7 +330,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-sub">Min: {stepSpec.minAccuracy}% acc</span>
+            <span className="text-[10px] text-sub">Min: 60% acc</span>
             <button
               type="button"
               onClick={toggleSound}
@@ -342,7 +386,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
             status={engine.state.status}
             onChange={engine.setTyped}
             onCommitWord={engine.commitWord}
-            onRestart={retryStep}
+            onRestart={handleRetry}
             onEscape={() => {}}
             onFocusChange={setIsFocused}
             focusToken={focusToken}
@@ -360,142 +404,58 @@ export function LessonDrill({ definition }: LessonDrillProps) {
         </div>
       )}
 
+      {/* Real-time tactile guide */}
+      {!isFinished && nextKey && (
+        <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border/60 bg-sub-alt/30 px-3.5 py-1 font-mono text-[11px] text-sub">
+          <span>Key: <strong className="font-bold text-accent">{nextKey === " " ? "SPACE" : nextKey}</strong></span>
+          <span>&middot;</span>
+          <span>{handForKey(nextKey) === "left" ? "Left Hand" : handForKey(nextKey) === "right" ? "Right Hand" : "Thumb"}</span>
+          {fingerForKey(nextKey) && (
+            <>
+              <span>&middot;</span>
+              <span className="capitalize">{fingerForKey(nextKey)?.replace("-", " ")}</span>
+            </>
+          )}
+          {isShiftRequired(nextKey) && (
+            <>
+              <span>&middot;</span>
+              <span className="font-semibold text-accent">Hold {shiftKeyFor(nextKey) === "left-shift" ? "Left" : "Right"} Shift</span>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Virtual Keyboard & Hand Guide */}
       <VirtualKeyboard nextKey={nextKey} />
 
-      {/* Result & Feedback Screen */}
-      {isFinished && result && (
-        <div className="theme-transition flex w-full flex-col items-center gap-5 rounded-2xl border border-border bg-sub-alt/30 p-6 sm:p-8 text-center shadow-lg">
-          {result.unitCompleted ? (
-            <div className="flex flex-col items-center gap-2">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent mb-1 animate-bounce">
-                <Sparkles size={24} aria-hidden="true" />
-              </span>
-              <h2 className="font-display text-xl sm:text-2xl font-black uppercase tracking-tight text-foreground">
-                Lesson Complete!
-              </h2>
-              <p className="text-xs sm:text-sm text-sub max-w-md">
-                You&apos;ve cleared all {subLessons.length} steps in {definition.name}.
-              </p>
-              {result.xpAwarded > 0 && (
-                <span className="mt-1 flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 font-display text-xs font-bold text-accent">
-                  <Award size={14} aria-hidden="true" /> +{result.xpAwarded} XP Earned
-                </span>
-              )}
-            </div>
-          ) : result.passed ? (
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-correct">
-                <CheckCircle2 size={18} aria-hidden="true" /> Step {sessionStep} Passed
-              </div>
-              <p className="text-xs text-sub">
-                {subLessons.length - sessionStep} more step{subLessons.length - sessionStep === 1 ? "" : "s"} to complete this lesson.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="font-display text-base font-bold uppercase tracking-wide text-error">
-                Needs Improvement &mdash; Try Again
-              </div>
-              <p className="text-xs text-sub max-w-sm">
-                Aim for {stepSpec.minAccuracy}% accuracy to advance. Slow down slightly to let muscle memory take over.
-              </p>
-            </div>
-          )}
-
-          {/* Performance Stats */}
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-10 rounded-xl border border-border/80 bg-background/50 px-6 py-4 font-mono text-sm text-sub">
-            <div>
-              <span className="font-display text-xl font-bold text-foreground">{wpm}</span>{" "}
-              <span className="text-xs">WPM</span>
-            </div>
-            <div className="h-8 w-px bg-border hidden sm:block" />
-            <div>
-              <span
-                className={cn(
-                  "font-display text-xl font-bold",
-                  accuracy >= stepSpec.minAccuracy ? "text-foreground" : "text-error",
-                )}
-              >
-                {accuracy}%
-              </span>{" "}
-              <span className="text-xs">accuracy</span>
-            </div>
-            <div className="h-8 w-px bg-border hidden sm:block" />
-            <div>
-              <span className="font-display text-xl font-bold text-sub">{stepSpec.minAccuracy}%</span>{" "}
-              <span className="text-xs">required</span>
-            </div>
-          </div>
-
-          {/* Weak Keys Notice */}
-          {attemptWeakKeys.length > 0 && (
-            <Link
-              href="/lessons/practice"
-              className="flex items-center gap-2 rounded-xl border border-border bg-sub-alt/40 px-4 py-2.5 text-xs text-sub transition-colors hover:border-accent hover:text-foreground"
-            >
-              <Target size={13} className="text-accent" aria-hidden="true" />
-              <span>
-                Keys to review:{" "}
-                <strong className="font-mono font-bold text-foreground">
-                  {attemptWeakKeys.map((k) => (k === " " ? "space" : k.toUpperCase())).join(", ")}
-                </strong>
-              </span>
-              <ArrowRight size={12} aria-hidden="true" />
-            </Link>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap justify-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={retryStep}
-              className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border px-5 text-xs font-bold uppercase tracking-wider text-sub transition-colors hover:border-accent hover:text-foreground"
-            >
-              <RotateCcw size={13} aria-hidden="true" />
-              Retry
-            </button>
-
-            {result.passed && !result.unitCompleted && (
-              <button
-                type="button"
-                onClick={continueToNextStep}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-6 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-md"
-              >
-                Continue (Enter)
-                <ArrowRight size={14} aria-hidden="true" />
-              </button>
-            )}
-
-            {result.passed && result.unitCompleted && nextUnit && (
-              <Link
-                href={`/lessons/${nextUnit.id}`}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-6 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-md"
-              >
-                Next Lesson: {nextUnit.name}
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            )}
-
-            {result.passed && result.unitCompleted && !nextUnit && (
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href="/"
-                  className="flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-6 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-md"
-                >
-                  Take the Typing Test
-                  <ArrowRight size={14} aria-hidden="true" />
-                </Link>
-                <Link
-                  href="/games"
-                  className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border px-5 text-xs font-bold uppercase tracking-wider text-sub transition-colors hover:border-accent hover:text-foreground"
-                >
-                  Explore Games
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Lesson Completion Modal Overlay */}
+      {result && (
+        <LessonCompletionModal
+          open={isFinished && result !== null}
+          stars={result.stars}
+          passed={result.passed}
+          wpm={wpm}
+          accuracy={accuracy}
+          minAccuracy={60}
+          errors={engine.state.incorrectKeystrokes}
+          timeMs={engine.state.elapsedMs}
+          headline={result.headline}
+          feedback={result.feedback}
+          mistakeSummary={result.mistakeSummary}
+          weaknessFeedback={result.weaknessFeedback}
+          retryFocusKeys={result.retryFocusKeys}
+          unitCompleted={result.unitCompleted}
+          lessonTitle={definition.name}
+          stepNumber={sessionStep}
+          totalSteps={subLessons.length}
+          nextUnitTitle={nextUnit?.name}
+          isLastUnitInCurriculum={!nextUnit}
+          xpAwarded={result.xpAwarded}
+          onContinue={handleContinue}
+          onRetry={handleRetry}
+          onPracticeLab={handlePracticeLab}
+          soundEnabled={soundEnabled}
+        />
       )}
     </div>
   );

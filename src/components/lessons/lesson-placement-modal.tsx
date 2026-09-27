@@ -2,31 +2,42 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, RotateCcw, X, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Compass,
+  RotateCcw,
+  X,
+} from "lucide-react";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
-import { calculateAccuracy, calculateNetWpm } from "@/lib/typing-engine/stats";
-import { evaluatePlacement } from "@/lib/lessons/lesson-placement";
+import { calculateAccuracy, calculateConsistency, calculateNetWpm, calculateRawWpm } from "@/lib/typing-engine/stats";
+import {
+  evaluateComprehensivePlacement,
+  PLACEMENT_DIAGNOSTIC_PASSAGE,
+  type DetailedPlacementAnalysis,
+  type StageRecommendationOption,
+} from "@/lib/lessons/lesson-placement";
 import { trackEvent } from "@/lib/analytics";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
+import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
+import { cn } from "@/lib/utils/cn";
 
 interface LessonPlacementModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const PLACEMENT_TEXT = "the quick brown fox jumps over the lazy dog and types with speed and great accuracy";
-
 function buildPlacementConfig(): TestConfig {
   return {
     mode: "custom",
-    timeDuration: 30,
-    wordCount: 10,
+    timeDuration: 60,
+    wordCount: 25,
     quoteLength: "short",
     vocabDifficulty: "easy",
-    customText: PLACEMENT_TEXT,
-    punctuation: false,
+    customText: PLACEMENT_DIAGNOSTIC_PASSAGE,
+    punctuation: true,
     numbers: false,
   };
 }
@@ -40,15 +51,29 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
 
   const isFinished = engine.state.status === "finished";
 
-  const recommendation = useMemo(() => {
+  const analysis: DetailedPlacementAnalysis | null = useMemo(() => {
     if (!isFinished) return null;
     const wpm = calculateNetWpm(engine.state.netWpmCharacters, engine.state.elapsedMs);
+    const rawWpm = calculateRawWpm(
+      engine.state.correctKeystrokes,
+      engine.state.incorrectKeystrokes,
+      engine.state.elapsedMs,
+    );
     const accuracy = calculateAccuracy(
       engine.state.correctKeystrokes,
       engine.state.incorrectKeystrokes,
       engine.state.charTally.missed,
     );
-    return evaluatePlacement(wpm, accuracy);
+    const consistency = calculateConsistency(engine.state.wpmSamples);
+
+    return evaluateComprehensivePlacement({
+      wpm,
+      rawWpm,
+      accuracy,
+      consistency,
+      elapsedMs: engine.state.elapsedMs,
+      wordStates: engine.state.wordStates,
+    });
   }, [
     isFinished,
     engine.state.netWpmCharacters,
@@ -56,6 +81,8 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
     engine.state.correctKeystrokes,
     engine.state.incorrectKeystrokes,
     engine.state.charTally.missed,
+    engine.state.wpmSamples,
+    engine.state.wordStates,
   ]);
 
   const placementStartedRef = useRef(false);
@@ -74,7 +101,7 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
 
   const recordedRef = useRef(false);
   useEffect(() => {
-    if (!recommendation) {
+    if (!analysis) {
       recordedRef.current = false;
       return;
     }
@@ -82,12 +109,12 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
     recordedRef.current = true;
     trackEvent("placement_completed", {
       assessment_type: "typing_placement",
-      wpm: recommendation.metrics.wpm,
-      accuracy: recommendation.metrics.accuracy,
-      suggested_lesson_id: recommendation.suggestedLessonId,
-      suggested_stage: recommendation.stageName,
+      wpm: analysis.metrics.wpm,
+      accuracy: analysis.metrics.accuracy,
+      suggested_lesson_id: analysis.recommendedStart.lessonId,
+      suggested_stage: analysis.recommendedStart.stageName,
     });
-  }, [recommendation]);
+  }, [analysis]);
 
   // Tab trapping & Escape handling
   const modalRef = useRef<HTMLDivElement>(null);
@@ -137,42 +164,49 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
-        className="relative flex w-full max-w-xl flex-col gap-5 rounded-2xl border border-border bg-background p-6 shadow-2xl sm:p-8"
+        className="relative my-6 flex w-full max-w-2xl flex-col gap-5 rounded-2xl border border-border bg-background p-6 shadow-2xl sm:p-8"
       >
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/15 text-accent">
-              <Zap size={15} aria-hidden="true" />
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/15 text-accent">
+              <Compass size={17} aria-hidden="true" />
             </span>
-            <h2 id={titleId} className="font-display text-base font-bold uppercase tracking-tight text-foreground">
-              Find your starting point
-            </h2>
+            <div>
+              <h2 id={titleId} className="font-display text-base font-bold uppercase tracking-tight text-foreground">
+                Touch Typing Placement Assessment
+              </h2>
+              <p className="text-[11px] text-sub">
+                Pedagogical evaluation across keyboard rows, transitions, and pacing
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close placement assessment"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sub hover:border-accent hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sub transition-colors hover:border-accent hover:text-foreground"
           >
             <X size={15} />
           </button>
         </div>
 
-        {!recommendation ? (
+        {!analysis ? (
           <div className="flex flex-col gap-4">
             <p className="text-xs leading-relaxed text-sub sm:text-sm">
-              Type this short sample sentence at your natural pace. We&apos;ll measure your speed and accuracy to
-              recommend where in the curriculum you&apos;ll get the most value.
+              Type the diagnostic sentence below at your regular, relaxed rhythm. Do not rush to maximize speed;
+              the engine measures <strong>accuracy, finger returns, row coordination, and pacing consistency</strong>{" "}
+              to recommend the ideal entry point.
             </p>
 
             <div
-              className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/30 p-4"
+              className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/30 p-4 transition-colors hover:border-accent/40"
               onClick={() => setFocusToken((t) => t + 1)}
             >
               <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
@@ -199,68 +233,168 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
             </div>
 
             <div className="flex items-center justify-between text-[11px] text-sub">
-              <span>Start typing to begin test</span>
+              <span>Start typing to begin assessment</span>
               <button
                 type="button"
                 onClick={handleRetry}
-                className="flex items-center gap-1 hover:text-foreground"
+                className="flex items-center gap-1.5 transition-colors hover:text-foreground"
               >
-                <RotateCcw size={11} aria-hidden="true" /> Reset
+                <RotateCcw size={12} aria-hidden="true" /> Reset
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-5 text-center">
-            <div className="flex items-center justify-center gap-2 font-display text-xs font-bold uppercase tracking-wider text-accent">
-              <CheckCircle2 size={16} aria-hidden="true" /> Assessment complete
+          <div className="flex flex-col gap-5">
+            {/* Header Result */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4">
+              <div>
+                <span className="flex items-center gap-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-accent">
+                  <CheckCircle2 size={13} aria-hidden="true" /> Assessment Complete &middot; {analysis.tier.toUpperCase()} TIER
+                </span>
+                <h3 className="font-display text-lg font-black uppercase tracking-tight text-foreground sm:text-xl">
+                  {analysis.headline}
+                </h3>
+                <p className="mt-1 text-xs text-sub leading-relaxed max-w-md">
+                  {analysis.summary}
+                </p>
+              </div>
+
+              {/* Metrics Grid */}
+              <div className="flex shrink-0 items-center justify-around gap-4 rounded-xl border border-border/80 bg-background/80 px-4 py-2 font-mono text-center">
+                <div>
+                  <div className="font-display text-lg font-bold text-foreground">{analysis.metrics.wpm}</div>
+                  <div className="text-[10px] text-sub">WPM</div>
+                </div>
+                <div className="h-6 w-px bg-border" />
+                <div>
+                  <div className="font-display text-lg font-bold text-foreground">{analysis.metrics.accuracy}%</div>
+                  <div className="text-[10px] text-sub">ACC</div>
+                </div>
+                <div className="h-6 w-px bg-border" />
+                <div>
+                  <div className="font-display text-lg font-bold text-foreground">{analysis.metrics.consistency}%</div>
+                  <div className="text-[10px] text-sub">CONSIST</div>
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-center gap-8 rounded-xl border border-border bg-sub-alt/20 py-3 font-mono text-sm text-sub">
-              <div>
-                <span className="font-display text-xl font-bold text-foreground">{recommendation.metrics.wpm}</span>{" "}
-                <span className="text-xs">WPM</span>
+            {/* Row Breakdown & Insights */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-xs">
+              <div className="rounded-xl border border-border bg-sub-alt/20 p-2.5 text-center">
+                <div className="text-[10px] text-sub font-sans uppercase font-semibold">Home Row</div>
+                <div className="text-sm font-bold text-foreground">{analysis.rowBreakdown.homeRowAcc}%</div>
               </div>
-              <div className="h-full w-px bg-border" />
-              <div>
-                <span className="font-display text-xl font-bold text-foreground">{recommendation.metrics.accuracy}%</span>{" "}
-                <span className="text-xs">accuracy</span>
+              <div className="rounded-xl border border-border bg-sub-alt/20 p-2.5 text-center">
+                <div className="text-[10px] text-sub font-sans uppercase font-semibold">Top Row</div>
+                <div className="text-sm font-bold text-foreground">{analysis.rowBreakdown.topRowAcc}%</div>
+              </div>
+              <div className="rounded-xl border border-border bg-sub-alt/20 p-2.5 text-center">
+                <div className="text-[10px] text-sub font-sans uppercase font-semibold">Bottom Row</div>
+                <div className="text-sm font-bold text-foreground">{analysis.rowBreakdown.bottomRowAcc}%</div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5 text-left rounded-xl border border-accent/40 bg-accent/5 p-4">
-              <span className="font-display text-[10px] font-bold uppercase tracking-wider text-accent">
-                Suggested starting point
+            {/* Pedagogical Track Options */}
+            <div className="flex flex-col gap-2.5">
+              <span className="font-display text-[11px] font-bold uppercase tracking-wider text-sub">
+                Choose your recommended path
               </span>
-              <h3 className="font-display text-lg font-bold uppercase tracking-tight text-foreground">
-                {recommendation.headline}
-              </h3>
-              <p className="text-xs leading-relaxed text-sub">{recommendation.rationale}</p>
-              <div className="mt-2 font-mono text-xs font-bold text-accent">
-                Recommended: {recommendation.lessonName}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <PlacementOptionCard
+                  option={analysis.recommendedStart}
+                  recommended
+                  onSelect={onClose}
+                />
+                <PlacementOptionCard
+                  option={analysis.startFromBeginning}
+                  recommended={false}
+                  onSelect={onClose}
+                />
+                <PlacementOptionCard
+                  option={analysis.challengeTrack}
+                  recommended={false}
+                  onSelect={onClose}
+                />
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-border/60 pt-3 text-xs">
               <button
                 type="button"
                 onClick={handleRetry}
-                className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
+                className="flex items-center gap-1.5 font-semibold text-sub transition-colors hover:text-foreground"
               >
-                <RotateCcw size={13} aria-hidden="true" /> Try again
+                <RotateCcw size={12} aria-hidden="true" /> Re-take placement test
               </button>
-              <Link
-                href={`/lessons/${recommendation.suggestedLessonId}`}
+              <button
+                type="button"
                 onClick={onClose}
-                className="flex h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110"
+                className="font-semibold text-sub hover:text-foreground"
               >
-                Go to lesson
-                <ArrowRight size={14} aria-hidden="true" />
-              </Link>
+                Close
+              </button>
             </div>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function PlacementOptionCard({
+  option,
+  recommended,
+  onSelect,
+}: {
+  option: StageRecommendationOption;
+  recommended: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Link
+      href={`/lessons/${option.lessonId}`}
+      onClick={() => {
+        useLessonProgressStore.getState().unlockUpToLesson(option.lessonId);
+        onSelect();
+      }}
+      className={cn(
+        "group relative flex flex-col justify-between rounded-xl border p-3.5 transition-all text-left",
+        recommended
+          ? "border-accent bg-accent/10 shadow-md hover:bg-accent/15"
+          : "border-border bg-sub-alt/20 hover:border-accent/50 hover:bg-sub-alt/40",
+      )}
+    >
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <span
+            className={cn(
+              "font-display text-[9px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5",
+              recommended
+                ? "bg-accent text-background"
+                : "bg-sub-alt text-sub",
+            )}
+          >
+            {recommended ? "Recommended" : option.tier}
+          </span>
+          <span className="font-display text-[10px] uppercase text-sub">{option.stageName}</span>
+        </div>
+
+        <h4 className="font-display text-xs font-bold uppercase tracking-tight text-foreground group-hover:text-accent transition-colors">
+          {option.label}
+        </h4>
+
+        <p className="text-[11px] leading-relaxed text-sub">
+          {option.description}
+        </p>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-bold text-accent">
+        <span>Start: {option.lessonName}</span>
+        <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+      </div>
+    </Link>
   );
 }
 

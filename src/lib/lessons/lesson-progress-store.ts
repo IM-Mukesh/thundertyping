@@ -2,30 +2,39 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { LESSON_LIST, type LessonId } from "@/lib/lessons/lesson-types";
 
-// A real zustand store, not the plain-function/localStorage pattern
-// game-scores.ts uses -- deliberately, and unlike that one. Progress here is
-// read reactively from many places at once (the dashboard's top stats bar,
-// every unit row, the drill's own "resume at step N") rather than written
-// once and read by a single badge, which is settings-store.ts's profile, not
-// game-scores.ts's. Follows settings-store.ts's exact persist/merge/sanitize
-// shape for that reason -- including reading/writing across the
-// next/dynamic(ssr:false) boundary that LessonDrill's chunk sits behind,
-// which is the same boundary settings-store already crosses today (the
-// dynamically-loaded typing test writes it, the always-loaded header reads
-// it) without the module-duplication problem documented on
-// test-status-store.ts elsewhere in this codebase -- that bug was specific
-// to a hand-rolled module-level store, not to zustand's create().
+export type LearnerGoal =
+  | "touch-typing"
+  | "accuracy"
+  | "speed-40"
+  | "speed-60"
+  | "speed-80"
+  | "coding";
+
+export const LEARNER_GOAL_CONFIGS: Record<LearnerGoal, { title: string; subtitle: string; targetWpm: number; targetAcc: number }> = {
+  "touch-typing": { title: "Touch Typing Mastery", subtitle: "Form flawless muscle memory and touch typing habits", targetWpm: 35, targetAcc: 95 },
+  accuracy: { title: "Precision First", subtitle: "Zero-tolerance for typos (aim for 98%+ accuracy)", targetWpm: 45, targetAcc: 98 },
+  "speed-40": { title: "Fluency Builder (40 WPM)", subtitle: "Smooth conversational pace for everyday writing", targetWpm: 40, targetAcc: 94 },
+  "speed-60": { title: "Professional Speed (60 WPM)", subtitle: "Fast, effortless typing for office and creative work", targetWpm: 60, targetAcc: 95 },
+  "speed-80": { title: "Advanced Cadence (80+ WPM)", subtitle: "High-cadence flow with minimal finger latency", targetWpm: 80, targetAcc: 96 },
+  coding: { title: "Developer & Code Syntax", subtitle: "Brackets, operators, symbols, and camelCase flow", targetWpm: 50, targetAcc: 96 },
+};
 
 export interface UnitProgress {
   completed: boolean;
   /** How many sub-lesson steps have been passed, 0..subLessonCount. Where "Resume" picks back up. */
   currentStep: number;
-  /** Count of *passing* attempts only -- what avgAccuracy/avgWpm are averaged over. A failed retry updates totalTimeMs (an honest total) but not the averages, so struggling on one step doesn't drag down the number the dashboard shows for the whole unit. */
+  /** Count of *passing* attempts only -- what avgAccuracy/avgWpm are averaged over. */
   passCount: number;
   avgAccuracy: number;
   avgWpm: number;
   totalTimeMs: number;
   completedAt: number;
+  bestWpm?: number;
+  bestAccuracy?: number;
+  attemptsCount?: number;
+  lastAttemptAt?: number;
+  bestStars?: number;
+  latestStars?: number;
 }
 
 export interface LessonTotals {
@@ -45,20 +54,26 @@ export interface RecordAttemptInput {
   incorrectChars: number;
   elapsedMs: number;
   minAccuracy: number;
+  stars?: number;
 }
 
 export interface LessonProgressState {
+  version: number;
+  learnerGoal: LearnerGoal;
   units: Partial<Record<LessonId, UnitProgress>>;
   totals: LessonTotals;
+  setLearnerGoal: (goal: LearnerGoal) => void;
   recordAttempt: (unitId: LessonId, input: RecordAttemptInput) => { passed: boolean; unitCompleted: boolean };
+  resetProgress: () => void;
+  unlockUpToLesson: (targetLessonId: LessonId) => void;
+  exportProgress: () => string;
+  importProgress: (jsonString: string) => boolean;
 }
+
+export const CURRENT_SCHEMA_VERSION = 2;
 
 const emptyTotals = (): LessonTotals => ({ typedChars: 0, correctChars: 0, incorrectChars: 0, timeMs: 0 });
 
-// A finite, non-negative number -- rejects NaN/Infinity/negatives, which
-// `typeof === "number"` alone lets straight through. A corrupted or
-// hand-edited value passing validation here used to mean a dashboard row
-// could render e.g. "-50 wpm" or a progress bar past 100%.
 function isFiniteNonNegative(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
@@ -74,7 +89,13 @@ function isValidUnitProgress(value: unknown): value is UnitProgress {
     v.avgAccuracy <= 100 &&
     isFiniteNonNegative(v.avgWpm) &&
     isFiniteNonNegative(v.totalTimeMs) &&
-    isFiniteNonNegative(v.completedAt)
+    isFiniteNonNegative(v.completedAt) &&
+    (v.bestWpm === undefined || isFiniteNonNegative(v.bestWpm)) &&
+    (v.bestAccuracy === undefined || (isFiniteNonNegative(v.bestAccuracy) && v.bestAccuracy <= 100)) &&
+    (v.attemptsCount === undefined || isFiniteNonNegative(v.attemptsCount)) &&
+    (v.lastAttemptAt === undefined || isFiniteNonNegative(v.lastAttemptAt)) &&
+    (v.bestStars === undefined || (isFiniteNonNegative(v.bestStars) && v.bestStars <= 5)) &&
+    (v.latestStars === undefined || (isFiniteNonNegative(v.latestStars) && v.latestStars <= 5))
   );
 }
 
@@ -89,23 +110,22 @@ function isValidTotals(value: unknown): value is LessonTotals {
   );
 }
 
-/**
- * The actual pass/fail + averaging logic, pulled out as a pure function --
- * exported for tests -- for the same reason use-typing-engine.ts exports its
- * reducer separately from the hook: through the store action, a wrong
- * average or a gating bug is invisible; here it can be asserted directly.
- */
 export function computeUnitProgressUpdate(
   existing: UnitProgress | undefined,
   input: RecordAttemptInput,
-): { unit: UnitProgress; passed: boolean; unitCompleted: boolean } {
-  const passed = input.accuracy >= input.minAccuracy;
+): { unit: UnitProgress; passed: boolean; unitCompleted: boolean; stars: number } {
+  // Exact minimum progression rule: 60% accuracy is required to move forward (3+ stars),
+  // or the configured minAccuracy threshold if specified.
+  const minAcc = input.minAccuracy ?? 60;
+  const passed = input.stars !== undefined
+    ? input.stars >= 3 && input.accuracy >= minAcc
+    : input.accuracy >= minAcc;
   const unitCompleted = passed && input.step >= input.totalSteps;
 
-  // Only a passing attempt feeds the displayed averages. A failed retry
-  // still counts toward totalTimeMs (an honest total -- the time was really
-  // spent) but not toward avgAccuracy/avgWpm, so acing 6 of 7 steps and
-  // needing three tries on one doesn't show a misleadingly low unit average.
+  const currentStars = input.stars ?? (passed ? (input.accuracy >= 98 ? 5 : input.accuracy >= 92 ? 4 : 3) : (input.accuracy >= input.minAccuracy - 12 ? 2 : 1));
+  const prevBestStars = existing?.bestStars ?? (existing?.completed ? 3 : 0);
+  const bestStars = Math.max(prevBestStars, currentStars);
+
   const prevPassCount = existing?.passCount ?? 0;
   const nextPassCount = passed ? prevPassCount + 1 : prevPassCount;
   const avgAccuracy = passed
@@ -115,6 +135,10 @@ export function computeUnitProgressUpdate(
     ? ((existing?.avgWpm ?? 0) * prevPassCount + input.wpm) / nextPassCount
     : (existing?.avgWpm ?? 0);
 
+  const prevAttempts = existing?.attemptsCount ?? existing?.passCount ?? 0;
+  const prevBestWpm = existing?.bestWpm ?? existing?.avgWpm ?? 0;
+  const prevBestAcc = existing?.bestAccuracy ?? existing?.avgAccuracy ?? 0;
+
   const unit: UnitProgress = {
     completed: (existing?.completed ?? false) || unitCompleted,
     currentStep: passed ? Math.max(existing?.currentStep ?? 0, input.step) : (existing?.currentStep ?? 0),
@@ -123,13 +147,17 @@ export function computeUnitProgressUpdate(
     avgWpm,
     totalTimeMs: (existing?.totalTimeMs ?? 0) + input.elapsedMs,
     completedAt: unitCompleted ? Date.now() : (existing?.completedAt ?? 0),
+    bestWpm: passed ? Math.max(prevBestWpm, input.wpm) : prevBestWpm,
+    bestAccuracy: Math.max(prevBestAcc, input.accuracy),
+    attemptsCount: prevAttempts + 1,
+    lastAttemptAt: Date.now(),
+    bestStars,
+    latestStars: currentStars,
   };
 
-  return { unit, passed, unitCompleted };
+  return { unit, passed, unitCompleted, stars: currentStars };
 }
 
-// Drops any single malformed unit entry rather than discarding the whole
-// map -- one corrupted record shouldn't erase progress on every other unit.
 export function sanitizeUnits(value: unknown): LessonProgressState["units"] {
   if (typeof value !== "object" || value === null) return {};
   const result: LessonProgressState["units"] = {};
@@ -142,16 +170,17 @@ export function sanitizeUnits(value: unknown): LessonProgressState["units"] {
 export const useLessonProgressStore = create<LessonProgressState>()(
   persist(
     (set, get) => ({
+      version: CURRENT_SCHEMA_VERSION,
+      learnerGoal: "touch-typing",
       units: {},
       totals: emptyTotals(),
+      setLearnerGoal: (goal) => set({ learnerGoal: goal }),
       recordAttempt: (unitId, input) => {
         const state = get();
         const { unit, passed, unitCompleted } = computeUnitProgressUpdate(state.units[unitId], input);
 
         set({
           units: { ...state.units, [unitId]: unit },
-          // Accumulated on every attempt, pass or fail -- an honest total,
-          // same spirit as the main engine never pausing its clock on blur.
           totals: {
             typedChars: state.totals.typedChars + input.typedChars,
             correctChars: state.totals.correctChars + input.correctChars,
@@ -162,35 +191,112 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
         return { passed, unitCompleted };
       },
+      resetProgress: () =>
+        set({ units: {}, totals: emptyTotals(), learnerGoal: "touch-typing" }),
+      unlockUpToLesson: (targetLessonId: LessonId) => {
+        const targetIndex = LESSON_LIST.findIndex((l) => l.id === targetLessonId);
+        if (targetIndex <= 0) return;
+        const state = get();
+        const nextUnits = { ...state.units };
+        let modified = false;
+
+        for (let i = 0; i < targetIndex; i++) {
+          const lesson = LESSON_LIST[i];
+          const existing = nextUnits[lesson.id];
+          if (!existing || !existing.completed) {
+            modified = true;
+            nextUnits[lesson.id] = {
+              completed: true,
+              currentStep: lesson.subLessonCount,
+              passCount: Math.max(1, existing?.passCount ?? 1),
+              avgAccuracy: existing?.avgAccuracy ?? 95,
+              avgWpm: existing?.avgWpm ?? 40,
+              totalTimeMs: existing?.totalTimeMs ?? 0,
+              completedAt: existing?.completedAt || Date.now(),
+              bestWpm: Math.max(existing?.bestWpm ?? 40, 40),
+              bestAccuracy: Math.max(existing?.bestAccuracy ?? 95, 95),
+              attemptsCount: Math.max(1, existing?.attemptsCount ?? 1),
+              lastAttemptAt: Date.now(),
+              bestStars: Math.max(existing?.bestStars ?? 4, 4),
+              latestStars: existing?.latestStars ?? 4,
+            };
+          }
+        }
+
+        if (modified) {
+          set({ units: nextUnits });
+        }
+      },
+      exportProgress: () => {
+        const state = get();
+        return JSON.stringify(
+          {
+            version: CURRENT_SCHEMA_VERSION,
+            schemaVersion: CURRENT_SCHEMA_VERSION,
+            exportedAt: Date.now(),
+            learnerGoal: state.learnerGoal,
+            units: state.units,
+            totals: state.totals,
+          },
+          null,
+          2,
+        );
+      },
+      importProgress: (jsonString: string) => {
+        try {
+          const parsed = JSON.parse(jsonString);
+          if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return false;
+          if (typeof parsed.units !== "object" || parsed.units === null || Array.isArray(parsed.units)) return false;
+
+          const cleanUnits = sanitizeUnits(parsed.units);
+          const cleanTotals = isValidTotals(parsed.totals) ? parsed.totals : emptyTotals();
+          const cleanGoal: LearnerGoal =
+            parsed.learnerGoal && parsed.learnerGoal in LEARNER_GOAL_CONFIGS
+              ? parsed.learnerGoal
+              : "touch-typing";
+
+          set({
+            version: CURRENT_SCHEMA_VERSION,
+            units: cleanUnits,
+            totals: cleanTotals,
+            learnerGoal: cleanGoal,
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      },
     }),
     {
-      // Left unrenamed on the HeroTyping rebrand -- every existing player's
-      // lesson progress is saved under this name, and renaming it would
-      // orphan it.
       name: "thundertyping-lesson-progress",
       storage: createJSONStorage(() => localStorage),
       merge: (persistedState, currentState) => {
         const p = (typeof persistedState === "object" && persistedState !== null ? persistedState : {}) as Partial<{
+          version?: unknown;
+          learnerGoal?: unknown;
           units: unknown;
           totals: unknown;
         }>;
+
+        const cleanUnits = sanitizeUnits(p.units);
+        const cleanTotals = isValidTotals(p.totals) ? p.totals : currentState.totals;
+        const cleanGoal: LearnerGoal =
+          p.learnerGoal && typeof p.learnerGoal === "string" && p.learnerGoal in LEARNER_GOAL_CONFIGS
+            ? (p.learnerGoal as LearnerGoal)
+            : currentState.learnerGoal;
+
         return {
           ...currentState,
-          units: sanitizeUnits(p.units),
-          totals: isValidTotals(p.totals) ? p.totals : currentState.totals,
+          version: CURRENT_SCHEMA_VERSION,
+          learnerGoal: cleanGoal,
+          units: cleanUnits,
+          totals: cleanTotals,
         };
       },
     },
   ),
 );
 
-/**
- * Pure, derived from LESSON_LIST order + the progress map -- there is no
- * separate "unlocked" field persisted anywhere, so nothing can desync from
- * actual completion state (the same single-source-of-truth reasoning behind
- * this codebase's accuracy/breakdown fix). The first unit is always
- * unlocked.
- */
 export function isLessonUnlocked(lessonId: LessonId, units: LessonProgressState["units"]): boolean {
   const index = LESSON_LIST.findIndex((l) => l.id === lessonId);
   if (index <= 0) return index === 0;

@@ -31,7 +31,11 @@ type SoundName =
   | "lesson-key"
   | "lesson-typo"
   | "lesson-clear"
-  | "lesson-miss";
+  | "lesson-miss"
+  | "lesson-star"
+  | "lesson-pass"
+  | "lesson-perfect"
+  | "lesson-retry";
 
 let ctx: AudioContext | null = null;
 /** Master gain, so one node mutes everything and keeps overall level sane. */
@@ -140,6 +144,24 @@ const SOUNDS: Record<SoundName, () => void> = {
     tone({ freq: 990, toFreq: 1480, durationMs: 150, type: "sine", gain: 0.32, delayMs: 50 });
   },
   "lesson-miss": () => tone({ freq: 240, toFreq: 100, durationMs: 320, type: "sawtooth", gain: 0.42 }),
+  "lesson-star": () => {
+    tone({ freq: 880, toFreq: 1100, durationMs: 70, type: "sine", gain: 0.28 });
+  },
+  "lesson-pass": () => {
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) =>
+      tone({ freq, durationMs: 140, type: "triangle", gain: 0.3, delayMs: i * 65 }),
+    );
+  },
+  "lesson-perfect": () => {
+    [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((freq, i) =>
+      tone({ freq, durationMs: 200, type: "sine", gain: 0.35, delayMs: i * 55 }),
+    );
+  },
+  "lesson-retry": () => {
+    [392, 329.63].forEach((freq, i) =>
+      tone({ freq, durationMs: 180, type: "triangle", gain: 0.22, delayMs: i * 90 }),
+    );
+  },
 };
 
 /**
@@ -157,5 +179,37 @@ export function playSound(name: SoundName, enabled: boolean): void {
     SOUNDS[name]();
   } catch {
     // never let an audio failure break gameplay
+  }
+}
+
+const STAR_BELL_FREQUENCIES = [523.25, 659.25, 783.99, 880, 1046.5]; // C5, E5, G5, A5, C6
+
+/**
+ * Sequential star reveal tone: each star pops with an ascending crystal harmonic chime.
+ */
+export function playStarSound(starIndex: number, enabled: boolean): void {
+  if (!enabled) return;
+  const audio = getContext();
+  if (!audio) return;
+  if (audio.state === "suspended") void audio.resume().catch(() => {});
+  try {
+    const idx = Math.max(0, Math.min(starIndex - 1, STAR_BELL_FREQUENCIES.length - 1));
+    const baseFreq = STAR_BELL_FREQUENCIES[idx];
+    tone({
+      freq: baseFreq,
+      toFreq: baseFreq * 1.05,
+      durationMs: 85,
+      type: "sine",
+      gain: 0.28,
+    });
+    tone({
+      freq: baseFreq * 2,
+      durationMs: 55,
+      type: "triangle",
+      gain: 0.12,
+      delayMs: 8,
+    });
+  } catch {
+    // safe no-op on audio restriction
   }
 }

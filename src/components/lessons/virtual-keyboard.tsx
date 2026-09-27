@@ -7,55 +7,115 @@ import {
   SPACE_KEY,
   fingerForKey,
   physicalKeyFor,
+  shiftKeyFor,
   type FingerId,
 } from "@/lib/lessons/keyboard-layout";
 import { cn } from "@/lib/utils/cn";
 
-// The lesson drill's next-key guide: a QWERTY grid tinted by finger, plus a
-// two-hand diagram that lights up the same finger the active key belongs to.
-// Both read off one `nextKey` prop and one FINGER_VAR color map, so the grid
-// and the hands can never disagree about which finger is responsible for a
-// key -- see keyboard-layout.ts for the shared finger assignments.
-//
-// The hands are abstract geometric shapes (palm + four finger bars + a
-// rotated thumb), not illustrated artwork, deliberately -- see the comment on
-// game-cover-art.tsx for why: every color here derives from a CSS variable,
-// so it re-themes for free and costs nothing to load, where baked art can
-// only ever match one theme.
-
 interface VirtualKeyboardProps {
-  /** The next character the typist needs to press, lowercase, or `null` before the drill starts / after it finishes. */
+  /** The next character the typist needs to press, lowercase or shifted, or `null` before/after drill. */
   nextKey: string | null;
 }
 
 export function VirtualKeyboard({ nextKey }: VirtualKeyboardProps) {
-  const normalizedKey = nextKey?.toLowerCase() ?? null;
-  const activeFinger = fingerForKey(normalizedKey);
-  // A shifted symbol ("!", "?", ":") has no key of its own on the grid --
-  // it's Shift plus a key that's already there. Compare against the
-  // physical key so that key (not nothing) lights up.
-  const activePhysicalKey = physicalKeyFor(normalizedKey);
+  const activePhysicalKey = physicalKeyFor(nextKey);
+  const activeFinger = fingerForKey(nextKey);
+  const requiredShift = shiftKeyFor(nextKey);
+  const shiftFinger: FingerId | null =
+    requiredShift === "left-shift"
+      ? "left-pinky"
+      : requiredShift === "right-shift"
+        ? "right-pinky"
+        : null;
+
+  let guidanceLabel = "Get ready";
+  if (nextKey) {
+    if (requiredShift && shiftFinger) {
+      const shiftSide = requiredShift === "left-shift" ? "Left" : "Right";
+      guidanceLabel = `Hold ${shiftSide} Shift (${FINGER_LABELS[shiftFinger]}) + ${nextKey.toUpperCase()} (${activeFinger ? FINGER_LABELS[activeFinger] : ""})`;
+    } else if (activeFinger) {
+      const keyName = nextKey === " " ? "Space" : nextKey.toUpperCase();
+      guidanceLabel = `${FINGER_LABELS[activeFinger]} — ${keyName}`;
+    }
+  }
 
   return (
-    <div className="flex w-full max-w-full flex-col items-center gap-3 sm:gap-4 overflow-hidden">
-      <HandDiagram activeFinger={activeFinger} />
+    <div className="flex w-full max-w-full flex-col items-center gap-3 sm:gap-4 overflow-hidden select-none">
+      <HandDiagram activeFinger={activeFinger} shiftFinger={shiftFinger} />
 
       <div className="flex w-full max-w-full flex-col items-center gap-1 sm:gap-1.5 py-1">
         {KEY_ROWS.map((row, i) => (
           <div key={i} className="flex justify-center gap-0.5 sm:gap-1.5">
+            {/* If bottom row (i === 3), show Left Shift before keys and Right Shift after */}
+            {i === 3 && (
+              <ShiftKey
+                label="Shift"
+                active={requiredShift === "left-shift"}
+                finger="left-pinky"
+                side="left"
+              />
+            )}
             {row.map((k) => (
               <Key key={k.key} keyDef={k} active={activePhysicalKey === k.key} />
             ))}
+            {i === 3 && (
+              <ShiftKey
+                label="Shift"
+                active={requiredShift === "right-shift"}
+                finger="right-pinky"
+                side="right"
+              />
+            )}
           </div>
         ))}
+
         <div className="flex justify-center pt-0.5 sm:pt-1">
           <Key keyDef={SPACE_KEY} active={activePhysicalKey === " "} wide />
         </div>
       </div>
 
-      <p className="text-center text-xs text-sub" aria-live="polite">
-        {activeFinger ? FINGER_LABELS[activeFinger] : "Get ready"}
-      </p>
+      <div
+        className="flex items-center gap-2 rounded-full border border-border/60 bg-sub-alt/40 px-3.5 py-1 text-center font-display text-[11px] font-semibold text-sub transition-colors"
+        aria-live="polite"
+      >
+        {requiredShift && (
+          <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" aria-hidden="true" />
+        )}
+        <span>{guidanceLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function ShiftKey({
+  label,
+  active,
+  finger,
+  side,
+}: {
+  label: string;
+  active: boolean;
+  finger: FingerId;
+  side: "left" | "right";
+}) {
+  const color = FINGER_VAR[finger];
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "relative hidden sm:flex items-center justify-center rounded font-mono text-[9px] uppercase transition-all duration-150 sm:rounded-md border",
+        "h-7 w-9 sm:h-8 sm:w-11 font-bold",
+        active
+          ? "scale-105 border-transparent text-background z-10 arcade-pulse"
+          : "border-border/60 text-sub/60 bg-sub-alt/20",
+      )}
+      style={{
+        backgroundColor: active ? color : undefined,
+        boxShadow: active ? `0 0 16px -2px ${color}` : undefined,
+      }}
+      title={`${side === "left" ? "Left" : "Right"} Shift`}
+    >
+      {label}
     </div>
   );
 }
@@ -113,26 +173,37 @@ const HAND_FINGER_LAYOUT: Record<HandSide, { finger: FingerId; x: number; height
   ],
 };
 
-/** Exported for reuse outside the drill -- the finger-map explorer (/guides/touch-typing-finger-map) drives the same two-hand SVG from hover/tap instead of a lesson's next-key. */
-export function HandDiagram({ activeFinger }: { activeFinger: FingerId | null }) {
+export function HandDiagram({
+  activeFinger,
+  shiftFinger,
+}: {
+  activeFinger: FingerId | null;
+  shiftFinger?: FingerId | null;
+}) {
   return (
     <div className="flex items-end gap-6 sm:gap-10">
-      <Hand side="left" activeFinger={activeFinger} />
-      <Hand side="right" activeFinger={activeFinger} />
+      <Hand side="left" activeFinger={activeFinger} shiftFinger={shiftFinger} />
+      <Hand side="right" activeFinger={activeFinger} shiftFinger={shiftFinger} />
     </div>
   );
 }
 
-function Hand({ side, activeFinger }: { side: HandSide; activeFinger: FingerId | null }) {
+function Hand({
+  side,
+  activeFinger,
+  shiftFinger,
+}: {
+  side: HandSide;
+  activeFinger: FingerId | null;
+  shiftFinger?: FingerId | null;
+}) {
   const fingers = HAND_FINGER_LAYOUT[side];
-  // The thumb sits on the inner edge of each hand (near the keyboard's
-  // center gap), angled toward the spacebar.
   const thumbX = side === "left" ? 82 : 4;
   const thumbActive = activeFinger === "thumb";
   const thumbColor = FINGER_VAR.thumb;
 
   return (
-    <svg viewBox="0 0 96 118" className="h-24 w-20 sm:h-28 sm:w-24">
+    <svg viewBox="0 0 96 118" className="h-20 w-16 sm:h-24 sm:w-20 transition-transform">
       <rect
         x="2"
         y="72"
@@ -154,7 +225,9 @@ function Hand({ side, activeFinger }: { side: HandSide; activeFinger: FingerId |
         className={thumbActive ? "arcade-pulse" : undefined}
       />
       {fingers.map(({ finger, x, height }) => {
-        const active = finger === activeFinger;
+        const isTarget = finger === activeFinger;
+        const isShift = finger === shiftFinger;
+        const active = isTarget || isShift;
         const color = FINGER_VAR[finger];
         return (
           <rect
