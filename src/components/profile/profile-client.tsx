@@ -18,6 +18,8 @@ import {
   subscribeProfile,
 } from "@/lib/profile/player-profile";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
+import { LESSON_ACHIEVEMENT_LIST, computeLessonAchievements } from "@/lib/lessons/lesson-achievements";
+import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { gameBestKey, parseGameBest } from "@/lib/games/game-scores";
 import { getStorageItem } from "@/lib/persistence/storage";
@@ -35,8 +37,14 @@ export function ProfileClient() {
   const profile = useMemo(() => parseProfile(raw), [raw]);
   const [confirmReset, setConfirmReset] = useState(false);
 
+  const units = useLessonProgressStore((s) => s.units);
+  const lessonEarned = useMemo(() => computeLessonAchievements(units), [units]);
+  const lessonEarnedCount = Object.values(lessonEarned).filter(Boolean).length;
+  const gameEarnedCount = Object.keys(profile.achievements).length;
+  const totalEarned = gameEarnedCount + lessonEarnedCount;
+  const totalPossible = ACHIEVEMENT_LIST.length + LESSON_ACHIEVEMENT_LIST.length;
+
   const { level, into, needed, fraction } = levelProgress(profile.xp);
-  const earned = Object.keys(profile.achievements).length;
   const totalRuns = Object.values(profile.stats).reduce(
     (n, s) => n + (s.runs ?? 0),
     0,
@@ -70,7 +78,12 @@ export function ProfileClient() {
         <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Stat icon={<Star size={14} />} label="Total XP" value={profile.xp.toLocaleString()} />
           <Stat icon={<Gamepad2 size={14} />} label="Runs played" value={totalRuns.toLocaleString()} />
-          <Stat icon={<Trophy size={14} />} label="Achievements" value={`${earned}/${ACHIEVEMENT_LIST.length}`} />
+          <Stat
+            icon={<Trophy size={14} />}
+            label="Achievements"
+            value={`${totalEarned}/${totalPossible}`}
+            href="/achievements"
+          />
           <Stat icon={<Flame size={14} />} label="Day streak" value={profile.streak.count.toLocaleString()} />
         </dl>
       </section>
@@ -181,16 +194,18 @@ function Stat({
   icon,
   label,
   value,
+  href,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  href?: string;
 }) {
-  return (
+  const content = (
     <div className="flex items-center gap-2">
       <span className="shrink-0 text-accent">{icon}</span>
       <div className="min-w-0">
-        <dd className="font-mono text-base font-bold tabular-nums text-foreground">
+        <dd className="font-mono text-base font-bold tabular-nums text-foreground group-hover/stat:text-accent">
           {value}
         </dd>
         <dt className="truncate font-mono text-[10px] uppercase tracking-wide text-sub">
@@ -199,4 +214,14 @@ function Stat({
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="group/stat transition-colors hover:opacity-90">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

@@ -11,6 +11,9 @@ import {
   subscribeProfile,
 } from "@/lib/profile/player-profile";
 
+import { computeLessonAchievements } from "@/lib/lessons/lesson-achievements";
+import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
+
 // Site facts (never change per-player) alongside the two genuinely personal
 // figures. Computed once at module scope, not per render -- GAME_LIST is
 // static data.
@@ -44,12 +47,17 @@ export function PlayerSummary() {
   );
   const profile = useMemo(() => parseProfile(raw), [raw]);
   const { level, into, needed } = levelProgress(profile.xp);
-  const achievements = Object.keys(profile.achievements).length;
+
+  const units = useLessonProgressStore((s) => s.units);
+  const lessonEarned = useMemo(() => computeLessonAchievements(units), [units]);
+  const lessonEarnedCount = Object.values(lessonEarned).filter(Boolean).length;
+  const gameEarnedCount = Object.keys(profile.achievements).length;
+  const totalEarned = gameEarnedCount + lessonEarnedCount;
 
   const stats = [
     { icon: Gamepad2, value: GAME_COUNT.toLocaleString(), label: "Games" },
     { icon: Layers, value: GAME_MODE_COUNT.toLocaleString(), label: "Game modes" },
-    { icon: Trophy, value: achievements.toLocaleString(), label: "Achievements" },
+    { icon: Trophy, value: totalEarned.toLocaleString(), label: "Achievements" },
     {
       icon: Star,
       value: `${into.toLocaleString()}/${needed.toLocaleString()} XP`,

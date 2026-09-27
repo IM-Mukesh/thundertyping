@@ -179,7 +179,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     recommendedSequenceOrder: 4,
     relatedGuides: [
       "typing-stretches-and-hand-warmups",
-      "how-to-touch-type",
+      "one-handed-typing-guide",
       "best-keyboard-switches-for-typing",
     ],
     relatedProductRoute: "/lessons",
@@ -276,9 +276,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     featured: false,
     recommendedSequenceOrder: 4,
     relatedGuides: [
+      "touch-typing-for-dyslexia-and-dysgraphia",
       "touch-typing-finger-map",
       "typing-practice-for-beginners",
-      "how-to-improve-typing-accuracy",
     ],
     relatedProductRoute: "/lessons",
     relatedProductLabel: "Explore 28 Curriculum Lessons",

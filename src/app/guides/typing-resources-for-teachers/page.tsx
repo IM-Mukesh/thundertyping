@@ -130,6 +130,7 @@ export default function TypingResourcesForTeachersPage() {
           { id: "tracking", label: "Progress tracking" },
           { id: "benchmarks", label: "Speed benchmarks" },
           { id: "reference", label: "Printable reference" },
+          { id: "accommodations", label: "Accommodations & diverse learners" },
         ]}
         hasFaq
         hasSources
@@ -259,6 +260,18 @@ export default function TypingResourcesForTeachersPage() {
           <Link href="/guides/wpm-cpm-kph-calculator">WPM/CPM/KPH calculator</Link> is also useful
           if you need to convert a district&apos;s typing requirement (often given in KPH) into the WPM
           number {SITE_NAME}&apos;s tests actually report.
+        </p>
+
+        <h2 id="accommodations">Accommodations &amp; diverse learners</h2>
+        <p>
+          Students with dysgraphia, dyslexia, or motor planning differences often experience intense
+          cognitive load when traditional handwriting or high-pressure timed tests are introduced.
+          Explore our guide on{" "}
+          <Link href="/guides/touch-typing-for-dyslexia-and-dysgraphia">
+            touch typing for dyslexia and dysgraphia
+          </Link>{" "}
+          for practical multisensory strategies, low-anxiety progression pacing, and accommodations
+          that help neurodivergent learners develop fluid keyboard automaticity without spelling fatigue.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

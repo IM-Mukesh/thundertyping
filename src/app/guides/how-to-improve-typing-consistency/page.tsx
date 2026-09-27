@@ -116,6 +116,7 @@ export default function HowToImproveTypingConsistencyPage() {
         toc={[
           { id: "the-myth-of-peak-wpm", label: "The myth of peak WPM" },
           { id: "measuring-consistency", label: "How consistency is measured" },
+          { id: "test-duration-impact", label: "Duration & hesitation impact" },
           { id: "consistency-tiers-table", label: "The consistency benchmarks" },
           { id: "the-look-ahead-buffer", label: "The visual look-ahead buffer" },
           { id: "metronome-training", label: "Cadence and metronome drills" },
@@ -167,19 +168,51 @@ export default function HowToImproveTypingConsistencyPage() {
 
         <h2 id="measuring-consistency">How Consistency Is Measured on HeroTyping</h2>
         <p>
-          Unlike platforms that only track your total words divided by total minutes, HeroTyping tracks your
-          velocity dynamically from second to second:
+          Unlike platforms that only track total keystrokes divided by total minutes, HeroTyping measures
+          your velocity uniformity from second to second:
         </p>
         <ol>
-          <li>Every 1,000 milliseconds, the engine records your instantaneous Net WPM.</li>
-          <li>It calculates the mean velocity and standard deviation across the full test duration.</li>
           <li>
-            It calculates your <strong>Consistency Percentage</strong> using the coefficient of variation formula:
+            <strong>1-Second Character Bucketing:</strong> Every 1,000 milliseconds, the typing engine logs
+            the delta of characters typed during that slice (&Delta;chars), converting it to an instantaneous
+            keystroke rate.
+          </li>
+          <li>
+            <strong>Coefficient of Variation Calculation:</strong> Across all 1-second sample points, the
+            engine calculates the mean velocity (&mu;) and standard deviation (&sigma;). The ratio (&sigma; / &mu;)
+            represents the classical coefficient of variation, quantifying relative speed dispersion.
+          </li>
+          <li>
+            <strong>Clamped Consistency Score:</strong> To present an intuitive 0% to 100% metric bounded
+            against negative outliers, HeroTyping clamps the result:
             <code className="block my-2 p-2 bg-sub-alt/40 rounded text-xs font-mono">
-              Consistency % = 100 - (Standard Deviation / Mean WPM * 100)
+              Consistency % = Math.max(0, Math.min(100, Math.round((1 - (Standard Deviation / Mean)) * 100)))
             </code>
           </li>
         </ol>
+
+        <h2 id="test-duration-impact">The Impact of Test Duration and Hesitations</h2>
+        <p>
+          A vital mathematical characteristic of this formula is <strong>sample window sensitivity</strong>:
+        </p>
+        <ul>
+          <li>
+            <strong>15-Second Tests:</strong> With only 15 one-second data points, a single 1-second hesitation
+            or mistake recovery represents <strong>6.7% of the entire test duration</strong>. That single zero-speed
+            slice dramatically inflates the standard deviation (&sigma;), depressing your consistency percentage even
+            if the other 14 seconds were paced smoothly.
+          </li>
+          <li>
+            <strong>60-Second Tests:</strong> Across a standard 60-second test (60 sample points), that same
+            isolated 1-second pause represents only <strong>1.6% of the dataset</strong>. The longer window allows
+            the metric to accurately reflect your true physiological cadence rather than penalizing a single hesitation.
+          </li>
+          <li>
+            <strong>Backspacing Dynamics:</strong> When you backspace, no forward characters are logged during that
+            second. The instantaneous rate drops to zero, capturing the real cognitive and temporal disruption caused
+            by typos.
+          </li>
+        </ul>
         <p>
           If your consistency score is above 80%, your typing is exceptionally smooth and rhythmic. If it drops below
           65%, your rhythm is plagued by frequent stops and starts.

@@ -11,7 +11,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function TermsPage() {
   return (
-    <ContentPage title="Terms of Use" subtitle="Last updated: September 14, 2026">
+    <ContentPage title="Terms of Use" subtitle="Last updated: September 27, 2026">
       <p>
         By using {SITE_NAME}, you agree to the terms below. If you don&apos;t agree, please don&apos;t use
         the site.
@@ -19,9 +19,10 @@ export default function TermsPage() {
 
       <h2>Using the service</h2>
       <p>
-        {SITE_NAME} is provided free of charge for personal, non-commercial use. Please don&apos;t
-        attempt to disrupt the service, scrape it at scale, or use automated tools to inflate
-        typing results.
+        {SITE_NAME} is provided free of charge for personal, educational, classroom, and workplace skill
+        development. Schools, educators, students, and professionals are welcome to use the service for
+        training, instruction, and practice. Please don&apos;t attempt to disrupt the service, scrape it
+        at scale, resell the platform, or use automated tools to inflate typing results.
       </p>
 
       <h2>Your content</h2>

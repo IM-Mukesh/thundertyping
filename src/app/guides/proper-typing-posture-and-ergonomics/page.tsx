@@ -297,6 +297,13 @@ export default function ProperTypingPosturePage() {
             ensuring your neck stays upright whether sitting tall or leaning gently back into your
             chair&apos;s support.
           </li>
+          <li>
+            <strong>Adaptive Setups for Unilateral Strain or Mobility Limits:</strong> For typists
+            managing acute injury, stroke rehabilitation, or single-hand typing requirements,
+            standard bilateral keyboards introduce extreme compensational wrist strain. See our{" "}
+            <Link href="/guides/one-handed-typing-guide">one-handed typing guide</Link> for ergonomic
+            mirror-layout mapping and radial reach strategies.
+          </li>
         </ol>
 
         <FaqSection items={FAQ_ITEMS} />

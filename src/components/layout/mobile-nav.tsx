@@ -249,7 +249,7 @@ export function MobileNav({ open, onClose, triggerRef }: MobileNavProps) {
             )}
 
             {/* Nav Links */}
-            <nav className="mt-4 flex flex-col gap-1">
+            <nav aria-label="Mobile navigation" className="mt-4 flex flex-col gap-1">
               {PRIMARY_LINKS.map(
                 ({ href, label, badge, icon: Icon, isHome }) => {
                   const active =

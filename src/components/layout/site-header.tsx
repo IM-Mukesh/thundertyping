@@ -88,7 +88,7 @@ export function SiteHeader() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden sm:flex min-w-0 items-center gap-1">
+        <nav aria-label="Main navigation" className="hidden sm:flex min-w-0 items-center gap-1">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (

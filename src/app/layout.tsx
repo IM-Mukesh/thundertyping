@@ -92,6 +92,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         )}
       </head>
       <body className="flex min-h-full flex-col">
+        {/* Keyboard-accessible skip link for screen readers and keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:font-bold focus:text-background focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-foreground"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>
           {/* Carries stored volume settings into the audio mixer, which is a
               plain module rather than React state. Mounted once here so the
@@ -105,7 +112,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               taller than the viewport no matter what the child does. Pages
               that simply grow are unaffected — they still expand the document
               and scroll normally. */}
-          <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+          <main id="main-content" className="flex min-h-0 flex-1 flex-col">{children}</main>
           <SiteFooter />
         </ThemeProvider>
       </body>

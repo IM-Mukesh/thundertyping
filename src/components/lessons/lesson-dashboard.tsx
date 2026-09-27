@@ -174,15 +174,25 @@ export function LessonDashboard() {
                 {inProgressUnit ? "Resume Lesson" : "Continue Lesson"}
                 <ArrowRight size={14} aria-hidden="true" />
               </Link>
-              {weakKeys.length > 0 && (
-                <Link
-                  href="/lessons/practice"
-                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-5 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlacementOpen(true)}
+                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-4 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
                 >
-                  <Target size={13} aria-hidden="true" />
-                  Practice weak keys ({weakKeys.slice(0, 3).join(", ")})
-                </Link>
-              )}
+                  <Compass size={13} aria-hidden="true" />
+                  Placement test
+                </button>
+                {weakKeys.length > 0 && (
+                  <Link
+                    href="/lessons/practice"
+                    className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-4 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
+                  >
+                    <Target size={13} aria-hidden="true" />
+                    Practice weak keys
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </section>
