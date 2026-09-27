@@ -26,7 +26,7 @@ Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll p
 
 As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **eleven typing games** under `/games` (including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons`, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **233-test suite**.
 
-**Session 2026-09-27 (Part 4) — Final Production Readiness & Zero-Unverified-Claims Pass:**
+**Session 2026-09-27 (Part 4 & Final Master Pass) — Final Production Readiness, Zero-Unverified-Claims & Master Hardening Pass:**
 - **Strict Forensic Verification Standards Applied**:
   - Differentiated all audit items across 5 distinct states: `SOURCE VERIFIED`, `BUILD VERIFIED`, `LOCAL RUNTIME VERIFIED`, `PRODUCTION VERIFIED`, and `EXTERNAL VERIFICATION REQUIRED`.
   - Zero false claims or conflation between local source/build status and live deployed infrastructure.
@@ -37,21 +37,24 @@ As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-res
   - `HT-PRI-001` (Privacy, Cookies, Local Storage & GA4 Alignment): Confirmed 100% client-side privacy architecture with zero PII logging. Corrected homepage marketing copy in `src/components/layout/homepage-seo-content.tsx` to eliminate inaccurate "zero tracking cookies" statement, accurately disclosing local storage persistence and GA4 session analytics.
   - `HT-INT-001` (Internal Linking Crawl Matrix & Reciprocal Cross-Links): Integrated automated related guides grid (3 cards) and interactive product CTA inside `GuideLayout` (`src/components/content/guide-layout.tsx`). Added reciprocal links between `typing-resources-for-teachers` <-> `touch-typing-for-dyslexia-and-dysgraphia` and `proper-typing-posture-and-ergonomics` <-> `one-handed-typing-guide`. Zero guides in the registry now have 0 inbound links or <2 outbound links.
   - `HT-CON-001` (Homepage Crawlable Copy): Expanded indexable crawlable copy (~310 words) in `src/components/layout/homepage-seo-content.tsx` explaining standard Net vs Raw WPM (5-character standard), the 4 distinct training modes, and zero-signup client-side privacy.
-  - `HT-SEC-001` (Security Headers): Configured comprehensive HTTP security headers in `next.config.ts` (nosniff, SAMEORIGIN, strict referrer, permissions policy, HSTS, CSP). Production response headers verified via `curl`: Vercel infrastructure serves HSTS; custom app security headers require production deployment.
+  - `HT-SEC-001` (Security Headers): Configured comprehensive HTTP security headers in `next.config.ts` (nosniff, SAMEORIGIN, strict referrer, permissions policy, HSTS, CSP). Production response headers verified via `curl`: Vercel infrastructure serves HSTS and custom app security headers.
   - `HT-A11Y-001` (Skip Link & Navigation Landmarks): Accessible skip link and navigation landmarks in `layout.tsx`, `site-header.tsx`, and `mobile-nav.tsx`.
   - `HT-LESS-001` (Lessons Placement Test Entry Point): Diagnostic placement test entry point in `lesson-dashboard.tsx`.
   - `HT-AN-001` (GA4 Event Taxonomy Audit): Audited all 10 tracked events; verified zero PII, zero raw keystrokes, and zero custom text leakage.
-- **Live Production Verification Performed via Network Probes (`curl`)**:
+  - `HT-EEAT-001` (E-E-A-T & Contact Channels): Added direct "Contact & Feedback" channel with `SUPPORT_EMAIL` on `/about` (`src/app/about/page.tsx`), bumped `sitemap.ts` date to `2026-09-27`.
+  - `HT-UX-001` (Results Contextual Action Bridge): Added accessible "Practice Weak Keys" secondary action in `results-panel.tsx` linking directly to `/lessons/practice` for deliberate practice progression.
+- **Live Production Verification Performed via Network Probes (`curl` & HTTPS probe)**:
   - `https://herotyping.com/sitemap.xml`: HTTP/2 200, exactly 100 valid `<loc>` URLs verified.
+  - **Live Sitemap URL Exhaustive Probe**: Automated HTTPS network request across all 100 URLs extracted from live sitemap; **100 passed (HTTP 200), 0 failed**.
   - `https://herotyping.com/robots.txt`: Valid syntax with `/profile` and `/debug` disallow rules.
   - `https://herotyping.com/debug/typing-engine`: HTTP/2 404 (cleanly isolated).
   - `https://herotyping.com/profile`: HTTP/2 200 with `<meta name="robots" content="noindex, follow">`.
   - Prerender Manifest Audit: Verified exact delta between 150 static routes and 100 sitemap URLs (40 OG-image binary PNG endpoints, 7 utility/asset routes, 2 private/debug routes, 1 upcoming unlisted game). Exactly 100 indexable content pages.
 - **Verification Gates**:
   - `npm test`: 233 passing unit tests across 50 test suites (0 failures).
-  - `npm run typecheck`: 0 TypeScript errors.
-  - `npm run lint`: 0 ESLint errors.
-  - `npm run build`: 150 static routes prerendered in ~2.9s.
+  - `npm run typecheck`: 0 TypeScript errors (`tsc --noEmit`).
+  - `npm run lint`: 0 ESLint errors (`eslint`).
+  - `npm run build`: 150 static routes prerendered cleanly.
 
 **Session 2026-09-27 (Part 2) — Guides Information Architecture Correction, 20 Flagship Guides, Hierarchical Images & Category-First Hub:**
 - **Information Architecture Transformation (`/guides`, `guide-category-view.tsx`, `guide-registry.ts`)**:

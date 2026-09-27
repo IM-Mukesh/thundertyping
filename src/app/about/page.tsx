@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentPage } from "@/components/layout/content-page";
-import { SITE_NAME } from "@/lib/seo/constants";
+import { SITE_NAME, SUPPORT_EMAIL } from "@/lib/seo/constants";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
@@ -41,6 +41,12 @@ export default function AboutPage() {
         saved only in your own browser (using <code>localStorage</code>) — they never leave your
         device, and clearing your browser data clears them for good. See the{" "}
         <Link href="/privacy">Privacy Policy</Link> for details.
+      </p>
+
+      <h2>Contact & Feedback</h2>
+      <p>
+        Have questions, curriculum feedback, bug reports, or classroom inquiries? You can reach the
+        team directly at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
       </p>
 
       <h2>What&apos;s next</h2>

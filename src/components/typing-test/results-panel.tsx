@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "motion/react";
-import { RotateCcw, Sparkles } from "lucide-react";
+import { RotateCcw, Sparkles, Target } from "lucide-react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
 import {
   calculateAccuracy,
@@ -88,14 +89,23 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onRestart}
-        className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
-      >
-        <RotateCcw size={16} />
-        Restart
-      </button>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={onRestart}
+          className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <RotateCcw size={16} />
+          Restart
+        </button>
+        <Link
+          href="/lessons/practice"
+          className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <Target size={16} />
+          Practice Weak Keys
+        </Link>
+      </div>
 
       <AdSlot placementId="results-rectangle" format="rectangle" />
     </motion.div>

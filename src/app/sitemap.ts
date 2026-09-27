@@ -18,7 +18,7 @@ export interface SitemapRouteEntry {
 export function getSitemapRoutes(): SitemapRouteEntry[] {
   return [
     { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-09-26" },
-    { path: "/about", priority: 0.5, changeFrequency: "monthly", lastModified: "2026-09-14" },
+    { path: "/about", priority: 0.5, changeFrequency: "monthly", lastModified: "2026-09-27" },
     { path: "/privacy", priority: 0.3, changeFrequency: "monthly", lastModified: "2026-09-26" },
     { path: "/terms", priority: 0.3, changeFrequency: "monthly", lastModified: "2026-09-27" },
     { path: "/guides", priority: 0.8, changeFrequency: "daily", lastModified: "2026-09-27" },
