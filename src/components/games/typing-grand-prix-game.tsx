@@ -30,7 +30,7 @@ import {
   useTypingGrandPrix,
   type GrandPrixState,
 } from "@/lib/games/use-typing-grand-prix";
-import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
 import { duck, playMusic, preload, stopMusic } from "@/lib/audio/audio-bus";
@@ -210,11 +210,12 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   const [isFocused, setIsFocused] = useState(true);
 
   const handleStart = useCallback(() => {
+    recordGameStart(definition.id);
     setIsNewBest(false);
     playSound("start", soundEnabled);
     sound("race-start", soundEnabled);
     start();
-  }, [start, soundEnabled]);
+  }, [start, soundEnabled, definition.id]);
 
   const accuracy = round(
     calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes, state.missedChars),

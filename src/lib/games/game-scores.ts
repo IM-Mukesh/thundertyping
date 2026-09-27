@@ -1,5 +1,6 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
-import type { GameId } from "@/lib/games/game-types";
+import { GAME_DEFINITIONS, type GameId } from "@/lib/games/game-types";
+import { trackEvent } from "@/lib/analytics";
 
 // Separate from results-store.ts on purpose: that one keys personal bests by
 // typing-test mode + config and only tracks WPM/accuracy, which doesn't
@@ -69,10 +70,28 @@ export function getGameBest(gameId: GameId): GameBest | null {
   }
 }
 
+export function recordGameStart(gameId: GameId): void {
+  const def = GAME_DEFINITIONS[gameId];
+  trackEvent("game_started", {
+    game_id: gameId,
+    game_name: def?.name ?? gameId,
+  });
+}
+
 export function recordGameResult(
   gameId: GameId,
   run: Omit<GameBest, "achievedAt">,
+  result?: string,
 ): { isNewBest: boolean; best: GameBest } {
+  const def = GAME_DEFINITIONS[gameId];
+  trackEvent("game_completed", {
+    game_id: gameId,
+    game_name: def?.name ?? gameId,
+    score: run.score,
+    duration_ms: run.survivedMs,
+    result,
+  });
+
   const existing = getGameBest(gameId);
   if (existing && existing.score >= run.score) {
     return { isNewBest: false, best: existing };

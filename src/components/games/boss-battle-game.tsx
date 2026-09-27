@@ -28,7 +28,7 @@ import {
   useBossBattle,
   type BossBattleState,
 } from "@/lib/games/use-boss-battle";
-import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
@@ -186,13 +186,14 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
   }, [state.status]);
 
   const handleStart = useCallback(() => {
+    recordGameStart(definition.id);
     setIsNewBest(false);
     // Also the user gesture that unlocks the audio context, so the first
     // keystroke of a run is already audible.
     playSound("start", soundEnabled);
     start();
     focusInput();
-  }, [start, focusInput, soundEnabled]);
+  }, [start, focusInput, soundEnabled, definition.id]);
 
   const [isFocused, setIsFocused] = useState(true);
 

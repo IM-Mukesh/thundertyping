@@ -27,7 +27,7 @@ import {
   grantUnlock,
   hasUnlock,
 } from "@/lib/profile/player-profile";
-import { recordGameResult } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart } from "@/lib/games/game-scores";
 import {
   ACHIEVEMENTS,
   ART,
@@ -229,6 +229,7 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
   }, [state.phase, state.floor, state.score, state.relics.length, state.cleanFloor]);
 
   const handleStart = (characterId: string) => {
+    recordGameStart("spellbound");
     resumeAudio();
     sound("select", soundEnabled);
     game.start(characterId);

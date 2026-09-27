@@ -22,7 +22,7 @@ import {
   useFallingWords,
   type WordKind,
 } from "@/lib/games/use-falling-words";
-import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
 import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
@@ -234,6 +234,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
   }, [state.status]);
 
   const handleStart = useCallback(() => {
+    recordGameStart(definition.id);
     setIsNewBest(false);
     seenTimeRef.current.clear();
     seenClearedRef.current.clear();
@@ -243,7 +244,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
     playSound("start", soundEnabled);
     start();
     focusInput();
-  }, [start, focusInput, soundEnabled]);
+  }, [start, focusInput, soundEnabled, definition.id]);
 
   useEffect(() => {
     if (state.status !== "over") return;

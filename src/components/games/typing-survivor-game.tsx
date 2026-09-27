@@ -33,7 +33,7 @@ import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/au
 import { FxSystem } from "@/lib/fx/particles";
 import { awardXp,
   checkSiteAchievements, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
-import { recordGameResult } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart } from "@/lib/games/game-scores";
 import { CHARACTERS } from "@/lib/games/survivor/content";
 import { useSurvivor, type Enemy } from "@/lib/games/survivor/use-survivor";
 import {
@@ -237,6 +237,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
   }, [state.phase, game]);
 
   const handleStart = (id: string) => {
+    recordGameStart("typing-survivor");
     resumeAudio();
     sound("select", soundEnabled);
     game.start(id);

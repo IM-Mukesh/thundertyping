@@ -13,8 +13,15 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildDrillLine, buildReviewText, buildSubLessons } from "@/lib/lessons/lesson-content";
-import { LESSON_LIST } from "@/lib/lessons/lesson-types";
+import {
+  buildDrillLine,
+  buildWarmupLine,
+  buildPatternLine,
+  buildAccuracyLine,
+  buildReviewText,
+  buildSubLessons,
+} from "@/lib/lessons/lesson-content";
+import { LESSON_LIST, LESSON_STAGES, LESSON_TIERS } from "@/lib/lessons/lesson-types";
 import {
   computeUnitProgressUpdate,
   isLessonUnlocked,
@@ -243,4 +250,68 @@ describe("curriculum data integrity", () => {
       assert.ok(unit.subLessonCount > 0, unit.id);
     }
   });
+
+  it("curriculum contains exactly 28 total units", () => {
+    assert.equal(LESSON_LIST.length, 28);
+  });
+
+  it("tier distributions match product specifications: 17 Beginner, 6 Intermediate, 5 Advanced", () => {
+    assert.equal(LESSON_TIERS.length, 3);
+    const beginner = LESSON_LIST.filter((l) => l.tier === "beginner").length;
+    const intermediate = LESSON_LIST.filter((l) => l.tier === "intermediate").length;
+    const advanced = LESSON_LIST.filter((l) => l.tier === "advanced").length;
+    assert.equal(beginner, 17);
+    assert.equal(intermediate, 6);
+    assert.equal(advanced, 5);
+    assert.equal(beginner + intermediate + advanced, 28);
+  });
+
+  it("all 8 educational stages are represented with positive unit counts", () => {
+    assert.equal(LESSON_STAGES.length, 8);
+    for (const stage of LESSON_STAGES) {
+      const unitsInStage = LESSON_LIST.filter((l) => l.stage === stage.id);
+      assert.ok(unitsInStage.length > 0, `Stage ${stage.id} has no units`);
+    }
+  });
 });
+
+describe("pedagogical sub-lesson phase progression", () => {
+  it("every unit starts with a warmup phase and concludes with a checkpoint phase", () => {
+    for (const unit of LESSON_LIST) {
+      const steps = buildSubLessons(unit);
+      assert.equal(steps[0].phase, "warmup", `${unit.id} step 1 phase`);
+      assert.equal(steps.at(-1)!.phase, "checkpoint", `${unit.id} final step phase`);
+      assert.ok(steps[0].title.length > 0);
+      assert.ok(steps.at(-1)!.title.length > 0);
+      assert.ok(steps[0].objective.length > 0);
+    }
+  });
+
+  it("buildWarmupLine only emits allowed keys", () => {
+    const allowed = ["a", "s", "d", "f"];
+    const line = buildWarmupLine(allowed, 20);
+    const allowedSet = new Set(allowed);
+    for (const char of line.replace(/ /g, "")) {
+      assert.ok(allowedSet.has(char), `"${char}" in warmup line is not allowed`);
+    }
+  });
+
+  it("buildPatternLine only emits allowed keys", () => {
+    const allowed = ["q", "w", "e", "r", "t"];
+    const line = buildPatternLine(allowed, 20);
+    const allowedSet = new Set(allowed);
+    for (const char of line.replace(/ /g, "")) {
+      assert.ok(allowedSet.has(char), `"${char}" in pattern line is not allowed`);
+    }
+  });
+
+  it("buildAccuracyLine only emits allowed keys", () => {
+    const allowed = ["z", "x", "c", "v", "b"];
+    const line = buildAccuracyLine(allowed, 20);
+    const allowedSet = new Set(allowed);
+    for (const char of line.replace(/ /g, "")) {
+      assert.ok(allowedSet.has(char), `"${char}" in accuracy line is not allowed`);
+    }
+  });
+});
+

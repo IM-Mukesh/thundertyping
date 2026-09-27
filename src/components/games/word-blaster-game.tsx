@@ -23,7 +23,7 @@ import {
   TICK_MS,
   useWordBlaster,
 } from "@/lib/games/use-word-blaster";
-import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
@@ -278,13 +278,14 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
   }, [state.status, focusInput]);
 
   const handleStart = useCallback(() => {
+    recordGameStart(definition.id);
     setIsNewBest(false);
     // Also the user gesture that unlocks the audio context, so the first
     // keystroke of a run is already audible.
     playSound("start", soundEnabled);
     start();
     focusInput();
-  }, [start, focusInput, soundEnabled]);
+  }, [start, focusInput, soundEnabled, definition.id]);
 
   useEffect(() => {
     if (state.status !== "over") return;

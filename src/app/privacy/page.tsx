@@ -48,9 +48,11 @@ export default function PrivacyPage() {
         geographic location (country/region) — to understand site traffic and improve our features.
       </p>
       <p>
-        No personally identifiable information (PII), passwords, or keystroke contents are ever sent
-        to Google Analytics. All keystroke data and typing performance metrics stay entirely within your
-        browser.
+        No personally identifiable information (PII), passwords, typed text, or individual keystrokes
+        are ever sent to Google Analytics. Aggregate product interaction events (such as starting or
+        completing a lesson, game, practice session, or typing test with summary speed and accuracy numbers)
+        may be measured to evaluate curriculum and game engagement, but raw keystroke sequences and user-typed
+        text remain strictly on your local device.
       </p>
       <p>
         You can block analytics tracking at any time by enabling standard browser content blockers

@@ -22,10 +22,10 @@ export function LessonStatsBar() {
   const hasData = totals.timeMs > 0;
 
   return (
-    <div className="theme-transition grid w-full grid-cols-3 gap-2 rounded-xl border border-border bg-sub-alt/30 p-4 sm:gap-4 sm:p-5">
-      <Tile icon={<Zap size={14} />} label="Avg speed" value={hasData ? `${avgWpm} wpm` : "—"} />
-      <Tile icon={<Target size={14} />} label="Avg accuracy" value={hasData ? `${avgAccuracy}%` : "—"} />
-      <Tile icon={<Clock size={14} />} label="Typing time" value={hasData ? formatTotalTime(totals.timeMs) : "—"} />
+    <div className="theme-transition grid w-full grid-cols-3 gap-2 rounded-xl border border-border/60 bg-sub-alt/20 p-3 sm:gap-4 sm:p-4">
+      <Tile icon={<Zap size={14} />} label="Aggregate speed" value={hasData ? `${avgWpm} wpm` : "—"} />
+      <Tile icon={<Target size={14} />} label="Overall accuracy" value={hasData ? `${avgAccuracy}%` : "—"} />
+      <Tile icon={<Clock size={14} />} label="Practice time" value={hasData ? formatTotalTime(totals.timeMs) : "—"} />
     </div>
   );
 }

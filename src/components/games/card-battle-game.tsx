@@ -31,7 +31,7 @@ import { sound } from "@/lib/audio/game-sounds";
 import { duck, playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
 import { awardXp,
   checkSiteAchievements, bumpStat, grantAchievement } from "@/lib/profile/player-profile";
-import { recordGameResult } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart } from "@/lib/games/game-scores";
 import { STARTER_DECKS } from "@/lib/games/cards/cards";
 import { STATUS_META, STATUS_ORDER, faceOf, type CardDef, type Statuses } from "@/lib/games/cards/model";
 import { useCardBattle, type EnemyState } from "@/lib/games/cards/use-card-battle";
@@ -114,6 +114,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
 
   const handleStart = useCallback(
     (deckId: string) => {
+      recordGameStart("card-battle");
       resumeAudio();
       sound("select", soundEnabled);
       game.start(deckId);

@@ -32,7 +32,7 @@ import { sound } from "@/lib/audio/game-sounds";
 import { playMusic, preload, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
 import { awardXp,
   checkSiteAchievements, bumpStat, grantAchievement, recordDaily } from "@/lib/profile/player-profile";
-import { recordGameResult } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart } from "@/lib/games/game-scores";
 import { createRng, dailySeed, dailySeedFor, msUntilNextDaily } from "@/lib/rng/seeded-rng";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
@@ -266,6 +266,7 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
   };
 
   const begin = () => {
+    recordGameStart("ghost-racer");
     resumeAudio();
     setTyped("");
     setErrors(0);

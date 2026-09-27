@@ -9,7 +9,9 @@ import { recordResult } from "@/lib/persistence/results-store";
 import {
   calculateAccuracy,
   calculateNetWpm,
+  calculateRawWpm,
 } from "@/lib/typing-engine/stats";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils/cn";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
 import { WordStream } from "@/components/typing-test/word-stream";
@@ -111,6 +113,26 @@ export function TypingTest() {
   // at unmount rather than on every status change.
   useEffect(() => () => setTestStatus("idle"), []);
 
+  const testStartedRef = useRef(false);
+  useEffect(() => {
+    if (engine.state.status === "running") {
+      if (!testStartedRef.current) {
+        testStartedRef.current = true;
+        trackEvent("typing_test_started", {
+          test_mode: config.mode,
+          test_duration: config.mode === "time" ? config.timeDuration : undefined,
+          word_count: config.mode === "words" ? config.wordCount : undefined,
+          quote_length: config.mode === "quote" ? config.quoteLength : undefined,
+          difficulty: config.mode === "vocabulary" ? config.vocabDifficulty : undefined,
+          punctuation: config.punctuation,
+          numbers: config.numbers,
+        });
+      }
+    } else if (engine.state.status === "idle") {
+      testStartedRef.current = false;
+    }
+  }, [engine.state.status, config]);
+
   const recordedRef = useRef(false);
   useEffect(() => {
     if (engine.state.status !== "finished") {
@@ -152,6 +174,22 @@ export function TypingTest() {
     );
     setIsNewBest(newBest);
     playSound(newBest ? "clear" : "lesson-clear", soundEnabled);
+
+    const grossWpm = calculateRawWpm(
+      engine.state.correctKeystrokes,
+      engine.state.incorrectKeystrokes,
+      engine.state.elapsedMs,
+    );
+    trackEvent("typing_test_completed", {
+      test_mode: config.mode,
+      test_duration: config.mode === "time" ? config.timeDuration : undefined,
+      wpm: Math.round(wpm),
+      accuracy: Math.round(accuracy),
+      gross_wpm: Math.round(grossWpm),
+      correct_chars: engine.state.correctKeystrokes,
+      incorrect_chars: engine.state.incorrectKeystrokes,
+      duration_ms: engine.state.elapsedMs,
+    });
     // intentionally narrow: only re-evaluate when the test transitions to "finished"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine.state.status]);

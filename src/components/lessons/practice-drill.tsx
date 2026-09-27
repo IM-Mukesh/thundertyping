@@ -14,6 +14,7 @@ import { getWeakKeys } from "@/lib/lessons/key-performance";
 import { useKeyPerformanceStore, getKeyStats } from "@/lib/lessons/key-performance-store";
 import { playSound } from "@/lib/games/game-audio";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
+import { trackEvent } from "@/lib/analytics";
 
 const PRACTICE_WORD_COUNT = 20;
 
@@ -71,6 +72,26 @@ export function PracticeDrill() {
     soundCountsRef.current = { correct: engine.state.correctKeystrokes, incorrect: engine.state.incorrectKeystrokes };
   }, [engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, soundEnabled]);
 
+  const practiceStartedRef = useRef(false);
+  useEffect(() => {
+    if (engine.state.status === "running") {
+      if (!practiceStartedRef.current) {
+        practiceStartedRef.current = true;
+        trackEvent("practice_started", {
+          practice_type: "weak_keys",
+          target_keys_count: weakKeys.length,
+        });
+      }
+    } else if (engine.state.status === "idle") {
+      practiceStartedRef.current = false;
+    }
+  }, [engine.state.status, weakKeys.length]);
+
+  const wpm = round(calculateNetWpm(engine.state.netWpmCharacters, engine.state.elapsedMs));
+  const accuracy = round(
+    calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.charTally.missed),
+  );
+
   const isFinished = engine.state.status === "finished";
   const recordedRef = useRef(false);
   useEffect(() => {
@@ -82,6 +103,13 @@ export function PracticeDrill() {
     recordedRef.current = true;
     recordKeyAttempt(engine.state.wordStates);
     playSound("lesson-clear", soundEnabled);
+
+    trackEvent("practice_completed", {
+      practice_type: "weak_keys",
+      wpm,
+      accuracy,
+      duration_ms: engine.state.elapsedMs,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFinished]);
 
@@ -90,11 +118,6 @@ export function PracticeDrill() {
     if (isFinished || !activeWord) return null;
     return activeWord.typed.length < activeWord.target.length ? activeWord.target[activeWord.typed.length] : " ";
   }, [isFinished, activeWord]);
-
-  const wpm = round(calculateNetWpm(engine.state.netWpmCharacters, engine.state.elapsedMs));
-  const accuracy = round(
-    calculateAccuracy(engine.state.correctKeystrokes, engine.state.incorrectKeystrokes, engine.state.charTally.missed),
-  );
 
   function retry() {
     setAttempt((a) => a + 1);
@@ -131,7 +154,7 @@ export function PracticeDrill() {
       </div>
 
       {!isFinished && (
-        <div className="relative w-full cursor-pointer" onClick={() => setFocusToken((t) => t + 1)}>
+        <div className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 p-4 transition-colors hover:border-accent/40" onClick={() => setFocusToken((t) => t + 1)}>
           <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
           <HiddenInput
             value={activeWord?.typed ?? ""}
@@ -149,31 +172,31 @@ export function PracticeDrill() {
       <VirtualKeyboard nextKey={nextKey} />
 
       {isFinished && (
-        <div className="theme-transition flex w-full flex-col items-center gap-4 rounded-xl border border-border bg-sub-alt/30 p-6 text-center">
+        <div className="theme-transition flex w-full flex-col items-center gap-5 rounded-2xl border border-border bg-sub-alt/30 p-6 sm:p-8 text-center shadow-lg">
           <p className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-correct">
             <CheckCircle2 size={16} aria-hidden="true" />
             Drill complete
           </p>
           <div className="flex gap-8 font-mono text-sm text-sub">
             <span>
-              <span className="text-lg text-foreground">{wpm}</span> wpm
+              <span className="text-lg font-bold text-foreground">{wpm}</span> wpm
             </span>
             <span>
-              <span className="text-lg text-foreground">{accuracy}%</span> accuracy
+              <span className="text-lg font-bold text-foreground">{accuracy}%</span> accuracy
             </span>
           </div>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={retry}
-              className="flex h-11 items-center gap-2 rounded-lg border border-border px-5 text-sm text-sub transition-colors hover:border-accent hover:text-foreground"
+              className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border px-5 text-xs font-bold uppercase tracking-wider text-sub transition-colors hover:border-accent hover:text-foreground"
             >
-              <RotateCcw size={14} aria-hidden="true" />
+              <RotateCcw size={13} aria-hidden="true" />
               Practice again
             </button>
             <Link
               href="/lessons"
-              className="flex h-11 items-center gap-2 rounded-lg bg-accent px-5 text-sm font-bold text-background transition-[filter] hover:brightness-110"
+              className="flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-6 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-md"
             >
               Back to lessons
               <ArrowRight size={14} aria-hidden="true" />

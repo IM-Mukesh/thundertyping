@@ -23,7 +23,7 @@ import {
   TICK_MS,
   useComboRush,
 } from "@/lib/games/use-combo-rush";
-import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
 import { playSound } from "@/lib/games/game-audio";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
@@ -135,13 +135,14 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
   }, [state.status]);
 
   const handleStart = useCallback(() => {
+    recordGameStart(definition.id);
     setIsNewBest(false);
     // Also the user gesture that unlocks the audio context, so the first
     // keystroke of a run is already audible.
     playSound("start", soundEnabled);
     start();
     focusInput();
-  }, [start, focusInput, soundEnabled]);
+  }, [start, focusInput, soundEnabled, definition.id]);
 
   const [isFocused, setIsFocused] = useState(true);
 

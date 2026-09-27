@@ -74,8 +74,10 @@ export type LessonId =
 // A unit's content is generated, not hand-typed, so the curriculum stays
 // cheap to extend -- see lesson-content.ts for how each kind is built, and
 // buildSubLessons for how one spec becomes `subLessonCount` graduated steps.
+export type DrillStyle = "random" | "warmup" | "pattern" | "accuracy";
+
 export type LessonContentSpec =
-  | { kind: "drill"; allowedKeys: string[]; wordCount: number }
+  | { kind: "drill"; allowedKeys: string[]; wordCount: number; style?: DrillStyle }
   | { kind: "review"; allowedKeys: string[]; wordCount: number }
   | { kind: "graduation"; wordCount: number; numbers?: boolean };
 

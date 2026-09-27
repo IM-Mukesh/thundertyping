@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   Flame,
@@ -24,7 +24,7 @@ import {
   TypingMode,
   TYPING_MODES,
 } from "@/lib/games/fruit-fury/fruit-fury-types";
-import { getGameBest, recordGameResult, type GameBest } from "@/lib/games/game-scores";
+import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   awardXp,
@@ -79,6 +79,14 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
     }
   }, [state.status, sliceMode]);
 
+  const handleStartGame = useCallback(
+    (diff: GameDifficulty, mode: TypingMode) => {
+      recordGameStart(definition.id);
+      startGame(diff, mode);
+    },
+    [definition.id, startGame],
+  );
+
   // Global keydown handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -98,7 +106,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
       } else if (state.status === "idle" || state.status === "over") {
         if (e.key === " " || e.key === "Enter") {
           e.preventDefault();
-          startGame(selectedDifficulty, selectedTypingMode);
+          handleStartGame(selectedDifficulty, selectedTypingMode);
         }
       } else if (state.status === "paused") {
         if (e.key === " " || e.key === "Escape") {
@@ -110,7 +118,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [state.status, handleKeyInput, togglePause, startGame, selectedDifficulty, selectedTypingMode]);
+  }, [state.status, handleKeyInput, togglePause, handleStartGame, selectedDifficulty, selectedTypingMode]);
 
   // Handle Game Over persistence, stats, achievements
   useEffect(() => {
@@ -590,7 +598,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 {/* Start Button */}
                 <button
                   type="button"
-                  onClick={() => startGame(selectedDifficulty, selectedTypingMode)}
+                  onClick={() => handleStartGame(selectedDifficulty, selectedTypingMode)}
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 px-7 py-2.5 sm:px-9 sm:py-3 text-sm sm:text-base font-black tracking-wide text-white shadow-xl shadow-rose-500/30 transition-all hover:scale-105 active:scale-95"
                 >
                   <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
@@ -715,7 +723,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 <div className="flex w-full items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => startGame(selectedDifficulty, selectedTypingMode)}
+                    onClick={() => handleStartGame(selectedDifficulty, selectedTypingMode)}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 py-2.5 sm:py-3 text-sm font-black text-white shadow-lg shadow-rose-500/30 transition-all hover:scale-105 active:scale-95"
                   >
                     <RotateCcw className="h-4 w-4" />

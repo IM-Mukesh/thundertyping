@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Lock, Play, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronRight, Lock, Play, RotateCcw } from "lucide-react";
 import type { LessonDefinition } from "@/lib/lessons/lesson-types";
 import type { UnitProgress } from "@/lib/lessons/lesson-progress-store";
 import { round } from "@/lib/typing-engine/stats";
@@ -9,88 +9,156 @@ interface LessonUnitRowProps {
   unit: LessonDefinition;
   position: number;
   unlocked: boolean;
+  isCurrent?: boolean;
   progress?: UnitProgress;
-  /** Why this unit is locked, e.g. `Complete "Home Row: Left Hand" first` -- only used when `unlocked` is false. */
   lockedReason?: string;
 }
 
-export function LessonUnitRow({ unit, position, unlocked, progress, lockedReason }: LessonUnitRowProps) {
+export function LessonUnitRow({
+  unit,
+  position,
+  unlocked,
+  isCurrent,
+  progress,
+  lockedReason,
+}: LessonUnitRowProps) {
   const completed = progress?.completed ?? false;
   const inProgress = !completed && (progress?.currentStep ?? 0) > 0;
   const stepsDone = progress?.currentStep ?? 0;
+  const progressPercent = Math.min(100, Math.round((stepsDone / unit.subLessonCount) * 100));
 
-  const row = (
+  const content = (
     <div
       className={cn(
-        "group/row flex flex-col gap-3 rounded-xl border p-4 transition-colors sm:flex-row sm:items-center sm:gap-5 sm:p-5",
-        unlocked ? "border-border hover:border-accent" : "border-border/50 opacity-60",
-        completed && "border-accent/50",
+        "group relative flex flex-col justify-between gap-4 rounded-xl border p-4 sm:p-5 transition-all duration-200",
+        unlocked
+          ? "border-border bg-background/50 hover:border-accent/70 hover:bg-sub-alt/10 hover:shadow-md"
+          : "border-border/40 bg-sub-alt/10 opacity-70 cursor-not-allowed",
+        isCurrent && "border-accent ring-1 ring-accent/30 bg-accent/5",
+        completed && "border-border/80 bg-background/70",
       )}
     >
-      <div
-        className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border font-display text-sm font-bold",
-          completed ? "border-accent bg-accent/15 text-accent" : "border-border text-sub",
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <div
+            className={cn(
+              "flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold transition-colors",
+              completed
+                ? "bg-accent/15 text-accent border border-accent/30"
+                : isCurrent
+                  ? "bg-accent text-background"
+                  : !unlocked
+                    ? "bg-sub-alt text-sub/60 border border-border/40"
+                    : "bg-sub-alt text-sub border border-border",
+            )}
+            aria-hidden="true"
+          >
+            {completed ? (
+              <CheckCircle2 size={16} />
+            ) : !unlocked ? (
+              <Lock size={14} />
+            ) : (
+              String(position).padStart(2, "0")
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-col">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-sm font-bold uppercase tracking-tight text-foreground sm:text-base group-hover:text-accent transition-colors">
+                {unit.name}
+              </h3>
+              {isCurrent && (
+                <span className="rounded-full bg-accent/20 px-2 py-0.5 font-display text-[9px] font-bold uppercase tracking-wider text-accent">
+                  Up next
+                </span>
+              )}
+            </div>
+
+            <p className="mt-1 line-clamp-1 text-xs text-sub">{unit.instructions[0]}</p>
+          </div>
+        </div>
+
+        {unit.newKeys.length > 0 && (
+          <div className="hidden min-[480px]:flex shrink-0 flex-wrap gap-1" aria-label="Introduced keys">
+            {unit.newKeys.map((k) => (
+              <span
+                key={k}
+                className="rounded border border-border/60 bg-sub-alt/50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-sub"
+              >
+                {k === " " ? "space" : k}
+              </span>
+            ))}
+          </div>
         )}
-        aria-hidden="true"
-      >
-        {completed ? <CheckCircle2 size={18} /> : !unlocked ? <Lock size={15} /> : position}
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-display text-sm font-bold uppercase tracking-tight text-foreground sm:text-base">
-            {unit.name}
-          </h3>
-          {unit.newKeys.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {unit.newKeys.map((k) => (
-                <span key={k} className="rounded bg-sub-alt px-1.5 py-0.5 font-mono text-[10px] uppercase text-sub">
-                  {k === " " ? "space" : k}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        <p className="mt-1 line-clamp-1 text-xs text-sub">{unit.instructions[0]}</p>
-
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-1.5 w-full max-w-40 overflow-hidden rounded-full bg-sub-alt">
+      <div className="flex flex-col gap-2 pt-2 border-t border-border/40 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-1.5 w-24 sm:w-32 overflow-hidden rounded-full bg-sub-alt">
             <div
-              className="h-full bg-accent transition-[width] duration-300"
-              style={{ width: `${(stepsDone / unit.subLessonCount) * 100}%` }}
+              className={cn("h-full transition-[width] duration-300", completed ? "bg-accent" : "bg-accent/80")}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <span className="whitespace-nowrap font-mono text-[10px] text-sub">
-            {stepsDone}/{unit.subLessonCount}
+          <span className="font-mono text-[11px] text-sub">
+            {stepsDone} / {unit.subLessonCount} steps
           </span>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+          {progress && progress.passCount > 0 ? (
+            <div className="flex items-center gap-3 font-mono text-xs text-sub">
+              <span>
+                <strong className="font-bold text-foreground">{round(progress.avgWpm)}</strong>{" "}
+                <span className="text-[10px]">WPM</span>
+              </span>
+              <span>
+                <strong className="font-bold text-foreground">{round(progress.avgAccuracy)}%</strong>{" "}
+                <span className="text-[10px]">ACC</span>
+              </span>
+            </div>
+          ) : (
+            <span className="font-mono text-[11px] text-sub">Target: {unit.minAccuracy}% acc</span>
+          )}
+
+          {unlocked ? (
+            <span
+              className={cn(
+                "flex h-8 sm:h-9 items-center gap-1.5 rounded-lg px-3 sm:px-4 font-display text-[11px] font-bold uppercase tracking-wider transition-all",
+                isCurrent
+                  ? "bg-accent text-background hover:brightness-110"
+                  : completed
+                    ? "border border-border text-sub hover:border-accent hover:text-foreground"
+                    : "border border-accent/40 bg-accent/10 text-accent hover:bg-accent/20",
+              )}
+            >
+              {completed ? (
+                <>
+                  <RotateCcw size={11} aria-hidden="true" /> Review
+                </>
+              ) : inProgress ? (
+                <>
+                  <Play size={11} aria-hidden="true" /> Resume
+                </>
+              ) : (
+                <>
+                  Start <ChevronRight size={12} aria-hidden="true" />
+                </>
+              )}
+            </span>
+          ) : (
+            <span className="font-mono text-[11px] text-sub/70 flex items-center gap-1">
+              <Lock size={12} aria-hidden="true" /> Locked
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="flex w-full sm:w-auto shrink-0 items-center justify-end sm:justify-start gap-4 sm:gap-6">
-        <dl className="hidden gap-4 font-mono text-xs text-sub sm:flex">
-          <div className="text-right">
-            <dd className="font-bold text-foreground">{progress ? `${round(progress.avgWpm)}` : "—"}</dd>
-            <dt className="text-[9px] uppercase tracking-wider">Avg wpm</dt>
-          </div>
-          <div className="text-right">
-            <dd className="font-bold text-foreground">{progress ? `${round(progress.avgAccuracy)}%` : "—"}</dd>
-            <dt className="text-[9px] uppercase tracking-wider">Avg acc</dt>
-          </div>
-        </dl>
-
-        {unlocked && (
-          <span
-            className={cn(
-              "flex h-9 w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg px-4 font-display text-[11px] font-bold uppercase tracking-wider",
-              completed ? "border border-border text-sub group-hover/row:text-foreground" : "bg-accent text-background",
-            )}
-          >
-            {completed ? <RotateCcw size={12} aria-hidden="true" /> : <Play size={12} aria-hidden="true" />}
-            {completed ? "Restart" : inProgress ? "Resume" : "Start"}
-          </span>
-        )}
-      </div>
+      {!unlocked && lockedReason && (
+        <div className="text-[11px] text-sub/70 italic border-t border-border/20 pt-1.5">
+          {lockedReason}
+        </div>
+      )}
     </div>
   );
 
@@ -98,29 +166,21 @@ export function LessonUnitRow({ unit, position, unlocked, progress, lockedReason
     return (
       <div
         aria-disabled="true"
-        aria-label={lockedReason}
+        aria-label={lockedReason ?? "Locked unit"}
         tabIndex={0}
-        className="group/locked relative cursor-not-allowed focus:outline-none"
+        className="focus-visible:outline-2 focus-visible:outline-accent rounded-xl"
       >
-        {row}
-        {lockedReason && (
-          <div
-            role="tooltip"
-            className={cn(
-              "pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-max max-w-64 -translate-x-1/2 rounded-lg border border-border bg-background px-3 py-2 text-center font-mono text-[11px] text-sub shadow-lg",
-              "opacity-0 transition-opacity duration-150 group-hover/locked:opacity-100 group-focus-within/locked:opacity-100",
-            )}
-          >
-            {lockedReason}
-          </div>
-        )}
+        {content}
       </div>
     );
   }
 
   return (
-    <Link href={`/lessons/${unit.id}`} className="block">
-      {row}
+    <Link
+      href={`/lessons/${unit.id}`}
+      className="block rounded-xl focus-visible:outline-2 focus-visible:outline-accent"
+    >
+      {content}
     </Link>
   );
 }
