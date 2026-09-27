@@ -184,8 +184,9 @@ export default function AverageTypingSpeedPage() {
           These are broad, widely-cited bands rather than results from a single controlled study
           — typing-speed research uses inconsistent test lengths, text difficulty, and error
           penalties, so exact figures vary by source. Use them as a rough compass, not a
-          leaderboard. Looking for data-entry-specific hiring benchmarks? See{" "}
-          <Link href="/guides/data-entry-typing-test">the data entry typing test guide</Link>.
+          leaderboard. Looking for specific hiring benchmarks? See{" "}
+          <Link href="/guides/data-entry-typing-test">the data entry typing test guide</Link> or our{" "}
+          <Link href="/guides/911-dispatcher-typing-test">911 dispatcher typing test guide</Link> for emergency communications standards.
         </p>
 
         <h2 id="largest-study">What the largest typing study found</h2>

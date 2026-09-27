@@ -276,7 +276,9 @@ export default function OneHandedTypingGuidePage() {
         </ul>
         <p>
           Once your setup is configured, test your progress on our{" "}
-          <Link href="/">typing tests</Link> and track your consistency over time.
+          <Link href="/">typing tests</Link> and track your consistency over time. For complementary motor planning strategies and sensory accommodations, explore our guide on{" "}
+          <Link href="/guides/touch-typing-for-dyslexia-and-dysgraphia">touch typing for dyslexia and dysgraphia</Link> or align your physical workspace using our{" "}
+          <Link href="/guides/proper-typing-posture-and-ergonomics">proper typing posture and ergonomics guide</Link>.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

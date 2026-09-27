@@ -415,7 +415,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 <div className="relative mb-2 flex items-center justify-center gap-3 sm:gap-4">
                   <div className="relative h-12 w-12 sm:h-16 sm:w-16 overflow-hidden rounded-2xl border-2 border-rose-500/50 shadow-xl shadow-rose-950/50 shrink-0">
                     <Image
-                      src="/games/fruit-fury/character.jpg"
+                      src="/games/fruit-fury/character.webp"
                       alt="Red Panda Ninja Master"
                       fill
                       className="object-cover"
@@ -617,8 +617,8 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 <Image
                   src={
                     isNewRecord
-                      ? "/games/fruit-fury/victory.jpg"
-                      : "/games/fruit-fury/defeat.jpg"
+                      ? "/games/fruit-fury/victory.webp"
+                      : "/games/fruit-fury/defeat.webp"
                   }
                   alt=""
                   fill

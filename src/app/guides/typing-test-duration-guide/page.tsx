@@ -175,9 +175,9 @@ export default function TypingTestDurationGuidePage() {
           <li>
             <strong>Job or certification testing.</strong> Employment typing tests commonly run
             3–5 minutes because that length reflects sustained, real working speed rather than a
-            burst — see{" "}
-            <Link href="/guides/data-entry-typing-test">the data entry typing test guide</Link> for
-            specifics.
+            burst — see our guides on{" "}
+            <Link href="/guides/data-entry-typing-test">data entry tests</Link> and{" "}
+            <Link href="/guides/911-dispatcher-typing-test">911 dispatcher typing tests</Link> for role-specific duration requirements.
           </li>
           <li>
             <strong>Skill assessment for yourself.</strong> A short streak of same-duration tests

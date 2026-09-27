@@ -133,7 +133,7 @@ export function useFruitFury(
   useEffect(() => {
     if (typeof window === "undefined") return;
     const img = new Image();
-    img.src = "/games/fruit-fury/bg-arena.jpg";
+    img.src = "/games/fruit-fury/bg-arena.webp";
     img.onload = () => {
       bgImageRef.current = img;
       bgLoadedRef.current = true;

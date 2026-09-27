@@ -267,13 +267,15 @@ export default function HomeRowTypingPracticePage() {
 
         <h3>Drill 4: Real Home-Row English Words</h3>
         <p className="font-mono text-xs bg-sub-alt/40 p-3 rounded border border-border">
-          ask dad sad fall glad flask salads alas达 falls达 flasks dallas
+          ask dad sad fall glad flask salads alas falls flasks dallas
         </p>
 
         <p>
           Once you feel comfortable, jump into the interactive lesson engine: start with{" "}
           <Link href="/lessons/home-row-left">Lesson 1: Home Row Left</Link> and progress through Lessons 2, 3, and 4
-          in <Link href="/lessons">HeroTyping Lessons</Link>.
+          in <Link href="/lessons">HeroTyping Lessons</Link>, or expand your finger reaches with our guides on{" "}
+          <Link href="/guides/how-to-type-top-row-without-looking">top row reaches</Link> and{" "}
+          <Link href="/guides/bottom-row-typing-practice">bottom row typing practice</Link>.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

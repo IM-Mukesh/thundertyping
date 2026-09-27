@@ -217,7 +217,9 @@ export default function HowToTouchTypePage() {
         </ol>
         <p>
           That&apos;s the exact sequence <Link href="/lessons">HeroTyping&apos;s typing lessons</Link>{" "}
-          follow, with the finger diagram fading out as you stop needing it — guided practice
+          follow (for the full pedagogical breakdown, see our{" "}
+          <Link href="/guides/touch-typing-lesson-order">touch typing lesson order guide</Link>),
+          with the finger diagram fading out as you stop needing it — guided practice
           first, then independent practice once a stage feels automatic rather than effortful. Once
           the full map is comfortable, deliberately practicing without glancing down at all is its
           own skill — see{" "}

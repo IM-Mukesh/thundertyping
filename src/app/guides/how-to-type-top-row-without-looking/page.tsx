@@ -280,6 +280,10 @@ export default function HowToTypeTopRowWithoutLookingPage() {
             <Link href="/lessons/top-row-words">Lesson 8: Top Row &amp; Home Row Integrated Words</Link>
           </li>
         </ul>
+        <p>
+          Once your upward reaches feel automatic, proceed to our complementary guide on{" "}
+          <Link href="/guides/bottom-row-typing-practice">bottom row typing practice</Link> to conquer downward curls (Z, X, C, V, B, N, M).
+        </p>
 
         <FaqSection items={FAQ_ITEMS} />
         <SourceList sources={SOURCES} />

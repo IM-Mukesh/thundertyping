@@ -267,7 +267,8 @@ export default function TypingForProgrammersPage() {
 
         <p>
           Once your key mappings are locked in, test your execution speed on our{" "}
-          <Link href="/">typing tests</Link> or drill foundational finger coordination in our{" "}
+          <Link href="/">typing tests</Link>, practice with real code syntax snippets using our{" "}
+          <Link href="/guides/custom-text-typing-test">custom text typing test</Link>, or drill foundational finger coordination in our{" "}
           <Link href="/lessons">touch typing lessons</Link>.
         </p>
 

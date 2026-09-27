@@ -34,7 +34,7 @@ describe("HT-CONS-001: Forensic Consistency Metric Scenarios A-Q", () => {
   it("Scenario C: Burst-and-stall collapses consistency", () => {
     const burstStall = Array.from({ length: 30 }, (_, i) => (i % 2 === 0 ? 10 : 0));
     const score = calculateConsistency(makeSamples(burstStall));
-    assert.equal(score, 0);
+    assert.ok(score < 15, `Expected burst-and-stall to collapse below 15%, got ${score}%`);
   });
 
   it("Scenario D: Gradual acceleration produces moderate pacing consistency", () => {
@@ -91,7 +91,7 @@ describe("HT-CONS-001: Forensic Consistency Metric Scenarios A-Q", () => {
   it("Scenario K: Zero-output first interval computes rate delta without NaN", () => {
     const zeroFirst = makeSamples([0, 5, 5, 5, 5]);
     const score = calculateConsistency(zeroFirst);
-    assert.equal(score, 100);
+    assert.ok(score >= 45 && score <= 55, `Expected ~50% consistency for zero first interval, got ${score}%`);
     assert.ok(Number.isFinite(score));
   });
 
@@ -129,5 +129,27 @@ describe("HT-CONS-001: Forensic Consistency Metric Scenarios A-Q", () => {
       score15 < score120 - 15,
       `Short tests are statistically more sensitive to single stalls: 15s=${score15}, 120s=${score120}`,
     );
+  });
+
+  it("Scenario R: 5-second test with 100ms real-engine ticks at 90-100 WPM achieves Monkeytype parity (>= 90%)", () => {
+    for (const targetWpm of [90, 95, 100]) {
+      const charInterval = 60000 / (targetWpm * 5); // ms per char
+      const realSamples: WpmSample[] = [];
+      for (let t = 1000; t <= 5000; t += 100) {
+        const typed = Math.floor(t / charInterval);
+        realSamples.push({
+          t,
+          typed,
+          wpm: (typed / 5) / (t / 60000),
+          rawWpm: (typed / 5) / (t / 60000),
+          correct: typed,
+        });
+      }
+      const score = calculateConsistency(realSamples);
+      assert.ok(
+        score >= 90 && score <= 100,
+        `Expected >= 90% consistency for 5s test at ${targetWpm} WPM with 100ms ticks, got ${score}%`,
+      );
+    }
   });
 });

@@ -268,6 +268,10 @@ export default function TouchTypingRoadmapForBeginnersPage() {
             and track your upward trendline over the months.
           </li>
         </ol>
+        <p>
+          For learners with handwriting fatigue, dysgraphia, or reading differences, see our specialized accommodations in{" "}
+          <Link href="/guides/touch-typing-for-dyslexia-and-dysgraphia">touch typing for dyslexia and dysgraphia</Link>.
+        </p>
 
         <FaqSection items={FAQ_ITEMS} />
         <SourceList sources={SOURCES} />

@@ -99,51 +99,70 @@ export function calculateAccuracy(correct: number, incorrect: number, missed = 0
 export const CONSISTENCY_BUCKET_MS = 1000;
 
 /**
- * How evenly the typing was paced, as 100 minus the coefficient of variation
- * of per-second speed.
+ * Calculates consistency by mapping COV from [0, +infinity) to [100, 0).
+ * Matches Monkeytype's exact kogasa sigmoid mapping (packages/util/src/numbers.ts).
+ */
+export function kogasa(cov: number): number {
+  return 100 * (1 - Math.tanh(cov + Math.pow(cov, 3) / 3 + Math.pow(cov, 5) / 5));
+}
+
+/**
+ * How evenly the typing was paced, calculated from per-second raw WPM rates
+ * using Monkeytype's exact standard deviation / mean coefficient of variation
+ * and kogasa sigmoid mapping.
  *
- * The samples arrive as *cumulative* figures, and this deliberately does not
- * use their `wpm` field. A cumulative average converges by construction: its
- * spread shrinks as the test runs regardless of how erratic the typing was,
- * so scoring its deviation rewards nothing but test length and reports a high
- * number for everyone. Real bursts and pauses only show up in *instantaneous*
- * speed, which is what the per-bucket deltas below recover.
- *
- * Buckets are one second wide. The 100ms tick is too fine to be meaningful --
- * at 80 WPM a single tick holds under two characters, so rounding alone swings
- * the per-tick rate by tens of WPM and the score would measure sampling noise.
+ * Samples arrive as cumulative counts. We reconstruct the exact 1-second grid
+ * boundaries starting from t = 0 (0 characters typed), find the cumulative
+ * keystroke count at each 1-second boundary, and derive each second's discrete rate.
+ * Short tail fragments under 500ms are discarded to prevent boundary artifacts.
  */
 export function calculateConsistency(samples: WpmSample[]): number {
   if (samples.length < 2) return 100;
 
-  // Collapse the ticks into one-second buckets, keeping the last cumulative
-  // reading in each, then difference them to get each second's own output.
-  const buckets: WpmSample[] = [];
-  for (const sample of samples) {
-    const index = Math.floor(sample.t / CONSISTENCY_BUCKET_MS);
-    const previous = buckets[buckets.length - 1];
-    if (previous && Math.floor(previous.t / CONSISTENCY_BUCKET_MS) === index) {
-      buckets[buckets.length - 1] = sample;
-    } else {
-      buckets.push(sample);
-    }
-  }
-  if (buckets.length < 2) return 100;
+  const endMs = samples[samples.length - 1].t;
+  const tickCount = Math.floor(endMs / CONSISTENCY_BUCKET_MS);
+  if (tickCount < 1) return 100;
 
-  const rates: number[] = [];
-  for (let i = 1; i < buckets.length; i++) {
-    const deltaMs = buckets[i].t - buckets[i - 1].t;
-    if (deltaMs <= 0) continue;
-    const deltaChars = buckets[i].typed - buckets[i - 1].typed;
-    rates.push(deltaChars / CHARS_PER_WORD / (deltaMs / 60000));
+  // Reconstruct cumulative typed characters at each 1-second boundary (0, 1000, 2000, ..., tickCount * 1000).
+  // Baseline at t = 0 is always 0 characters.
+  const typedAtBoundary = [0];
+  for (let s = 1; s <= tickCount; s++) {
+    const targetMs = s * CONSISTENCY_BUCKET_MS;
+    let closestSample: WpmSample | null = null;
+    for (const sample of samples) {
+      if (sample.t <= targetMs) {
+        if (!closestSample || sample.t > closestSample.t) {
+          closestSample = sample;
+        }
+      }
+    }
+    typedAtBoundary.push(closestSample ? closestSample.typed : 0);
   }
+
+  // Derive per-second raw WPM rates across full 1-second intervals
+  const rates: number[] = [];
+  for (let s = 1; s <= tickCount; s++) {
+    const deltaChars = typedAtBoundary[s] - typedAtBoundary[s - 1];
+    rates.push(Math.round((deltaChars / CHARS_PER_WORD) * 60));
+  }
+
+  // Only include tail remainder if >= 500ms (Monkeytype boundary parity)
+  const remainderMs = endMs - tickCount * CONSISTENCY_BUCKET_MS;
+  if (remainderMs >= 500) {
+    const lastTyped = samples[samples.length - 1].typed;
+    const deltaChars = lastTyped - typedAtBoundary[tickCount];
+    rates.push(Math.round((deltaChars / CHARS_PER_WORD) / (remainderMs / 60000)));
+  }
+
   if (rates.length < 2) return 100;
 
   const mean = rates.reduce((a, b) => a + b, 0) / rates.length;
   if (mean <= 0) return 0;
   const variance = rates.reduce((sum, v) => sum + (v - mean) ** 2, 0) / rates.length;
-  const consistency = 100 - (Math.sqrt(variance) / mean) * 100;
-  return Math.max(0, Math.min(100, consistency));
+  const cov = Math.sqrt(variance) / mean;
+
+  const consistency = kogasa(cov);
+  return Number.isFinite(consistency) ? Math.max(0, Math.min(100, Math.round(consistency * 100) / 100)) : 0;
 }
 
 export function emptyCharTally(): CharTally {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { VOCAB_DIFFICULTIES, VOCAB_WORDS, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 import { VocabularyTest } from "@/components/vocabulary/vocabulary-test";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { cn } from "@/lib/utils/cn";
 
 const LABEL: Record<VocabDifficulty, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
 
@@ -66,6 +67,24 @@ export default async function VocabularyDifficultyPage({
           Try the <Link href="/lessons" className="text-accent underline underline-offset-2">typing lessons</Link>, or
           jump into a <Link href="/" className="text-accent underline underline-offset-2">plain typing speed test</Link>.
         </p>
+
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {VOCAB_DIFFICULTIES.map((tier) => (
+            <Link
+              key={tier}
+              href={`/vocabulary/${tier}`}
+              aria-current={tier === difficulty ? "page" : undefined}
+              className={cn(
+                "rounded-full border px-3 py-1 font-mono text-xs uppercase tracking-wider transition-colors",
+                tier === difficulty
+                  ? "border-accent bg-accent/15 text-accent font-semibold"
+                  : "border-border bg-sub-alt/30 text-sub hover:border-accent hover:text-foreground",
+              )}
+            >
+              {LABEL[tier]} Tier
+            </Link>
+          ))}
+        </div>
       </div>
 
       <VocabularyTest difficulty={difficulty} />

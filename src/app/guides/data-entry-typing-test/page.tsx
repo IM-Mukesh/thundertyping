@@ -141,7 +141,7 @@ export default function DataEntryTypingTestPage() {
             <strong>Government and certification examinations.</strong> These are typically the
             most standardized and strict, often with specific pass/fail accuracy cutoffs, but the
             exact requirements differ by country, exam, and role, and change over time — check
-            that exam&apos;s own official notification for current numbers.
+            that exam&apos;s own official notification for current numbers (for public-safety roles, see our dedicated <Link href="/guides/911-dispatcher-typing-test">911 dispatcher typing test guide</Link>).
           </li>
         </ul>
 

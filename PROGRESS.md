@@ -10,7 +10,7 @@
 cd path/to/herotyping
 npm install       # only needed if node_modules isn't already present
 npm run dev        # starts Next.js on http://localhost:3000 by default
-npm test            # 233 unit tests (Node's built-in runner, no extra dependency)
+npm test            # 234 unit tests (Node's built-in runner, no extra dependency)
 npm run lint        # must be clean before you consider anything "done"
 npm run build       # must be clean before you consider anything "done"
 npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
@@ -18,20 +18,109 @@ npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
 
 Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now.
 
-**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, and 2026-09-27, 233 cases across 50 suites) covering the scoring engine, consistency metric calibration (Scenarios A through Q), the mobile input path, the game anti-exploit rules, the countdown formatter, the game readiness/sitemap isolation rules, the lesson curriculum's content generation/gating, the vocabulary ratio & uniqueness rules, the TTS speech synthesis engine, the WPM/CPM/KPH calculator's conversion math, and sitemap route integrity — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
+**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, and 2026-09-27, 234 cases across 50 suites) covering the scoring engine, consistency metric calibration (Scenarios A through R), the mobile input path, the game anti-exploit rules, the countdown formatter, the game readiness/sitemap isolation rules, the lesson curriculum's content generation/gating, the vocabulary ratio & uniqueness rules, the TTS speech synthesis engine, the WPM/CPM/KPH calculator's conversion math, and sitemap route integrity — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
 
 **Write a test for anything scoring-related.** Every scoring bug found so far was invisible through the UI — a dropped keystroke and a missed render look identical on screen. The tests drive the pure reducer directly for that reason.
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **eleven typing games** under `/games` (including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons`, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **233-test suite**.
+As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons`, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **234-test suite**.
+
+**Session 2026-09-27 (Part 6) — Homepage Link Safety & Benefit Copy Refinement:**
+- **Audited & Remediated Issue IDs**:
+  - `HT-HOME-001` (Homepage Benefit Copy Refinement & Link Safety):
+    - Replaced the extended editorial section ("Deliberate Keyboard Mastery") in `src/components/layout/homepage-seo-content.tsx` with a concise, scannable product-benefit section ("Why HeroTyping?", 106 words total, target 50–120 words).
+    - Verified all 6 internal links are relative and resolve cleanly to valid production routes:
+      - `/guides/net-wpm-vs-gross-wpm`
+      - `/lessons`
+      - `/lessons/practice`
+      - `/vocabulary`
+      - `/games`
+      - `/privacy`
+    - Removed unsupported legal/compliance claims ("safe and compliant practice", "built around cognitive science", "keystrokes never leave your device").
+    - Fact-checked and verified claims against codebase implementation:
+      - Standard 5-character WPM convention (`CHARS_PER_WORD = 5` in `src/lib/typing-engine/stats.ts`).
+      - Exactly 28-unit touch-typing lesson curriculum in `src/lib/lessons/`.
+      - 100% client-side `localStorage` data persistence (profile, test history, achievements, lesson progress).
+      - Transparent disclosure of aggregate GA4 usage analytics.
+    - Verified repository-wide audit for `localhost:3000`: 0 production-facing occurrences; only safe developer docs (README.md, PROGRESS.md) and regression test assertions.
+- **Files Modified**:
+  - `src/components/layout/homepage-seo-content.tsx`
+  - `src/app/vocabulary/[difficulty]/page.tsx` (aria-current="page" accessibility enhancement)
+- **Tests & Verification Gates**:
+  - `npm test`: 234 passing unit tests across 50 test suites (0 failures).
+  - `npm run typecheck`: 0 TypeScript errors (`tsc --noEmit`).
+  - `npm run lint`: 0 ESLint errors (`eslint`).
+  - `npm run build`: All 150 static routes prerendered cleanly.
+
+**Session 2026-09-27 (Part 5) — Internal Link Graph Optimization, Fruit Fury Sub-100KB WebP Pipeline & Validation:**
+- **Audited & Remediated Issue IDs**:
+  - `HT-LINK-001` (Internal Linking Graph & Under-linked Guides Remediation):
+    - Re-mapped `relatedGuides` across all 43 guides in `src/lib/guides/guide-registry.ts` into 9 coherent semantic topical clusters (e.g. Ergonomics & Health, Row & Finger Technique, Keyboard Hardware & Layouts, Specialized Career & Speed, Testing & Metrics, Practice Strategy, Difficulty & Beginner Onboarding).
+    - Integrated contextual in-body editorial cross-links into 10 key guides:
+      - `data-entry-typing-test` -> `/guides/911-dispatcher-typing-test`
+      - `home-row-typing-practice` -> `/guides/top-row-without-looking` and `/guides/bottom-row-typing-practice` (fixed sample drill typo)
+      - `one-handed-typing-guide` -> `/guides/touch-typing-for-dyslexia-and-dysgraphia` and `/guides/proper-typing-posture-and-ergonomics`
+      - `how-to-touch-type` -> `/guides/touch-typing-lesson-order`
+      - `typing-for-programmers` -> `/guides/custom-text-typing-test`
+      - `touch-typing-roadmap-for-beginners` -> `/guides/touch-typing-for-dyslexia-and-dysgraphia`
+      - `touch-typing-finger-map` -> `/guides/home-row-typing-practice` and `/guides/bottom-row-typing-practice`
+      - `how-to-type-top-row-without-looking` -> `/guides/bottom-row-typing-practice`
+      - `average-typing-speed` -> `/guides/911-dispatcher-typing-test`
+      - `typing-test-duration-guide` -> `/guides/911-dispatcher-typing-test`
+    - Recalculated link graph across all 49 guide HTML routes:
+      - Zero orphan pages (100% crawlable).
+      - Minimum inbound link degree across all guides improved from 0-2 to **5**.
+      - Zero guides with in-degree <= 3 (previously 22 guides were underlinked).
+  - `HT-VOCAB-001` (Vocabulary Tier Inter-linking):
+    - Added accessible difficulty tier switcher pills in `src/app/vocabulary/[difficulty]/page.tsx` connecting Easy, Medium, and Hard tiers reciprocally.
+  - `HT-IMG-001` (Fruit Fury Game Asset Optimization & WebP Conversion):
+    - Converted all 6 uncompressed JPG assets in `public/games/fruit-fury/` using ImageMagick high-efficiency WebP compression:
+      - `cover.jpg` (869.0 KB) -> `cover.webp` (92.7 KB, 89.3% reduction)
+      - `hero.jpg` (869.0 KB) -> `hero.webp` (92.7 KB, 89.3% reduction)
+      - `bg-arena.jpg` (676.7 KB) -> `bg-arena.webp` (35.0 KB, 94.8% reduction)
+      - `character.jpg` (748.9 KB) -> `character.webp` (21.3 KB, 97.2% reduction)
+      - `victory.jpg` (818.4 KB) -> `victory.webp` (75.7 KB, 90.7% reduction)
+      - `defeat.jpg` (799.4 KB) -> `defeat.webp` (70.6 KB, 91.2% reduction)
+    - Total asset payload reduced from **4.88 MB to 388 KB (92.1% bandwidth savings)**.
+    - Every asset strictly conforms to the <100 KB budget.
+    - Updated direct image references in `src/components/games/fruit-fury-game.tsx` and `src/lib/games/fruit-fury/use-fruit-fury.ts`. Deleted obsolete `.jpg` files.
+    - Verified LCP priority loading remains intact (`priority`, `loading="eager"` on hero image).
+- **Files Modified**:
+  - `src/lib/guides/guide-registry.ts`
+  - `src/app/guides/average-typing-speed/page.tsx`
+  - `src/app/guides/data-entry-typing-test/page.tsx`
+  - `src/app/guides/home-row-typing-practice/page.tsx`
+  - `src/app/guides/how-to-touch-type/page.tsx`
+  - `src/app/guides/how-to-type-top-row-without-looking/page.tsx`
+  - `src/app/guides/one-handed-typing-guide/page.tsx`
+  - `src/app/guides/touch-typing-finger-map/page.tsx`
+  - `src/app/guides/touch-typing-roadmap-for-beginners/page.tsx`
+  - `src/app/guides/typing-for-programmers/page.tsx`
+  - `src/app/guides/typing-test-duration-guide/page.tsx`
+  - `src/app/vocabulary/[difficulty]/page.tsx`
+  - `src/components/games/fruit-fury-game.tsx`
+  - `src/lib/games/fruit-fury/use-fruit-fury.ts`
+  - `public/games/fruit-fury/` (6 `.webp` added, 6 `.jpg` removed)
+  - `src/lib/typing-engine/stats.ts` (preserved from previous authorized pass)
+  - `src/lib/typing-engine/consistency.test.ts` (preserved from previous authorized pass)
+- **Tests & Verification Gates**:
+  - `npm test`: 234 passing unit tests across 50 test suites (0 failures).
+  - `npm run typecheck`: 0 errors (`tsc --noEmit`).
+  - `npm run lint`: 0 ESLint errors (`eslint`).
+  - `npm run build`: All 150 static routes prerendered cleanly.
+  - Link Graph Audit: 0 orphans, min in-degree = 5, 0 guides under-linked.
+  - Asset Audit: Zero `.jpg` references in prerendered HTML for `/games/fruit-fury`.
+- **Remaining SEO Opportunities**:
+  - Dedicated duration landing pages (e.g. 1-minute, 30-second typing tests) when authorized.
+  - Expanding vocabulary word banks beyond 1,300 words with multi-language corpora.
 
 **Session 2026-09-27 (Part 4 & Final Master Pass) — Final Production Readiness, Zero-Unverified-Claims & Master Hardening Pass:**
 - **Strict Forensic Verification Standards Applied**:
   - Differentiated all audit items across 5 distinct states: `SOURCE VERIFIED`, `BUILD VERIFIED`, `LOCAL RUNTIME VERIFIED`, `PRODUCTION VERIFIED`, and `EXTERNAL VERIFICATION REQUIRED`.
   - Zero false claims or conflation between local source/build status and live deployed infrastructure.
 - **Audited & Remediated Issue IDs**:
-  - `HT-CONS-001` (Typing Consistency Metric Calibration & Edge-Case Forensics): Implemented comprehensive test suite in `src/lib/typing-engine/consistency.test.ts` covering mathematical Scenarios A through Q (steady typing, natural variation, burst-pause-burst, gradual acceleration, start pause, terminal pause, single mid-test pause, backspacing intervals, low-speed typing, 2-sample short tests, zero-output first interval, zero mean rate, deterministic identical output, duration scaling across 15s/30s/60s/120s, and short-test stall sensitivity). Expanded technical documentation in `src/app/guides/how-to-improve-typing-consistency/page.tsx`.
+  - `HT-CONS-001` (Typing Consistency Metric Calibration & Monkeytype Parity): Diagnosed and resolved consistency under-reporting defect (e.g. 5s steady typing scoring 41% instead of 90%+). Replaced tick-based bucket overwriting and unanchored boundary slicing with Monkeytype's exact 1-second grid boundary reconstruction, $t=0$ cumulative baseline anchor, elimination of fractional tail slivers under 500ms, and integration of Monkeytype's official `kogasa` sigmoid normalization mapping ($100 \times (1 - \tanh(\text{cov} + \text{cov}^3/3 + \text{cov}^5/5))$). Expanded test suite in `src/lib/typing-engine/consistency.test.ts` to 18 scenarios (Scenarios A through R), confirming $\ge 90\%$ consistency for 5-second runs with 100ms real-engine ticks.
   - `HT-PROD-001` (Achievement Single Source of Truth): Unified earned achievement calculation across all surfaces (`${totalEarned}/37`) in `profile-client.tsx`, `achievements-client.tsx`, and `player-summary.tsx`.
   - `HT-TERMS-001` (Terms of Use Scope Alignment): Updated `src/app/terms/page.tsx` to authorize educational, classroom, and workplace typing skill training.
   - `HT-PRI-001` (Privacy, Cookies, Local Storage & GA4 Alignment): Confirmed 100% client-side privacy architecture with zero PII logging. Corrected homepage marketing copy in `src/components/layout/homepage-seo-content.tsx` to eliminate inaccurate "zero tracking cookies" statement, accurately disclosing local storage persistence and GA4 session analytics.
@@ -50,8 +139,9 @@ As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-res
   - `https://herotyping.com/debug/typing-engine`: HTTP/2 404 (cleanly isolated).
   - `https://herotyping.com/profile`: HTTP/2 200 with `<meta name="robots" content="noindex, follow">`.
   - Prerender Manifest Audit: Verified exact delta between 150 static routes and 100 sitemap URLs (40 OG-image binary PNG endpoints, 7 utility/asset routes, 2 private/debug routes, 1 upcoming unlisted game). Exactly 100 indexable content pages.
+  - **Google Indexation & Technical SEO Re-Audit**: Formally retracted previous invalid P0 "site absent from index" finding. Direct user verification confirms core URLs (`/`, `/games`, `/lessons`, `/guides`, `/privacy`) are actively indexed and appearing in Google Search results. All 100 public sitemap URLs verified technically indexable (HTTP 200, self-referencing canonicals, noindex absent, valid JSON-LD, allowed in robots.txt).
 - **Verification Gates**:
-  - `npm test`: 233 passing unit tests across 50 test suites (0 failures).
+  - `npm test`: 234 passing unit tests across 50 test suites (0 failures).
   - `npm run typecheck`: 0 TypeScript errors (`tsc --noEmit`).
   - `npm run lint`: 0 ESLint errors (`eslint`).
   - `npm run build`: 150 static routes prerendered cleanly.
@@ -168,8 +258,8 @@ As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-res
 1. **`NEXT_PUBLIC_SITE_URL` is configured with default `https://herotyping.com`**, and documented in `.env.example`. Can be set per-environment for staging/preview deployments.
 2. **AdSense architecture is production-ready**: `AdSlot` separates DOM placement IDs from numeric AdSense unit IDs (`isValidAdSenseSlotId`) to prevent non-numeric internal keys from being emitted into `data-ad-slot`. Ads remain conditionally disabled until `NEXT_PUBLIC_ADSENSE_CLIENT_ID` is supplied.
 3. **Google Analytics 4 is live** (production-only, `src/lib/analytics/constants.ts` + `<GoogleAnalytics>` in `layout.tsx`). The Privacy Policy has been updated with accurate disclosures (anonymized metrics, no keystrokes transmitted).
-4. **SEO content is comprehensive**: 23 guides are live, fully cross-linked, with fact-checked health/employment claims, sticky TOC navigation, and metadata synchronization.
-5. **Eleven games shipped**: `falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush`, `spellbound`, `typing-survivor`, `ghost-racer`, `card-battle`, and flagship `fruit-fury`. Upcoming games (e.g. `spellbound`) are generically excluded from sitemaps and arcade achievement barriers, with `robots: noindex, follow`.
+4. **SEO content is comprehensive**: 43 guides across 6 category hubs are live, fully cross-linked, with fact-checked health/employment claims, sticky TOC navigation, and metadata synchronization.
+5. **10 playable games shipped (11 total including upcoming Spellbound preview)**: `falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush`, `spellbound`, `typing-survivor`, `ghost-racer`, `card-battle`, and flagship `fruit-fury`. Upcoming games (e.g. `spellbound`) are generically excluded from sitemaps and arcade achievement barriers, with `robots: noindex, follow`.
 6. **28 lesson units shipped** across Beginner (17)/Intermediate (6)/Advanced (5), plus per-key weak-spot tracking.
 7. **Accessibility & focus management hardened**: Global high-contrast `:focus-visible`, Tab key hijacking removed from results screen, 44px min touch targets, mobile drawer focus trap & restore, custom text modal focus trap, and `inert` focus containment during active tests.
 8. **Live countdown formatting resolved**: `formatCountdown` (<60s -> "0s", 60s+ -> "1:00", 1h+ -> "1:00:00") implemented with tabular digits and zero layout jumping.

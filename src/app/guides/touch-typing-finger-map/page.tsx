@@ -224,7 +224,9 @@ export default function TouchTypingFingerMapPage() {
         </ol>
         <p>
           That&apos;s the exact order <Link href="/lessons">HeroTyping&apos;s typing lessons</Link> run,
-          with a live hand diagram fading out as you stop needing it. For the day-by-day version
+          with a live hand diagram fading out as you stop needing it. For targeted drill sets across keyboard zones, explore our guides on{" "}
+          <Link href="/guides/home-row-typing-practice">home row typing practice</Link> and{" "}
+          <Link href="/guides/bottom-row-typing-practice">bottom row typing practice</Link>. For the day-by-day version
           of this plan, see{" "}
           <Link href="/guides/how-to-type-without-looking-at-the-keyboard">
             how to type without looking at the keyboard
