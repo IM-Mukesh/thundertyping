@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "node --experimental-strip-types --test --import ./scripts/test-setup.mjs \"src/**/*.test.ts\"",
     "images:optimize": "node ./scripts/optimize-guide-images.mjs",
     "images:validate": "node ./scripts/validate-guide-images.mjs"
