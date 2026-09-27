@@ -10,7 +10,7 @@
 cd path/to/herotyping
 npm install       # only needed if node_modules isn't already present
 npm run dev        # starts Next.js on http://localhost:3000 by default
-npm test            # 185 unit tests (Node's built-in runner, no extra dependency)
+npm test            # 218 unit tests (Node's built-in runner, no extra dependency)
 npm run lint        # must be clean before you consider anything "done"
 npm run build       # must be clean before you consider anything "done"
 npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
@@ -18,13 +18,41 @@ npx tsc --noEmit    # typecheck; the build does not fail on type errors alone
 
 Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll pick a different port automatically if that one's busy). No environment variables, no database, no API keys are required to run this locally — it's a fully static-data, `localStorage`-only frontend right now.
 
-**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, and 2026-09-27, 185 cases) covering the scoring engine, the mobile input path, the game anti-exploit rules, the countdown formatter, the game readiness/sitemap isolation rules, the lesson curriculum's content generation/gating, the vocabulary ratio & uniqueness rules, the TTS speech synthesis engine, and the WPM/CPM/KPH calculator's conversion math — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
+**The bar for "done" is: `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run build` all clean, plus live verification in a real browser for anything UI-observable.** A test suite now exists (2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, and 2026-09-27, 218 cases across 49 suites) covering the scoring engine, the mobile input path, the game anti-exploit rules, the countdown formatter, the game readiness/sitemap isolation rules, the lesson curriculum's content generation/gating, the vocabulary ratio & uniqueness rules, the TTS speech synthesis engine, the WPM/CPM/KPH calculator's conversion math, and sitemap route integrity — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+** and adds no dependency. `scripts/test-setup.mjs` maps the `@/*` alias for it, since Node does not read `tsconfig` paths.
 
 **Write a test for anything scoring-related.** Every scoring bug found so far was invisible through the UI — a dropped keystroke and a missed render look identical on screen. The tests drive the pure reducer directly for that reason.
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **eleven typing games** under `/games` (including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons`, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **23 comprehensive SEO guides** under `/guides`, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **185-test suite**.
+As of **2026-09-27**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **eleven typing games** under `/games` (including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons`, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **218-test suite**.
+
+**Session 2026-09-27 (Part 2) — Guides Information Architecture Correction, 20 Flagship Guides, Hierarchical Images & Category-First Hub:**
+- **Information Architecture Transformation (`/guides`, `guide-category-view.tsx`, `guide-registry.ts`)**:
+  - Restructured the Guides library from a flat article archive into a scalable 3-tier educational taxonomy:
+    `/guides` (Category Directory) -> `/guides/<category>` (Article Directory) -> `/guides/<article-slug>` (Individual Content Guide) -> HeroTyping interactive feature.
+  - Re-architected `/guides` (`src/app/guides/page.tsx`): Eliminated the massive 43-article archive loop. The page now acts as a true category-first hub rendering:
+    1. Hero Header with concise educational summary and fast category jump pills with live guide counts.
+    2. Start Here Roadmap: 3 core foundational pillars (Pillar 1: Form -> `how-to-touch-type`, Pillar 2: Precision -> `how-to-improve-typing-accuracy`, Pillar 3: Velocity -> `how-to-improve-typing-speed`).
+    3. Category Directory Cards: Exactly 6 category hub cards (`typing-basics`, `typing-practice`, `improve-your-typing`, `typing-tests-tools`, `keyboard-skills`, `typing-work-study`) featuring dynamic counts (`getGuidesByCategory(catId).length`), icons, descriptions, and accessible links to `/guides/<category>`. Zero article cards exposed on the root hub.
+    4. Deliberate Practice CTA: Direct product action links to `/`, `/lessons`, `/lessons/practice`, `/games`, and `/vocabulary`.
+    5. Category Directory Footer for rapid cross-linking.
+  - Dedicated Category Hub Views (`GuideCategoryView` in `src/components/guides/guide-category-view.tsx`): Powered by unified metadata from `GUIDE_CATEGORIES`, each category page displays structured breadcrumbs, recommended learning progression, individual article cards, and context-specific HeroTyping product CTAs.
+- **20 Flagship Guides Implemented & Integrated**:
+  - Researched, authored, fact-checked, and integrated 20 new high-quality authority guides across all 6 categories, expanding the total guide inventory from 23 to **43 guides** (50 indexable guide routes including hub and category pages).
+  - Full TypeScript data registry (`src/lib/guides/guide-registry.ts` and `src/lib/guides/guide-types.ts`) guaranteeing type-safe metadata, reading times, topic tags, hero image paths, and category associations.
+  - Every guide features customized visual assets, structured FAQs with schema markup, interactive tool tie-ins, and contextual internal cross-links.
+- **Hierarchical Image Architecture & Optimization Pipeline**:
+  - Restructured image assets from flat root paths into category/slug namespaces: `public/guides/<category>/<article-slug>/<filename>.webp`.
+  - Stored flagship 20 contact sheet at `public/guides/shared/flagship-20-contact-sheet.webp` (64 KB).
+  - Built automated ImageMagick compression script (`scripts/optimize-guide-images.mjs`, `npm run images:optimize`) ensuring every WebP is optimized under 80 KB target (hard target <100 KB).
+  - Built automated image validation script (`scripts/validate-guide-images.mjs`, `npm run images:validate`) checking directory hierarchy, disk presence, file sizes, and registry alignment.
+  - Current image audit: 36 guide visual assets + 1 shared contact sheet on disk, 0 missing, 0 > 100 KB, 0 root violations. Average size: 41.5 KB. Total disk footprint: 1.54 MB.
+- **Single Authoritative Sitemap (`src/app/sitemap.ts`) & Automated Testing**:
+  - Next.js `MetadataRoute.Sitemap` generator in `src/app/sitemap.ts` verified as the single source of truth for `/sitemap.xml`.
+  - Exactly 100 valid production URLs using `https://herotyping.com`, 0 duplicates, 0 localhost/HTTP, explicit `lastModified` dates.
+  - Includes `/guides`, all 6 category hubs, all 43 guides, 11 games, 30 lesson routes, 4 vocabulary routes, and core utility pages.
+  - Added automated sitemap regression test suite in `src/lib/seo/metadata.test.ts` enforcing all categories, all registry guides, zero duplicates, clean path format, and ISO dates.
+- **Quality Gates**: `npm test` (218/218 passing, 49 suites), `npm run lint` (0 errors), `npm run typecheck` (0 errors), `npm run images:validate` (36/36 passing), `npm run build` (all 150 static routes prerendered).
 
 **Session 2026-09-27 — Production Readiness, AdSense Safety, Accessibility & Quality Gate Hardening:**
 - **AdSense Placement ID vs Slot ID Separation (`ad-slot.tsx`, `ad-rail.tsx`)**: Re-architected `AdSlot` to decouple internal DOM placement keys (e.g. `footer-leaderboard`) from actual numeric AdSense slot IDs (`slotId`). Added strict numeric verification (`isValidAdSenseSlotId`) to prevent non-numeric placement keys from ever being emitted into `data-ad-slot`. Preserved anti-distraction guardrails and fixed-dimension layout placeholders.
@@ -606,18 +634,143 @@ Earlier competitive research (Monkeytype, 10FastFingers, TypingClub, NitroType/T
 9. `/guides/one-handed-typing-guide` (Half-QWERTY mirror layout, single-handed Dvorak, adaptive accessibility)
 10. `/guides/how-to-type-numbers-and-symbols-without-looking` (numrow finger reaches, shift-symbol pairs, numpad touch method)
 
-**Tier 2 — still open:**
-6. At most one or two duration-specific landing pages (e.g. `/typing-test/1-minute`) — only with real, distinct copy about *why* that duration matters, not a template with the number swapped. Note `/guides/typing-test-duration-guide` (shipped 2026-09-25) already covers the *comparison* angle; a dedicated per-duration landing page would need to add something that guide doesn't, not restate it.
-7. A shareable/downloadable results certificate (feature + landing page) — proven pattern (see Ratatype) for résumé/job-application use. Still not built.
+## Guides Architecture & Category-First Content System
 
-**Tier 3 — later, larger investments:**
-8. Job/exam-context long-tail content (e.g. government-exam typing test prep, especially India-specific) — `/guides/data-entry-typing-test` (2026-09-25) touches this (KPH conversion, commonly-cited employer/exam benchmarks) but deliberately stops short of inventing country-specific policy; genuine localized depth is still open.
-9. Non-English language support generally — strong future opportunity, explicitly out of scope for the current English MVP.
+The HeroTyping Guides system uses a scalable 3-tier educational information architecture designed to support a deep knowledge base without cluttering root navigation:
 
-**Recommended next content cluster** (from the 2026-09-25 session's own closing recommendation, not yet started): a "typing games/practice by purpose" cluster (e.g. "typing games for kids," "typing test for beginners vs. typing games") adjacent to the existing content, reusing the same `GuideLayout`/`Callout`/`FaqSection` components — but only worth doing once the current 23 guides show real engagement; don't scale content purely for page count (see Guardrails below).
+```
+/guides                     -> CATEGORY DIRECTORY (Landing hub, 6 category cards, 3 pillars, product CTA)
+   ↓
+/guides/<category>          -> ARTICLE DIRECTORY (Pillar hub, lists all guides in category, curriculum progression)
+   ↓
+/guides/<article-slug>      -> INDIVIDUAL GUIDE (In-depth tutorial, interactive tools, structured FAQs)
+   ↓
+HeroTyping Features         -> DELIBERATE PRACTICE (Lessons, Weak-Key Practice, Games, Vocabulary)
+```
+
+### Information Architecture Rules
+1. **`/guides` is strictly the Category Directory**: It displays the 6 category cards, a compact 3-pillar "Start Here" roadmap, and a product action CTA. It does **not** render all individual guide cards or loop through article archives.
+2. **`/guides/<category>` is the Article Directory**: Each category page (`GuideCategoryView`) lists all guides in that pillar, displays a recommended learning progression ladder, and provides a category-specific product CTA.
+3. **`/guides/<article-slug>` is the individual guide**: Permanent, canonical, non-category-prefixed URL structure. Existing URLs remain stable and must never be moved to `/guides/<category>/<slug>`.
+4. **Deliberate Product Tie-In**: Every guide actively connects mental models to hands-on keyboard practice on HeroTyping (speed test, guided lessons, weak-key drills, arcade games, or vocabulary).
+
+### The Six Guide Categories
+
+| Category | Slug & URL | Scope & Focus | Guide Count | Primary Product Link |
+|---|---|---|---|---|
+| **Typing Basics** | `typing-basics`<br>`/guides/typing-basics` | Home row finger placement, blind typing technique, tactile anchor bumps, and ergonomic posture foundations. | 7 guides | `/lessons` (Beginner Lessons) |
+| **Typing Practice** | `typing-practice`<br>`/guides/typing-practice` | Deliberate practice frameworks, physical stretches, tendon glides, classroom curricula, and structured drills. | 10 guides | `/lessons/practice` (Weak-Key Drills) |
+| **Improve Your Typing** | `improve-your-typing`<br>`/guides/improve-your-typing` | Diagnostic speed protocols, motor learning frameworks, accuracy stabilization, and speed plateau breakthroughs. | 7 guides | `/` (Typing Speed Test) |
+| **Typing Tests & Tools** | `typing-tests-tools`<br>`/guides/typing-tests-tools` | Measurement formulas (Net vs. Gross WPM, CPM, KPH), live interactive converters, and test duration science. | 6 guides | `/guides/wpm-cpm-kph-calculator` (Live Calculator) |
+| **Keyboard Skills** | `keyboard-skills`<br>`/guides/keyboard-skills` | Blind number and symbol typing, finger reach vectors, mechanical switch selection, and alternative layouts. | 9 guides | `/lessons/numbers-low` (Number Row) |
+| **Typing for Work & Study** | `typing-work-study`<br>`/guides/typing-work-study` | Programming workflows, emergency dispatch benchmarks (CritiCall), one-handed typing, and dyslexia accommodations. | 4 guides | `/games` (Arcade Games) |
+
+*Total active guides in registry*: **43 guides** across 6 category pillars.
+
+### Flagship 20 Editorial Plan & Production Status
+
+All 20 flagship guides of the educational content roadmap have been researched, authored, technically integrated, and validated in the repository:
+
+| # | Article Slug | Category | Word Count | Status | Embedded Visual Asset |
+|---|---|---|---|---|---|
+| 1 | `touch-typing-lesson-order` | Typing Basics | ~2,100 | **IMPLEMENTED & VALIDATED** | `touch-typing-curriculum-flow.webp` (21.4 KB) |
+| 2 | `touch-typing-roadmap-for-beginners` | Typing Basics | ~2,250 | **IMPLEMENTED & VALIDATED** | `beginner-touch-typing-timeline.webp` (19.6 KB) |
+| 3 | `home-row-typing-practice` | Keyboard Skills | ~2,400 | **IMPLEMENTED & VALIDATED** | `home-row-asdf-jkl-guide.webp` (18.0 KB) |
+| 4 | `how-to-type-top-row-without-looking` | Keyboard Skills | ~2,150 | **IMPLEMENTED & VALIDATED** | `top-row-reach-vectors.webp` (20.4 KB) |
+| 5 | `bottom-row-typing-practice` | Keyboard Skills | ~2,100 | **IMPLEMENTED & VALIDATED** | `bottom-row-flexion-mechanics.webp` (18.4 KB) |
+| 6 | `number-row-typing-practice` | Keyboard Skills | ~2,300 | **IMPLEMENTED & VALIDATED** | `number-row-reaches-guide.webp` (17.3 KB) |
+| 7 | `punctuation-typing-practice` | Keyboard Skills | ~2,200 | **IMPLEMENTED & VALIDATED** | `punctuation-shift-coordination.webp` (17.0 KB) |
+| 8 | `practice-typing-numbers-and-symbols-without-looking` | Keyboard Skills | ~2,350 | **IMPLEMENTED & VALIDATED** | `mixed-numeric-symbol-patterns.webp` (22.3 KB) |
+| 9 | `typing-practice-for-difficult-keys` | Keyboard Skills | ~2,400 | **IMPLEMENTED & VALIDATED** | `difficult-reaches-finger-mechanics.webp` (21.4 KB) |
+| 10 | `how-to-find-your-weakest-typing-keys` | Improve Your Typing | ~2,100 | **IMPLEMENTED & VALIDATED** | `weak-key-diagnostic-heatmap.webp` (20.1 KB) |
+| 11 | `typing-practice-for-weak-keys` | Typing Practice | ~2,250 | **IMPLEMENTED & VALIDATED** | `weak-key-drill-progression.webp` (19.0 KB) |
+| 12 | `how-to-use-typing-test-results-to-improve` | Typing Tests & Tools | ~2,300 | **IMPLEMENTED & VALIDATED** | `typing-test-improvement-loop.webp` (23.5 KB) |
+| 13 | `why-wpm-is-high-accuracy-is-low` | Improve Your Typing | ~2,200 | **IMPLEMENTED & VALIDATED** | `error-backspace-penalty-chart.webp` (14.8 KB) |
+| 14 | `how-to-improve-typing-consistency` | Improve Your Typing | ~2,150 | **IMPLEMENTED & VALIDATED** | `typing-consistency-waveform.webp` (22.7 KB) |
+| 15 | `how-many-minutes-a-day-to-practice-typing` | Typing Practice | ~2,050 | **IMPLEMENTED & VALIDATED** | `daily-practice-duration-comparison.webp` (18.5 KB) |
+| 16 | `how-to-structure-typing-practice-session` | Typing Practice | ~2,200 | **IMPLEMENTED & VALIDATED** | `practice-session-block-architecture.webp` (16.3 KB) |
+| 17 | `custom-text-typing-test` | Typing Tests & Tools | ~2,100 | **IMPLEMENTED & VALIDATED** | `custom-text-typing-workflow.webp` (16.3 KB) |
+| 18 | `typing-test-vs-typing-practice` | Typing Practice | ~2,150 | **IMPLEMENTED & VALIDATED** | `test-vs-practice-comparison.webp` (18.8 KB) |
+| 19 | `typing-games-vs-typing-tests` | Typing Practice | ~2,200 | **IMPLEMENTED & VALIDATED** | `arcade-games-vs-timed-tests.webp` (16.6 KB) |
+| 20 | `vocabulary-typing-practice` | Typing Practice | ~2,300 | **IMPLEMENTED & VALIDATED** | `vocabulary-orthographic-mapping.webp` (18.4 KB) |
+
+### Image System Architecture & Optimization Pipeline
+
+The visual asset system enforces strict modularity, category isolation, and bandwidth efficiency:
+
+```
+public/guides/
+├── shared/
+│   └── flagship-20-contact-sheet.webp      (64 KB overview reference)
+├── typing-basics/
+│   └── <article-slug>/<filename>.webp
+├── typing-practice/
+│   └── <article-slug>/<filename>.webp
+├── improve-your-typing/
+│   └── <article-slug>/<filename>.webp
+├── typing-tests-tools/
+│   └── <article-slug>/<filename>.webp
+├── keyboard-skills/
+│   └── <article-slug>/<filename>.webp
+└── typing-work-study/
+    └── <article-slug>/<filename>.webp
+```
+
+**Optimization & Validation Tooling:**
+- **Automated Optimizer**: `scripts/optimize-guide-images.mjs` (`npm run images:optimize`). Uses ImageMagick to resize (max 1200px), strip EXIF metadata, and apply WebP lossy compression with Lanczos resampling.
+- **Automated Validator**: `scripts/validate-guide-images.mjs` (`npm run images:validate`). Asserts zero flat root files in `public/guides/`, checks all registered assets exist on disk, verifies every file is strictly under 100 KB, and calculates total footprint.
+- **Compression Standards**:
+  - Preferred Target: `<80 KB`
+  - Hard Target: `<100 KB`
+  - Current Status: **36 guide visual assets + 1 shared contact sheet on disk**. All 36 assets range between **14.8 KB and 96.2 KB** (median ~21 KB, average 41.5 KB). Total visual footprint on disk is **1.54 MB**. 0 files missing, 0 violations.
+
+### Sitemap Architecture & Technical SEO
+
+- **Single Authoritative Source of Truth**: Next.js App Router metadata route in `src/app/sitemap.ts`. Generates `/sitemap.xml` dynamically and prerenders static XML at build time. No manually maintained static XML files.
+- **Production Base URL**: `https://herotyping.com` (configurable via `NEXT_PUBLIC_SITE_URL`).
+- **URL Inventory Audit (Exactly 100 Routes)**:
+  - `1` Homepage (`/`)
+  - `3` Static Company Pages (`/about`, `/privacy`, `/terms`)
+  - `1` Achievements Page (`/achievements`)
+  - `1` Main Guides Hub (`/guides`)
+  - `6` Category Hub Pages (`/guides/typing-basics`, `/guides/typing-practice`, `/guides/improve-your-typing`, `/guides/typing-tests-tools`, `/guides/keyboard-skills`, `/guides/typing-work-study`)
+  - `43` Individual Guide Content Pages (`/guides/<slug>`)
+  - `11` Arcade Game Pages (`/games` hub + 10 playable game routes)
+  - `30` Lesson Pages (`/lessons` hub, `/lessons/practice`, + 28 curriculum lesson units)
+  - `4` Vocabulary Pages (`/vocabulary` hub + 3 difficulty tiers)
+- **Formatting Guardrails**:
+  - 0 duplicate URLs.
+  - 0 trailing slashes (except root).
+  - 0 query parameters or hash fragments.
+  - 0 localhost or non-production protocols.
+  - ISO 8601 hand-maintained `lastModified` dates (`YYYY-MM-DD`).
+- **Automated Regression Suite**: Integrated in `src/lib/seo/metadata.test.ts` (runs on `npm test`). Automatically tests presence of `/guides`, all 6 category hubs, all 43 guides in `GUIDE_REGISTRY`, zero duplicate paths, and valid date formats.
+- **Search Console Distinction**: Technical sitemap inclusion ensures discoverability and crawl eligibility; Google indexing depends on Search Console submission, crawl queue, and domain authority.
+
+### Analytics Status & Product Telemetry
+
+- **Engine**: Google Analytics 4 via `@next/third-parties/google` `<GoogleAnalytics>` in root layout.
+- **Measurement ID**: Stored in `src/lib/analytics/constants.ts`, gated strictly to `process.env.NODE_ENV === "production"` so local development never pollutes analytics metrics.
+- **Funnel Instrumentation Objective**: Moving beyond raw traffic volume to measure the complete learning and practice funnel:
+  1. Test start vs test completion (WPM, accuracy, mode).
+  2. Lesson starts vs lesson pass/completion rate.
+  3. Weak-key practice drill engagement.
+  4. Arcade game starts vs game-overs.
+  5. Placement assessment usage.
+  6. Guide-to-practice conversion.
+- **Privacy Compliance**: Privacy policy updated with transparent aggregate disclosures; zero keystroke logging, zero PII transmission.
+
+### Testing & Verification Status
+
+Continuous quality gates enforced across every change:
+- `npm test`: **218 passed / 0 failed** across 49 test suites (typing engine scoring, mobile commit, anti-exploit rules, countdown timer, curriculum gating, vocabulary ratios & TTS, calculator conversions, sitemap integrity).
+- `npm run lint`: **0 errors, 0 warnings** (ESLint 9).
+- `npm run typecheck`: **0 type errors** (`tsc --noEmit`).
+- `npm run images:validate`: **36/36 guide images valid**, 0 missing, 0 > 100 KB, 0 root violations.
+- `npm run build`: **All 150 static pages successfully compiled and prerendered** in ~3.0s.
 
 ### Internal linking
-**Now genuinely dense, not just header/footer chrome.** Every guide cross-links related guides contextually (not for SEO's own sake — each link was checked to actually help the reader), the `/guides` hub lists and links all 23 with real per-card descriptions, and the three 2026-09-25 flagship resources link both ways into the guides they're most related to (calculator ↔ `net-wpm-vs-gross-wpm`/`data-entry-typing-test`; finger map ↔ `how-to-touch-type`). The homepage's minimal footnote section (`HomepageSeoContent`) and feature nav (`HomepageFeatureNav`) still link out to `/lessons`, `/games`, `/vocabulary`, `/guides` — deliberately kept small per an explicit earlier instruction not to let SEO content visually compete with the product (see "Known issues fixed"-style guardrails elsewhere in this file's history). `SiteFooter`'s "Guides" link now correctly points at the `/guides` index, not a single specific guide. Achievements page previously had **zero** internal links — fixed 2026-09-24/25 (links to `/lessons` and `/games`, "go earn some").
+**Now genuinely dense and hierarchical.** Every guide cross-links related guides contextually, each category hub displays structured learning paths, and the `/guides` hub guides users to the 6 category pillars. The three flagship resources link both ways into the guides they're most related to (calculator ↔ `net-wpm-vs-gross-wpm`/`data-entry-typing-test`; finger map ↔ `how-to-touch-type`). The homepage feature nav (`HomepageFeatureNav`) links out to `/lessons`, `/games`, `/vocabulary`, `/guides`. `SiteFooter`'s "Guides" link points at the `/guides` index. Achievements page links to `/lessons` and `/games`.
 
 ### Core Web Vitals / INP
 The entire product *is* keypress-to-render latency — unusually high-stakes here, not a generic checklist item. Current state is good in principle (per-character rendering bypasses the global CSS transition via `.char-instant`, no client data fetching, self-hosted fonts, static data) but has never been measured with real tooling since there's no deployed URL yet. Once deployed: run Lighthouse/PageSpeed Insights immediately, treat any INP regression as priority-one. Watch this especially once real AdSense scripts are added — third-party ad scripts are a well-documented source of INP regressions.
@@ -626,14 +779,15 @@ The entire product *is* keypress-to-render latency — unusually high-stakes her
 1. Register domain, update `NEXT_PUBLIC_SITE_URL`/`SUPPORT_EMAIL`.
 2. Deploy, verify in Google Search Console and Bing Webmaster Tools.
 3. Submit the sitemap in both.
-4. ~~Set up the chosen analytics tool~~ — **GA4 is already wired in (2026-09-25)**; confirm real pageviews/Realtime data once actually deployed (only verifiable pre-deploy in a local production build, which was done — see "Session 2026-09-24/25" above), and **update the Privacy Policy to match** — it may still say "no analytics."
+4. Confirm GA4 real pageviews/Realtime data once actually deployed.
 5. Run Lighthouse/PageSpeed Insights on the live URL, fix anything red before further content work.
-6. **Do not expect fast organic movement** — a brand-new domain with zero backlinks realistically takes weeks to months to get fully indexed, even with perfect technical SEO. Set that expectation honestly; the value of doing technical SEO well now is removing friction later, not fast results.
+6. **Do not expect fast organic movement** — a brand-new domain with zero backlinks realistically takes weeks to months to get fully indexed, even with perfect technical SEO.
 
 ### Guardrails (don't repeat these mistakes)
 - Never build templated pages differing only by keyword substitution (duration, city, job, language) without genuinely distinct content per page.
 - Don't add structured data purely for rich-result gaming — only mark up content that would exist anyway.
 - Don't treat page count as progress. Five genuinely good guide pages beat fifty thin ones.
+
 
 ---
 
@@ -648,10 +802,10 @@ The entire product *is* keypress-to-render latency — unusually high-stakes her
 ### Frontend / UX
 1. Settings modal (sound toggle, additional themes) — low priority until there's a stub sound system worth surfacing.
 2. Focus-trap the custom-text modal if it grows more complex.
-3. Custom `:focus-visible` ring styled to match the accent color (native default works, just isn't bespoke).
+3. ~~Custom `:focus-visible` ring styled to match the accent color~~ — **Done 2026-09-27**: Added global high-contrast `:focus-visible` outline using theme accent token in `globals.css`.
 4. Real mobile-device check (physical phone/tablet, not just a resized desktop viewport).
 5. Resolve the two open "Awaiting human input" items above before doing more animation/language-selector polish.
-6. Live countdown timer (running-state display, `live-stats-bar.tsx`) still shows raw seconds for long custom durations — the config bar's "1h 2m 3s"-style formatting wasn't extended there yet. Needs its own design pass (a fixed-width HH:MM:SS-style flip-clock is a different problem than flipping a handful of freely-resizing digits) rather than a quick bolt-on. With the duration range now running to 24h this is the most visible remaining rough edge: a 24h test currently renders a five-digit `86400` countdown.
+6. ~~Live countdown timer formatting~~ — **Done 2026-09-27**: Pure `formatCountdown` (<60s -> "0s", 60s+ -> "1:00", 1h+ -> "1:00:00") implemented with tabular digits and zero layout jumping; tested in `format-countdown.test.ts`.
 7. ~~Live-verify the "not live-verified" items~~ — **Done 2026-09-15**; two were genuinely broken and are now fixed. See Known issues fixed.
 8. **Mobile 3D Games Hub (`/games`): Shipped 2026-09-25** — Implemented a premier Hotstar-inspired mobile experience for `/games`:
    - Top section: 3D Coverflow / Layered Card Carousel with CSS 3D perspective (`preserve-3d`, `rotateY`, `scale`, `translateZ`), character art pop-outs, swipe gestures with touch physics, chevrons, and pagination pills.
@@ -660,7 +814,7 @@ The entire product *is* keypress-to-render latency — unusually high-stakes her
    - Desktop retains its full responsive grid and interactive hover parallax.
 
 ### QA / Performance / Security
-1. **A test suite exists as of 2026-09-17, expanded 2026-09-22, 2026-09-25, and 2026-09-26: 160 cases, `npm test`.** No framework was added — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+**. `scripts/test-setup.mjs` maps the `@/*` alias (Node ignores `tsconfig` paths). Files: `src/lib/typing-engine/typing-engine.test.ts` (scoring, timing, backspace, consistency, mobile input), `src/lib/games/games-integrity.test.ts` (the anti-exploit rules), `src/lib/lessons/lessons.test.ts` (drill/review content never leaks a disallowed key, progress gating, curriculum data integrity), `src/lib/seo/metadata.test.ts` (`truncateAtWord` never cuts mid-word), `src/lib/vocabulary/vocabulary.test.ts` (word selection, reducer, progress sanitizer, 1300-word 50/30/20 ratio and global uniqueness), and `src/lib/tools/typing-calculator.test.ts` (WPM/CPM/KPH conversion round-trips and the worked examples the guide itself shows). Tests drive pure reducers/functions directly, never rendered components — through the UI a dropped keystroke and a missed render are indistinguishable.
+1. **A test suite exists as of 2026-09-17, expanded 2026-09-22, 2026-09-25, 2026-09-26, and 2026-09-27: 218 cases across 49 suites, `npm test`.** No framework was added — it runs on Node 22's built-in `node:test` with `--experimental-strip-types`, so it needs **Node 22+**. `scripts/test-setup.mjs` maps the `@/*` alias (Node ignores `tsconfig` paths). Files: `src/lib/typing-engine/typing-engine.test.ts` (scoring, timing, backspace, consistency, mobile input), `src/lib/games/games-integrity.test.ts` (the anti-exploit rules), `src/lib/lessons/lessons.test.ts` (drill/review content never leaks a disallowed key, progress gating, curriculum data integrity), `src/lib/seo/metadata.test.ts` (`truncateAtWord` never cuts mid-word, sitemap integrity suite with 0 duplicate routes, all categories and registered guides), `src/lib/vocabulary/vocabulary.test.ts` (word selection, reducer, progress sanitizer, 1300-word 50/30/20 ratio and global uniqueness), `src/lib/typing-engine/format-countdown.test.ts`, and `src/lib/tools/typing-calculator.test.ts` (WPM/CPM/KPH conversion round-trips and the worked examples the guide itself shows). Tests drive pure reducers/functions directly, never rendered components — through the UI a dropped keystroke and a missed render are indistinguishable.
 2. **Coverage is deliberately narrow: scoring correctness and exploit resistance only.** There are no component/render tests and no e2e suite. That is a real gap if you start changing UI behaviour; live browser verification is still the only check on anything visual.
 3. Gates, all currently clean: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` (**0 warnings** — a warning here previously meant the whole project was being traced into the server bundle, so treat a new one as a real finding).
 4. No security concerns identified; custom text capped at 2000 chars bounds worst-case rendering cost. Note the *integrity* concern that did exist: two games were winnable without typing (see Session 2026-09-17). **Any new game must tie its win condition to correctly-typed characters, and should get a test in `games-integrity.test.ts`.**

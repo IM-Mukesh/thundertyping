@@ -132,7 +132,7 @@ export default function BestKeyboardSwitchesPage() {
 
         <h2 id="hero-image">Mechanical switch anatomy</h2>
         <Image
-          src="/guides/best-keyboard-switches-for-typing.webp"
+          src="/guides/keyboard-skills/best-keyboard-switches-for-typing/best-keyboard-switches-for-typing.webp"
           alt="Cutaway mechanical keyboard switches showing linear, tactile, and clicky internal mechanisms with springs and stems"
           width={1200}
           height={675}

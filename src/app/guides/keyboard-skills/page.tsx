@@ -1,0 +1,14 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo/metadata";
+import { GuideCategoryView } from "@/components/guides/guide-category-view";
+import { GUIDE_CATEGORIES } from "@/lib/guides/guide-registry";
+
+export const metadata: Metadata = pageMetadata({
+  title: GUIDE_CATEGORIES["keyboard-skills"].title,
+  description: GUIDE_CATEGORIES["keyboard-skills"].description,
+  path: GUIDE_CATEGORIES["keyboard-skills"].path,
+});
+
+export default function KeyboardSkillsCategoryPage() {
+  return <GuideCategoryView categoryId="keyboard-skills" />;
+}

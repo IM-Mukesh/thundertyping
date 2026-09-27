@@ -127,7 +127,7 @@ export default function TypingTestDurationGuidePage() {
 
         <h2 id="comparing">Comparing durations</h2>
         <Image
-          src="/guides/typing-test-duration-comparison.webp"
+          src="/guides/typing-tests-tools/typing-test-duration-guide/typing-test-duration-comparison.webp"
           alt="Comparison chart of typing test durations from 15 seconds to 10 minutes and what each one measures"
           width={1672}
           height={941}

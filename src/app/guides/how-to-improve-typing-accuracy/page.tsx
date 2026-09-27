@@ -145,7 +145,7 @@ export default function HowToImproveTypingAccuracyPage() {
 
         <h2 id="the-system">The accuracy improvement system</h2>
         <Image
-          src="/guides/accuracy-improvement-loop.webp"
+          src="/guides/improve-your-typing/how-to-improve-typing-accuracy/accuracy-improvement-loop.webp"
           alt="Circular diagram of the seven-step typing accuracy improvement loop"
           width={1254}
           height={1254}

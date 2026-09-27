@@ -142,7 +142,7 @@ export default function QwertyVsDvorakVsColemakPage() {
 
         <h2 id="hero-image">The three layouts</h2>
         <Image
-          src="/guides/qwerty-vs-dvorak-vs-colemak.webp"
+          src="/guides/keyboard-skills/qwerty-vs-dvorak-vs-colemak/qwerty-vs-dvorak-vs-colemak.webp"
           alt="Comparative render of QWERTY, Dvorak, and Colemak keyboard layouts showing home row finger travel heatmaps"
           width={1200}
           height={675}

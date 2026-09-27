@@ -131,7 +131,7 @@ export default function ProperTypingPosturePage() {
 
         <h2 id="visual-setup">The ideal ergonomic setup</h2>
         <Image
-          src="/guides/proper-typing-posture-and-ergonomics.webp"
+          src="/guides/typing-basics/proper-typing-posture-and-ergonomics/proper-typing-posture-and-ergonomics.webp"
           alt="Ergonomic typing workstation diagram showing correct posture, 90-degree elbow angle, and eye-level monitor height"
           width={1200}
           height={675}

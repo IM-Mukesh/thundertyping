@@ -1,198 +1,300 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Briefcase,
+  Compass,
+  Gauge,
+  Keyboard,
+  Layers,
+  Sparkles,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 import { SITE_NAME } from "@/lib/seo/constants";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { pageMetadata } from "@/lib/seo/metadata";
+import { GUIDE_CATEGORIES, getGuidesByCategory } from "@/lib/guides/guide-registry";
+import type { GuideCategory } from "@/lib/guides/guide-types";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Guides — Speed, Accuracy & Touch Typing",
+  title: "Typing Guides & Mastery Curriculum — Speed, Accuracy & Ergonomics",
   description:
-    "Practical, honest guides to typing speed and technique -- what actually improves your WPM, and what a good typing speed looks like by context.",
+    "Comprehensive, practical guides to touch typing mastery: home row ergonomics, speed and accuracy protocols, WPM formulas, and specialized workflows.",
   path: "/guides",
 });
 
-const GUIDES = [
-  {
-    href: "/guides/how-to-improve-typing-speed",
-    title: "How to Improve Your Typing Speed",
-    description:
-      "A complete training system: fix accuracy first, find your weak keys, drill them, and climb from 20 WPM to 100+.",
-  },
-  {
-    href: "/guides/average-typing-speed",
-    title: "What Is a Good Typing Speed?",
-    description:
-      "WPM benchmarks by skill level and by context — casual, office, programming, data entry — with sourced ranges.",
-  },
-  {
-    href: "/guides/net-wpm-vs-gross-wpm",
-    title: "How Is WPM Calculated?",
-    description: "The exact formula, worked examples, and why two typing sites can score the same run differently.",
-  },
-  {
-    href: "/guides/wpm-cpm-kph-calculator",
-    title: "WPM, CPM & KPH Calculator",
-    description: "Calculate all three live from a test, or convert freely between them — every formula shown.",
-  },
-  {
-    href: "/guides/how-to-touch-type",
-    title: "How to Touch Type",
-    description: "The full finger-to-key map, a practice progression that doesn't skip steps, and a realistic timeline.",
-  },
-  {
-    href: "/guides/touch-typing-finger-map",
-    title: "Touch-Typing Finger Map",
-    description: "An interactive, hover-or-tap chart of every key and the finger that owns it, plus Shift and numbers.",
-  },
-  {
-    href: "/guides/how-to-type-without-looking-at-the-keyboard",
-    title: "How to Type Without Looking at the Keyboard",
-    description: "A day-by-day plan for breaking the look-down habit — exactly what to practice, not \"just practice more.\"",
-  },
-  {
-    href: "/guides/typing-practice-for-beginners",
-    title: "Typing Practice for Beginners",
-    description: "A real curriculum: exercises by category, routines from 5 to 30 minutes, and what to practice at each stage.",
-  },
-  {
-    href: "/guides/how-to-improve-typing-accuracy",
-    title: "How to Improve Typing Accuracy",
-    description: "Why accuracy drops, a repeatable improvement system, and practical targets by skill stage.",
-  },
-  {
-    href: "/guides/english-typing-test-and-practice",
-    title: "English Typing Test & Practice",
-    description: "What an English typing test measures, why results vary between sites, and passages by level.",
-  },
-  {
-    href: "/guides/typing-test-duration-guide",
-    title: "Which Typing Test Duration Should You Use?",
-    description: "How 15-second to 10-minute tests differ, and which one fits practice, measurement, or exam prep.",
-  },
-  {
-    href: "/guides/data-entry-typing-test",
-    title: "Data Entry Typing Test",
-    description: "What it measures, how KPH relates to WPM, and how to train for one.",
-  },
-  {
-    href: "/guides/typing-resources-for-teachers",
-    title: "Free Typing Resources for Teachers",
-    description: "A week-by-week curriculum built from 28 real lessons, classroom activities, and assessment ideas.",
-  },
-  {
-    href: "/guides/proper-typing-posture-and-ergonomics",
-    title: "Proper Typing Posture & Ergonomics",
-    description:
-      "A complete desk setup guide: 90-degree elbow angles, neutral wrists, monitor distance, and carpal tunnel prevention.",
-  },
-  {
-    href: "/guides/typing-stretches-and-hand-warmups",
-    title: "8 Essential Typing Stretches & Hand Warmups",
-    description:
-      "Physical therapist-recommended tendon glides and mobility stretches to relieve wrist pain and prevent RSI.",
-  },
-  {
-    href: "/guides/how-to-break-a-typing-speed-plateau",
-    title: "How to Break a Typing Speed Plateau",
-    description:
-      "Stuck at 50, 70, or 90 WPM? Motor learning protocols, word chunking, and burst training to push past your ceiling.",
-  },
-  {
-    href: "/guides/qwerty-vs-dvorak-vs-colemak",
-    title: "QWERTY vs. Dvorak vs. Colemak",
-    description:
-      "Finger travel, same-finger bigrams, and ergonomics: real data on which keyboard layout is actually fastest.",
-  },
-  {
-    href: "/guides/best-keyboard-switches-for-typing",
-    title: "Best Keyboard Switches for Typing",
-    description:
-      "Linear vs. tactile vs. clicky compared: actuation force, travel distance, and eliminating bottoming-out fatigue.",
-  },
-  {
-    href: "/guides/911-dispatcher-typing-test",
-    title: "911 Dispatcher Typing Test & CritiCall Prep",
-    description:
-      "Passing benchmarks, audio-to-CAD transcription, alphanumeric data entry, and how to train for public safety tests.",
-  },
-  {
-    href: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
-    title: "Typing for Dyslexia and Dysgraphia",
-    description:
-      "How multi-sensory touch typing and motor memory liberate neurodivergent learners from handwriting barriers.",
-  },
-  {
-    href: "/guides/typing-for-programmers",
-    title: "Typing for Programmers",
-    description:
-      "Master brackets, braces, and logic operators without looking, plus Vim modal editing and Caps Lock remapping.",
-  },
-  {
-    href: "/guides/one-handed-typing-guide",
-    title: "One-Handed Typing Guide",
-    description:
-      "Adaptive layouts, Half-QWERTY mirror typing, and radial touch zones for stroke recovery, amputees, and injury.",
-  },
-  {
-    href: "/guides/how-to-type-numbers-and-symbols-without-looking",
-    title: "How to Type Numbers & Symbols Blind",
-    description:
-      "Conquer the top number row with anchor fingers, diagonal reach vectors, and the opposite-hand Shift rule.",
-  },
+interface CategoryHubCard {
+  id: GuideCategory;
+  icon: typeof Keyboard;
+}
+
+const CATEGORY_HUBS: CategoryHubCard[] = [
+  { id: "typing-basics", icon: Keyboard },
+  { id: "typing-practice", icon: Target },
+  { id: "improve-your-typing", icon: TrendingUp },
+  { id: "typing-tests-tools", icon: Gauge },
+  { id: "keyboard-skills", icon: Layers },
+  { id: "typing-work-study", icon: Briefcase },
 ];
 
 export default function GuidesIndexPage() {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-12 sm:px-10">
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-12 px-6 py-12 sm:px-10">
       <Breadcrumbs items={[{ name: "Guides", path: "/guides" }]} />
-      <div className="flex max-w-2xl flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Typing Guides</h1>
-        <p className="text-sm text-foreground/85">
-          Practical technique and honest benchmarks — not shortcuts. Written to be read once and actually used, not
-          skimmed for keywords.
+
+      {/* Hero Header */}
+      <header className="flex flex-col gap-4">
+        <div className="inline-flex items-center gap-1.5 self-start rounded-full border border-border bg-sub-alt/40 px-3 py-1 text-xs font-medium text-sub">
+          <BookOpen size={13} className="text-accent" aria-hidden="true" />
+          <span>Curated Knowledge Base</span>
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Typing Guides
+        </h1>
+        <p className="max-w-3xl text-base leading-relaxed text-foreground/85">
+          Practical, evidence-backed guides covering touch typing technique, structured practice routines,
+          speed and accuracy protocols, typing test metrics, advanced keyboard skills, and workflows for work
+          and study. Designed to be read once and actively applied on HeroTyping.
         </p>
-      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {GUIDES.map((guide) => (
+        {/* Quick Category Navigation Pills */}
+        <nav aria-label="Quick category navigation" className="mt-1 flex flex-wrap gap-2">
+          {CATEGORY_HUBS.map(({ id }) => {
+            const cat = GUIDE_CATEGORIES[id];
+            const count = getGuidesByCategory(id).length;
+            return (
+              <Link
+                key={id}
+                href={cat.path}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-sub-alt/30 px-3 py-1.5 text-xs font-medium text-sub transition-colors hover:border-accent hover:text-foreground"
+              >
+                <span>{cat.name}</span>
+                <span className="rounded bg-sub-alt px-1.5 py-0.2 font-mono text-[10px] text-accent">
+                  {count}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      </header>
+
+      {/* Start Here / Foundational Roadmap */}
+      <section aria-labelledby="start-here-heading" className="rounded-2xl border border-accent/40 bg-accent/5 p-6 sm:p-7">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
+          <Compass size={15} aria-hidden="true" />
+          <h2 id="start-here-heading">Start Here: The 3 Core Pillars</h2>
+        </div>
+        <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+          New to deliberate typing training? Begin with these foundational guides before diving into specialized topics:
+        </p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <Link
-            key={guide.href}
-            href={guide.href}
-            className="group flex items-start justify-between gap-4 rounded-xl border border-border bg-sub-alt/20 p-5 transition-colors hover:border-accent"
+            href="/guides/how-to-touch-type"
+            className="group flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-4 transition-colors hover:border-accent hover:bg-sub-alt/30"
           >
-            <div className="flex flex-col gap-1">
-              <h2 className="font-medium text-foreground">{guide.title}</h2>
-              <p className="text-sm text-foreground/85">{guide.description}</p>
+            <div>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-accent">Pillar 1: Form</span>
+              <h3 className="mt-1 text-sm font-semibold text-foreground group-hover:text-accent">
+                How to Touch Type
+              </h3>
+              <p className="mt-1.5 text-xs text-sub">Home row positioning, tactile anchor bumps, and full finger maps.</p>
             </div>
-            <ArrowRight
-              size={16}
-              className="mt-1 shrink-0 text-sub transition-transform group-hover:translate-x-1 group-hover:text-accent"
-              aria-hidden="true"
-            />
+            <div className="mt-4 flex items-center gap-1 text-[11px] text-accent">
+              <span>Read guide</span>
+              <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </div>
           </Link>
-        ))}
-      </div>
 
-      <p className="max-w-2xl text-xs text-sub">
-        Want to put any of this into practice right away?{" "}
-        <Link href="/" className="text-accent underline underline-offset-2">
-          Take a typing test
-        </Link>
-        , work through{" "}
-        <Link href="/lessons" className="text-accent underline underline-offset-2">
-          structured lessons
-        </Link>{" "}
-        from the home row up, keep it fun with a{" "}
-        <Link href="/games" className="text-accent underline underline-offset-2">
-          typing game
-        </Link>
-        , or build vocabulary with{" "}
-        <Link href="/vocabulary" className="text-accent underline underline-offset-2">
-          vocabulary practice
-        </Link>
-        . — {SITE_NAME}
-      </p>
+          <Link
+            href="/guides/how-to-improve-typing-accuracy"
+            className="group flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-4 transition-colors hover:border-accent hover:bg-sub-alt/30"
+          >
+            <div>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-accent">Pillar 2: Precision</span>
+              <h3 className="mt-1 text-sm font-semibold text-foreground group-hover:text-accent">
+                How to Improve Typing Accuracy
+              </h3>
+              <p className="mt-1.5 text-xs text-sub">The 7-step error reduction loop and why speed without accuracy is an illusion.</p>
+            </div>
+            <div className="mt-4 flex items-center gap-1 text-[11px] text-accent">
+              <span>Read guide</span>
+              <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </div>
+          </Link>
+
+          <Link
+            href="/guides/how-to-improve-typing-speed"
+            className="group flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-4 transition-colors hover:border-accent hover:bg-sub-alt/30"
+          >
+            <div>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-accent">Pillar 3: Velocity</span>
+              <h3 className="mt-1 text-sm font-semibold text-foreground group-hover:text-accent">
+                How to Improve Typing Speed
+              </h3>
+              <p className="mt-1.5 text-xs text-sub">The progression ladder from 30 WPM to 100+ WPM with deliberate practice routines.</p>
+            </div>
+            <div className="mt-4 flex items-center gap-1 text-[11px] text-accent">
+              <span>Read guide</span>
+              <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* Six Category Hubs */}
+      <section aria-labelledby="categories-heading" className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
+            <Sparkles size={14} aria-hidden="true" />
+            <span>Curriculum Pillars</span>
+          </div>
+          <h2 id="categories-heading" className="text-2xl font-bold tracking-tight text-foreground">
+            Explore by Category
+          </h2>
+          <p className="text-sm text-sub">
+            Browse our six dedicated learning hubs to access comprehensive tutorials, benchmarks, and step-by-step progressions.
+          </p>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {CATEGORY_HUBS.map(({ id, icon: Icon }) => {
+            const category = GUIDE_CATEGORIES[id];
+            const guideCount = getGuidesByCategory(id).length;
+
+            return (
+              <Link
+                key={category.id}
+                href={category.path}
+                className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-border bg-sub-alt/20 p-6 transition-all hover:border-accent hover:bg-sub-alt/40 hover:shadow-sm"
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/80 bg-background/80 text-accent transition-colors group-hover:border-accent/40 group-hover:bg-accent/10">
+                      <Icon size={20} aria-hidden="true" />
+                    </div>
+                    <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-0.5 font-mono text-xs font-medium text-sub group-hover:text-foreground">
+                      {guideCount} {guideCount === 1 ? "guide" : "guides"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground transition-colors group-hover:text-accent">
+                      {category.name}
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-foreground/80 sm:text-sm">
+                      {category.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
+                  <span>Explore category</span>
+                  <ArrowRight
+                    size={14}
+                    className="transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Product Connection CTA */}
+      <section aria-labelledby="practice-cta-heading" className="rounded-2xl border border-border bg-sub-alt/30 p-6 sm:p-8">
+        <h2 id="practice-cta-heading" className="text-lg font-bold text-foreground sm:text-xl">
+          Put Theory Into Deliberate Practice
+        </h2>
+        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-sub sm:text-sm">
+          Reading guides builds the mental model, but muscle memory develops on the keyboard.
+          Every concept in these guides connects directly to interactive training tools on HeroTyping:
+        </p>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Link
+            href="/"
+            className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
+          >
+            <div>
+              <span className="text-xs font-bold text-foreground">Typing Speed Test</span>
+              <p className="mt-1 text-[11px] text-sub">Benchmark your net WPM &amp; accuracy</p>
+            </div>
+            <span className="mt-3 text-[11px] font-medium text-accent">Take test &rarr;</span>
+          </Link>
+
+          <Link
+            href="/lessons"
+            className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
+          >
+            <div>
+              <span className="text-xs font-bold text-foreground">28 Guided Lessons</span>
+              <p className="mt-1 text-[11px] text-sub">Learn home row through punctuation</p>
+            </div>
+            <span className="mt-3 text-[11px] font-medium text-accent">Start lessons &rarr;</span>
+          </Link>
+
+          <Link
+            href="/lessons/practice"
+            className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
+          >
+            <div>
+              <span className="text-xs font-bold text-foreground">Weak-Key Practice</span>
+              <p className="mt-1 text-[11px] text-sub">Target slow &amp; error-prone keys</p>
+            </div>
+            <span className="mt-3 text-[11px] font-medium text-accent">Drill keys &rarr;</span>
+          </Link>
+
+          <Link
+            href="/games"
+            className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
+          >
+            <div>
+              <span className="text-xs font-bold text-foreground">11 Arcade Games</span>
+              <p className="mt-1 text-[11px] text-sub">Build velocity under pressure</p>
+            </div>
+            <span className="mt-3 text-[11px] font-medium text-accent">Play games &rarr;</span>
+          </Link>
+
+          <Link
+            href="/vocabulary"
+            className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
+          >
+            <div>
+              <span className="text-xs font-bold text-foreground">1,300 Vocabulary Words</span>
+              <p className="mt-1 text-[11px] text-sub">Tiered English word pools with audio</p>
+            </div>
+            <span className="mt-3 text-[11px] font-medium text-accent">Practice words &rarr;</span>
+          </Link>
+        </div>
+
+        <p className="mt-5 text-[11px] text-sub">
+          All tools are free, ad-free, and run locally in your browser. &mdash; {SITE_NAME}
+        </p>
+      </section>
+
+      {/* Bottom Category Directory Footer */}
+      <footer className="flex flex-col gap-3 border-t border-border/60 pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <span className="text-xs font-medium text-sub">Explore all categories:</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+            {CATEGORY_HUBS.map(({ id }) => {
+              const cat = GUIDE_CATEGORIES[id];
+              return (
+                <Link
+                  key={id}
+                  href={cat.path}
+                  className="text-sub transition-colors hover:text-accent"
+                >
+                  {cat.name}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

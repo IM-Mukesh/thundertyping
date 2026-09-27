@@ -121,7 +121,7 @@ export default function OneHandedTypingGuidePage() {
 
         <h2 id="hero-image">Adaptive one-handed design</h2>
         <Image
-          src="/guides/one-handed-typing-guide.webp"
+          src="/guides/typing-work-study/one-handed-typing-guide/one-handed-typing-guide.webp"
           alt="Adaptive single-handed typing keyboard layout showing radial finger zones and mirror-typing modifier integration"
           width={1200}
           height={675}

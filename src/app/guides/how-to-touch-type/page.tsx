@@ -139,7 +139,7 @@ export default function HowToTouchTypePage() {
         </p>
 
         <Image
-          src="/guides/home-row-finger-placement.webp"
+          src="/guides/shared/home-row-finger-placement.webp"
           alt="Left and right hand finger placement on the QWERTY home row, with the F and J key bumps highlighted"
           width={1672}
           height={941}
@@ -187,7 +187,7 @@ export default function HowToTouchTypePage() {
         </p>
 
         <Image
-          src="/guides/keyboard-finger-zones-map.webp"
+          src="/guides/shared/keyboard-finger-zones-map.webp"
           alt="Full QWERTY keyboard color-coded by which finger is responsible for each key"
           width={1672}
           height={941}

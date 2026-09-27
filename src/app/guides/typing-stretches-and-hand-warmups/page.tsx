@@ -181,7 +181,7 @@ export default function TypingStretchesPage() {
 
         <h2 id="hero-image">Mobility &amp; tendon glides</h2>
         <Image
-          src="/guides/typing-stretches-and-hand-warmups.webp"
+          src="/guides/typing-practice/typing-stretches-and-hand-warmups/typing-stretches-and-hand-warmups.webp"
           alt="Diagram illustrating typing hand warmups, wrist mobility stretches, and carpal tendon gliding exercises"
           width={1200}
           height={675}

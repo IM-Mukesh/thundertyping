@@ -209,7 +209,7 @@ export default function HowToBreakPlateauPage() {
 
         <h2 id="hero-image">Breaking through performance plateaus</h2>
         <Image
-          src="/guides/how-to-break-a-typing-speed-plateau.webp"
+          src="/guides/improve-your-typing/how-to-break-a-typing-speed-plateau/how-to-break-a-typing-speed-plateau.webp"
           alt="Visual representation of diagnosing a typing speed plateau and building a targeted practice routine"
           width={1200}
           height={675}

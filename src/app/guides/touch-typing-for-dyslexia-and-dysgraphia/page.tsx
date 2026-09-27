@@ -129,7 +129,7 @@ export default function TouchTypingDyslexiaPage() {
 
         <h2 id="hero-image">Multi-sensory learning</h2>
         <Image
-          src="/guides/touch-typing-for-dyslexia-and-dysgraphia.webp"
+          src="/guides/typing-work-study/touch-typing-for-dyslexia-and-dysgraphia/touch-typing-for-dyslexia-and-dysgraphia.webp"
           alt="Multi-sensory touch typing illustration showing color-coded keyboard zones converting puzzle letters into flowing text"
           width={1200}
           height={675}

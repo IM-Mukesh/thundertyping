@@ -249,7 +249,7 @@ export default function HowToImproveTypingSpeedPage() {
           through them out of order or in overlapping bursts.
         </p>
         <Image
-          src="/guides/wpm-progression-ladder.webp"
+          src="/guides/improve-your-typing/how-to-improve-typing-speed/wpm-progression-ladder.webp"
           alt="Ladder diagram of typing speed progression stages from 20 to 100+ WPM, with the focus area for each stage"
           width={1086}
           height={1448}

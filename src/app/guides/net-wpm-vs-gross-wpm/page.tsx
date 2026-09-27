@@ -131,7 +131,7 @@ export default function NetVsGrossWpmPage() {
 
         <h2 id="the-formula">The formula</h2>
         <Image
-          src="/guides/wpm-formula-gross-vs-net.webp"
+          src="/guides/typing-tests-tools/net-wpm-vs-gross-wpm/wpm-formula-gross-vs-net.webp"
           alt="Side-by-side comparison of the gross WPM formula and the net WPM formula"
           width={1448}
           height={1086}

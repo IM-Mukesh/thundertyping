@@ -130,7 +130,7 @@ export default function TypingForProgrammersPage() {
 
         <h2 id="hero-image">Developer workstation &amp; symbols</h2>
         <Image
-          src="/guides/typing-for-programmers.webp"
+          src="/guides/typing-work-study/typing-for-programmers/typing-for-programmers.webp"
           alt="Minimalist programmer workstation with split ergonomic keyboard and glowing coding symbols like braces, brackets, and arrows"
           width={1200}
           height={675}

@@ -147,7 +147,7 @@ export default function HowToTypeNumbersSymbolsPage() {
 
         <h2 id="hero-image">Top-row reach vectors</h2>
         <Image
-          src="/guides/how-to-type-numbers-and-symbols-without-looking.webp"
+          src="/guides/keyboard-skills/how-to-type-numbers-and-symbols-without-looking/how-to-type-numbers-and-symbols-without-looking.webp"
           alt="Top-down keyboard angle showing the number row with tactile reach vectors extending from F and J home keys to numbers and symbols"
           width={1200}
           height={675}

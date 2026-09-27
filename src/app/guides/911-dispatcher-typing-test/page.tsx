@@ -130,7 +130,7 @@ export default function DispatcherTypingTestPage() {
 
         <h2 id="hero-image">Emergency dispatch console</h2>
         <Image
-          src="/guides/911-dispatcher-typing-test.webp"
+          src="/guides/typing-work-study/911-dispatcher-typing-test/911-dispatcher-typing-test.webp"
           alt="High-tech 911 emergency dispatch command workstation with multi-monitor CAD screens, radio console, and keyboard"
           width={1200}
           height={675}
