@@ -1,3 +1,12 @@
+## Current CI Typecheck Fix — 2026-09-27
+
+- Root cause: CI ran `tsc --noEmit` before Next.js 16 route type generation, so generated global `PageProps` / `LayoutProps` types were unavailable to TypeScript.
+- Exact fix: changed the `typecheck` script in `package.json` from `tsc --noEmit` to `next typegen && tsc --noEmit`.
+- No application, SEO, analytics, sitemap, structured-data, security-header, typing-engine, or UI files were changed.
+- Verification: GitHub Actions run **#7** for commit `1a65c4835c7ed40feaa6c60a9cd0eae2d1998f1b` is running. Dependency installation has completed; lint is currently running, with typecheck/tests/build pending.
+- Local npm verification could not be executed in this environment because outbound GitHub DNS/network access is unavailable; GitHub Actions is the available CI-equivalent verification.
+- CI reaches test/build only after lint and the corrected typecheck complete; final pass/fail remains pending at session end.
+
 # HeroTyping — Project State & Roadmap
 
 **Read this file first, completely, before touching any code.** It exists so *any* AI coding assistant — Claude, GPT-based, Astra, Gemini, a local model, whatever picks this up next — or any human developer can start from zero context and be productive immediately, without re-asking the project owner questions that are already answered here. Nothing in this file assumes you're using a specific tool; where a note is specific to one environment, it's labeled as such near the end, not mixed into the main instructions.
