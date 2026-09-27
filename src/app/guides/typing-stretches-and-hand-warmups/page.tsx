@@ -11,7 +11,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "8 Essential Typing Stretches & Hand Warmups for RSI & Wrist Pain",
   description:
-    "Physical therapist-recommended typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and reduce repetitive strain.",
+    "Gentle typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and encourage comfortable, relaxed typing.",
   path: "/guides/typing-stretches-and-hand-warmups",
 });
 
@@ -133,7 +133,7 @@ export default function TypingStretchesPage() {
   const schema = buildArticleSchema({
     headline: "8 Essential Typing Stretches & Hand Warmups for RSI & Wrist Pain",
     description:
-      "Physical therapist-recommended typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and reduce repetitive strain.",
+      "Gentle typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and encourage comfortable, relaxed typing.",
     path: "/guides/typing-stretches-and-hand-warmups",
     datePublished: PUBLISHED,
   });
@@ -146,7 +146,7 @@ export default function TypingStretchesPage() {
       />
       <GuideLayout
         title="8 Essential Typing Stretches & Hand Warmups for RSI & Wrist Pain"
-        subtitle="Physical therapist-approved tendon glides, nerve mobility drills, and targeted releases to keep your hands fast, fluid, and pain-free."
+        subtitle="Ergonomist-informed tendon glides, mobility drills, and targeted warmups to keep your hands relaxed, agile, and comfortable."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           {
@@ -289,7 +289,7 @@ export default function TypingStretchesPage() {
         </ul>
         <p>
           If your hands feel comfortable and loose, build accuracy and speed by testing your newly
-          warmed-up fingers on our <Link href="/lessons">guided typing lessons</Link> or competing in{" "}
+          warmed-up fingers on our <Link href="/lessons">28-unit typing curriculum</Link> or competing in{" "}
           <Link href="/games">arcade typing games</Link>.
         </p>
 

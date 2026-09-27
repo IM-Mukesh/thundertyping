@@ -243,8 +243,8 @@ export default function HowToTypeNumbersSymbolsPage() {
         <h2 id="opposite-shift">The opposite-hand Shift rule</h2>
         <p>
           Attempting to hold the Left Shift key with your left pinky while stretching your left index or
-          middle finger to hit <code>$</code> (Shift+4) or <code>%</code> (Shift+5) forces an extreme,
-          injurious claw grip known as lateral carpal strain.
+          middle finger to hit <code>$</code> (Shift+4) or <code>%</code> (Shift+5) forces an awkward,
+          strained claw grip that introduces unnecessary forearm and wrist tension.
         </p>
         <p>
           <strong>The Golden Law of Shift:</strong>

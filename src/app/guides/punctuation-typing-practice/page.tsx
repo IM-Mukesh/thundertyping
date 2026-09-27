@@ -259,12 +259,20 @@ export default function PunctuationTypingPracticePage() {
           Where is the station? What time does it leave? Look out! Is everyone ready?
         </p>
 
-        <h2 id="interactive-curriculum">Interactive HeroTyping Practice</h2>
+        <h2 id="interactive-curriculum">Interactive Punctuation Curriculum</h2>
         <p>
-          To practice punctuation with live accuracy scoring and opposite-shift enforcement, proceed to{" "}
-          <Link href="/lessons/full-keyboard-punctuation">Lesson 16: Full Keyboard Punctuation</Link> in the{" "}
-          <Link href="/lessons">HeroTyping Curriculum</Link>, or practice live prose with punctuation enabled on the{" "}
-          <Link href="/">HeroTyping Speed Test</Link> by selecting the Punctuation mode toggle.
+          In HeroTyping, punctuation is introduced progressively alongside letters: semicolons in{" "}
+          <Link href="/lessons/home-row-words">Unit 4</Link>, commas in{" "}
+          <Link href="/lessons/numbers-high">Unit 14</Link>, periods in{" "}
+          <Link href="/lessons/full-keyboard-words">Unit 15</Link>, and slashes in{" "}
+          <Link href="/lessons/full-keyboard-punctuation">Unit 16</Link>.
+        </p>
+        <p>
+          To practice opposite-hand Shift coordination with full sentence capitalization, explore{" "}
+          <Link href="/lessons/everyday-sentences">Unit 18: Shift Mechanics &amp; Capitalization</Link> and{" "}
+          <Link href="/lessons/speed-endurance">Unit 24: Symbols &amp; Practical Punctuation</Link> in the{" "}
+          <Link href="/lessons">HeroTyping Curriculum</Link>, or toggle Punctuation mode on the{" "}
+          <Link href="/">HeroTyping Speed Test</Link> to practice live sentences.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

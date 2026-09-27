@@ -205,22 +205,22 @@ export default function HowToTouchTypePage() {
 
         <h2 id="progression">A practice progression that doesn&apos;t skip steps</h2>
         <p>
-          Trying to touch type a full sentence before your fingers know eight keys by feel is why
-          most self-taught attempts stall. The order that actually works:
+          Trying to touch type full sentences before your fingers know key positions by feel is why
+          most self-taught attempts stall. The progression that actually builds lasting automaticity:
         </p>
         <ol>
-          <li>Left hand home row alone (A S D F), until it&apos;s automatic</li>
-          <li>Right hand home row alone (J K L ;), same standard</li>
-          <li>Both hands combined on the home row</li>
-          <li>Top row, then bottom row, each hand separately before combining</li>
-          <li>Numbers, then real words, then full sentences with punctuation</li>
+          <li>Tactile home anchors first: F and J index bumps, anchoring both hands simultaneously.</li>
+          <li>Symmetrical outward pairs: D &amp; K middle fingers, S &amp; L ring fingers, A &amp; semicolon pinkies, G &amp; H reaches.</li>
+          <li>Periodic consolidation: practicing real English words formed exclusively from learned keys before expanding.</li>
+          <li>Top-row paired reaches: high-frequency vowels (E &amp; I) first, followed by index, center, ring, and pinky extensions.</li>
+          <li>Bottom-row downward finger curls: paired across hands with basic punctuation (comma, period, slash).</li>
+          <li>Opposite-hand Shift mechanics, capitalization, number row reaches, and practical punctuation.</li>
         </ol>
         <p>
           That&apos;s the exact sequence <Link href="/lessons">HeroTyping&apos;s typing lessons</Link>{" "}
           follow (for the full pedagogical breakdown, see our{" "}
           <Link href="/guides/touch-typing-lesson-order">touch typing lesson order guide</Link>),
-          with the finger diagram fading out as you stop needing it — guided practice
-          first, then independent practice once a stage feels automatic rather than effortful. Once
+          with an interactive on-screen keyboard and hand diagram highlighting finger movements in real time. Once
           the full map is comfortable, deliberately practicing without glancing down at all is its
           own skill — see{" "}
           <Link href="/guides/how-to-type-without-looking-at-the-keyboard">

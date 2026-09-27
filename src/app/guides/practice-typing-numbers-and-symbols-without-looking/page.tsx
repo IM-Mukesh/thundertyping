@@ -241,15 +241,14 @@ export default function PracticeTypingNumbersAndSymbolsWithoutLookingPage() {
           to lowercase letters at full velocity.
         </p>
 
-        <h2 id="mastery-curriculum">HeroTyping Mastery Lesson 27</h2>
+        <h2 id="mastery-curriculum">HeroTyping Mastery Unit 27</h2>
         <p>
           To drill mixed numbers and symbols with rigorous validation, proceed to{" "}
-          <Link href="/lessons/numbers-and-symbols-mastery">Lesson 27: Numbers and Symbols Mastery</Link> in the{" "}
+          <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link> in the{" "}
           <Link href="/lessons">HeroTyping Curriculum</Link>.
         </p>
         <p>
-          Lesson 27 combines currency, bracketed lists, arithmetic equations, and technical prose into progressive,
-          timed drills designed to build total blind keyboard mastery.
+          Unit 27 combines brackets <code>{`{} [] ()`}</code>, operators <code>+= == != =&gt;</code>, camelCase, snake_case, and variable syntax into progressive drills designed to build fluid keyboard mastery for technical professionals.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

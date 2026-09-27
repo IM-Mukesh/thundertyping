@@ -256,7 +256,7 @@ export default function TypingPracticeForDifficultKeysPage() {
 
         <p>
           Want automated practice customized to your personal bottleneck keys? Open the adaptive{" "}
-          <Link href="/lessons/practice">HeroTyping Weak-Key Practice Tool</Link> to generate real-time drill text
+          <Link href="/lessons/practice">HeroTyping Practice Lab</Link> to generate real-time drill text
           tailored to the keys you struggle with most.
         </p>
 

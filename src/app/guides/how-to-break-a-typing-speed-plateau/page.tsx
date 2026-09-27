@@ -57,7 +57,7 @@ const DIAGNOSTIC_TABLE = [
     solution:
       "Broaden your practice material. Spend session time on full-sentence prose, varied literature, and technical articles.",
     href: "/lessons/practice",
-    linkText: "lessons practice",
+    linkText: "HeroTyping Practice Lab",
   },
   {
     symptom: "Adding punctuation, capitalization, and numbers causes major slowdowns.",
@@ -65,9 +65,9 @@ const DIAGNOSTIC_TABLE = [
     miniTest:
       "Take one test on lowercase text, followed by one with full punctuation and capitals. Notice whether pauses occur primarily around symbols.",
     solution:
-      "Practice the opposite-hand Shift rule and drill upper-row characters systematically in numbers and symbols mastery.",
+      "Practice the opposite-hand Shift rule and drill upper-row characters systematically in Unit 27: Code Syntax & Technical Formats.",
     href: "/lessons/numbers-and-symbols-mastery",
-    linkText: "numbers and symbols mastery",
+    linkText: "Unit 27: Code Syntax & Technical Formats",
   },
   {
     symptom: "Pace feels fast initially, but becomes strained toward the end of a test.",
@@ -503,7 +503,7 @@ export default function HowToBreakPlateauPage() {
           <li>
             <strong>Train the Weakness Separately:</strong> Spend the initial portion of your practice session
             working strictly on that element. For example, if punctuation causes hesitation, practice text
-            passages containing full punctuation in <Link href="/lessons/practice">lessons practice</Link> before
+            passages containing full punctuation in <Link href="/lessons/practice">the Practice Lab</Link> before
             taking general tests.
           </li>
           <li>
@@ -546,7 +546,7 @@ export default function HowToBreakPlateauPage() {
           </li>
           <li>
             <strong>Day 3 (Weak-Key Isolation):</strong> Dedicate 10 to 15 minutes to targeted drills on the
-            keys identified on Day 1 using <Link href="/lessons/practice">lessons practice</Link>. Finish with
+            keys identified on Day 1 using <Link href="/lessons/practice">the Practice Lab</Link>. Finish with
             one or two relaxed runs on standard text.
           </li>
           <li>
@@ -580,7 +580,7 @@ export default function HowToBreakPlateauPage() {
           <li>
             <strong>Day 10 (Numbers and Symbols Review):</strong> Spend 10 to 15 minutes on text containing numbers,
             dates, or basic symbols in{" "}
-            <Link href="/lessons/numbers-and-symbols-mastery">numbers and symbols mastery</Link>. Practice keeping
+            <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link>. Practice keeping
             your resting hand anchored on the home row when reaching upward.
           </li>
           <li>

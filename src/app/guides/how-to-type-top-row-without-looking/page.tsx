@@ -263,21 +263,28 @@ export default function HowToTypeTopRowWithoutLookingPage() {
 
         <h2 id="interactive-practice">Interactive Curriculum Practice</h2>
         <p>
-          To drill these reaches with instant feedback and mistake tracking, proceed through the dedicated top-row
-          modules in <Link href="/lessons">HeroTyping Lessons</Link>:
+          HeroTyping teaches top-row reaches in progressive, symmetrical pairs rather than forcing all ten upper keys at once.
+          To build clean reach vectors with real-time feedback, proceed through the dedicated top-row units in{" "}
+          <Link href="/lessons">HeroTyping Lessons</Link>:
         </p>
         <ul>
           <li>
-            <Link href="/lessons/top-row-left">Lesson 5: Top Row Left (Q, W, E, R, T)</Link>
+            <Link href="/lessons/top-row-combined">Unit 7: Top Row: E &amp; I Vowels</Link> — High-frequency vowel foundation.
           </li>
           <li>
-            <Link href="/lessons/top-row-right">Lesson 6: Top Row Right (Y, U, I, O, P)</Link>
+            <Link href="/lessons/top-row-words">Unit 8: Top Row: R &amp; U Index Reaches</Link> — Upward index extensions from home anchors.
           </li>
           <li>
-            <Link href="/lessons/top-row-combined">Lesson 7: Top Row Combined Practice</Link>
+            <Link href="/lessons/bottom-row-left">Unit 9: Top Row: T &amp; Y Upper Center</Link> — Diagonal center reaches.
           </li>
           <li>
-            <Link href="/lessons/top-row-words">Lesson 8: Top Row &amp; Home Row Integrated Words</Link>
+            <Link href="/lessons/bottom-row-right">Unit 10: Top Row: W &amp; O Ring Reaches</Link> — Ring finger extensions.
+          </li>
+          <li>
+            <Link href="/lessons/bottom-row-combined">Unit 11: Top Row: Q &amp; P Outer Pinkies</Link> — Outer top-deck boundaries.
+          </li>
+          <li>
+            <Link href="/lessons/bottom-row-words">Unit 12: Consolidation: Top &amp; Home Rows</Link> — 20 keys integrated across natural prose.
           </li>
         </ul>
         <p>

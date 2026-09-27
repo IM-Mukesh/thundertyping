@@ -268,8 +268,9 @@ export default function TypingForProgrammersPage() {
         <p>
           Once your key mappings are locked in, test your execution speed on our{" "}
           <Link href="/">typing tests</Link>, practice with real code syntax snippets using our{" "}
-          <Link href="/guides/custom-text-typing-test">custom text typing test</Link>, or drill foundational finger coordination in our{" "}
-          <Link href="/lessons">touch typing lessons</Link>.
+          <Link href="/guides/custom-text-typing-test">custom text typing test</Link>, or practice technical operators and brackets directly in{" "}
+          <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link> within the{" "}
+          <Link href="/lessons">HeroTyping Curriculum</Link>.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

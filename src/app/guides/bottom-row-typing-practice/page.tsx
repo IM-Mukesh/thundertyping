@@ -288,22 +288,27 @@ export default function BottomRowTypingPracticePage() {
           brave zinc exact voice never climb brown blank examine volume carbon
         </p>
 
+        <h2 id="interactive-curriculum">Interactive Bottom-Row Curriculum</h2>
         <p>
-          Ready to put these mechanics into practice with real-time accuracy scoring? Jump into the structured bottom-row
-          modules in <Link href="/lessons">HeroTyping Lessons</Link>:
+          HeroTyping teaches downward curls in progressive, symmetrical pairs rather than throwing the entire bottom
+          row at once. To practice with real-time feedback and mistake tracking, proceed through the dedicated bottom-row
+          units in <Link href="/lessons">HeroTyping Lessons</Link>:
         </p>
         <ul>
           <li>
-            <Link href="/lessons/bottom-row-left">Lesson 9: Bottom Row Left (Z, X, C, V, B)</Link>
+            <Link href="/lessons/numbers-low">Unit 13: Bottom Row: V &amp; M Index Curls</Link> — Downward index finger curls.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-right">Lesson 10: Bottom Row Right (N, M, Punctuation)</Link>
+            <Link href="/lessons/numbers-high">Unit 14: Bottom Row: C &amp; Comma</Link> — Middle finger curls and comma placement.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-combined">Lesson 11: Bottom Row Combined Practice</Link>
+            <Link href="/lessons/full-keyboard-words">Unit 15: Bottom Row: X &amp; Period</Link> — Ring finger curls and sentence periods.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-words">Lesson 12: Bottom Row Integrated Real Words</Link>
+            <Link href="/lessons/full-keyboard-punctuation">Unit 16: Bottom Row: Z &amp; Slash</Link> — Pinky curls and slash reach.
+          </li>
+          <li>
+            <Link href="/lessons/graduation">Unit 17: Alphabet Complete: B &amp; N</Link> — Center reaches unlocking all 26 letters of the alphabet.
           </li>
         </ul>
 

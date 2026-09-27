@@ -236,9 +236,8 @@ export default function TouchTypingRoadmapForBeginnersPage() {
             parallel to the floor or slope slightly downward toward the keyboard.
           </li>
           <li>
-            <strong>Wrists floating, not planted:</strong> Never rest your wrists or palms flat against a hard desk while
-            typing. Planting your wrists anchors your hands, forcing your fingers to stretch past their natural range of
-            motion and compressing the carpal tunnel. See our comprehensive guide on{" "}
+            <strong>Wrists floating, not planted:</strong> Avoid resting your wrists or palms flat against a hard desk surface while
+            typing. Planting your wrists anchors your hands, forcing fingers to stretch awkwardly and creating unnecessary forearm tension. Keep wrists hovering in a relaxed, neutral alignment. See our comprehensive guide on{" "}
             <Link href="/guides/proper-typing-posture-and-ergonomics">Proper Typing Posture and Ergonomics</Link>.
           </li>
           <li>
@@ -257,11 +256,12 @@ export default function TouchTypingRoadmapForBeginnersPage() {
           <li>
             Start with the structured curriculum: Explore the{" "}
             <Link href="/guides/touch-typing-lesson-order">Touch Typing Lesson Order</Link> or dive directly into{" "}
-            <Link href="/lessons">HeroTyping Lessons</Link>.
+            <Link href="/lessons">HeroTyping Lessons</Link>, which uses a 28-unit, 3-tier sequence introducing at most two new keys per unit.
           </li>
           <li>
             Commit to 15 minutes of practice every day. Check your{" "}
-            <strong>Today&apos;s Training</strong> recommendation on your lesson dashboard.
+            <strong>Today&apos;s Training</strong> recommendation on your lesson dashboard or refine troublesome keys in the{" "}
+            <Link href="/lessons/practice">Practice Lab</Link>.
           </li>
           <li>
             Once a week, take a standard 1-minute test on the <Link href="/">Speed Test</Link> to log your WPM benchmark

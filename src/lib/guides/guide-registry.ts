@@ -68,7 +68,7 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     shortDescription: "Blind number typing, mechanical switch selection, and layout comparisons.",
     recommendedOrderDescription:
       "Master blind top-row number reaching, compare QWERTY vs. Dvorak vs. Colemak, and optimize your mechanical switches.",
-    productRoute: "/lessons/numbers-low",
+    productRoute: "/lessons/building-speed",
     productLabel: "Practice Number Row",
   },
   "typing-work-study": {
@@ -268,7 +268,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     href: "/guides/typing-resources-for-teachers",
     title: "Free Typing Resources for Teachers",
     description:
-      "A week-by-week classroom curriculum built from 28 structured lessons, printable typing charts, lab activity ideas, and objective rubric assessment.",
+      "A 9-stage classroom framework across 28 structured units, pacing options from bell-ringers to lab blocks, and objective formative assessment.",
     category: "typing-practice",
     primaryTopic: "Classroom & Educational Curriculum",
     intent: "career",
@@ -281,7 +281,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "how-many-minutes-a-day-to-practice-typing",
     ],
     relatedProductRoute: "/lessons",
-    relatedProductLabel: "Explore 28 Curriculum Lessons",
+    relatedProductLabel: "Explore 28 Curriculum Units",
     publishedAt: "2026-09-14",
     updatedAt: "2026-09-24",
   },
@@ -480,7 +480,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "wpm-cpm-kph-calculator",
       "number-row-typing-practice",
     ],
-    relatedProductRoute: "/lessons/numbers-high",
+    relatedProductRoute: "/lessons/building-speed",
     relatedProductLabel: "Practice Number Entry Drills",
     publishedAt: "2026-09-14",
     updatedAt: "2026-09-24",
@@ -504,7 +504,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "practice-typing-numbers-and-symbols-without-looking",
       "typing-for-programmers",
     ],
-    relatedProductRoute: "/lessons/numbers-low",
+    relatedProductRoute: "/lessons/building-speed",
     relatedProductLabel: "Practice Number Lessons",
     heroImage: "/guides/keyboard-skills/how-to-type-numbers-and-symbols-without-looking/how-to-type-numbers-and-symbols-without-looking.webp",
     articleImages: [
@@ -878,7 +878,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "home-row-typing-practice",
       "touch-typing-finger-map",
     ],
-    relatedProductRoute: "/lessons/bottom-row-left",
+    relatedProductRoute: "/lessons/numbers-low",
     relatedProductLabel: "Drill Bottom-Row Lessons",
     heroImage: "/guides/keyboard-skills/bottom-row-typing-practice/bottom-row-flexion-mechanics.webp",
 
@@ -909,7 +909,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "how-to-type-top-row-without-looking",
       "data-entry-typing-test",
     ],
-    relatedProductRoute: "/lessons/numbers-low",
+    relatedProductRoute: "/lessons/building-speed",
     relatedProductLabel: "Practice Number Row Lessons",
     heroImage: "/guides/keyboard-skills/number-row-typing-practice/number-row-reaches-guide.webp",
 
@@ -940,8 +940,8 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "practice-typing-numbers-and-symbols-without-looking",
       "custom-text-typing-test",
     ],
-    relatedProductRoute: "/lessons/full-keyboard-punctuation",
-    relatedProductLabel: "Drill Punctuation Lesson",
+    relatedProductRoute: "/lessons/shift-capitalization",
+    relatedProductLabel: "Practice Shift & Punctuation",
     heroImage: "/guides/keyboard-skills/punctuation-typing-practice/punctuation-shift-coordination.webp",
 
     articleImages: [

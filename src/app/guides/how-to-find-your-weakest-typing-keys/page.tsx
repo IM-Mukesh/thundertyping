@@ -48,9 +48,9 @@ const FAQ_ITEMS = [
   {
     question: "How many typing attempts do I need before a key is statistically 'weak'?",
     answer:
-      "A key needs at least 6 to 10 recorded attempts in real words before accuracy numbers become meaningful. Missing a key once out of two attempts gives an apparent 50% error rate, but that single slip is statistical noise. HeroTyping's engine requires at least 6 recorded attempts and an accuracy below 90% before classifying any key as an active weak key.",
+      "A key needs at least 8 recorded attempts in real words before accuracy numbers become statistically meaningful. Missing a key once out of two attempts gives an apparent 50% error rate, but that single slip is statistical noise. HeroTyping's mastery engine uses a Bayesian Wilson score confidence interval requiring at least 8 attempts and an accuracy rate below 88% before classifying any key as actively struggling.",
     plainAnswer:
-      "A key requires at least 6 to 10 recorded attempts before an error rate is statistically significant. Single slips on rarely typed letters do not indicate true motor weakness.",
+      "A key requires at least 8 recorded attempts before an error rate is statistically significant. HeroTyping uses a Wilson score confidence interval to filter out random single slips.",
   },
   {
     question: "Why do I keep mistyping common letters like 'E' and 'T'?",
@@ -126,7 +126,7 @@ export default function HowToFindYourWeakestTypingKeysPage() {
         <Callout label="Diagnostic rule">
           <p>
             Never classify a key as weak based on an isolated mistake. A genuine weak key shows a repeatable
-            accuracy rate under 90% across at least 6 to 10 verified attempts within natural words. Fixing two
+            accuracy rate under 88% across at least 8 verified attempts within natural words. Fixing two
             diagnosed weak keys routinely yields a bigger WPM leap than 50 random typing tests.
           </p>
         </Callout>
@@ -180,12 +180,12 @@ export default function HowToFindYourWeakestTypingKeysPage() {
 
         <ul>
           <li>
-            <strong>Minimum attempt threshold:</strong> Only evaluate keys with at least 6 recorded attempts during
-            a practice session.
+            <strong>Minimum attempt threshold:</strong> Only evaluate keys with at least 8 recorded attempts during
+            practice or lesson sessions.
           </li>
           <li>
-            <strong>Accuracy threshold:</strong> A key is classified as an active weak key when its accuracy drops
-            consistently below 90% across multiple runs.
+            <strong>Accuracy threshold:</strong> HeroTyping classifies a key as actively struggling when its Wilson
+            score lower bound drops below 88% accuracy across multiple exercises.
           </li>
           <li>
             <strong>Lexical frequency weight:</strong> Prioritize fixing vowels and high-frequency consonants
@@ -238,10 +238,10 @@ export default function HowToFindYourWeakestTypingKeysPage() {
             whether the errors were misses, late backspaces, or extra insertions.
           </li>
           <li>
-            <strong>Check the HeroTyping Key Performance Tracker:</strong> If you use{" "}
-            <Link href="/lessons">HeroTyping Lessons</Link>, the internal performance engine automatically aggregates
-            your per-key statistics across exercises. If a key falls below 90% accuracy with 6+ attempts, the platform
-            flags it in your dashboard as a priority weak key.
+            <strong>Check the HeroTyping Key Performance Tracker:</strong> When you practice in{" "}
+            <Link href="/lessons">HeroTyping Lessons</Link>, the Bayesian mastery engine automatically aggregates
+            your per-key statistics across exercises. If a key falls below 88% accuracy with 8+ attempts, the platform
+            flags it in your dashboard as an active weak key and schedules it for review.
           </li>
           <li>
             <strong>Inspect adjacent anchor stability:</strong> When you miss a key like <code>U</code>, check whether
@@ -259,8 +259,8 @@ export default function HowToFindYourWeakestTypingKeysPage() {
           Instead, switch immediately to targeted remediation. Read our comprehensive guide on{" "}
           <Link href="/guides/typing-practice-for-weak-keys">Typing Practice for Weak Keys</Link> to learn the bigram
           embedding method, or jump directly into the adaptive{" "}
-          <Link href="/lessons/practice">HeroTyping Weak-Key Practice Drill</Link> to generate custom practice text
-          built specifically around your diagnosed problem letters.
+          <Link href="/lessons/practice">HeroTyping Practice Lab</Link> to generate custom drills across five targeted
+          practice modes built specifically around your diagnosed problem letters.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

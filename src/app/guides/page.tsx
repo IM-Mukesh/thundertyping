@@ -230,8 +230,8 @@ export default function GuidesIndexPage() {
             className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
           >
             <div>
-              <span className="text-xs font-bold text-foreground">28 Guided Lessons</span>
-              <p className="mt-1 text-[11px] text-sub">Learn home row through punctuation</p>
+              <span className="text-xs font-bold text-foreground">28 Curriculum Units</span>
+              <p className="mt-1 text-[11px] text-sub">Symmetrical 2-key progression across 3 tiers</p>
             </div>
             <span className="mt-3 text-[11px] font-medium text-accent">Start lessons &rarr;</span>
           </Link>
@@ -241,8 +241,8 @@ export default function GuidesIndexPage() {
             className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
           >
             <div>
-              <span className="text-xs font-bold text-foreground">Weak-Key Practice</span>
-              <p className="mt-1 text-[11px] text-sub">Target slow &amp; error-prone keys</p>
+              <span className="text-xs font-bold text-foreground">Adaptive Practice Lab</span>
+              <p className="mt-1 text-[11px] text-sub">Target struggling keys with Wilson-score tracking</p>
             </div>
             <span className="mt-3 text-[11px] font-medium text-accent">Drill keys &rarr;</span>
           </Link>

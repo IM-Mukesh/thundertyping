@@ -75,7 +75,7 @@ const FAQ_ITEMS = [
   {
     question: "When should I graduate a weak key back to regular typing?",
     answer:
-      "Graduate the key when you can complete three consecutive 1-minute drills containing the target key with at least 98% accuracy and zero hesitation pauses. In HeroTyping, the automated tracker clears the weak status once your rolling accuracy exceeds 90% across 6+ live attempts.",
+      "Graduate the key when you can complete three consecutive drills containing the target key with at least 98% accuracy and zero hesitation pauses. In HeroTyping, the mastery engine graduates a key from struggling to mastered once its Wilson score confidence interval reaches 95% accuracy across live attempts.",
     plainAnswer:
       "Retire the dedicated drill once you maintain 98%+ accuracy across three consecutive runs without hesitation pauses before striking the letter.",
   },
@@ -248,16 +248,15 @@ export default function TypingPracticeForWeakKeysPage() {
 
         <ol>
           <li>
-            Go directly to the <Link href="/lessons/practice">HeroTyping Weak-Key Practice Tool</Link>.
+            Go directly to the <Link href="/lessons/practice">HeroTyping Practice Lab</Link>.
           </li>
           <li>
             The engine reads your live mistake history from recent tests and curriculum exercises, automatically
-            generating customized word lines centered on your exact problem keys.
+            generating customized exercises centered on your exact problem keys across five modes (Focus Key, Trigram Flow, Common Words, Adaptive Sentences, and Real Sentences).
           </li>
           <li>
-            Complete 3 sets of 3-minute drills. Watch the live accuracy indicator—once your target letter stays above
-            92% across several runs, the engine automatically clears the weak designation and adjusts your training
-            focus.
+            Complete 3 focused sets. Watch your per-key mastery progress—once your target letter stabilizes above
+            95% accuracy under the Wilson score model, the engine graduates the key to mastered status and updates your training queue.
           </li>
           <li>
             Finish your session with a standard 1-minute run on the <Link href="/">Speed Test</Link> to consolidate

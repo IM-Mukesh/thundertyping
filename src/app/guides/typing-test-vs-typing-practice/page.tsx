@@ -227,8 +227,8 @@ export default function TypingTestVsTypingPracticePage() {
         </p>
         <ol>
           <li>
-            <strong>For Practice:</strong> Use the <Link href="/lessons">28-Lesson Curriculum</Link> and the adaptive{" "}
-            <Link href="/lessons/practice">Weak-Key Practice Tool</Link> to systematically build flawless motor memory.
+            <strong>For Practice:</strong> Work through the <Link href="/lessons">28-unit, 3-tier Curriculum</Link> and the adaptive{" "}
+            <Link href="/lessons/practice">Practice Lab</Link> to systematically build clean motor memory without timer pressure.
           </li>
           <li>
             <strong>For Testing:</strong> Use the <Link href="/">HeroTyping Speed Test</Link> to evaluate your Net WPM,

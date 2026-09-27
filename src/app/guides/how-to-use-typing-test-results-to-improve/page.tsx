@@ -171,7 +171,7 @@ export default function HowToUseTypingTestResultsToImprovePage() {
           <li>
             <strong>Step 3: Targeted Remediation (10 minutes):</strong> Close the test screen. If you stumbled on
             reaches like <code>B</code> and <code>P</code>, launch the{" "}
-            <Link href="/lessons/practice">HeroTyping Weak-Key Practice</Link> drill to re-anchor those specific
+            <Link href="/lessons/practice">HeroTyping Practice Lab</Link> to re-anchor those specific
             trajectories.
           </li>
           <li>
@@ -244,7 +244,7 @@ export default function HowToUseTypingTestResultsToImprovePage() {
           </li>
           <li>
             If specific letters failed, jump straight into{" "}
-            <Link href="/lessons/practice">Weak-Key Remediation Drills</Link>.
+            <Link href="/lessons/practice">Practice Lab Remediation Drills</Link>.
           </li>
         </ol>
 

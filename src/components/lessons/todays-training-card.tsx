@@ -98,10 +98,10 @@ export function TodaysTrainingCard() {
 
         <div className="flex flex-col gap-1">
           <div className="text-sm font-bold text-foreground">
-            1. Home Row: Left Hand
+            {`1. ${LESSON_LIST[0].name}`}
           </div>
           <p className="text-xs text-sub leading-relaxed">
-            Master the tactile anchor keys (A S D F). Feel the raised index bump on F to type without looking.
+            Master the tactile anchor bumps on F and J. Anchor your index fingers to orient both hands on the home row without looking down.
           </p>
         </div>
 

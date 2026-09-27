@@ -28,7 +28,7 @@ const STAGES = [
   {
     range: "Under 20 WPM",
     practice:
-      "Pure key-location drills — home row first, then the rest of the keyboard, one row at a time. Skip full sentences entirely until the finger map is solid; typing sentences too early reinforces looking down.",
+      "Anchor keys and home row first — starting with the F and J bumps, introducing keys in symmetrical pairs (two at a time), and practicing short patterns before full sentences. Skip full sentences until the finger map is solid to avoid reinforcing looking down.",
   },
   {
     range: "20–40 WPM",
@@ -56,9 +56,9 @@ const FAQ_ITEMS = [
   {
     question: "What should a complete beginner practice first?",
     answer:
-      "Home row key location — nothing else. Skipping straight to words or sentences before the eight home-row keys are automatic is the most common reason self-taught typing plateaus early. A slow, boring session finding A S D F / J K L ; by feel is more valuable at this stage than any full-sentence typing test.",
+      "Home row anchor keys (F & J) and initial symmetrical pairs — nothing else. Skipping straight to words or sentences before tactile home-row anchors are automatic is the most common reason self-taught typing plateaus early. A slow, focused session feeling the F and J locator nubs and typing clean symmetrical drills is more valuable at this stage than any full-sentence typing test.",
     plainAnswer:
-      "Home row key location, before anything else — skipping to words or sentences too early is the most common reason self-taught typing plateaus.",
+      "Home row anchor keys (F & J) and symmetrical pairs before anything else — skipping to words or sentences too early is the most common reason self-taught typing plateaus.",
   },
   {
     question: "How often should a beginner practice?",
@@ -190,11 +190,13 @@ export default function TypingPracticeForBeginnersPage() {
 
         <h2 id="where">Where to actually do this on HeroTyping</h2>
         <p>
-          <Link href="/lessons">Structured lessons</Link> run the home-row-to-sentences progression
-          in order automatically, with an on-screen keyboard and hand diagram. Once the basics are
-          solid, <Link href="/vocabulary">vocabulary practice</Link> supplies unfamiliar words that
+          <Link href="/lessons">Structured lessons</Link> run a 28-unit, 3-tier curriculum that
+          introduces keys in symmetrical pairs (never more than two new keys per unit), with an on-screen
+          keyboard, live finger guidance, and consolidation reviews. Once your foundational finger map is
+          solid, <Link href="/lessons/practice">the targeted Practice Lab</Link> isolates persistent weak keys,{" "}
+          <Link href="/vocabulary">vocabulary practice</Link> supplies unfamiliar words that
           prevent coasting on memorized text, and <Link href="/games">typing games</Link> keep
-          longer practice sessions from feeling like a drill. When you want a clean measurement of
+          longer sessions engaging. When you want a clean measurement of
           where you stand, <Link href="/">take a typing test</Link> under consistent conditions.
         </p>
 

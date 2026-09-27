@@ -216,15 +216,15 @@ export default function TouchTypingFingerMapPage() {
 
         <h2 id="practice">How to actually learn it</h2>
         <ol>
-          <li>Home row alone, left hand, until it&apos;s automatic without looking.</li>
-          <li>Home row alone, right hand, same standard.</li>
-          <li>Both hands combined on home row.</li>
-          <li>Top row, then bottom row, each hand separately before combining.</li>
-          <li>Numbers, then real words, then full sentences with punctuation.</li>
+          <li>Index anchor keys first (<code>F</code> &amp; <code>J</code>) using tactile bump orientation.</li>
+          <li>Home row radiating outward in symmetrical pairs (<code>D &amp; K</code>, <code>S &amp; L</code>, <code>A &amp; ;</code>, <code>G &amp; H</code>), followed by a consolidation review.</li>
+          <li>Top row reaches paired symmetrically (<code>E &amp; I</code>, <code>R &amp; U</code>, <code>T &amp; Y</code>, <code>W &amp; O</code>, <code>Q &amp; P</code>) and consolidated.</li>
+          <li>Bottom row downward curls paired symmetrically (<code>V &amp; M</code>, <code>C &amp; ,</code>, <code>X &amp; .</code>, <code>Z &amp; /</code>, <code>B &amp; N</code>) and consolidated.</li>
+          <li>Capitalization (opposite-hand Shift), number row pairs, and punctuation/symbols across Intermediate and Advanced tiers.</li>
         </ol>
         <p>
-          That&apos;s the exact order <Link href="/lessons">HeroTyping&apos;s typing lessons</Link> run,
-          with a live hand diagram fading out as you stop needing it. For targeted drill sets across keyboard zones, explore our guides on{" "}
+          That&apos;s the exact 28-unit progression <Link href="/lessons">HeroTyping&apos;s typing lessons</Link> follow,
+          introducing at most two new keys per unit with an interactive visual keyboard and tactile finger guide. For targeted drill sets across keyboard zones, explore our guides on{" "}
           <Link href="/guides/home-row-typing-practice">home row typing practice</Link> and{" "}
           <Link href="/guides/bottom-row-typing-practice">bottom row typing practice</Link>. For the day-by-day version
           of this plan, see{" "}

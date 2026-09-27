@@ -35,6 +35,39 @@ Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll p
 
 As of **2026-09-28**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons` rebuilt with a strict **<=2 new alphanumeric keys per unit** pedagogical sequence, a **1-5 star motor mastery rating system**, a **10/10 animated lesson completion modal** with sequential star reveals and crystal chimes, an adaptive practice lab, diagnostic placement engine, and Bayesian mastery scoring, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **283-test suite**.
 
+**Session 2026-09-28 (Part 4) — Complete Guides Content Audit & Rewrite (Curriculum Alignment & Pedagogical Realism):**
+- **Comprehensive Guides Corpus Audit & Re-alignment**:
+  - Audited all 43 guides across 6 category hubs plus `/guides` hub against the new 28-unit, 3-tier, 9-stage curriculum implementation in `src/lib/lessons/`.
+  - Replaced all stale assumptions, outdated lesson numbers, obsolete 90%-95% pass thresholds, and "left-hand first" sequencing with HeroTyping's true pedagogical architecture.
+- **Pedagogical Guides Rewritten from First Principles**:
+  - `src/app/guides/typing-resources-for-teachers/page.tsx`: Fully rewritten for classroom realities with 3 implementation models (10m bell-ringer, 20m typing block, 40-45m computer lab period), 9-stage progression overview across all 28 units, formative 1–5 star grading rubric, 60% minimum progression threshold, honest local-storage privacy disclosures, and research-backed attribution (NBEA / academic keyboarding literature).
+  - `src/app/guides/touch-typing-lesson-order/page.tsx`: Completely rebuilt from the ground up around the real 9-stage curriculum sequence, explaining why F & J anchors come first, how the <=2 keys/unit rule prevents cognitive overload, how consolidation units work (Units 6, 12, 17, 23), and why numbers/code syntax are deferred to Intermediate/Advanced tiers.
+  - `src/app/guides/home-row-typing-practice/page.tsx`: Realigned all drills and unit links to the 2-key symmetrical model (F & J, D & K, S & L, A & ;, G & H, Unit 6 consolidation) and 60% pass threshold.
+  - `src/app/guides/how-to-type-top-row-without-looking/page.tsx`: Fixed all lesson links from stale single-hand assignments to actual Top Row units: Unit 7 (E & I), Unit 8 (R & U), Unit 9 (T & Y), Unit 10 (W & O), Unit 11 (Q & P), and Unit 12 (Consolidation).
+  - `src/app/guides/bottom-row-typing-practice/page.tsx`: Fixed all lesson links to actual Bottom Row units: Unit 13 (V & M), Unit 14 (C & comma), Unit 15 (X & period), Unit 16 (Z & slash), and Unit 17 (B & N).
+  - `src/app/guides/number-row-typing-practice/page.tsx`: Realigned links with actual Number Row units: Unit 19 (4 & 7), Unit 20 (3 & 8), Unit 21 (2 & 9), Unit 22 (1 & 0), Unit 23 (5 & 6), and Unit 27 (Code Syntax & Numbers).
+  - `src/app/guides/punctuation-typing-practice/page.tsx`: Realigned punctuation links to reflect real tier progression (Unit 4 semicolon, Unit 14 comma, Unit 15 period, Unit 16 slash, Unit 18 Shift & capitalization, Unit 24 symbols).
+  - `src/app/guides/touch-typing-finger-map/page.tsx` & `src/app/guides/how-to-touch-type/page.tsx`: Replaced stale "left hand home row alone then right hand" sequencing with symmetrical 2-key pairings radiating from tactile anchors.
+  - `src/app/guides/typing-practice-for-beginners/page.tsx`: Updated practice stages and recommendations to reflect F & J bumps, 2-key pairs, and 28 units.
+- **Adaptive Engine & Weak-Key Diagnostics Alignment**:
+  - `src/app/guides/how-to-find-your-weakest-typing-keys/page.tsx` & `src/app/guides/typing-practice-for-weak-keys/page.tsx`: Updated diagnostic thresholds to match the actual Bayesian Wilson-score engine (minimum 8 attempts, lower bound < 88% = struggling, >= 95% = mastered) and linked to the Practice Lab's five modes.
+  - `src/app/guides/why-wpm-is-high-accuracy-is-low/page.tsx`: Updated lesson gating from old 95% threshold to the formative 1–5 star rating system (60% minimum accuracy pass gate to advance; 4–5 stars for precision).
+  - `src/app/guides/practice-typing-numbers-and-symbols-without-looking/page.tsx` & `src/app/guides/typing-for-programmers/page.tsx`: Updated Unit 27 links to "Unit 27: Code Syntax & Technical Formats" (`/lessons/numbers-and-symbols-mastery`).
+- **Ergonomics & Non-Medical Phrasing (Rule 19 Compliance)**:
+  - `src/app/guides/typing-stretches-and-hand-warmups/page.tsx`: Softened "Physical therapist-recommended" claims to educational ergonomic language, focusing on comfort, mobility, and healthy warmup habits.
+  - `src/app/guides/how-to-type-numbers-and-symbols-without-looking/page.tsx`: Replaced "injurious claw grip known as lateral carpal strain" with accurate non-clinical forearm tension descriptions.
+  - `src/app/guides/touch-typing-roadmap-for-beginners/page.tsx`: Softened carpal tunnel compression language to relaxed neutral joint alignment.
+- **Internal Routing & Navigation Integrity**:
+  - `src/lib/guides/guide-registry.ts`: Fixed mismatched product routes: Keyboard Skills now correctly routes to `/lessons/building-speed` (Unit 19 Number Row), Data Entry and Number guides link to Unit 19, Bottom Row links to Unit 13 (`/lessons/numbers-low`), and Punctuation links to Unit 18 (`/lessons/shift-capitalization`).
+  - `src/app/guides/page.tsx`: Updated CTA cards to "28 Curriculum Units" and "Adaptive Practice Lab".
+  - `src/components/lessons/todays-training-card.tsx`: Replaced hardcoded "1. Home Row: Left Hand (A S D F)" with dynamic `1. ${LESSON_LIST[0].name}` ("1. Home Row: F & J Anchors").
+- **Verification**:
+  - `npm test`: 283 unit tests passing across 58 suites (100% pass).
+  - `npm run typecheck`: 0 TypeScript errors.
+  - `npm run lint`: 0 ESLint errors, 0 warnings.
+  - `npm run build`: 150/150 static pages successfully prerendered.
+  - `git diff --check`: 0 whitespace errors.
+
 **Session 2026-09-28 (Part 3) — Lesson Completion & Star System Redesign (10/10 Human-Crafted UX):**
 - **Eliminated Surprise Auto-Restart (Bugs 2 & 37)**:
   - Lessons never auto-restart or transition unexpectedly upon completion or mistake thresholds.

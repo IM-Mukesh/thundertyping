@@ -93,9 +93,9 @@ const FAQ_ITEMS = [
   {
     question: "How long should I practice the home row before moving to the top row?",
     answer:
-      "Stay on the home row until you can type all 8 home keys (and basic home words like 'ask', 'fall', 'sad', 'glad', 'flask') at 95%+ accuracy without looking down. For most learners, this takes 2 to 4 days of 15-minute daily practice.",
+      "Stay on the home row until you can type all 10 home keys (A S D F G H J K L ;) and complete Unit 6 (Home Row Mastery) with at least 60% accuracy without glancing down. Reaching 88%+ or 94%+ awards 4 to 5 stars. For most learners, working through the five progressive key pairs and the Unit 6 consolidation takes 2 to 4 days of 15-minute daily practice.",
     plainAnswer:
-      "Spend 2 to 4 days on home-row drills until you achieve 95%+ accuracy on home-row words without looking at your hands.",
+      "Spend 2 to 4 days on the progressive home-row units through Unit 6 (Home Row Mastery) until typing feels comfortable without looking at your hands.",
   },
 ];
 
@@ -247,34 +247,35 @@ export default function HomeRowTypingPracticePage() {
 
         <h2 id="practical-home-drills">Step-by-Step Practice Drills</h2>
         <p>
-          Practice these four drill sequences to build permanent home-row muscle memory:
+          HeroTyping introduces the home row in symmetrical two-key pairs rather than forcing you to memorize all ten
+          keys simultaneously. Practice these four drill stages to build clean home-row muscle memory:
         </p>
 
-        <h3>Drill 1: Left-Hand Home Anchor</h3>
+        <h3>Drill 1: Symmetrical Anchor Nibs (F and J)</h3>
         <p className="font-mono text-xs bg-sub-alt/40 p-3 rounded border border-border">
-          asdf asdf fdas fdas aass ddff afsd dafs fds aada
+          f j fj jf ff jj fff jjj fjf jfj fj fjf jfj
         </p>
 
-        <h3>Drill 2: Right-Hand Home Anchor</h3>
+        <h3>Drill 2: Middle &amp; Ring Keys (D, K, S, L)</h3>
         <p className="font-mono text-xs bg-sub-alt/40 p-3 rounded border border-border">
-          jkl; jkl; ;lkj ;lkj jjkk ll;; j;kl k;lj lk;j ;llk
+          dk kd sl ls dksl lskd fjdk jksf dl sk dl sk
         </p>
 
-        <h3>Drill 3: Two-Hand Alternating Coordination</h3>
+        <h3>Drill 3: Pinky Anchors &amp; Center Reaches (A, Semicolon, G, H)</h3>
         <p className="font-mono text-xs bg-sub-alt/40 p-3 rounded border border-border">
-          aj sk dl f; a; sl dk fj asdf jkl; fdsa ;lkj alsk djfh
+          a; ;a gh hg ag ah ;g ;h asdf jkl; fdsa ;lkj
         </p>
 
-        <h3>Drill 4: Real Home-Row English Words</h3>
+        <h3>Drill 4: Real Home-Row English Words (Unit 6 Consolidation)</h3>
         <p className="font-mono text-xs bg-sub-alt/40 p-3 rounded border border-border">
           ask dad sad fall glad flask salads alas falls flasks dallas
         </p>
 
         <p>
-          Once you feel comfortable, jump into the interactive lesson engine: start with{" "}
-          <Link href="/lessons/home-row-left">Lesson 1: Home Row Left</Link> and progress through Lessons 2, 3, and 4
-          in <Link href="/lessons">HeroTyping Lessons</Link>, or expand your finger reaches with our guides on{" "}
-          <Link href="/guides/how-to-type-top-row-without-looking">top row reaches</Link> and{" "}
+          Once you feel comfortable with hand anchoring, jump into the interactive lesson engine: start with{" "}
+          <Link href="/lessons/home-row-left">Unit 1: Home Row: F &amp; J Anchors</Link> and progress through Units 2 to 5
+          and the Unit 6 Consolidation in <Link href="/lessons">HeroTyping Lessons</Link>, or expand your finger reaches
+          with our guides on <Link href="/guides/how-to-type-top-row-without-looking">top row reaches</Link> and{" "}
           <Link href="/guides/bottom-row-typing-practice">bottom row typing practice</Link>.
         </p>
 

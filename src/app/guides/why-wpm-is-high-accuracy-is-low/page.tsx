@@ -255,14 +255,14 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
             missed characters directly subtract from your score, showing you the true cost of typos.
           </li>
           <li>
-            <strong>Accuracy-Gated Lessons:</strong> In <Link href="/lessons">HeroTyping Lessons</Link>, every module
-            imposes strict accuracy thresholds (typically 90% to 95%). You cannot advance to the next lesson through
-            speed alone; you must demonstrate clean technique.
+            <strong>Formative Star Ratings:</strong> In <Link href="/lessons">HeroTyping Lessons</Link>, every unit
+            evaluates your run with a 1–5 star rating system. You must achieve at least 3 stars (a minimum 60% accuracy threshold)
+            to unlock the next unit, while higher tiers demand 90% to 98%+ precision to achieve 4 or 5 stars.
           </li>
           <li>
-            <strong>Automated Weak-Key Tracking:</strong> If your errors cluster on specific letters, visit the{" "}
-            <Link href="/lessons/practice">HeroTyping Weak-Key Practice Tool</Link> to drill those problem keys until
-            accuracy stabilizes above 95%.
+            <strong>Targeted Practice Lab:</strong> When errors cluster on specific letters, the Bayesian Wilson-score engine
+            identifies struggling keys and routes them into the <Link href="/lessons/practice">HeroTyping Practice Lab</Link> across
+            five targeted modes until confidence and accuracy stabilize above 95%.
           </li>
         </ul>
 

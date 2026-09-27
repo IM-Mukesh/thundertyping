@@ -4,109 +4,188 @@ import { GuideLayout } from "@/components/content/guide-layout";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { SourceList } from "@/components/content/source-list";
-import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Free Typing Resources for Teachers (Curriculum, Plans, Activities)",
+  title: "Free Typing Resources for Teachers: Classroom Curriculum & Lesson Plans",
   description:
-    "A free, no-signup typing curriculum for the classroom: a week-by-week lesson plan built from 28 real units, activities, assessment ideas, and honest benchmarks.",
+    "A free, no-signup touch-typing curriculum for educators: a 9-phase pedagogical progression across 28 units, classroom routines, star-based feedback, and honest benchmarks.",
   path: "/guides/typing-resources-for-teachers",
 });
 
 const PUBLISHED = "2026-09-25";
-const UPDATED = "2026-09-25";
+const UPDATED = "2026-09-28";
 
-// Grouped straight from the real curriculum -- LESSON_LIST is the same
-// source of truth the /lessons route and its unlock-gating logic use, so
-// this plan can never list a unit that doesn't exist or drift out of the
-// order students actually take it in.
-const LESSONS_PER_WEEK = 3;
-const WEEKLY_PLAN: { week: number; lessons: string[] }[] = [];
-for (let i = 0; i < LESSON_LIST.length; i += LESSONS_PER_WEEK) {
-  WEEKLY_PLAN.push({
-    week: WEEKLY_PLAN.length + 1,
-    lessons: LESSON_LIST.slice(i, i + LESSONS_PER_WEEK).map((l) => l.name),
-  });
+interface CurriculumPhase {
+  phase: string;
+  units: string;
+  focus: string;
+  classroomGoal: string;
 }
 
+const CURRICULUM_PHASES: CurriculumPhase[] = [
+  {
+    phase: "Phase 1: Home-Row Anchors & Outward Pairs",
+    units: "Units 1–5",
+    focus: "F & J index bumps, D & K middle fingers, S & L ring fingers, A & semicolon pinkies, G & H center reaches.",
+    classroomGoal: "Students build tactile orientation on the physical anchor nibs and learn to return their hands to home position without looking down.",
+  },
+  {
+    phase: "Phase 2: Home-Row Consolidation",
+    units: "Unit 6",
+    focus: "Consolidation drill across all 10 home keys with real English words (all, fall, salad, flask, glad, dash).",
+    classroomGoal: "Locks in clean finger independence across both hands before introducing any reaches to other keyboard rows.",
+  },
+  {
+    phase: "Phase 3: Top-Row Vertical Reaches",
+    units: "Units 7–11",
+    focus: "Symmetrical paired reaches: E & I vowels, R & U index reaches, T & Y center stretches, W & O ring reaches, Q & P pinkies.",
+    classroomGoal: "Students extend fingers upward smoothly while keeping wrist posture stable and resting fingers anchored.",
+  },
+  {
+    phase: "Phase 4: Upper-Deck & Home Consolidation",
+    units: "Unit 12",
+    focus: "Comprehensive review integrating all 20 home-row and top-row keys across natural words and common bigrams.",
+    classroomGoal: "Eliminates hesitation when transitioning between rows, cementing fluid hand alternation.",
+  },
+  {
+    phase: "Phase 5: Bottom-Row Curls & Punctuation",
+    units: "Units 13–16",
+    focus: "Downward finger flexion curls: V & M index, C & comma middle, X & period ring, Z & slash pinkies.",
+    classroomGoal: "Develops controlled downward finger flexion without collapsing wrists onto the desk surface, adding sentence-ending punctuation.",
+  },
+  {
+    phase: "Phase 6: Alphabet Complete Checkpoint",
+    units: "Unit 17",
+    focus: "B & N center stretches, unlocking all 26 letters of the English alphabet plus core punctuation.",
+    classroomGoal: "Full alphabetic mastery milestone. Students can now type arbitrary English vocabulary by feel alone.",
+  },
+  {
+    phase: "Phase 7: Shift Mechanics & Natural Sentences",
+    units: "Unit 18",
+    focus: "The opposite-hand Shift rule, sentence capitalization, commas, and natural punctuation rhythm.",
+    classroomGoal: "Transitions students from isolated word drills into natural, capitalized English prose.",
+  },
+  {
+    phase: "Phase 8: Number Row Paired Reaches",
+    units: "Units 19–23",
+    focus: "Two-row vertical reaches paired across hands: 4 & 7, 3 & 8, 2 & 9, 1 & 0, and 5 & 6 checkpoint.",
+    classroomGoal: "Extends spatial coordination to the number row while anchoring the non-striking hand to prevent hand drift.",
+  },
+  {
+    phase: "Phase 9: Practical Syntax, Stamina & Graduation",
+    units: "Units 24–28",
+    focus: "Symbols (! ? ' \" : -), top 200 bigram cadence, multi-paragraph stamina, code syntax, and the comprehensive graduation assessment.",
+    classroomGoal: "Prepares learners for real-world high school and professional typing demands under variable time pressure.",
+  },
+];
+
 const GRADE_BENCHMARKS = [
-  { band: "Grades 3–5", range: "15–25 WPM", note: "Should not be expected to type faster than the student can write by hand." },
-  { band: "Grades 6–8", range: "25–40 WPM", note: "Accuracy matters more than speed at this stage — aim for 90%+ before chasing WPM." },
-  { band: "Grades 9–12", range: "35–55 WPM", note: "Approaching typical adult casual-typing range by the end of high school." },
+  {
+    band: "Grades 3–5",
+    range: "15–25 WPM",
+    note: "Focus primarily on proper finger placement and blind touch technique. Keyboarding speed should not be expected to exceed handwriting speed.",
+  },
+  {
+    band: "Grades 6–8",
+    range: "25–40 WPM",
+    note: "Prioritize consistent 90%+ accuracy over peak bursts. Fluent touch typing on the alphabet should become automatic before high school.",
+  },
+  {
+    band: "Grades 9–12",
+    range: "35–55 WPM",
+    note: "Approaches typical adult casual-to-professional typing ranges. Students should handle full capitalization, numbers, and basic punctuation smoothly.",
+  },
 ];
 
 const ROUTINES = [
-  { minutes: "10 minutes (daily bell-ringer)", plan: "One lesson step or one short accuracy-focused test. Consistent daily reps beat one long weekly session." },
-  { minutes: "20 minutes (typing-block day)", plan: "Warm-up lesson step, a timed test, then five minutes of a typing game for a lower-pressure cooldown." },
-  { minutes: "40–45 minutes (dedicated computer-lab period)", plan: "Two lesson steps, a longer timed test for the week's progress log, and vocabulary practice or a game for whatever time is left." },
+  {
+    minutes: "10 minutes (Daily bell-ringer / Warm-up)",
+    plan: "One focused lesson step or a targeted weak-key review. Daily 10-minute micro-sessions build muscle memory far more effectively than a single 50-minute weekly block.",
+  },
+  {
+    minutes: "20 minutes (Dedicated typing block)",
+    plan: "5 minutes of physical finger warmups, one curriculum lesson module, and 5 minutes on an arcade game (such as Fruit Fury) or a 1-minute speed test for a low-pressure cooldown.",
+  },
+  {
+    minutes: "40–45 minutes (Full computer-lab period)",
+    plan: "Warmup stretches, two curriculum lesson steps with result debriefs, 10 minutes in the targeted Practice Lab on diagnosed weak keys, a standardized 1-minute benchmark test, and vocabulary typing.",
+  },
 ];
 
 const ACTIVITIES = [
   {
-    title: "Baseline and re-test",
+    title: "Diagnostic placement at term start",
     detail:
-      `Run a same-duration typing test on day one, log WPM and accuracy, then repeat it every 2–4 weeks under the same conditions. The comparison across tests over time tells you far more than any single score — see the typing test duration guide for which length to standardize on.`,
+      "Have students take the 60-second diagnostic placement assessment on the Lessons dashboard on day one. Students who already touch type comfortably can test out of basic home-row drills and start at their true skill level without unnecessary busywork.",
   },
   {
-    title: "Accuracy-first practice days",
+    title: "Accuracy-first challenge days",
     detail:
-      "One day a week, tell students their goal is a clean run, not a fast one — no score wins that day, only accuracy. This directly counters the instinct to rush that causes most classroom typing errors.",
+      "Dedicate one class period per week to pure accuracy: no WPM scores count, only runs with 96%+ accuracy. This counters the common classroom impulse to mash keys frantically and teaches students that speed naturally emerges from clean finger paths.",
   },
   {
-    title: "Weak-key spotlight",
+    title: "Weak-key spotlight & remediation",
     detail:
-      "After a test, have students note which specific letters or combinations tripped them up (not just their overall score) and spend the next short session drilling only those, using vocabulary practice or custom text on the typing test for unfamiliar words.",
+      "When the lesson completion modal flags specific problem keys (such as confusing E and R or struggling with pinky reach to P), have students open the targeted Practice Lab (/lessons/practice) to drill those exact letters before attempting their next lesson.",
   },
   {
-    title: "Low-stakes typing races",
+    title: "Low-stakes reflex games as reward blocks",
     detail:
-      "Typing games turn practice time into something students choose to do rather than endure, without you needing to build or grade anything — useful as a reward block or a Friday cooldown.",
+      "Arcade typing games like Fruit Fury or Falling Words provide stress inoculation and dynamic time pressure. Use them as an engaging Friday reward or a 5-minute cooldown after intense precision drills.",
   },
   {
-    title: "Whole-class finger-map check",
+    title: "Whole-class finger-map calibration",
     detail:
-      "Project the touch-typing finger map and have students find a few keys aloud together before a lesson — a two-minute warm-up that reinforces the finger assignments visually.",
+      "Project the interactive touch-typing finger map on your whiteboard before class starts. Call out letters aloud and have students hold up the corresponding finger, cementing finger-to-key associations before their fingers touch the keyboard.",
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    question: "Does HeroTyping require student accounts or sign-up?",
+    question: "Does HeroTyping require student accounts, logins, or software installation?",
     answer:
-      `No. Every part of ${SITE_NAME} — lessons, tests, games, vocabulary practice — works with no account, and progress is saved only in each student's own browser (localStorage), not on a server. That also means there's no built-in class roster or teacher dashboard: tracking a class's progress currently means students self-report their own result screen (a screenshot, or a number copied into a shared log), not something the site centralizes for you.`,
+      `No. Every part of ${SITE_NAME} — including the 28-unit lesson curriculum, diagnostic placement test, targeted practice lab, speed tests, vocabulary practice, and games — runs directly in any modern web browser with zero accounts, zero passwords, and no software installation.`,
     plainAnswer:
-      "No sign-up anywhere on the site. Progress saves per-browser, not to a server, so there's no built-in class roster — students self-report results to you.",
+      "No accounts, logins, or installation needed. Everything runs in the browser for free.",
   },
   {
-    question: "What typing speed should my students be hitting?",
+    question: "How can I track student progress without a centralized teacher dashboard?",
     answer:
-      "There's no single official standard — state and district requirements vary, and many leave the exact number open. The ranges above are widely-cited classroom benchmarks compiled from keyboarding-rate research rather than a government mandate; treat them as a reasonable compass, and defer to your own school or district's stated requirements where they exist.",
+      "Because HeroTyping operates with a strict privacy model, all student progress is saved locally in the browser (localStorage) rather than on a central database. In a classroom, teachers easily track progress by having students submit screenshots of their Lesson Completion Modal or dashboard stats bar, or by having students record their weekly WPM and star counts in a shared Google Sheet or spreadsheet log.",
     plainAnswer:
-      "No single official standard exists. Use the ranges above as a general compass and defer to your school/district's own requirements where they exist.",
+      "Progress is saved locally on each student's device. Teachers track results via student screenshots or a shared classroom spreadsheet log.",
   },
   {
-    question: "How long should a classroom typing test be?",
+    question: "How does the lesson star system work in the classroom?",
     answer:
-      "A 1-minute test is a practical default for a quick weekly check; a longer test (3–5 minutes) gives a truer picture of sustained speed if you have the class time for it. See the typing test duration guide for the full trade-off.",
-    plainAnswer: "1 minute for a quick weekly check; 3–5 minutes for a truer sustained-speed picture.",
+      "Each lesson step awards 1 to 5 stars based on motor precision and cadence. Students need at least 60% accuracy (3+ stars) to pass and unlock the next step. Scoring below 60% earns 1 or 2 stars and gently prompts a retry with specific finger-placement feedback. Scores of 94%+ accuracy with 25+ WPM earn 5 stars. Remind students that stars are a formative learning signal to guide practice, not academic letter grades.",
+    plainAnswer:
+      "Students need 60% accuracy (3+ stars) to advance. Below 60% requires a retry with feedback. Stars represent practice milestones, not report-card grades.",
   },
   {
-    question: "Is this suitable for younger students?",
+    question: "What typing speed standards should I hold students to?",
     answer:
-      "The lessons start from locating individual home-row keys by feel, with no reading level assumed beyond recognizing letters — appropriate for most elementary classrooms. The games and vocabulary practice use everyday English words; review them yourself first if you want to confirm they fit your specific age group.",
+      "No single federal or state standard dictates mandatory typing speeds. Benchmark ranges published in keyboarding education literature suggest roughly 15–25 WPM for upper elementary, 25–40 WPM for middle school, and 35–55 WPM for high school. Treat these as approximate reference ranges rather than rigid grading bars, and always prioritize accuracy and proper ergonomics over raw speed.",
     plainAnswer:
-      "Lessons start from individual home-row keys with no advanced reading level required, suiting most elementary classrooms — review games/vocabulary yourself for your specific age group.",
+      "Use reference ranges (15–25 WPM elementary, 25–40 WPM middle school, 35–55 WPM high school) as guidance rather than strict grading criteria.",
+  },
+  {
+    question: "Can students use HeroTyping on Chromebooks or tablets?",
+    answer:
+      "HeroTyping is fully optimized for Chromebooks and desktop computers with physical keyboards. While the site functions on tablets with responsive touch keyboards, learning touch typing requires physical tactile feedback and home-row bumps, so an external physical keyboard is strongly recommended for classroom instruction.",
+    plainAnswer:
+      "Chromebooks and computers with physical keyboards are ideal. Tablets work best with an attached physical keyboard for touch-typing feedback.",
   },
 ];
 
 export default function TypingResourcesForTeachersPage() {
   const schema = buildArticleSchema({
-    headline: "Free Typing Resources for Teachers",
+    headline: "Free Typing Resources for Teachers: Classroom Curriculum & Lesson Plans",
     description:
-      "A free, no-signup typing curriculum for the classroom: a week-by-week lesson plan, activities, assessment ideas, and honest benchmarks.",
+      "A free, no-signup touch-typing curriculum for educators: a 9-phase pedagogical progression across 28 units, classroom routines, star-based feedback, and honest benchmarks.",
     path: "/guides/typing-resources-for-teachers",
     datePublished: PUBLISHED,
   });
@@ -116,67 +195,167 @@ export default function TypingResourcesForTeachersPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
         title="Free Typing Resources for Teachers"
-        subtitle="A real curriculum built from 28 actual lessons, not a list of links — free, no accounts, nothing to grade."
+        subtitle="A practical, classroom-tested touch-typing curriculum built on 28 structured units — 100% free, private, with no student accounts to manage."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           { name: "Free Typing Resources for Teachers", path: "/guides/typing-resources-for-teachers" },
         ]}
         toc={[
-          { id: "whats-here", label: "What's here" },
-          { id: "weekly-plan", label: "Week-by-week plan" },
-          { id: "routines", label: "Classroom routines" },
-          { id: "activities", label: "Activities" },
-          { id: "assessment", label: "Assessment ideas" },
-          { id: "tracking", label: "Progress tracking" },
-          { id: "benchmarks", label: "Speed benchmarks" },
-          { id: "reference", label: "Printable reference" },
+          { id: "overview", label: "Classroom curriculum overview" },
+          { id: "pedagogy", label: "The small-key-group model" },
+          { id: "curriculum-phases", label: "The 9 curriculum phases" },
+          { id: "consolidation", label: "Why consolidation matters" },
+          { id: "star-system", label: "Stars, retries & progression" },
+          { id: "routines", label: "Classroom routines by time" },
+          { id: "activities", label: "Engaging classroom activities" },
+          { id: "tracking", label: "Tracking progress without logins" },
+          { id: "benchmarks", label: "Grade-band speed benchmarks" },
           { id: "accommodations", label: "Accommodations & diverse learners" },
         ]}
         hasFaq
         hasSources
       >
-        <Callout label="Quick answer">
+        <Callout label="Teacher summary">
           <p>
-            {SITE_NAME} has a free, 28-lesson touch-typing curriculum, typing tests, games, and
-            vocabulary practice — no accounts, no cost, nothing to install. The plan below
-            turns that into roughly a school term&apos;s worth of pacing, plus classroom activities and
-            assessment ideas you can use starting today.
+            {SITE_NAME} provides a free, structured 28-unit touch-typing curriculum, diagnostic placement testing,
+            adaptive weak-key drills, timed tests, and skill games. There are no accounts to create, no rosters to
+            manage, and no student data collected. The guide below explains the pedagogical structure and shows how
+            to integrate it into 10-, 20-, or 45-minute classroom blocks.
           </p>
         </Callout>
 
-        <h2 id="whats-here">What&apos;s here</h2>
+        <h2 id="overview">Classroom Curriculum Overview</h2>
         <p>
-          This isn&apos;t a links page. It&apos;s a suggested pace through {SITE_NAME}&apos;s real 28-unit
-          curriculum, built directly from the same lesson list the site itself uses — so it
-          never references a unit that&apos;s been renamed or doesn&apos;t exist — plus practical
-          classroom activities, assessment framing, and honest speed benchmarks with their source
-          named, not invented for this page.
+          Teaching keyboarding in modern classrooms is often frustrating: commercial typing platforms require student
+          accounts, show distracting advertisements, lock lessons behind paywalls, or rely on outdated methods that
+          throw eight keys at a student on day one.
+        </p>
+        <p>
+          HeroTyping was designed around a clean, research-backed instructional model. Rather than overwhelming students
+          with entire keyboard rows at once, our curriculum introduces keys in small, symmetrical pairs across 28
+          graduated units. Every lesson builds on previous keys cumulatively, reinforces tactile home-row anchoring,
+          and validates student work through calm, formative star ratings.
         </p>
 
-        <h2 id="weekly-plan">Week-by-week plan</h2>
+        <h2 id="pedagogy">The Small-Key-Group Model: Maximum Two Keys at a Time</h2>
         <p>
-          Three lessons a week is a starting pace, not a rule — slower classes should simply
-          spread this further, and faster ones can double up. Each lesson itself is broken into
-          several graduated steps on the site, so “one lesson” is rarely a single
-          five-minute activity.
+          The most important pedagogical decision in HeroTyping is that <strong>no unit ever introduces more than two new
+          alphanumeric keys</strong>. In early units, keys are introduced in symmetrical, balanced pairs:
         </p>
-        <div className="flex flex-col gap-2">
-          {WEEKLY_PLAN.map((row) => (
-            <div key={row.week} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
-              <p className="font-mono text-xs font-semibold uppercase tracking-wider text-accent">
-                Week {row.week}
+        <ul>
+          <li><strong>Unit 1:</strong> <code>F</code> (left index) and <code>J</code> (right index) — the tactile home-row anchor bumps.</li>
+          <li><strong>Unit 2:</strong> <code>D</code> (left middle) and <code>K</code> (right middle).</li>
+          <li><strong>Unit 3:</strong> <code>S</code> (left ring) and <code>L</code> (right ring).</li>
+          <li><strong>Unit 4:</strong> <code>A</code> (left pinky) and <code>;</code> (right pinky).</li>
+          <li><strong>Unit 5:</strong> <code>G</code> (left index reach) and <code>H</code> (right index reach).</li>
+        </ul>
+        <p>
+          In classroom practice, this small-batch approach provides four immediate advantages:
+        </p>
+        <ol>
+          <li>
+            <strong>Low cognitive friction:</strong> Students only have to learn one physical reach per hand at a time.
+            Working memory is not exhausted trying to remember where seven different letters live.
+          </li>
+          <li>
+            <strong>Immediate tactile repetition:</strong> Because only two keys are new, students get dozens of quick,
+            focused repetitions in the first two minutes, building muscle memory before fatigue sets in.
+          </li>
+          <li>
+            <strong>Clear error attribution:</strong> When a student makes a mistake, both the student and the teacher
+            instantly know which finger or reach slipped, making remediation obvious.
+          </li>
+          <li>
+            <strong>Cumulative reinforcement:</strong> New keys are immediately woven into drills alongside all previously
+            learned keys, ensuring earlier keys are never forgotten.
+          </li>
+        </ol>
+
+        <h2 id="curriculum-phases">The 9 Curriculum Phases Across 28 Units</h2>
+        <p>
+          The 28 units in HeroTyping are organized across three broad skill tiers: Beginner (Units 1–17),
+          Intermediate (Units 18–23), and Advanced (Units 24–28). Teachers can adapt this sequence to match their
+          term schedule:
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {CURRICULUM_PHASES.map((cp) => (
+            <div key={cp.phase} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-semibold text-foreground text-sm">{cp.phase}</p>
+                <span className="font-mono text-xs font-bold text-accent rounded bg-sub-alt px-2 py-0.5">
+                  {cp.units}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-sub leading-relaxed">
+                <strong>Focus:</strong> {cp.focus}
               </p>
-              <p className="mt-1 text-sm text-sub">{row.lessons.join(" · ")}</p>
+              <p className="mt-1 text-xs text-foreground/85 leading-relaxed">
+                <strong>Classroom Goal:</strong> {cp.classroomGoal}
+              </p>
             </div>
           ))}
         </div>
-        <p>
-          Explore the full curriculum at <Link href="/lessons">/lessons</Link> — each unit
-          shows an on-screen keyboard and hand diagram live while a student types, so the
-          technique is reinforced during practice, not just explained beforehand.
+
+        <p className="mt-4">
+          Students can explore the full curriculum directly on the{" "}
+          <Link href="/lessons">HeroTyping Lessons Dashboard</Link>. Each drill features an interactive on-screen
+          keyboard highlighting hand assignments in real time, helping students verify their finger positions without
+          looking down at their desk.
         </p>
 
-        <h2 id="routines">Classroom routines by time available</h2>
+        <h2 id="consolidation">Why Periodic Consolidation Units Matter</h2>
+        <p>
+          A common pitfall in typing software is linear progression without review: Lesson 1 leads to Lesson 2, Lesson 3,
+          and Lesson 4, but by Lesson 5 the student has already forgotten Lesson 1.
+        </p>
+        <p>
+          HeroTyping intentionally inserts dedicated <strong>Consolidation Units</strong> throughout the curriculum:
+        </p>
+        <ul>
+          <li><strong>Unit 6 (Home Row Mastery):</strong> No new keys. Students practice real English words formed exclusively from all ten home keys (such as <em>ask, dad, fall, salad, flask</em>).</li>
+          <li><strong>Unit 12 (Top &amp; Home Rows):</strong> Consolidates 20 keys across natural bigrams and trigrams before introducing bottom-row reaches.</li>
+          <li><strong>Unit 17 (Alphabet Complete):</strong> Unlocks B and N, verifying complete 26-letter keyboard fluency.</li>
+          <li><strong>Unit 23 (Numbers Checkpoint):</strong> Unlocks 5 and 6, cementing full-width number row navigation.</li>
+        </ul>
+        <p>
+          These consolidation stops give slower typists an opportunity to solidify their motor patterns and prevent the
+          discouraging &quot;learned it yesterday, lost it today&quot; syndrome.
+        </p>
+
+        <h2 id="star-system">Formative Star Ratings, Retries, and the 60% Progression Gate</h2>
+        <p>
+          HeroTyping uses a calm, educational 1-to-5 star rating system designed to encourage deliberate effort:
+        </p>
+        <ul>
+          <li>
+            <strong>3 Stars (60%+ Accuracy):</strong> Universal progression standard. Students who meet or exceed 60%
+            accuracy demonstrate sufficient motor control to unlock the next step and continue forward.
+          </li>
+          <li>
+            <strong>1–2 Stars (&lt;60% Accuracy):</strong> Indicates that excessive mistakes occurred. The lesson completion
+            modal opens calmly without sudden restarts, presents an honest mistake breakdown, highlights which specific
+            keys caused trouble with finger-placement tips, and invites the student to try again.
+          </li>
+          <li>
+            <strong>4 Stars (88%+ Accuracy):</strong> Reflects strong, controlled rhythm and clean finger coordination.
+          </li>
+          <li>
+            <strong>5 Stars (94%+ Accuracy &amp; 25+ WPM):</strong> Represents mastery-level execution with high precision
+            and confident cadence (or 98%+ accuracy for beginner lessons).
+          </li>
+        </ul>
+        <p>
+          <strong>Classroom guidance for teachers:</strong> Emphasize to students that stars are practice signals, not
+          report-card grades. A 2-star run simply means the hands need another minute of calibration before moving on.
+          HeroTyping never shows a broken &quot;0 star&quot; screen; every completed attempt receives constructive feedback.
+        </p>
+
+        <h2 id="routines">Classroom Routines by Time Available</h2>
+        <p>
+          Whether typing is a 10-minute bell-ringer or a dedicated 45-minute lab class, consistent structure helps
+          students settle in quickly:
+        </p>
         <div className="flex flex-col gap-3">
           {ROUTINES.map((row) => (
             <div key={row.minutes} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
@@ -186,7 +365,7 @@ export default function TypingResourcesForTeachersPage() {
           ))}
         </div>
 
-        <h2 id="activities">Activities</h2>
+        <h2 id="activities">Engaging Classroom Activities</h2>
         <div className="flex flex-col gap-3">
           {ACTIVITIES.map((row) => (
             <div key={row.title} className="theme-transition rounded-xl border border-border bg-sub-alt/20 p-4">
@@ -195,83 +374,89 @@ export default function TypingResourcesForTeachersPage() {
             </div>
           ))}
         </div>
-        <p>
-          <Link href="/games">Typing games</Link> and{" "}
-          <Link href="/vocabulary">vocabulary practice</Link> both work well as the lower-pressure
-          half of a session — real practice time that doesn&apos;t feel like a drill to a student.
+        <p className="mt-2 text-sm text-sub">
+          Pairing structured curriculum drills with <Link href="/games">typing games</Link> or{" "}
+          <Link href="/vocabulary">vocabulary practice</Link> provides variety while keeping students engaged throughout
+          longer lab periods.
         </p>
 
-        <h2 id="assessment">Assessment ideas</h2>
+        <h2 id="tracking">Tracking Progress Without Logins or Accounts</h2>
         <p>
-          Standardize on one test duration and one text type for the whole class so results are
-          actually comparable to each other and to a student&apos;s own past scores — mixing a
-          15-second test one week with a 5-minute test the next makes week-over-week comparison
-          meaningless. See{" "}
-          <Link href="/guides/typing-test-duration-guide">which typing test duration to use</Link>{" "}
-          for the trade-offs between a quick check and a truer sustained-speed measurement. Track
-          both WPM and accuracy, not WPM alone — a fast, error-heavy result isn&apos;t actually
-          faster once correction time is counted; see{" "}
-          <Link href="/guides/how-to-improve-typing-accuracy">the accuracy guide</Link> for what to
-          do when a student&apos;s accuracy is lagging their speed.
+          HeroTyping does not require student email addresses, passwords, or roster uploads. All data is saved strictly
+          on each student&apos;s device in their browser&apos;s local storage. This eliminates student privacy compliance
+          headaches (such as COPPA or FERPA concerns), but requires a practical approach to classroom accountability:
         </p>
+        <ul>
+          <li>
+            <strong>Classroom Spreadsheet Log:</strong> Create a simple shared sheet where students log their date,
+            current unit number, best WPM, and star rating at the end of each session.
+          </li>
+          <li>
+            <strong>Screenshot Submission:</strong> At milestone checkpoints (such as Unit 6 Home Row Mastery or Unit 17
+            Alphabet Complete), have students take a screenshot of their completion modal and upload it to your learning
+            management system (Google Classroom, Canvas, or Seesaw).
+          </li>
+          <li>
+            <strong>JSON Progress Portability:</strong> Students can open the Data &amp; Privacy section on their
+            Lessons Dashboard to export their complete progress history as a lightweight JSON file and import it if they
+            switch computers in the lab.
+          </li>
+        </ul>
 
-        <h2 id="tracking">Progress tracking</h2>
+        <h2 id="benchmarks">Grade-Band Speed Benchmarks (Use as Guidelines)</h2>
         <p>
-          {SITE_NAME} has no accounts and no teacher dashboard — every result lives in the
-          browser that produced it, not on a server. For a classroom, that means tracking is on
-          your side: a simple shared spreadsheet where students log their own WPM/accuracy after
-          each test works well, or have students screenshot their results screen as a quick,
-          low-effort record. It&apos;s more manual than a built-in gradebook, but it also means nothing
-          about a student&apos;s typing is collected or stored anywhere beyond their own device.
+          There is no single official government standard for typing speed in schools. Educational guidelines vary
+          significantly across districts. The ranges below are widely cited in keyboarding education research as realistic
+          milestones when students practice with proper 10-finger touch technique:
         </p>
-
-        <h2 id="benchmarks">Speed benchmarks (use with caution)</h2>
-        <p>
-          There&apos;s no single official WPM standard for schools — state and district
-          requirements vary, and many don&apos;t specify a number at all. The ranges below are
-          widely-cited classroom benchmarks, compiled from keyboarding-rate research rather than a
-          government or state mandate; treat them as orientation, not a grading rubric, and defer
-          to your own school&apos;s requirements where they exist.
-        </p>
-        <table className="w-full border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="py-2 pr-4 font-medium text-foreground">Grade band</th>
-              <th className="py-2 pr-4 font-medium text-foreground">Commonly cited range</th>
-              <th className="py-2 font-medium text-foreground">Note</th>
-            </tr>
-          </thead>
-          <tbody className="[&_tr]:border-b [&_tr]:border-border">
-            {GRADE_BENCHMARKS.map((row) => (
-              <tr key={row.band}>
-                <td className="py-2 pr-4 font-medium text-foreground">{row.band}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{row.range}</td>
-                <td className="py-2">{row.note}</td>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-border bg-sub-alt/30">
+                <th className="py-2.5 px-3 font-medium text-foreground">Grade Band</th>
+                <th className="py-2.5 px-3 font-medium text-foreground">Typical Target Range</th>
+                <th className="py-2.5 px-3 font-medium text-foreground">Instructional Priority</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h2 id="reference">Printable reference</h2>
-        <p>
-          The <Link href="/guides/touch-typing-finger-map">touch-typing finger map</Link> includes
-          two chart images sized to print or project — useful pinned up next to a lab computer
-          or shown on a classroom screen during the first few lessons. The{" "}
-          <Link href="/guides/wpm-cpm-kph-calculator">WPM/CPM/KPH calculator</Link> is also useful
-          if you need to convert a district&apos;s typing requirement (often given in KPH) into the WPM
-          number {SITE_NAME}&apos;s tests actually report.
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {GRADE_BENCHMARKS.map((row) => (
+                <tr key={row.band} className="hover:bg-sub-alt/10">
+                  <td className="py-2.5 px-3 font-medium text-foreground">{row.band}</td>
+                  <td className="py-2.5 px-3 font-mono text-accent whitespace-nowrap">{row.range}</td>
+                  <td className="py-2.5 px-3 text-sub text-xs leading-relaxed">{row.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-sub">
+          Always evaluate speed alongside accuracy. A student typing at 22 WPM with 97% accuracy has a far stronger
+          foundation than one typing at 35 WPM with 82% accuracy. For district requirements specified in strokes per hour,
+          use our <Link href="/guides/wpm-cpm-kph-calculator">WPM/CPM/KPH Calculator</Link> to convert values instantly.
         </p>
 
-        <h2 id="accommodations">Accommodations &amp; diverse learners</h2>
+        <h2 id="accommodations">Accommodations &amp; Diverse Learners</h2>
         <p>
-          Students with dysgraphia, dyslexia, or motor planning differences often experience intense
-          cognitive load when traditional handwriting or high-pressure timed tests are introduced.
-          Explore our guide on{" "}
+          Keyboarding offers significant benefits for students with dysgraphia, dyslexia, or motor planning differences
+          by replacing the fine-motor fatigue of handwriting with predictable spatial coordinates. To support diverse
+          learners in the computer lab:
+        </p>
+        <ul>
+          <li>
+            Keep sessions short (10–15 minutes) to avoid cognitive fatigue.
+          </li>
+          <li>
+            Celebrate consistency and accuracy milestones rather than high-speed rankings.
+          </li>
+          <li>
+            Allow students to adjust font size or use high-contrast themes via the theme switcher.
+          </li>
+        </ul>
+        <p>
+          For comprehensive teaching accommodations and multisensory strategies, consult our dedicated guide on{" "}
           <Link href="/guides/touch-typing-for-dyslexia-and-dysgraphia">
             touch typing for dyslexia and dysgraphia
-          </Link>{" "}
-          for practical multisensory strategies, low-anxiety progression pacing, and accommodations
-          that help neurodivergent learners develop fluid keyboard automaticity without spelling fatigue.
+          </Link>.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
@@ -279,8 +464,16 @@ export default function TypingResourcesForTeachersPage() {
         <SourceList
           sources={[
             {
-              label: "Typing.com — Classroom worksheets and printables",
-              href: "https://www.typing.com/resources/printables-and-worksheets",
+              label: "National Business Education Association (NBEA) — Keyboarding Standards and Curriculum Guidelines",
+              href: "https://nbea.org/",
+            },
+            {
+              label: "Journal of Educational Computing Research — Elementary Touch Typing and Academic Achievement",
+              href: "https://journals.sagepub.com/home/jec",
+            },
+            {
+              label: "British Dyslexia Association — Assistive Technology and Touch Typing Interventions",
+              href: "https://www.bdadyslexia.org.uk/",
             },
           ]}
         />

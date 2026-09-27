@@ -11,78 +11,114 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "Touch Typing Lesson Order: What to Learn First, Next, and Why",
   description:
-    "The scientifically proven curriculum order for learning to touch type: why home row comes first, when to introduce numbers and symbols, and how to structure your learning.",
+    "The pedagogical curriculum order for learning to touch type: why small symmetrical key pairs come first, how consolidation units work, and how HeroTyping sequences all 28 units.",
   path: "/guides/touch-typing-lesson-order",
 });
 
 const PUBLISHED = "2026-09-27";
+const UPDATED = "2026-09-28";
 
-const CURRICULUM_PHASES = [
+interface CurriculumStage {
+  stage: string;
+  units: string;
+  keys: string;
+  pedagogicalRationale: string;
+}
+
+const CURRICULUM_STAGES: CurriculumStage[] = [
   {
-    phase: "Phase 1: Home Row Foundation",
-    keys: "A, S, D, F, J, K, L, ;",
-    cognitiveGoal: "Establish tactile indexing on F and J bumps. Eliminate looking down at the keyboard.",
-    typicalDuration: "Days 1–5 (3 to 5 hours total)",
-    heroLessonRef: "Lessons 1–4 (Home Row Left, Right, Combined, Words)",
+    stage: "Stage 1: Home-Row Anchors & Symmetrical Pairs",
+    units: "Units 1–5",
+    keys: "F & J, D & K, S & L, A & ;, G & H",
+    pedagogicalRationale:
+      "Begins with the raised tactile bumps on F and J, establishing fixed physical reference points. Expands outward symmetrically across both hands so neither hand is neglected, introducing semicolon (;) as the right pinky home position.",
   },
   {
-    phase: "Phase 2: Top Row Expansion",
-    keys: "Q, W, E, R, T, Y, U, I, O, P",
-    cognitiveGoal: "Learn upward diagonal reaches while preserving home-row anchor contact.",
-    typicalDuration: "Days 6–12 (4 to 6 hours total)",
-    heroLessonRef: "Lessons 5–8 (Top Row Left, Right, Combined, Words)",
+    stage: "Stage 2: First Consolidation — Home Row Mastery",
+    units: "Unit 6",
+    keys: "All 10 Home-Row Keys (A S D F G H J K L ;)",
+    pedagogicalRationale:
+      "Introduces zero new keys. Instead, students practice real English words (all, fall, salad, flask, glad, dash) to solidify home-row transitions before reaching to other rows.",
   },
   {
-    phase: "Phase 3: Bottom Row & Full Alphabet",
-    keys: "Z, X, C, V, B, N, M",
-    cognitiveGoal: "Master downward finger curling without planting wrists on the desk surface.",
-    typicalDuration: "Days 13–20 (5 to 7 hours total)",
-    heroLessonRef: "Lessons 9–12 & Beginner Checkpoint (Lesson 17)",
+    stage: "Stage 3: Top-Row Vowel & Consonant Reaches",
+    units: "Units 7–11",
+    keys: "E & I, R & U, T & Y, W & O, Q & P",
+    pedagogicalRationale:
+      "E and I are introduced first because they are the two most common vowels in English. Reaches are paired symmetrically between left and right hands, preserving home anchor contact throughout.",
   },
   {
-    phase: "Phase 4: Numeric Row & Common Punctuation",
-    keys: "1–0, Period, Comma, Apostrophe, Question Mark",
-    cognitiveGoal: "Extend spatial map to two-row reaches and coordinate opposite-hand Shift keystrokes.",
-    typicalDuration: "Days 21–30 (6 to 8 hours total)",
-    heroLessonRef: "Lessons 13–16 (Numbers, Punctuation)",
+    stage: "Stage 4: Upper-Deck & Home Consolidation",
+    units: "Unit 12",
+    keys: "All 20 Home & Top Keys",
+    pedagogicalRationale:
+      "Consolidates two full rows across natural words and common bigrams (th, er, on, re), eliminating hesitation when moving vertically between home and top rows.",
   },
   {
-    phase: "Phase 5: Speed, Endurance & Code Mastery",
-    keys: "All alphanumeric + shift symbols (!@#$%^&*()_+) and syntax",
-    cognitiveGoal: "Sub-word chunking, rapid word flow, and fatigue resistance during long sessions.",
-    typicalDuration: "Day 31+ (Ongoing maintenance)",
-    heroLessonRef: "Lessons 18–28 (Speed, Endurance, Checkpoints, Final Challenge)",
+    stage: "Stage 5: Bottom-Row Downward Curls",
+    units: "Units 13–16",
+    keys: "V & M, C & comma, X & period, Z & slash",
+    pedagogicalRationale:
+      "Downward finger curling requires delicate wrist clearance. Introduced only after upward reaches are automated, pairing basic punctuation (comma, period, slash) alongside consonants.",
+  },
+  {
+    stage: "Stage 6: Alphabet Complete Checkpoint",
+    units: "Unit 17",
+    keys: "B & N (All 26 letters unlocked)",
+    pedagogicalRationale:
+      "B and N represent the longest inward reaching stretches on the bottom deck. Unlocking them completes all 26 letters of the English alphabet, marking the end of the Beginner Tier.",
+  },
+  {
+    stage: "Stage 7: Shift Mechanics & Natural Sentences",
+    units: "Unit 18",
+    keys: "Dual Shift keys + Full Capitalization",
+    pedagogicalRationale:
+      "Enforces the opposite-hand Shift rule (Left Shift for right-hand letters, Right Shift for left-hand letters) to prevent hand twisting while typing capitalized English prose.",
+  },
+  {
+    stage: "Stage 8: Number Row Paired Reaches",
+    units: "Units 19–23",
+    keys: "4 & 7, 3 & 8, 2 & 9, 1 & 0, 5 & 6",
+    pedagogicalRationale:
+      "Two-row vertical reaches require absolute anchor stability. Keys are taught in symmetrical pairs from the center index reaches outward, culminating in Unit 23's numbers checkpoint.",
+  },
+  {
+    stage: "Stage 9: Advanced Practical Syntax & Graduation",
+    units: "Units 24–28",
+    keys: "Symbols (! ? ' \" : -), Bigrams, Stamina, Code Syntax",
+    pedagogicalRationale:
+      "Transitions students from raw key acquisition to professional real-world stamina, technical code syntax ({ } [ ] = =>), and the comprehensive graduation assessment.",
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    question: "Why should I learn the home row before anything else?",
+    question: "Why does HeroTyping introduce keys two at a time rather than an entire row at once?",
     answer:
-      "The home row is your keyboard anchor. The tactile bumps on 'F' and 'J' give your hands a fixed physical reference point in space. Without an established home-row resting position, your hands float across the keyboard, forcing your eyes to constantly look down to locate each key.",
+      "Learning an entire row of eight to ten keys at once overwhelms working memory. When students try to memorize multiple new keys simultaneously, they cannot attribute errors to a specific finger and instinctively look down. Introducing a maximum of two keys per unit ensures immediate repetition, crystal-clear feedback, and zero cognitive overload.",
     plainAnswer:
-      "Home row keys provide the physical reference coordinates for every other key reach. Without mastering them first, blind touch typing is impossible.",
+      "Two keys at a time prevents working memory overload, allows immediate high-frequency practice, and makes errors easy to identify and fix.",
   },
   {
-    question: "Should I learn letters and numbers at the same time?",
+    question: "Why is semicolon (;) taught as a home-row key rather than punctuation?",
     answer:
-      "No. Introducing numbers too early creates severe cognitive overload. The number row is two full rows above the home row and requires long reaches. You must automate the 26 alphabetic keys until blind typing is effortless before introducing numbers and Shift symbols.",
+      "On standard ANSI QWERTY keyboards, the right pinky naturally rests on the semicolon key in home position. Learning where your pinky sits physically is distinct from learning how to punctuate complex sentences. Semicolon is taught in Unit 4 strictly as the physical anchor for the right pinky.",
     plainAnswer:
-      "No. Master the alphabet first. Reaching for the number row requires stable anchor discipline that only develops after alphabetic keys are automated.",
+      "Semicolon is where the right pinky rests on the home row. It is learned early for physical finger placement, not sentence grammar.",
   },
   {
-    question: "Why does the top row usually come before the bottom row?",
+    question: "Why does the top row come before the bottom row?",
     answer:
-      "Bioméchanically, extending fingers upward into the top row is more natural for human hand anatomy than curling fingers tightly backward into the palm for the bottom row. Furthermore, top-row vowels ('E', 'I', 'O', 'U') and consonants ('T', 'R') account for over 45% of English letters, allowing beginners to construct real words immediately.",
+      "Extending fingers upward to the top row is biomechanically more natural than curling them tightly downward toward the palm. In addition, the top row contains four high-frequency vowels (E, U, I, O) and major consonants (R, T). Combining top-row letters with home-row keys unlocks thousands of real English words immediately.",
     plainAnswer:
       "Extending fingers upward is biomechanically easier than curling them downward, and the top row contains essential vowels like E, I, O, and U.",
   },
   {
-    question: "How long should I stay on each curriculum phase?",
+    question: "What accuracy score do I need to advance to the next lesson?",
     answer:
-      "Do not advance to the next row until you achieve at least 95% accuracy on your current row's exercises. Speed does not matter initially—whether you type at 15 WPM or 35 WPM, flawless accuracy and zero glances at the keyboard are the true criteria for advancing.",
+      "In HeroTyping, the universal pass threshold is 60% accuracy (which awards 3 stars). Scoring below 60% awards 1 or 2 stars and gently requires a retry with targeted finger tips. Reaching 88%+ awards 4 stars, while 94%+ with 25+ WPM awards 5 stars. You do not need 100% perfection to move forward, but you must demonstrate controlled finger paths.",
     plainAnswer:
-      "Advance only when you maintain 95%+ accuracy without glancing down. Speed will develop naturally once finger accuracy is locked in.",
+      "You need 60% accuracy (3+ stars) to advance. Below 60% requires a retry with feedback. Aim for 88%+ to earn 4 or 5 stars.",
   },
 ];
 
@@ -108,7 +144,7 @@ export default function TouchTypingLessonOrderPage() {
   const schema = buildArticleSchema({
     headline: "Touch Typing Lesson Order: What to Learn First, Next, and Why",
     description:
-      "The scientifically proven curriculum order for learning to touch type: why home row comes first, when to introduce numbers and symbols, and how to structure your learning.",
+      "The pedagogical curriculum order for learning to touch type: why small symmetrical key pairs come first, how consolidation units work, and how HeroTyping sequences all 28 units.",
     path: "/guides/touch-typing-lesson-order",
     datePublished: PUBLISHED,
   });
@@ -118,27 +154,29 @@ export default function TouchTypingLessonOrderPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
         title="Touch Typing Lesson Order"
-        subtitle="The optimal curriculum sequence for learning to touch type without cognitive overload or bad habits."
+        subtitle="The pedagogical rationale behind HeroTyping's 28-unit sequence: small key pairs, symmetrical hand balance, and periodic consolidation."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           { name: "Typing Basics", path: "/guides/typing-basics" },
           { name: "Touch Typing Lesson Order", path: "/guides/touch-typing-lesson-order" },
         ]}
         toc={[
-          { id: "the-science-of-sequencing", label: "The science of curriculum sequence" },
-          { id: "five-curriculum-phases", label: "The five curriculum phases" },
-          { id: "why-order-matters", label: "Why random order fails" },
-          { id: "milestone-progression", label: "When to advance: accuracy gates" },
-          { id: "herotyping-curriculum", label: "The HeroTyping 28-lesson path" },
+          { id: "sequencing-science", label: "The science of curriculum sequence" },
+          { id: "small-key-rule", label: "The two-key maximum rule" },
+          { id: "nine-stages", label: "The 9 curriculum stages" },
+          { id: "consolidation-units", label: "Why consolidation stops matter" },
+          { id: "progression-rules", label: "When to advance: star ratings" },
+          { id: "three-tiers", label: "The 3 skill tiers in HeroTyping" },
         ]}
         hasFaq
         hasSources
       >
-        <Callout label="Curriculum principle">
+        <Callout label="Core curriculum design">
           <p>
-            Never attempt to learn the entire keyboard simultaneously. Motor skill acquisition requires sequential
-            chunking: master the home-row anchors first, expand upward to high-frequency top vowels, master downward
-            curls, and only then introduce the cognitive demand of numbers and Shift symbols.
+            Never try to memorize an entire keyboard row in one sitting. Motor skill acquisition requires sequential
+            chunking: master tactile index anchors first (F and J), expand outward in symmetrical pairs, consolidate
+            learned keys through real words, and only introduce number rows and complex punctuation once the alphabetic
+            map is completely automated.
           </p>
         </Callout>
 
@@ -151,117 +189,152 @@ export default function TouchTypingLessonOrderPage() {
           className="my-6 w-full rounded-xl border border-border shadow-sm"
         />
 
-        <h2 id="the-science-of-sequencing">The Science of Curriculum Sequencing</h2>
+        <h2 id="sequencing-science">The Science of Curriculum Sequencing</h2>
         <p>
-          Learning to touch type is not merely memorizing where 26 letters live on a piece of plastic. It is the
-          construction of an unconscious sensorimotor map inside your brain&apos;s motor cortex.
+          Learning to touch type is not simply memorizing where 26 letters sit on plastic keycaps. It is the gradual
+          encoding of an unconscious sensorimotor map in your motor cortex.
         </p>
         <p>
-          When beginners try to learn by typing general paragraphs immediately, their working memory is flooded.
-          They must decide which hand to use, which finger to extend, how far to reach, and whether to hold Shift—all
-          while trying to read text on a screen. Under this cognitive overload, the brain instinctively reverts to what
-          feels easiest: looking down at the keyboard and hunting with two index fingers.
+          When beginners attempt to practice by typing full paragraphs immediately, working memory is overwhelmed.
+          The brain must simultaneously decide which hand to move, which finger to extend, how far to reach, and whether
+          to press Shift. Under this cognitive strain, learners instinctively look down at the keyboard and revert to
+          hunting and pecking with two fingers.
         </p>
         <p>
-          A well-designed typing curriculum prevents this regression by strictly limiting new variables. You master
-          one row at a time, anchoring new finger reaches onto previously solidified tactile coordinates.
-        </p>
-
-        <h2 id="five-curriculum-phases">The Five Progressive Curriculum Phases</h2>
-        <p>
-          Every competent typist follows an identifiable progression from physical anchoring to unconscious flow.
-          Here is how the standard curriculum is broken down:
+          A well-structured curriculum prevents this regression by strictly constraining variables. Each step introduces
+          a manageable tactile challenge, allowing new finger reaches to anchor onto previously solidified muscle memory.
         </p>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse border border-border">
+        <h2 id="small-key-rule">The Two-Key Maximum Rule: Why Small Groups Win</h2>
+        <p>
+          Traditional keyboarding curricula frequently introduced four to eight keys simultaneously (such as teaching
+          all left-hand home-row keys <code>A S D F</code> in a single lesson, followed by <code>J K L ;</code> in the next).
+        </p>
+        <p>
+          HeroTyping intentionally abandons the old &quot;row-by-row&quot; batch model in favor of <strong>symmetrical
+          two-key pairings</strong>:
+        </p>
+        <ul>
+          <li><strong>Unit 1:</strong> <code>F</code> (left index) and <code>J</code> (right index) — the tactile anchor bumps.</li>
+          <li><strong>Unit 2:</strong> <code>D</code> (left middle) and <code>K</code> (right middle).</li>
+          <li><strong>Unit 3:</strong> <code>S</code> (left ring) and <code>L</code> (right ring).</li>
+          <li><strong>Unit 4:</strong> <code>A</code> (left pinky) and <code>;</code> (right pinky).</li>
+          <li><strong>Unit 5:</strong> <code>G</code> (left index reach) and <code>H</code> (right index reach).</li>
+        </ul>
+        <p>
+          Introducing keys in balanced pairs across both hands trains bilateral hand coordination from day one. Neither
+          hand is left dormant, and students immediately experience natural left-right hand alternation.
+        </p>
+
+        <h2 id="nine-stages">The 9 Curriculum Stages in HeroTyping</h2>
+        <p>
+          Here is how the complete 28-unit journey is structured:
+        </p>
+
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-left border-collapse border border-border text-sm">
             <thead>
               <tr className="bg-sub-alt/40 border-b border-border">
-                <th className="p-3 font-semibold text-foreground">Curriculum Phase</th>
+                <th className="p-3 font-semibold text-foreground">Stage</th>
+                <th className="p-3 font-semibold text-foreground">Units</th>
                 <th className="p-3 font-semibold text-foreground">Keys Covered</th>
-                <th className="p-3 font-semibold text-foreground">Core Biomechanical Goal</th>
-                <th className="p-3 font-semibold text-foreground">HeroTyping Curriculum</th>
+                <th className="p-3 font-semibold text-foreground">Pedagogical Purpose</th>
               </tr>
             </thead>
-            <tbody className="divide-y border-border">
-              {CURRICULUM_PHASES.map((p) => (
-                <tr key={p.phase} className="hover:bg-sub-alt/20 transition-colors">
-                  <td className="p-3 font-medium text-foreground">{p.phase}</td>
-                  <td className="p-3 font-mono text-xs text-sub">{p.keys}</td>
-                  <td className="p-3 text-foreground/85">{p.cognitiveGoal}</td>
-                  <td className="p-3 text-accent">{p.heroLessonRef}</td>
+            <tbody className="divide-y divide-border/60">
+              {CURRICULUM_STAGES.map((s) => (
+                <tr key={s.stage} className="hover:bg-sub-alt/20 transition-colors">
+                  <td className="p-3 font-medium text-foreground">{s.stage}</td>
+                  <td className="p-3 font-mono text-xs text-accent whitespace-nowrap">{s.units}</td>
+                  <td className="p-3 font-mono text-xs text-sub">{s.keys}</td>
+                  <td className="p-3 text-xs leading-relaxed text-foreground/85">{s.pedagogicalRationale}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <h2 id="why-order-matters">Why Alternative Orders Fail</h2>
+        <h2 id="consolidation-units">Why Periodic Consolidation Units Matter</h2>
         <p>
-          Learners frequently ask whether they can start with the top row because &quot;QWERTY starts at the top,&quot;
-          or whether they should learn all vowels first. Educational research consistently shows these alternative
-          approaches fail for two distinct biomechanical reasons:
+          Learning motor patterns requires consolidation stops. If a curriculum only adds new keys without structured
+          review, previously introduced keys fade from working memory.
         </p>
-
+        <p>
+          HeroTyping embeds four dedicated consolidation checkpoints:
+        </p>
         <ul>
           <li>
-            <strong>Loss of Tactile Homing:</strong> Only two keys on the standard keyboard have raised tactile bumps:
-            <code>F</code> and <code>J</code>. Both live on the home row. If you start with any other row, your hands
-            have zero tactile feedback to re-center themselves after striking a key, forcing you to look down.
+            <strong>Unit 6 (Home Row Mastery):</strong> Zero new keys. Students practice real English words formed entirely
+            from the 10 home keys (such as <em>ask, dad, fall, salad, flask, glad, dash</em>).
           </li>
           <li>
-            <strong>Cortical Representation:</strong> In human neuroanatomy, your index and middle fingers have far
-            larger motor representations in the brain than your ring and pinky fingers. Starting with index-finger
-            anchors (<code>F</code> and <code>J</code>) builds immediate success, whereas starting with pinky reaches
-            (<code>Q</code>, <code>P</code>, <code>Z</code>) triggers early hand fatigue and frustration.
+            <strong>Unit 12 (Top &amp; Home Rows):</strong> Consolidates 20 keys across natural bigrams (th, er, on, re)
+            before introducing bottom-row finger curls.
+          </li>
+          <li>
+            <strong>Unit 17 (Alphabet Complete):</strong> Unlocks B and N, verifying full 26-letter alphabetic mastery.
+          </li>
+          <li>
+            <strong>Unit 23 (Numbers Checkpoint):</strong> Unlocks 5 and 6, solidifying two-row vertical reaching across
+            the entire numeric deck.
           </li>
         </ul>
 
-        <h2 id="milestone-progression">When to Advance: The 95% Accuracy Gate</h2>
+        <h2 id="progression-rules">When to Advance: Star Ratings &amp; The 60% Gate</h2>
         <p>
-          The single most common mistake in learning to type is rushing ahead to new lessons before your previous
-          keys are automated.
+          Earlier typing tools often enforced rigid 90% or 95% pass walls that frustrated beginners and caused sudden,
+          jarring restarts after a few errors.
         </p>
         <p>
-          Use this simple rule: <strong>Do not advance to a new lesson until you pass the current one with at least
-          95% accuracy across three consecutive runs.</strong>
+          HeroTyping uses a clear, transparent progression rule:
         </p>
-        <p>
-          If your accuracy on the home row is 88%, advancing to the top row does not teach you the top row—it merely
-          compounds your home-row uncertainty. Speed is completely irrelevant during the first three phases. A learner
-          who types at 18 WPM with 99% accuracy will surpass a learner who types at 35 WPM with 85% accuracy within
-          three weeks.
-        </p>
-
-        <h2 id="herotyping-curriculum">The HeroTyping 28-Lesson Structured Path</h2>
-        <p>
-          To make this curriculum effortless to follow, HeroTyping organizes keyboard learning into a cohesive,
-          28-lesson progression structured across three natural skill tiers:
-        </p>
-
         <ul>
           <li>
-            <strong>Beginner Tier (Lessons 1–17):</strong> Covers the Home Row (1–4), Top Row (5–8), Bottom Row (9–12),
-            Numbers Low/High (13–14), Full Keyboard Words (15), Punctuation (16), and the culminating Beginner
-            Checkpoint (Lesson 17).
+            <strong>60% Accuracy Minimum (3+ Stars):</strong> You must achieve at least 60% accuracy to unlock the next
+            lesson step. This ensures you have acquired basic finger orientation without penalizing early exploration.
           </li>
           <li>
-            <strong>Intermediate Tier (Lessons 18–23):</strong> Focuses on everyday sentences, rhythm building, mixed
-            alphanumeric practice, longer paragraphs, and the Intermediate Checkpoint (Lesson 23).
+            <strong>Under 60% Accuracy (1–2 Stars):</strong> The lesson modal pauses calmly (no surprise restarts) and
+            displays an honest summary of your mistakes, highlighting which specific keys slipped and offering finger
+            placement tips before you retry.
           </li>
           <li>
-            <strong>Advanced Tier (Lessons 24–28):</strong> Challenges your speed endurance, high-pressure precision,
-            long-form typing, advanced numbers and symbols mastery, and the Final Graduation Challenge (Lesson 28).
+            <strong>4 Stars (88%+ Accuracy):</strong> Reflects strong, controlled rhythm.
+          </li>
+          <li>
+            <strong>5 Stars (94%+ Accuracy &amp; 25+ WPM):</strong> Represents mastery-level speed and precision (or 98%+
+            accuracy in beginner drills).
+          </li>
+        </ul>
+
+        <h2 id="three-tiers">The 3 Skill Tiers in HeroTyping</h2>
+        <p>
+          To provide clear progression milestones, the 28 units are divided into three natural skill tiers:
+        </p>
+        <ul>
+          <li>
+            <strong>Beginner Tier (Units 1–17):</strong> Focuses on foundational tactile anchors, home-row pairs, top-row
+            reaches, bottom-row curls, and alphabet completion (B &amp; N).
+          </li>
+          <li>
+            <strong>Intermediate Tier (Units 18–23):</strong> Introduces opposite-hand Shift mechanics, sentence
+            capitalization, and paired reaches across the number row (1–0).
+          </li>
+          <li>
+            <strong>Advanced Tier (Units 24–28):</strong> Challenges your skills with practical symbols (! ? &apos; &quot; : -),
+            high-frequency bigrams, paragraph stamina, developer code syntax, and the final graduation assessment.
           </li>
         </ul>
 
         <p>
           Ready to begin? Visit the complete <Link href="/lessons">HeroTyping Lessons Dashboard</Link> to start with
-          Lesson 1, or take the skill placement test to jump in at your current competency level.
+          Unit 1 (Home Row: F &amp; J Anchors), or take the diagnostic placement test to skip directly to your current skill level.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
         <SourceList sources={SOURCES} />
+
+        <p className="text-xs text-sub/70">Last updated {UPDATED}.</p>
       </GuideLayout>
     </>
   );

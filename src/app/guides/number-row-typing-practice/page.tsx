@@ -264,19 +264,29 @@ export default function NumberRowTypingPracticePage() {
           room 402 flight 718 gate 14 route 66 zip 90210 code 505 order 8821
         </p>
 
-        <h2 id="interactive-lessons">Interactive HeroTyping Lessons</h2>
+        <h2 id="interactive-lessons">Interactive Number Row Lessons</h2>
         <p>
-          Ready to test your number-row accuracy? HeroTyping provides dedicated lessons designed to build this exact skill:
+          HeroTyping teaches the number row in symmetrical pairs from the center index reaches outward, preserving
+          home-row anchor discipline:
         </p>
         <ul>
           <li>
-            <Link href="/lessons/numbers-low">Lesson 13: Numbers Low (1, 2, 3, 4, 5)</Link>
+            <Link href="/lessons/building-speed">Unit 19: Number Row: 4 &amp; 7</Link> — Upward index finger reaches past R and U.
           </li>
           <li>
-            <Link href="/lessons/numbers-high">Lesson 14: Numbers High (6, 7, 8, 9, 0)</Link>
+            <Link href="/lessons/numbers-and-words">Unit 20: Number Row: 3 &amp; 8</Link> — Middle finger reaches past E and I.
           </li>
           <li>
-            <Link href="/lessons/numbers-and-words">Lesson 20: Numbers and Words Integrated</Link>
+            <Link href="/lessons/longer-passages">Unit 21: Number Row: 2 &amp; 9</Link> — Ring finger reaches past W and O.
+          </li>
+          <li>
+            <Link href="/lessons/mixed-practice">Unit 22: Number Row: 1 &amp; 0</Link> — Outer pinky corner reaches past Q and P.
+          </li>
+          <li>
+            <Link href="/lessons/intermediate-checkpoint">Unit 23: Numbers Complete: 5 &amp; 6</Link> — Center reaches completing the entire number row.
+          </li>
+          <li>
+            <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link> — Advanced mixed numbers, currency, and bracketed syntax.
           </li>
         </ul>
 
