@@ -20,6 +20,15 @@ type SoundName =
   | "miss"
   | "over"
   | "start"
+  | "countdown"
+  | "countdown-go"
+  | "nitro"
+  | "freeze"
+  | "thunder"
+  | "boss-hit"
+  | "boss-block"
+  | "victory"
+  | "powerup"
   // Lessons get their own, slightly fuller versions of key/typo/clear/miss
   // rather than reusing the games' -- those are deliberately subtle because
   // a fast arcade game fires them constantly; a lesson is slower and more
@@ -126,6 +135,41 @@ const SOUNDS: Record<SoundName, () => void> = {
   start: () => {
     [420, 560, 780].forEach((freq, i) =>
       tone({ freq, durationMs: 120, type: "triangle", gain: 0.34, delayMs: i * 70 }),
+    );
+  },
+  countdown: () => {
+    tone({ freq: 440, durationMs: 75, type: "sine", gain: 0.3 });
+  },
+  "countdown-go": () => {
+    tone({ freq: 880, toFreq: 1100, durationMs: 200, type: "triangle", gain: 0.45 });
+  },
+  nitro: () => {
+    tone({ freq: 300, toFreq: 820, durationMs: 350, type: "sawtooth", gain: 0.32 });
+    tone({ freq: 600, toFreq: 1200, durationMs: 300, type: "triangle", gain: 0.2, delayMs: 40 });
+  },
+  freeze: () => {
+    [1200, 1500, 1900].forEach((freq, i) =>
+      tone({ freq, durationMs: 160, type: "sine", gain: 0.25, delayMs: i * 45 }),
+    );
+  },
+  thunder: () => {
+    tone({ freq: 85, toFreq: 40, durationMs: 600, type: "sawtooth", gain: 0.45 });
+  },
+  "boss-hit": () => {
+    tone({ freq: 140, toFreq: 50, durationMs: 180, type: "sawtooth", gain: 0.5 });
+    tone({ freq: 800, toFreq: 200, durationMs: 70, type: "square", gain: 0.2 });
+  },
+  "boss-block": () => {
+    tone({ freq: 1050, toFreq: 650, durationMs: 120, type: "triangle", gain: 0.4 });
+  },
+  victory: () => {
+    [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((freq, i) =>
+      tone({ freq, durationMs: 250, type: "triangle", gain: 0.35, delayMs: i * 90 }),
+    );
+  },
+  powerup: () => {
+    [440, 554.37, 659.25, 880].forEach((freq, i) =>
+      tone({ freq, durationMs: 100, type: "sine", gain: 0.3, delayMs: i * 50 }),
     );
   },
   // A short high "tick" layered under a lower "thock" -- two tones landing

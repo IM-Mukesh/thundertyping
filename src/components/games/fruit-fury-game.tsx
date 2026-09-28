@@ -33,6 +33,7 @@ import {
   grantAchievement,
 } from "@/lib/profile/player-profile";
 import { GAME_LIST } from "@/lib/games/game-types";
+import { GameViewport } from "@/components/games/ui/game-viewport";
 import { cn } from "@/lib/utils/cn";
 
 export default function FruitFuryGame({ definition }: GameComponentProps) {
@@ -189,7 +190,14 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
   }, [state.correctTyped, state.elapsedMs]);
 
   return (
-    <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center select-none font-sans">
+    <GameViewport
+      onFocusGame={() => {
+        if (sliceMode === "type") inputRef.current?.focus();
+      }}
+      isFocused={true}
+      isRunning={state.status === "running"}
+      className="relative mx-auto flex w-full max-w-4xl flex-col items-center select-none font-sans"
+    >
       {/* Hidden input for virtual keyboard support on touch devices */}
       <input
         ref={inputRef}
@@ -362,7 +370,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
         {/* HTML5 Canvas Surface */}
         <div
           className="relative w-full cursor-crosshair overflow-hidden touch-none"
-          style={{ height: "clamp(340px, 60dvh, 640px)" }}
+          style={{ height: "var(--safe-board-height, clamp(340px, 60dvh, 640px))" }}
           onClick={(e) => {
             handleCanvasClick(e.clientX, e.clientY);
             if (sliceMode === "type") inputRef.current?.focus();
@@ -736,6 +744,6 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
           )}
         </div>
       </div>
-    </div>
+    </GameViewport>
   );
 }

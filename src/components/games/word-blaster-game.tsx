@@ -29,7 +29,8 @@ import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
-import { HealthBar, IncomingWarning, WordDisplay } from "@/components/games/ui/game-chrome";
+import { HealthBar, IncomingWarning, WordDisplay, PauseOverlay } from "@/components/games/ui/game-chrome";
+import { GameViewport } from "@/components/games/ui/game-viewport";
 
 
 /**
@@ -334,7 +335,12 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
   const bossTimeFraction = boss ? Math.max(0, Math.min(1, bossTimeLeftMs / BOSS_TIME_PER_WORD_MS)) : 0;
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-3">
+    <GameViewport
+      onFocusGame={focusInput}
+      isFocused={isFocused}
+      isRunning={isPlaying}
+      className="w-full max-w-4xl gap-3"
+    >
       {/*
         In-play chrome is numbers and icons only — no word labels. Everything
         here is still announced to screen readers through aria-label, so
@@ -401,7 +407,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
         ref={boardRef}
         onClick={focusInput}
         className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:clamp(300px,62dvh,440px)] sm:[--board-h:clamp(360px,68dvh,560px)] lg:[--board-h:clamp(400px,72vh,680px)]"
-        style={{ height: "var(--board-h)" }}
+        style={{ height: "var(--safe-board-height, var(--board-h))" }}
       >
         {heroArt && (
           <Image
@@ -495,16 +501,20 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
                 <span
                   className={cn(
                     "rounded-md border bg-background/85 px-1 py-0.25 font-mono text-xs font-semibold tracking-tight shadow-sm backdrop-blur-[1px] sm:px-1.5 sm:py-0.5 sm:text-base md:text-lg",
-                    // The border/glow signals "locked in"; text colour is
-                    // reserved for "this character is typed" and must never
-                    // apply to the whole word, or the untyped remainder
-                    // (which owns no colour of its own) inherits it and the
-                    // entire word reads as "done" after just one keystroke —
-                    // leaving only a faint underline to show what's left.
                     isTarget ? "border-accent ring-2 ring-accent/40 arcade-glow" : inDanger ? "border-error/70" : "border-border/60",
-                    inDanger ? "text-error" : "text-foreground",
+                    enemy.type === "swarmer" && !isTarget && !inDanger && "border-amber-500/70 text-amber-400",
+                    enemy.type === "tank" && !isTarget && !inDanger && "border-cyan-500/80 bg-cyan-950/40 text-cyan-300",
+                    enemy.type === "emp" && !isTarget && !inDanger && "border-purple-500/80 bg-purple-950/40 text-purple-300",
+                    inDanger ? "text-error" : !enemy.type || enemy.type === "standard" ? "text-foreground" : undefined,
                   )}
                 >
+                  {enemy.type === "swarmer" && !isTarget && <span className="mr-1 text-[10px] font-bold text-amber-400">⚡</span>}
+                  {enemy.type === "tank" && !isTarget && (
+                    <span className="mr-1 text-[10px] font-bold text-cyan-400">
+                      {enemy.shieldHp && enemy.shieldHp > 1 ? "🛡️" : "💥"}
+                    </span>
+                  )}
+                  {enemy.type === "emp" && !isTarget && <span className="mr-1 text-[10px] font-bold text-purple-400">⚡EMP</span>}
                   {matched > 0 && (
                     <span className="text-accent underline decoration-2 underline-offset-2">
                       {enemy.text.slice(0, matched)}
@@ -801,20 +811,12 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
               <StartCard definition={definition} best={best} charArt={gunnerArt} onStart={handleStart} />
             )}
             {state.status === "paused" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">
-                  Paused
-                </p>
-                <ArcadeButton
-                  onClick={() => {
-                    resume();
-                    focusInput();
-                  }}
-                >
-                  <Play size={15} />
-                  Resume
-                </ArcadeButton>
-              </div>
+              <PauseOverlay
+                onResume={() => {
+                  resume();
+                  focusInput();
+                }}
+              />
             )}
             {state.status === "over" && (
               <GameOverCard
@@ -861,7 +863,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
           style={{ fontSize: 16 }}
         />
       </div>
-    </div>
+    </GameViewport>
   );
 }
 

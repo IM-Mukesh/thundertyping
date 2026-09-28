@@ -34,6 +34,8 @@ import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
+import { GameViewport } from "@/components/games/ui/game-viewport";
+import { PauseOverlay } from "@/components/games/ui/game-chrome";
 
 /** Charge fraction past which the telegraph reads as imminent. */
 const DANGER_FROM = 0.72;
@@ -106,7 +108,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
     if (s.correctKeystrokes > prev.correct) playSound("key", soundEnabled);
     if (s.incorrectKeystrokes > prev.incorrect) playSound("typo", soundEnabled);
     if (s.cleared > prev.cleared) {
-      playSound("clear", soundEnabled);
+      playSound("boss-hit", soundEnabled);
       sound("sword-hit", soundEnabled, { vary: 60 });
     }
     if (s.hitsTaken > prev.hitsTaken) {
@@ -114,7 +116,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
       sound("player-hurt", soundEnabled);
     }
     if (s.blocked > prev.blocked) {
-      playSound("combo", soundEnabled);
+      playSound("boss-block", soundEnabled);
       sound("shield-block", soundEnabled);
     }
     if (s.phase > prev.phase) {
@@ -221,7 +223,12 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
   const phaseInfo = PHASE_INFO[Math.min(state.phase, PHASE_COUNT) - 1];
 
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-3">
+    <GameViewport
+      onFocusGame={focusInput}
+      isFocused={isFocused}
+      isRunning={isPlaying}
+      className="w-full max-w-5xl gap-3"
+    >
       <div
         ref={boardRef}
         onClick={focusInput}
@@ -229,7 +236,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
           "relative w-full overflow-hidden rounded-2xl border border-border bg-background transition-transform",
           state.phaseFlashMs > 0 && "boss-shake",
         )}
-        style={{ height: "clamp(340px, 68dvh, 760px)", maxHeight: "min(760px, 86vh)" }}
+        style={{ height: "var(--safe-board-height, clamp(340px, 68dvh, 760px))" }}
       >
         {/* Battlefield backdrop. */}
         {bgArt && (
@@ -559,18 +566,12 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
               <StartCard definition={definition} best={best} characterArt={characterArt} onStart={handleStart} />
             )}
             {state.status === "paused" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">Paused</p>
-                <ArcadeButton
-                  onClick={() => {
-                    resume();
-                    focusInput();
-                  }}
-                >
-                  <Play size={15} />
-                  Resume
-                </ArcadeButton>
-              </div>
+              <PauseOverlay
+                onResume={() => {
+                  resume();
+                  focusInput();
+                }}
+              />
             )}
             {state.status === "over" && (
               <ResultCard
@@ -620,7 +621,7 @@ export function BossBattleGame({ definition, art }: BossBattleGameProps) {
           style={{ fontSize: 16 }}
         />
       </div>
-    </div>
+    </GameViewport>
   );
 }
 

@@ -37,6 +37,8 @@ import { duck, playMusic, preload, stopMusic } from "@/lib/audio/audio-bus";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, calculateLiveWpm, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
+import { GameViewport } from "@/components/games/ui/game-viewport";
+import { PauseOverlay } from "@/components/games/ui/game-chrome";
 
 const LANE_COUNT = OPPONENT_COUNT + 1;
 /** 3 even segments of the word list, presented as "laps" — a real, honest
@@ -161,7 +163,10 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     }
     // Losing a place deliberately gets no sound — a jeer every time a rival
     // edges ahead would be relentless over a whole race.
-    if (!prev.boostActive && boostActive) sound("boost-whoosh", soundEnabled);
+    if (!prev.boostActive && boostActive) {
+      sound("boost-whoosh", soundEnabled);
+      playSound("nitro", soundEnabled);
+    }
     if (lap > prev.lap) sound("final-lap-alarm", soundEnabled);
 
     prevRef.current = {
@@ -227,6 +232,17 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   const countdown = Math.max(1, Math.ceil(state.leadInMs / LEAD_IN_BEAT_MS));
   const charsToFinish = Math.max(0, Math.round((1 - state.playerProgress) * state.totalChars));
 
+  const prevCountdownRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (inLeadIn && countdown !== prevCountdownRef.current) {
+      prevCountdownRef.current = countdown;
+      playSound("countdown", soundEnabled);
+    } else if (!inLeadIn && prevCountdownRef.current !== null) {
+      prevCountdownRef.current = null;
+      playSound("countdown-go", soundEnabled);
+    }
+  }, [inLeadIn, countdown, soundEnabled]);
+
   useEffect(() => {
     if (state.status === "running" && !inLeadIn) {
       focusInput();
@@ -251,10 +267,15 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   ].sort((a, b) => b.progress - a.progress);
 
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-3" onClick={focusInput}>
+    <GameViewport
+      onFocusGame={focusInput}
+      isFocused={isFocused}
+      isRunning={isPlaying}
+      className="w-full max-w-5xl gap-3"
+    >
       <div
         className="relative w-full overflow-hidden rounded-2xl border border-border bg-background"
-        style={{ height: "clamp(340px, 64dvh, 720px)", maxHeight: "min(720px, 86vh)" }}
+        style={{ height: "var(--safe-board-height, clamp(340px, 64dvh, 720px))" }}
       >
         {bgArt && (
           <Image
@@ -550,20 +571,12 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
               <StartCard definition={definition} best={best} carArt={playerCarArt} onStart={handleStart} />
             )}
             {state.status === "paused" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">
-                  Paused
-                </p>
-                <ArcadeButton
-                  onClick={() => {
-                    resume();
-                    focusInput();
-                  }}
-                >
-                  <Play size={15} />
-                  Resume
-                </ArcadeButton>
-              </div>
+              <PauseOverlay
+                onResume={() => {
+                  resume();
+                  focusInput();
+                }}
+              />
             )}
             {state.status === "over" && (
               <ResultCard
@@ -620,7 +633,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           style={{ fontSize: 16 }}
         />
       </div>
-    </div>
+    </GameViewport>
   );
 }
 

@@ -33,6 +33,18 @@ import {
   OVERDRIVE_MS,
 } from "@/lib/games/use-falling-words";
 import type { GameState as FallingWordsState } from "@/lib/games/use-falling-words";
+import {
+  createInitialState as wrInitialState,
+  reducer as wrReducer,
+  getStormPhase,
+} from "@/lib/games/use-word-rain";
+import type { WordRainState } from "@/lib/games/use-word-rain";
+import {
+  createInitialState as crInitialState,
+  reducer as crReducer,
+  getRushTier,
+} from "@/lib/games/use-combo-rush";
+import type { ComboRushState } from "@/lib/games/use-combo-rush";
 
 describe("ghost racer: distance is correct characters, not keystrokes", () => {
   const text = "the quick brown fox";
@@ -432,5 +444,119 @@ describe("falling words: target variety, fever and overdrive", () => {
     // Advance well past DESTROY_EFFECT_MS in ticks.
     for (let i = 0; i < 20; i++) s = fwReducer(s, { type: "TICK" });
     assert.equal(s.destroyed.length, 0, "the effect ages out on its own without extra cleanup");
+  });
+});
+
+describe("word rain: storm weather phases and single-life survival", () => {
+  it("progresses sequentially through all 5 weather phases as elapsed time advances", () => {
+    assert.equal(getStormPhase(0).phase, "MIST");
+    assert.equal(getStormPhase(20_000).phase, "DRIZZLE");
+    assert.equal(getStormPhase(45_000).phase, "DOWNPOUR");
+    assert.equal(getStormPhase(80_000).phase, "GALE FORCE");
+    assert.equal(getStormPhase(120_000).phase, "HURRICANE");
+  });
+
+  it("any word reaching the floor immediately ends the run (single life)", () => {
+    const s0: WordRainState = {
+      ...wrInitialState(GAME_DEFINITIONS["word-rain"]),
+      status: "running",
+      words: [{ id: 1, text: "rain", progress: 0.999, fallMs: 50, lane: 2 }],
+    };
+    const s = wrReducer(s0, { type: "TICK" });
+    assert.equal(s.status, "over", "a single landed drop immediately triggers game over");
+  });
+
+  it("clearing a word near the floor credits a near-miss", () => {
+    const s0: WordRainState = {
+      ...wrInitialState(GAME_DEFINITIONS["word-rain"]),
+      status: "running",
+      words: [{ id: 1, text: "peril", progress: 0.85, fallMs: 6000, lane: 1 }],
+      nearMisses: 0,
+      cleared: 0,
+    };
+    const s = wrReducer(s0, { type: "SET_TYPED", value: "peril" });
+    assert.equal(s.cleared, 1);
+    assert.equal(s.nearMisses, 1, "near-miss threshold credited successfully");
+  });
+});
+
+describe("word blaster: tactical enemy archetypes", () => {
+  it("armored tank requires breaking shield word before revealing core word", () => {
+    const s0: WordBlasterState = {
+      ...wbInitialState(GAME_DEFINITIONS["word-blaster"]),
+      status: "running",
+      enemies: [
+        {
+          id: 1,
+          text: "shield",
+          progress: 0.2,
+          lane: 0,
+          travelMs: 8000,
+          type: "tank",
+          shieldHp: 2,
+        },
+      ],
+    };
+
+    // Typing shield word damages shield
+    const s1 = wbReducer(s0, { type: "SET_TYPED", value: "shield" });
+    assert.equal(s1.enemies.length, 1, "tank survives shield break");
+    const tank = s1.enemies[0]!;
+    assert.equal(tank.shieldHp, 1, "shield reduced to 1");
+    assert.notEqual(tank.text, "shield", "core word is revealed");
+
+    // Typing core word destroys the tank
+    const coreWord = tank.text;
+    const s2 = wbReducer(s1, { type: "SET_TYPED", value: coreWord });
+    assert.equal(s2.enemies.length, 0, "tank is destroyed when core word is typed");
+    assert.ok(s2.score >= 100, "tank awards bonus points");
+  });
+
+  it("emp shockwave drone clears other enemies in the same lane", () => {
+    const s0: WordBlasterState = {
+      ...wbInitialState(GAME_DEFINITIONS["word-blaster"]),
+      status: "running",
+      enemies: [
+        { id: 1, text: "pulse", progress: 0.3, lane: 2, travelMs: 8000, type: "emp" },
+        { id: 2, text: "swarm", progress: 0.5, lane: 2, travelMs: 8000, type: "swarmer" },
+        { id: 3, text: "other", progress: 0.4, lane: 4, travelMs: 8000, type: "standard" },
+      ],
+    };
+
+    const s1 = wbReducer(s0, { type: "SET_TYPED", value: "pulse" });
+    // EMP drone and swarmer in lane 2 should be gone; enemy in lane 4 should remain
+    assert.equal(s1.enemies.some((e) => e.lane === 2), false, "lane 2 cleared by shockwave");
+    assert.equal(s1.enemies.some((e) => e.lane === 4), true, "lane 4 enemy survived shockwave");
+  });
+});
+
+describe("combo rush: rush tiers and combo scaling", () => {
+  it("determines correct rush tier from streak", () => {
+    assert.equal(getRushTier(0).tier, "normal");
+    assert.equal(getRushTier(4).tier, "normal");
+    assert.equal(getRushTier(5).tier, "bronze");
+    assert.equal(getRushTier(9).tier, "bronze");
+    assert.equal(getRushTier(10).tier, "silver");
+    assert.equal(getRushTier(14).tier, "silver");
+    assert.equal(getRushTier(15).tier, "gold");
+    assert.equal(getRushTier(24).tier, "gold");
+    assert.equal(getRushTier(25).tier, "hyper");
+    assert.equal(getRushTier(50).tier, "hyper");
+  });
+
+  it("mistake resets combo and drops Rush Tier back to normal", () => {
+    const s0: ComboRushState = {
+      ...crInitialState(GAME_DEFINITIONS["combo-rush"]),
+      status: "running",
+      queue: ["alpha", "beta"],
+      combo: 18,
+      typed: "",
+    };
+    assert.equal(getRushTier(s0.combo).tier, "gold");
+
+    // Type a wrong character 'z' for 'alpha'
+    const s1 = crReducer(s0, { type: "SET_TYPED", value: "z" });
+    assert.equal(s1.combo, 0, "combo reset to 0 on errant keystroke");
+    assert.equal(getRushTier(s1.combo).tier, "normal", "tier drops back to warmup");
   });
 });

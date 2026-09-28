@@ -145,6 +145,16 @@ export interface ComboRushState {
   mistakeUntilMs: number;
 }
 
+export type RushTier = "normal" | "bronze" | "silver" | "gold" | "hyper";
+
+export function getRushTier(combo: number): { tier: RushTier; name: string; multiplier: number; color: string } {
+  if (combo >= 25) return { tier: "hyper", name: "HYPER", multiplier: 2.5, color: "text-purple-400 border-purple-500/80 bg-purple-950/40" };
+  if (combo >= 15) return { tier: "gold", name: "GOLD", multiplier: 2.0, color: "text-amber-400 border-amber-500/80 bg-amber-950/40" };
+  if (combo >= 10) return { tier: "silver", name: "SILVER", multiplier: 1.6, color: "text-cyan-400 border-cyan-500/80 bg-cyan-950/40" };
+  if (combo >= 5) return { tier: "bronze", name: "BRONZE", multiplier: 1.3, color: "text-emerald-400 border-emerald-500/80 bg-emerald-950/40" };
+  return { tier: "normal", name: "WARMUP", multiplier: 1.0, color: "text-sub border-border/50 bg-sub-alt/40" };
+}
+
 /** Rises to 1.6x over twelve clean words; applies to time *and* score. */
 export function comboMultiplier(combo: number): number {
   return 1 + Math.min(combo, COMBO_CAP) * COMBO_STEP;
@@ -172,7 +182,7 @@ type ComboRushAction =
   | { type: "SET_TYPED"; value: string }
   | { type: "SKIP" };
 
-function createInitialState(definition: GameDefinition): ComboRushState {
+export function createInitialState(definition: GameDefinition): ComboRushState {
   return {
     status: "idle",
     definition,
@@ -208,7 +218,7 @@ function appendWords(queue: string[], words: string[]): string[] {
   return next;
 }
 
-function reducer(state: ComboRushState, action: ComboRushAction): ComboRushState {
+export function reducer(state: ComboRushState, action: ComboRushAction): ComboRushState {
   switch (action.type) {
     case "START":
       return {

@@ -14,6 +14,8 @@ import type { GameDefinition, GameStatus } from "@/lib/games/game-types";
 // All the pacing/scoring knobs live in this file. game-types.ts holds only the
 // contract every game shares (name, rules, lives, how the score is formatted).
 
+export type EnemyType = "standard" | "swarmer" | "tank" | "emp";
+
 export interface Enemy {
   id: number;
   text: string;
@@ -23,6 +25,9 @@ export interface Enemy {
   travelMs: number;
   /** Vertical lane index, so enemies don't overlap each other. */
   lane: number;
+  type?: EnemyType;
+  /** Shield hits remaining for tank archetype */
+  shieldHp?: number;
 }
 
 /**
@@ -211,6 +216,19 @@ function scoreForKill(text: string, combo: number): number {
   return Math.round(text.length * POINTS_PER_CHAR * comboMultiplier(combo));
 }
 
+function pickEnemyType(destroyed: number): EnemyType {
+  const r = Math.random();
+  if (destroyed >= 12 && r < 0.16) return "emp";
+  if (destroyed >= 6 && r < 0.38) return "tank";
+  if (destroyed >= 2 && r < 0.65) return "swarmer";
+  return "standard";
+}
+
+function pickTankCoreWord(): string {
+  const candidates = generateWords(4, { punctuation: false, numbers: false });
+  return candidates.reduce((a, b) => (b.length > a.length ? b : a));
+}
+
 // ---------------------------------------------------------------------------
 // Reducer
 // ---------------------------------------------------------------------------
@@ -305,12 +323,22 @@ export function reducer(state: WordBlasterState, action: GameAction): WordBlaste
     case "SPAWN": {
       if (state.status !== "running") return state;
       if (state.enemies.length >= MAX_ACTIVE_ENEMIES) return state;
+      const type = pickEnemyType(state.destroyed);
+      const baseTravel = currentTravelMs(state);
+      const travelMs =
+        type === "swarmer"
+          ? Math.round(baseTravel * 0.65)
+          : type === "tank"
+            ? Math.round(baseTravel * 1.35)
+            : baseTravel;
       const enemy: Enemy = {
         id: nextEnemyId++,
         text: action.text,
         progress: 0,
-        travelMs: currentTravelMs(state),
+        travelMs,
         lane: action.lane,
+        type,
+        shieldHp: type === "tank" ? 2 : 1,
       };
       return { ...state, enemies: [...state.enemies, enemy] };
     }
@@ -482,30 +510,81 @@ export function reducer(state: WordBlasterState, action: GameAction): WordBlaste
       const correctKeystrokes = state.correctKeystrokes + added;
 
       if (target.text === value) {
+        // Tank archetype: first word cracks the armor shield, second word eliminates the hull
+        if (target.type === "tank" && target.shieldHp && target.shieldHp > 1) {
+          const combo = state.combo + 1;
+          const shieldPoints = 60;
+          const secondWord = pickTankCoreWord();
+          const updatedEnemies = state.enemies.map((e) =>
+            e.id === target.id
+              ? { ...e, text: secondWord, shieldHp: 1 }
+              : e
+          );
+          return {
+            ...state,
+            enemies: updatedEnemies,
+            typed: "",
+            lockedId: null,
+            score: state.score + shieldPoints,
+            combo,
+            bestCombo: Math.max(state.bestCombo, combo),
+            correctKeystrokes,
+            hits: [
+              ...state.hits,
+              {
+                seq: nextHitSeq++,
+                lane: target.lane,
+                progress: target.progress,
+                bornMs: state.elapsedMs,
+                points: shieldPoints,
+              },
+            ].slice(-MAX_HIT_EFFECTS),
+          };
+        }
+
         const combo = state.combo + 1;
-        // Scored at the combo *before* this kill, so the first kill of a run
-        // is a plain 1x.
         const points = scoreForKill(target.text, state.combo);
+        let bonusPoints = 0;
+        let empKills: Enemy[] = [];
+
+        if (target.type === "emp") {
+          // Detonate EMP shockwave across target lane, destroying any other enemies in that lane
+          empKills = state.enemies.filter((e) => e.lane === target.lane && e.id !== target.id);
+          bonusPoints = empKills.length * 100;
+        }
+
+        const destroyedEnemies = new Set([target.id, ...empKills.map((e) => e.id)]);
+        const totalCleared = state.destroyed + destroyedEnemies.size;
+
+        const newHits = [
+          ...state.hits,
+          {
+            seq: nextHitSeq++,
+            lane: target.lane,
+            progress: target.progress,
+            bornMs: state.elapsedMs,
+            points,
+          },
+          ...empKills.map((e) => ({
+            seq: nextHitSeq++,
+            lane: e.lane,
+            progress: e.progress,
+            bornMs: state.elapsedMs,
+            points: 100,
+          })),
+        ].slice(-MAX_HIT_EFFECTS);
+
         return {
           ...state,
-          enemies: state.enemies.filter((e) => e.id !== target.id),
+          enemies: state.enemies.filter((e) => !destroyedEnemies.has(e.id)),
           typed: "",
           lockedId: null,
-          destroyed: state.destroyed + 1,
-          score: state.score + points,
+          destroyed: totalCleared,
+          score: state.score + points + bonusPoints,
           combo,
           bestCombo: Math.max(state.bestCombo, combo),
           correctKeystrokes,
-          hits: [
-            ...state.hits,
-            {
-              seq: nextHitSeq++,
-              lane: target.lane,
-              progress: target.progress,
-              bornMs: state.elapsedMs,
-              points,
-            },
-          ].slice(-MAX_HIT_EFFECTS),
+          hits: newHits,
         };
       }
 

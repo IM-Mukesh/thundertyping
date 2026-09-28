@@ -37,6 +37,7 @@ import { STATUS_META, STATUS_ORDER, faceOf, type CardDef, type Statuses } from "
 import { useCardBattle, type EnemyState } from "@/lib/games/cards/use-card-battle";
 import { CardSigil } from "@/components/games/ui/card-sigil";
 import { GameStage, RuleCard, StartButton, StatTile } from "@/components/games/ui/game-chrome";
+import { GameViewport } from "@/components/games/ui/game-viewport";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
@@ -139,7 +140,13 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
   }, [state.phase, game]);
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-3" style={{ ["--accent" as string]: ACCENT }}>
+    <GameViewport
+      onFocusGame={() => inputRef.current?.focus()}
+      isFocused={isFocused}
+      isRunning={state.phase === "combat"}
+      className="w-full max-w-3xl gap-3"
+      style={{ ["--accent" as string]: ACCENT }}
+    >
       {state.phase !== "select" && (
         <div className="flex flex-wrap items-center gap-2">
           <StatTile icon={<Heart size={13} />} label="Health" value={`${state.hp}/${state.maxHp}`} tone="error" />
@@ -161,7 +168,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
       <GameStage
         art={game.encounter?.background}
         danger={state.hp / Math.max(1, state.maxHp) < 0.3}
-        className="[--board-h:clamp(360px,64dvh,540px)] cursor-pointer"
+        className="[--board-h:var(--safe-board-height,clamp(360px,64dvh,540px))] cursor-pointer"
       >
         <div
           onClick={() => {
@@ -355,7 +362,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
       )}
 
       <p className="text-center text-xs text-sub">{definition.tagline}</p>
-    </div>
+    </GameViewport>
   );
 }
 

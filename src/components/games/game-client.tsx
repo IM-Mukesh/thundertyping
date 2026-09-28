@@ -50,7 +50,7 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
     import("@/components/games/falling-words-game").then((m) => ({ default: m.FallingWordsGame })),
   ),
   "word-rain": lazyGame(() =>
-    import("@/components/games/falling-words-game").then((m) => ({ default: m.FallingWordsGame })),
+    import("@/components/games/word-rain-game").then((m) => ({ default: m.WordRainGame })),
   ),
   "word-blaster": lazyGame(() =>
     import("@/components/games/word-blaster-game").then((m) => ({ default: m.WordBlasterGame })),

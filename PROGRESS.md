@@ -33,7 +33,33 @@ Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll p
 
 ## Right now (orientation for a cold start — the rest of this file has the detail)
 
-As of **2026-09-28**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons` rebuilt with a strict **<=2 new alphanumeric keys per unit** pedagogical sequence, a **1-5 star motor mastery rating system**, a **10/10 animated lesson completion modal** with sequential star reveals and crystal chimes, an adaptive practice lab, diagnostic placement engine, and Bayesian mastery scoring, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **283-test suite**.
+As of **2026-09-28**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons` rebuilt with a strict **<=2 new alphanumeric keys per unit** pedagogical sequence, a **1-5 star motor mastery rating system**, a **10/10 animated lesson completion modal** with sequential star reveals and crystal chimes, an adaptive practice lab, diagnostic placement engine, and Bayesian mastery scoring, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **290-test suite across 61 suites**.
+
+**Session 2026-09-28 (Part 5) — Complete Games Rebuild: Mechanics, Depth, Mobile Viewport & Audio Hierarchy:**
+- **Game-by-Game Audit & Catalog Discovery**:
+  - Authored comprehensive 26-question (A–Z) audit for all 11 catalog games at `docs/games-catalog-audit.md`.
+  - Discovered 10 fully playable games (`falling-words`, `word-rain`, `word-blaster`, `typing-grand-prix`, `boss-battle`, `combo-rush`, `typing-survivor`, `ghost-racer`, `card-battle`, `fruit-fury`) and preserved 1 upcoming game preview (`spellbound`).
+- **Decoupled Mechanics & Enhanced Gameplay Loops**:
+  - **Word Rain**: Decoupled from Falling Words into dedicated survival tempest engine `src/lib/games/use-word-rain.ts` with 5 weather phases (`MIST`, `DRIZZLE`, `DOWNPOUR`, `GALE FORCE`, `HURRICANE`), real-time storm pressure gauge with downpour pulse surges, near-miss floor clearing rewards, and rain atmosphere audio.
+  - **Falling Words**: Rebuilt with 5 escalation phases (Scout Warmup to Matrix Meltdown), new word types (Slowdown Freeze words, Golden score multipliers, and red Hazard words), and tactical matrix slowdown mechanics in `src/lib/games/use-falling-words.ts`.
+  - **Word Blaster**: Upgraded with 3 distinct enemy archetypes in `src/lib/games/use-word-blaster.ts` (fast Swarmers, Armored Tanks with 2-phase shield words, and EMP drones triggering lane-clearing shockwave detonations).
+  - **Combo Rush**: Added 5 Rush Tiers (`WARMUP`, `BRONZE`, `SILVER`, `GOLD`, `HYPER`) with escalating score multipliers and time refunds in `src/lib/games/use-combo-rush.ts`, complete with dynamic HUD tier glow badge and powerup audio.
+  - **Typing Grand Prix**: Enhanced with Nitro boost sound, lead-in countdown audio, and safe viewport sizing.
+  - **Boss Battle**: Enhanced with zero-latency synthesized Web Audio hit/block/phase chimes and pause overlay.
+  - **Ghost Racer**: Added real-time pace delta chips (`+4c` / `-2c`) to lane runners, countdown audio triggers, and safe viewport sizing.
+  - **Card Battle & Fruit Fury**: Wrapped in responsive viewport containers with `--safe-board-height` to prevent mobile OSK occlusion.
+- **Mobile Virtual Viewport & OSK Architecture**:
+  - Built `src/lib/games/use-game-viewport.ts` and `src/components/games/ui/game-viewport.tsx` subscribing to `window.visualViewport` resize and scroll events.
+  - Exposes dynamic CSS variables `--safe-board-height`, `--visible-height`, `--keyboard-inset` so game stages scale above the mobile virtual keyboard without clipping.
+  - Standardized `CountdownOverlay`, `PauseOverlay`, `UniversalStartCard`, and `UniversalResultCard` in `src/components/games/ui/game-chrome.tsx`.
+- **Zero-Latency Web Audio Hierarchy**:
+  - Added synthesized Web Audio sound generators in `src/lib/games/game-audio.ts` (`countdown`, `countdown-go`, `nitro`, `freeze`, `thunder`, `boss-hit`, `boss-block`, `victory`, `powerup`), resuming safely on user gestures.
+- **Verification & Quality Gates**:
+  - `npm test`: 290 unit tests passing across 61 test suites (100% pass).
+  - `npm run lint`: 0 ESLint errors, 0 warnings.
+  - `npx next typegen && npx tsc --noEmit`: 0 TypeScript errors.
+  - `npm run build`: 150/150 static pages prerendered cleanly.
+  - Working tree preserved cleanly without commits or pushes.
 
 **Session 2026-09-28 (Part 4) — Complete Guides Content Audit & Rewrite (Curriculum Alignment & Pedagogical Realism):**
 - **Comprehensive Guides Corpus Audit & Re-alignment**:

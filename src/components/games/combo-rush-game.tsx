@@ -21,6 +21,7 @@ import {
   MAX_TIME_MS,
   START_TIME_MS,
   TICK_MS,
+  getRushTier,
   useComboRush,
 } from "@/lib/games/use-combo-rush";
 import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
@@ -28,6 +29,8 @@ import { playSound } from "@/lib/games/game-audio";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
+import { GameViewport } from "@/components/games/ui/game-viewport";
+import { PauseOverlay } from "@/components/games/ui/game-chrome";
 
 /** Fixed so the board never resizes as words of different lengths come up. */
 
@@ -81,17 +84,18 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
   // Sounds are driven off state transitions rather than fired inline from
   // handlers, so every path that changes the run — a keystroke, a skip, the
   // clock hitting zero on a tick — gets audio without each one remembering.
-  const prevRef = useRef({ correct: 0, incorrect: 0, cleared: 0, skipped: 0, combo: 0 });
+  const prevRef = useRef({ correct: 0, incorrect: 0, cleared: 0, skipped: 0, combo: 0, tier: "normal" });
   useEffect(() => {
     const prev = prevRef.current;
     const s = state;
+    const currentTier = getRushTier(s.combo);
 
     if (s.correctKeystrokes > prev.correct) playSound("key", soundEnabled);
     if (s.incorrectKeystrokes > prev.incorrect) playSound("typo", soundEnabled);
     if (s.cleared > prev.cleared) playSound("clear", soundEnabled);
     if (s.skipped > prev.skipped) playSound("miss", soundEnabled);
-    // Milestone only — a chime on every clear would be exhausting at this pace.
     if (s.combo > prev.combo && s.combo > 0 && s.combo % 5 === 0) playSound("combo", soundEnabled);
+    if (currentTier.tier !== prev.tier && currentTier.tier !== "normal") playSound("powerup", soundEnabled);
 
     prevRef.current = {
       correct: s.correctKeystrokes,
@@ -99,6 +103,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
       cleared: s.cleared,
       skipped: s.skipped,
       combo: s.combo,
+      tier: currentTier.tier,
     };
   }, [state, soundEnabled]);
 
@@ -179,8 +184,15 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
   const upcoming = state.queue.slice(1);
   const multiplier = comboMultiplier(state.combo);
 
+  const tierInfo = getRushTier(state.combo);
+
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-3">
+    <GameViewport
+      onFocusGame={focusInput}
+      isFocused={isFocused}
+      isRunning={isPlaying}
+      className="w-full max-w-3xl gap-3"
+    >
       <style>{COMBO_RUSH_CSS}</style>
 
       {/*
@@ -189,12 +201,19 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
         costs nothing for screen readers.
       */}
       <div className="flex items-center justify-between gap-2 font-mono sm:gap-4">
-        <span
-          className="text-2xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
-          aria-label={`Score ${state.score}`}
-        >
-          {state.score.toLocaleString()}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-2xl font-semibold tabular-nums text-accent arcade-glow sm:text-4xl"
+            aria-label={`Score ${state.score}`}
+          >
+            {state.score.toLocaleString()}
+          </span>
+          {tierInfo.tier !== "normal" && (
+            <span className={cn("rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider arcade-pulse", tierInfo.color)}>
+              {tierInfo.name}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-2 text-xs text-sub sm:gap-4 sm:text-sm">
           <Stat icon={<Target size={13} />} value={state.cleared} label={`${state.cleared} words cleared`} />
@@ -231,7 +250,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
       <div
         onClick={focusInput}
         className="relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge arcade-scanlines [--board-h:320px] sm:[--board-h:400px]"
-        style={{ height: "var(--board-h)" }}
+        style={{ height: "var(--safe-board-height, var(--board-h))" }}
       >
         <div aria-hidden="true" className="absolute inset-0 arcade-haze" />
         <div aria-hidden="true" className="absolute inset-0 arcade-grid opacity-40" />
@@ -353,20 +372,12 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
               <StartCard definition={definition} best={best} onStart={handleStart} />
             )}
             {state.status === "paused" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">
-                  Paused
-                </p>
-                <ArcadeButton
-                  onClick={() => {
-                    resume();
-                    focusInput();
-                  }}
-                >
-                  <Play size={15} />
-                  Resume
-                </ArcadeButton>
-              </div>
+              <PauseOverlay
+                onResume={() => {
+                  resume();
+                  focusInput();
+                }}
+              />
             )}
             {state.status === "over" && (
               <GameOverCard
@@ -423,7 +434,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
           style={{ fontSize: 16 }}
         />
       </div>
-    </div>
+    </GameViewport>
   );
 }
 

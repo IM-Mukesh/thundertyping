@@ -15,7 +15,7 @@ import type { GameDefinition, GameId, GameStatus } from "@/lib/games/game-types"
  * priority decisions ("save the golden one first") without needing the
  * player to learn a whole bestiary of falling-object types.
  */
-export type WordKind = "normal" | "elite" | "golden";
+export type WordKind = "normal" | "elite" | "golden" | "freeze" | "hazard";
 
 export interface FallingWord {
   id: number;
@@ -70,6 +70,10 @@ export interface GameState {
   fever: number;
   /** While positive: words spawn falling slower and score more. */
   overdriveMs: number;
+  /** While positive: active freeze slows all falling words by 50%. */
+  slowdownMs: number;
+  phase: number;
+  phaseName: string;
 }
 
 /** Pacing knobs — the only thing separating the two games on this engine. */
@@ -153,15 +157,21 @@ const OVERDRIVE_SCORE_MULT = 1.5;
 // kept — same approach Boss Battle's word draw already uses.
 const ELITE_MIN_LENGTH = 7;
 const ELITE_SAMPLES = 6;
-/** Elites only start appearing once the run has some pace to it; golden
- *  words are a flat-odds bonus from the very first spawn. */
-const ELITE_UNLOCK_AT_CLEARED = 8;
-const ELITE_CHANCE = 0.16;
-const GOLDEN_CHANCE = 0.08;
+const ELITE_UNLOCK_AT_CLEARED = 15;
+export function phaseForCleared(cleared: number): { phase: number; name: string } {
+  if (cleared >= 70) return { phase: 5, name: "Overdrive Frenzy" };
+  if (cleared >= 45) return { phase: 4, name: "Elite Swarm" };
+  if (cleared >= 25) return { phase: 3, name: "Mixed Threats" };
+  if (cleared >= 10) return { phase: 2, name: "Pressure Surge" };
+  return { phase: 1, name: "Scout Warmup" };
+}
 
 function pickWordKind(cleared: number): WordKind {
-  if (Math.random() < GOLDEN_CHANCE) return "golden";
-  if (cleared >= ELITE_UNLOCK_AT_CLEARED && Math.random() < ELITE_CHANCE) return "elite";
+  const rand = Math.random();
+  if (rand < 0.07) return "golden";
+  if (rand < 0.16) return "freeze";
+  if (cleared >= 10 && rand < 0.28) return "hazard";
+  if (cleared >= ELITE_UNLOCK_AT_CLEARED && rand < 0.44) return "elite";
   return "normal";
 }
 
@@ -183,6 +193,7 @@ type GameAction =
   | { type: "SET_TYPED"; value: string };
 
 export function createInitialState(definition: GameDefinition): GameState {
+  const initialPhase = phaseForCleared(0);
   return {
     status: "idle",
     definition,
@@ -202,6 +213,9 @@ export function createInitialState(definition: GameDefinition): GameState {
     lastMissMs: null,
     fever: 0,
     overdriveMs: 0,
+    slowdownMs: 0,
+    phase: initialPhase.phase,
+    phaseName: initialPhase.name,
   };
 }
 
@@ -211,9 +225,10 @@ export function currentSpawnMs(state: GameState): number {
   return Math.max(minSpawnMs, initialSpawnMs - state.cleared * spawnRampPerClear);
 }
 
-function currentFallMs(state: GameState): number {
+function currentFallMs(state: GameState, kind: WordKind = "normal"): number {
   const { initialFallMs, minFallMs, fallRampPerClear } = tuningFor(state.definition.id);
-  const base = Math.max(minFallMs, initialFallMs - state.cleared * fallRampPerClear);
+  let base = Math.max(minFallMs, initialFallMs - state.cleared * fallRampPerClear);
+  if (kind === "hazard") base = Math.round(base * 0.82); // Hazard falls faster!
   return state.overdriveMs > 0 ? Math.round(base * OVERDRIVE_FALL_SCALE) : base;
 }
 
@@ -223,7 +238,13 @@ function comboMultiplier(combo: number): number {
   return 1 + Math.min(combo, 10) * 0.1;
 }
 
-const KIND_SCORE_MULT: Record<WordKind, number> = { normal: 1, elite: 1.8, golden: 3 };
+const KIND_SCORE_MULT: Record<WordKind, number> = {
+  normal: 1,
+  elite: 1.8,
+  golden: 3,
+  freeze: 1.4,
+  hazard: 2,
+};
 
 function scoreForWord(text: string, combo: number, kind: WordKind, overdriveActive: boolean): number {
   const base = text.length * 10 * comboMultiplier(combo) * KIND_SCORE_MULT[kind];
@@ -291,7 +312,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         text: action.text,
         kind: action.kind,
         progress: 0,
-        fallMs: currentFallMs(state),
+        fallMs: currentFallMs(state, action.kind),
         lane: action.lane,
       };
       return { ...state, words: [...state.words, word] };
@@ -302,8 +323,10 @@ export function reducer(state: GameState, action: GameAction): GameState {
 
       const survivors: FallingWord[] = [];
       let landed = 0;
+      const speedMult = state.slowdownMs > 0 ? 0.5 : 1;
+
       for (const word of state.words) {
-        const progress = word.progress + TICK_MS / word.fallMs;
+        const progress = word.progress + (TICK_MS * speedMult) / word.fallMs;
         if (progress >= 1) landed += 1;
         else survivors.push({ ...word, progress });
       }
@@ -311,8 +334,11 @@ export function reducer(state: GameState, action: GameAction): GameState {
       const elapsedMs = state.elapsedMs + TICK_MS;
       const destroyed = state.destroyed.filter((d) => elapsedMs - d.bornMs < DESTROY_EFFECT_MS);
       const overdriveMs = Math.max(0, state.overdriveMs - TICK_MS);
+      const slowdownMs = Math.max(0, state.slowdownMs - TICK_MS);
 
-      if (landed === 0) return { ...state, words: survivors, elapsedMs, destroyed, overdriveMs };
+      if (landed === 0) {
+        return { ...state, words: survivors, elapsedMs, destroyed, overdriveMs, slowdownMs };
+      }
 
       const lives = Math.max(0, state.lives - landed);
       // A landed word may have been the one being typed — drop the lock so the
@@ -324,6 +350,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
         elapsedMs,
         destroyed,
         overdriveMs,
+        slowdownMs,
         lives,
         missed: state.missed + landed,
         combo: 0,
@@ -363,7 +390,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       if (target.text === value) {
         const combo = state.combo + 1;
         const overdriveActive = state.overdriveMs > 0;
-        const points = scoreForWord(target.text, state.combo, target.kind, overdriveActive);
+        const bonus = target.kind === "hazard" ? 25 : 0;
+        const points =
+          scoreForWord(target.text, state.combo, target.kind, overdriveActive) + bonus;
 
         // Fever builds on every clean clear and is spent the instant it caps —
         // Overdrive doesn't also refill fever while it's active, so the
@@ -371,17 +400,24 @@ export function reducer(state: GameState, action: GameAction): GameState {
         const feverGain = overdriveActive ? 0 : feverForClear(target.kind, combo);
         const fever = overdriveActive ? state.fever : Math.min(FEVER_MAX, state.fever + feverGain);
         const enteringOverdrive = !overdriveActive && fever >= FEVER_MAX;
+        const activatesSlowdown = target.kind === "freeze";
+        const newSlowdownMs = activatesSlowdown ? 3500 : state.slowdownMs;
+        const newCleared = state.cleared + 1;
+        const phaseInfo = phaseForCleared(newCleared);
 
         return {
           ...state,
           words: state.words.filter((w) => w.id !== target.id),
           typed: "",
           lockedId: null,
-          cleared: state.cleared + 1,
+          cleared: newCleared,
+          phase: phaseInfo.phase,
+          phaseName: phaseInfo.name,
           score: state.score + points,
           combo,
           bestCombo: Math.max(state.bestCombo, combo),
           correctKeystrokes,
+          slowdownMs: newSlowdownMs,
           fever: enteringOverdrive ? 0 : fever,
           overdriveMs: enteringOverdrive ? OVERDRIVE_MS : state.overdriveMs,
           destroyed: [

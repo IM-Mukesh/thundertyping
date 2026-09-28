@@ -45,6 +45,7 @@ import {
   rankFor,
   type GhostRun,
 } from "@/lib/games/racer/ghost-store";
+import { playSound } from "@/lib/games/game-audio";
 import {
   GameStage,
   RuleCard,
@@ -53,6 +54,7 @@ import {
   UpNext,
   WordDisplay,
 } from "@/components/games/ui/game-chrome";
+import { GameViewport } from "@/components/games/ui/game-viewport";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 import { racePositionOf, wordStartAt } from "@/lib/games/racer/progress";
@@ -160,10 +162,12 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
             setPhase("racing");
             void playMusic(MUSIC.race);
             sound("race-start", soundEnabled);
+            playSound("countdown-go", soundEnabled);
             focusTimeoutRef.current = window.setTimeout(() => inputRef.current?.focus(), 0);
             return 0;
           }
           sound("tick", soundEnabled);
+          playSound("countdown", soundEnabled);
           return c - 1;
         });
       }, 700);
@@ -304,9 +308,15 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
     return afterCurrent.split(" ").slice(0, 4);
   }, [text, wordStart, currentWord]);
 
+  const deltaChars = racePosition - (ghost ? ghostIndexAt(ghost, elapsed) : 0);
+  const deltaLabel = playerPct > 0 ? (deltaChars >= 0 ? `+${deltaChars}c` : `${deltaChars}c`) : undefined;
+
   return (
-    <div
-      className="flex w-full max-w-3xl flex-col gap-3"
+    <GameViewport
+      onFocusGame={() => inputRef.current?.focus()}
+      isFocused={isFocused}
+      isRunning={phase === "racing"}
+      className="w-full max-w-3xl gap-3"
       style={{ ["--accent" as string]: ACCENT }}
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -345,7 +355,7 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
 
       <GameStage
         art={phase === "done" ? (result?.won ? ART.victory : ART.defeat) : ART.neoncity}
-        className="[--board-h:clamp(340px,64dvh,520px)] cursor-pointer"
+        className="[--board-h:var(--safe-board-height,clamp(340px,64dvh,520px))] cursor-pointer"
       >
         <div
           onClick={() => {
@@ -413,7 +423,7 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
           {phase === "racing" && (
             <div className="flex h-full flex-col justify-between gap-3 p-3 sm:p-4">
               <div className="flex flex-col gap-2">
-                <Lane label="You" pct={playerPct} art={ART.bike} tone="accent" />
+                <Lane label="You" pct={playerPct} art={ART.bike} tone="accent" delta={deltaLabel} />
                 <Lane label={ghost && isPacer(ghost) ? "Pacer" : "Ghost"} pct={ghostPct} art={ART.bikeGhost} tone="ghost" />
               </div>
 
@@ -499,7 +509,7 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
       )}
 
       <p className="text-center text-xs text-sub">{definition.tagline}</p>
-    </div>
+    </GameViewport>
   );
 }
 
@@ -509,11 +519,13 @@ function Lane({
   pct,
   art,
   tone,
+  delta,
 }: {
   label: string;
   pct: number;
   art: string;
   tone: "accent" | "ghost";
+  delta?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, pct));
   return (
@@ -546,9 +558,21 @@ function Lane({
           />
         </div>
       </div>
-      <span className="w-9 shrink-0 text-right font-mono text-[10px] tabular-nums text-sub">
-        {Math.round(clamped)}%
-      </span>
+      <div className="flex w-16 shrink-0 items-center justify-end gap-1">
+        <span className="text-right font-mono text-[10px] tabular-nums text-sub">
+          {Math.round(clamped)}%
+        </span>
+        {delta && (
+          <span
+            className={cn(
+              "rounded px-1 py-0.2 font-mono text-[9px] font-bold tabular-nums",
+              delta.startsWith("+") ? "bg-accent/20 text-accent" : "bg-red-500/20 text-red-400",
+            )}
+          >
+            {delta}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

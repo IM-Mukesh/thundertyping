@@ -38,10 +38,12 @@ import { CHARACTERS } from "@/lib/games/survivor/content";
 import { useSurvivor, type Enemy } from "@/lib/games/survivor/use-survivor";
 import {
   GameStage,
+  PauseOverlay,
   RuleCard,
   StartButton,
   StatTile,
 } from "@/components/games/ui/game-chrome";
+import { GameViewport } from "@/components/games/ui/game-viewport";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
@@ -248,7 +250,13 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     state.phase === "over" ? ART.defeat : state.phase === "won" ? ART.victory : ART.arena;
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-3" style={{ ["--accent" as string]: ACCENT }}>
+    <GameViewport
+      onFocusGame={() => inputRef.current?.focus()}
+      isFocused={isFocused}
+      isRunning={state.phase === "playing"}
+      className="w-full max-w-3xl gap-3"
+      style={{ ["--accent" as string]: ACCENT }}
+    >
       {state.phase !== "select" && (
         <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-sub">
           <StatTile icon={<Heart size={13} />} label="Health" value={`${Math.ceil(state.hp)}/${state.maxHp}`} tone="error" />
@@ -282,7 +290,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
       <GameStage
         art={background}
         danger={state.hp / Math.max(1, state.maxHp) < 0.3}
-        className="[--board-h:clamp(320px,58dvh,500px)] cursor-pointer"
+        className="[--board-h:var(--safe-board-height,clamp(320px,58dvh,500px))] cursor-pointer"
       >
         <div
           ref={boardRef}
@@ -463,6 +471,12 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
               </p>
             </div>
           )}
+
+          {game.paused && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <PauseOverlay onResume={() => game.setPaused(false)} />
+            </div>
+          )}
         </div>
       </GameStage>
 
@@ -484,7 +498,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
       )}
 
       <p className="text-center text-xs text-sub">{definition.tagline}</p>
-    </div>
+    </GameViewport>
   );
 }
 

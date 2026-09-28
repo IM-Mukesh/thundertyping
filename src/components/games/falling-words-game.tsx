@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import {
+  AlertTriangle,
   Crosshair,
   Flame,
   Gauge,
   Heart,
   Play,
   RotateCcw,
+  Snowflake,
   Target,
   Trophy,
   Volume2,
@@ -29,6 +31,8 @@ import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
+import { GameViewport } from "@/components/games/ui/game-viewport";
+import { PauseOverlay } from "@/components/games/ui/game-chrome";
 
 // Board height is a PERCENTAGE-based layout (see FLOOR_INSET_PCT etc below),
 // so the real pixel height only needs to fit the viewport — clamp() instead
@@ -61,6 +65,8 @@ const KIND_STYLES: Record<WordKind, { text: string; chip: string }> = {
   normal: { text: "text-foreground", chip: "border-border/60" },
   elite: { text: "text-error", chip: "border-error/70" },
   golden: { text: "text-accent", chip: "border-accent" },
+  freeze: { text: "text-cyan-400", chip: "border-cyan-500/80 bg-cyan-950/40" },
+  hazard: { text: "text-rose-500", chip: "border-rose-500/80 bg-rose-950/40" },
 };
 
 /** Milestones are rare (seconds-to-minutes apart), so plain component state
@@ -167,6 +173,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
     missed: 0,
     combo: 0,
     overdriveActive: false,
+    slowdownActive: false,
   });
   useEffect(() => {
     const prev = prevRef.current;
@@ -188,6 +195,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
       sound("combo-milestone", soundEnabled);
     }
     if (s.overdriveMs > 0 && !prev.overdriveActive) sound("level-up", soundEnabled);
+    if (s.slowdownMs > 0 && !prev.slowdownActive) playSound("freeze", soundEnabled);
 
     prevRef.current = {
       correct: s.correctKeystrokes,
@@ -196,6 +204,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
       missed: s.missed,
       combo: s.combo,
       overdriveActive: s.overdriveMs > 0,
+      slowdownActive: s.slowdownMs > 0,
     };
   }, [state, soundEnabled]);
 
@@ -263,15 +272,21 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
   const isPlaying = state.status === "running";
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-3">
+    <GameViewport
+      onFocusGame={focusInput}
+      isFocused={isFocused}
+      isRunning={isPlaying}
+      className="w-full max-w-4xl gap-3"
+    >
       <div
         onClick={focusInput}
         className={cn(
           "relative w-full overflow-hidden rounded-2xl border border-border bg-background arcade-edge transition-all duration-300",
           overdriveActive && "border-accent ring-2 ring-accent/30",
           urgentAlert && "border-error ring-2 ring-error/60 arcade-pulse",
+          state.slowdownMs > 0 && "border-cyan-400/80 ring-2 ring-cyan-400/40",
         )}
-        style={{ height: "clamp(320px, 68dvh, 720px)", maxHeight: "min(720px, 86vh)" }}
+        style={{ height: "var(--safe-board-height, clamp(320px, 68dvh, 720px))" }}
       >
         {bgArt && (
           <Image
@@ -299,6 +314,15 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
           />
         )}
 
+        {/* Frost / Slowdown tint */}
+        {state.slowdownMs > 0 && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+            style={{ background: "linear-gradient(to bottom, rgba(6, 182, 212, 0.18), transparent 60%)" }}
+          />
+        )}
+
         {/* Impact flash — the ground floods red the instant something lands. */}
         <div
           aria-hidden="true"
@@ -323,19 +347,24 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                 {headline}
                 {definition.scoreBy === "time" && <span className="text-lg text-accent/70">s</span>}
               </span>
-              <span
-                className="flex items-center gap-1"
-                aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
-              >
-                {Array.from({ length: definition.lives }, (_, i) => (
-                  <Heart
-                    key={i}
-                    size={14}
-                    className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
-                    fill={i < state.lives ? "currentColor" : "none"}
-                  />
-                ))}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex items-center gap-1"
+                  aria-label={`${state.lives} ${state.lives === 1 ? "life" : "lives"} remaining`}
+                >
+                  {Array.from({ length: definition.lives }, (_, i) => (
+                    <Heart
+                      key={i}
+                      size={14}
+                      className={cn("transition-colors", i < state.lives ? "text-error" : "text-sub/25")}
+                      fill={i < state.lives ? "currentColor" : "none"}
+                    />
+                  ))}
+                </span>
+                <span className="rounded border border-border/50 bg-sub-alt/40 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-sub">
+                  {state.phaseName}
+                </span>
+              </div>
             </div>
 
             {/* The performance panel — WPM is the headline metric here, never
@@ -372,7 +401,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
             </div>
           </div>
 
-          {/* Fever / Overdrive meter. */}
+          {/* Fever / Overdrive meter & Freeze active display */}
           <div className="mt-2 flex items-center gap-2">
             <Flame size={12} className={cn(overdriveActive ? "text-accent" : "text-sub/60")} aria-hidden="true" />
             <div
@@ -393,6 +422,11 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                 Overdrive {Math.ceil(state.overdriveMs / 1000)}s
               </span>
             )}
+            {state.slowdownMs > 0 && (
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400 arcade-glow">
+                Freeze {Math.ceil(state.slowdownMs / 1000)}s
+              </span>
+            )}
           </div>
 
           {/* -------------------------------------------------------- Sky --- */}
@@ -408,17 +442,13 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                   className={cn(
                     "absolute whitespace-nowrap font-mono text-xs tracking-tight transition-[top] ease-linear sm:text-base md:text-lg",
                     "rounded-md border bg-background/85 px-1.5 py-0.5 shadow-sm backdrop-blur-[2px]",
-                    // The border/glow says "this is locked in" — the text
-                    // colour is reserved for "this character is typed",
-                    // never for the word as a whole.
                     isTarget ? "border-accent ring-2 ring-accent/40 arcade-glow" : inDanger ? "border-error/70" : kindStyle.chip,
                     inDanger ? "text-error" : "text-foreground",
                     !isTarget && !inDanger && kindStyle.text,
                     word.kind === "golden" && !isTarget && "arcade-pulse",
+                    word.kind === "freeze" && !isTarget && "shadow-cyan-500/20 shadow-md",
                   )}
                   style={{
-                    // Matches the engine tick so stepped updates read as
-                    // continuous motion without running the loop at frame rate.
                     transitionDuration: "50ms",
                     top: `${TOP_INSET_PCT + word.progress * PLAYABLE_HEIGHT_PCT}%`,
                     left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / laneCount)}%`,
@@ -426,6 +456,8 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                   }}
                 >
                   {word.kind === "elite" && !isTarget && <Flame size={10} className="mr-1 inline text-error" aria-hidden="true" />}
+                  {word.kind === "freeze" && !isTarget && <Snowflake size={10} className="mr-1 inline text-cyan-400" aria-hidden="true" />}
+                  {word.kind === "hazard" && !isTarget && <AlertTriangle size={10} className="mr-1 inline text-rose-500" aria-hidden="true" />}
                   {matched > 0 && (
                     <span className="text-accent font-semibold arcade-glow">{word.text.slice(0, matched)}</span>
                   )}
@@ -439,7 +471,16 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
               const t = (now - hit.bornMs) / DESTROY_EFFECT_MS;
               const y = TOP_INSET_PCT + hit.progress * PLAYABLE_HEIGHT_PCT;
               const x = LANE_INSET_PCT + (hit.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / laneCount);
-              const color = hit.kind === "golden" ? "var(--accent)" : hit.kind === "elite" ? "var(--error)" : "var(--correct)";
+              const color =
+                hit.kind === "golden"
+                  ? "var(--accent)"
+                  : hit.kind === "elite"
+                    ? "var(--error)"
+                    : hit.kind === "freeze"
+                      ? "#22d3ee"
+                      : hit.kind === "hazard"
+                        ? "#f43f5e"
+                        : "var(--correct)";
               return (
                 <div key={hit.seq} aria-hidden="true" className="pointer-events-none absolute" style={{ left: `${x}%`, top: `${y}%` }}>
                   <span
@@ -505,20 +546,12 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
               <StartCard definition={definition} best={best} onStart={handleStart} />
             )}
             {state.status === "paused" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <p className="font-mono text-lg font-semibold uppercase tracking-[0.2em] text-foreground">
-                  Paused
-                </p>
-                <ArcadeButton
-                  onClick={() => {
-                    resume();
-                    focusInput();
-                  }}
-                >
-                  <Play size={15} />
-                  Resume
-                </ArcadeButton>
-              </div>
+              <PauseOverlay
+                onResume={() => {
+                  resume();
+                  focusInput();
+                }}
+              />
             )}
             {state.status === "over" && (
               <GameOverCard
@@ -567,7 +600,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
           style={{ fontSize: 16 }}
         />
       </div>
-    </div>
+    </GameViewport>
   );
 }
 
