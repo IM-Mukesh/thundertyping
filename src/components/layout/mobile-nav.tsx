@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { THEMES } from "@/components/theme/themes";
+import { UserAccountMenu } from "@/components/auth/user-account-menu";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   levelProgress,
@@ -247,6 +248,11 @@ export function MobileNav({ open, onClose, triggerRef }: MobileNavProps) {
                 </div>
               </div>
             )}
+
+            {/* Account / Sign In State */}
+            <div className="mt-3">
+              <UserAccountMenu isMobile />
+            </div>
 
             {/* Nav Links */}
             <nav aria-label="Mobile navigation" className="mt-4 flex flex-col gap-1">

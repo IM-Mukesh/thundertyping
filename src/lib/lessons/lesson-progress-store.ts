@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import { LESSON_LIST, type LessonId } from "@/lib/lessons/lesson-types";
+import { getCurrentUserId } from "@/lib/auth/current-user";
 
 export type LearnerGoal =
   | "touch-typing"
@@ -68,7 +69,41 @@ export interface LessonProgressState {
   unlockUpToLesson: (targetLessonId: LessonId) => void;
   exportProgress: () => string;
   importProgress: (jsonString: string) => boolean;
+  /** Replaces (not merges) local state with the signed-in player's cloud
+   * progress — cloud is authoritative while signed in, so this never blends
+   * with whatever was last in this browser's local storage. */
+  replaceCloudUnits: (rows: Array<{ lesson_id: string; completed: boolean; stars: number; best_wpm: number; best_accuracy: number; attempt_count: number }>) => void;
 }
+
+// Signed-in players are cloud-only for lesson progress: this storage adapter
+// skips reading AND writing localStorage while signed in, so a different
+// account signing in later on the same browser can never inherit another
+// player's lesson progress. Guests are unaffected (real localStorage).
+const guestOnlyStorage: StateStorage = {
+  getItem: (name) => {
+    if (getCurrentUserId()) return null;
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    if (getCurrentUserId()) return;
+    try {
+      localStorage.setItem(name, value);
+    } catch {
+      // Ignore (e.g. storage quota, private browsing)
+    }
+  },
+  removeItem: (name) => {
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      // Ignore
+    }
+  },
+};
 
 export const CURRENT_SCHEMA_VERSION = 2;
 
@@ -177,7 +212,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
       setLearnerGoal: (goal) => set({ learnerGoal: goal }),
       recordAttempt: (unitId, input) => {
         const state = get();
-        const { unit, passed, unitCompleted } = computeUnitProgressUpdate(state.units[unitId], input);
+        const { unit, passed, unitCompleted, stars } = computeUnitProgressUpdate(state.units[unitId], input);
 
         set({
           units: { ...state.units, [unitId]: unit },
@@ -188,6 +223,22 @@ export const useLessonProgressStore = create<LessonProgressState>()(
             timeMs: state.totals.timeMs + input.elapsedMs,
           },
         });
+
+        const userId = getCurrentUserId();
+        if (userId) {
+          fetch("/api/lessons/progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lessonId: unitId,
+              completed: unit.completed,
+              stars,
+              wpm: input.wpm,
+              accuracy: input.accuracy,
+              attemptCount: 1,
+            }),
+          }).catch((err) => console.warn("[lessons] failed to save cloud progress:", err));
+        }
 
         return { passed, unitCompleted };
       },
@@ -242,6 +293,29 @@ export const useLessonProgressStore = create<LessonProgressState>()(
           2,
         );
       },
+      replaceCloudUnits: (rows) => {
+        const units: LessonProgressState["units"] = {};
+        for (const row of rows) {
+          const lesson = LESSON_LIST.find((item) => item.id === row.lesson_id);
+          if (!lesson) continue;
+          const completed = Boolean(row.completed);
+          units[lesson.id] = {
+            completed,
+            currentStep: completed ? lesson.subLessonCount : 0,
+            passCount: row.attempt_count || 0,
+            avgAccuracy: row.best_accuracy || 0,
+            avgWpm: row.best_wpm || 0,
+            totalTimeMs: 0,
+            completedAt: completed ? Date.now() : 0,
+            bestWpm: row.best_wpm || 0,
+            bestAccuracy: row.best_accuracy || 0,
+            attemptsCount: row.attempt_count || 0,
+            bestStars: row.stars || 0,
+            latestStars: row.stars || 0,
+          };
+        }
+        set({ units, totals: emptyTotals() });
+      },
       importProgress: (jsonString: string) => {
         try {
           const parsed = JSON.parse(jsonString);
@@ -269,7 +343,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
     }),
     {
       name: "thundertyping-lesson-progress",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => guestOnlyStorage),
       merge: (persistedState, currentState) => {
         const p = (typeof persistedState === "object" && persistedState !== null ? persistedState : {}) as Partial<{
           version?: unknown;
@@ -296,6 +370,26 @@ export const useLessonProgressStore = create<LessonProgressState>()(
     },
   ),
 );
+
+/** Called by AuthProvider right after sign-in. Cloud is authoritative. */
+export async function primeCloudLessonProgress(): Promise<void> {
+  try {
+    const res = await fetch("/api/lessons/progress");
+    const json = await res.json();
+    if (json?.success && Array.isArray(json.data)) {
+      useLessonProgressStore.getState().replaceCloudUnits(json.data);
+    }
+  } catch (err) {
+    console.warn("[lessons] failed to load cloud progress:", err);
+  }
+}
+
+/** Called by AuthProvider on sign-out, to swap back to this browser's own
+ * local guest progress instead of leaving the just-signed-out account's
+ * cloud data visible. Call only after clearing the current-user id. */
+export function restoreLocalLessonProgress(): void {
+  useLessonProgressStore.persist.rehydrate();
+}
 
 export function isLessonUnlocked(lessonId: LessonId, units: LessonProgressState["units"]): boolean {
   const index = LESSON_LIST.findIndex((l) => l.id === lessonId);

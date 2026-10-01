@@ -15,6 +15,8 @@ import {
   setStorageItem,
 } from "@/lib/persistence/storage";
 import { PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { getGameBest } from "@/lib/games/game-scores";
 
 // Storage key deliberately left unrenamed on the HeroTyping (formerly
 // ThunderTyping) rebrand -- it's what every existing player's XP,
@@ -167,6 +169,50 @@ export function subscribeProfile(listener: () => void): () => void {
   return () => window.removeEventListener(CHANGE_EVENT, listener);
 }
 
+// Signed-in players are cloud-only for XP and achievements: these mirrors are
+// in-memory only, primed from the server on sign-in and dropped on sign-out,
+// so a different account signing in later on the same browser can never
+// inherit another player's XP or achievements from localStorage. Guests are
+// unaffected (real localStorage via readProfile()/write() below).
+let cloudXp = 0;
+const cloudAchievements = new Set<string>();
+
+/** Called by AuthProvider right after sign-in, with the server's current total. */
+export function primeCloudXp(totalXp: number): void {
+  cloudXp = totalXp;
+  if (typeof window !== "undefined") {
+    queueMicrotask(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
+  }
+}
+
+/** Called by AuthProvider right after sign-in. Fire-and-forget. */
+export function primeCloudAchievements(): Promise<void> {
+  return fetch("/api/profile/achievements")
+    .then((res) => res.json())
+    .then((json) => {
+      if (json?.success && Array.isArray(json.data)) {
+        cloudAchievements.clear();
+        for (const id of json.data as string[]) cloudAchievements.add(id);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event(CHANGE_EVENT));
+        }
+      }
+    })
+    .catch((err) => console.warn("[profile] failed to load cloud achievements:", err));
+}
+
+/** Called by AuthProvider on sign-out. */
+export function clearCloudProfile(): void {
+  cloudXp = 0;
+  cloudAchievements.clear();
+}
+
+/** Cloud-aware count of earned game achievements, for display. */
+export function getEarnedAchievementCount(): number {
+  if (getCurrentUserId()) return cloudAchievements.size;
+  return Object.keys(readProfile().achievements).length;
+}
+
 export interface XpResult {
   xp: number;
   level: number;
@@ -175,21 +221,51 @@ export interface XpResult {
 }
 
 export function awardXp(amount: number): XpResult {
+  const gained = Math.max(0, Math.round(amount));
+  const userId = getCurrentUserId();
+
+  if (userId) {
+    const before = levelForXp(cloudXp);
+    cloudXp += gained;
+    const after = levelForXp(cloudXp);
+    if (gained > 0) {
+      fetch("/api/profile/xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: gained }),
+      }).catch((err) => console.warn("[profile] failed to award cloud XP:", err));
+    }
+    if (typeof window !== "undefined") {
+      queueMicrotask(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
+    }
+    return { xp: cloudXp, level: after, leveledUp: after > before, gained };
+  }
+
   const profile = readProfile();
   const before = levelForXp(profile.xp);
-  profile.xp += Math.max(0, Math.round(amount));
+  profile.xp += gained;
   const after = levelForXp(profile.xp);
   write(profile);
-  return {
-    xp: profile.xp,
-    level: after,
-    leveledUp: after > before,
-    gained: Math.max(0, Math.round(amount)),
-  };
+  return { xp: profile.xp, level: after, leveledUp: after > before, gained };
 }
 
 /** Returns true only the first time, so callers can fire a celebration once. */
 export function grantAchievement(id: string): boolean {
+  const userId = getCurrentUserId();
+  if (userId) {
+    if (cloudAchievements.has(id)) return false;
+    cloudAchievements.add(id);
+    fetch("/api/profile/achievements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ achievementId: id }),
+    }).catch((err) => console.warn("[profile] failed to grant cloud achievement:", err));
+    if (typeof window !== "undefined") {
+      queueMicrotask(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
+    }
+    return true;
+  }
+
   const profile = readProfile();
   if (profile.achievements[id]) return false;
   profile.achievements[id] = new Date().toISOString();
@@ -198,6 +274,7 @@ export function grantAchievement(id: string): boolean {
 }
 
 export function hasAchievement(id: string): boolean {
+  if (getCurrentUserId()) return cloudAchievements.has(id);
   return Boolean(readProfile().achievements[id]);
 }
 
@@ -267,6 +344,7 @@ export function recordDaily(dateKey: string, score: number): {
  * Spellbound do not render the achievement impossible to earn.
  */
 export function checkSiteAchievements(playableGameIds?: readonly string[]): string[] {
+  const userId = getCurrentUserId();
   const profile = readProfile();
   const granted: string[] = [];
 
@@ -276,14 +354,23 @@ export function checkSiteAchievements(playableGameIds?: readonly string[]): stri
       ? playableGameIds.filter((id) => playableSet.has(id))
       : PLAYABLE_GAME_LIST.map((g) => g.id);
 
+  // Signed-in: "played" comes from the cloud game-bests cache, not this
+  // browser's local stats, so the achievement reflects the account's actual
+  // cloud history rather than whatever a different signed-in player (or a
+  // guest session) last left in this browser's localStorage.
   const playedAll =
     targets.length > 0 &&
-    targets.every((id) => (profile.stats[id]?.runs ?? 0) > 0);
+    targets.every((id) =>
+      userId ? Boolean(getGameBest(id as Parameters<typeof getGameBest>[0])) : (profile.stats[id]?.runs ?? 0) > 0
+    );
   if (playedAll && grantAchievement("site:all-games")) granted.push("site:all-games");
 
-  if (levelForXp(profile.xp) >= 10 && grantAchievement("site:level-10")) {
+  const currentXp = userId ? cloudXp : profile.xp;
+  if (levelForXp(currentXp) >= 10 && grantAchievement("site:level-10")) {
     granted.push("site:level-10");
   }
+  // Day streak and daily-challenge completions are not cloud-tracked yet --
+  // these two checks stay local-only for both guests and signed-in players.
   if (profile.streak.count >= 7 && grantAchievement("site:streak-7")) {
     granted.push("site:streak-7");
   }

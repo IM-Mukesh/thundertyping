@@ -11,6 +11,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
 import { LevelBadge } from "@/components/layout/level-badge";
+import { UserAccountMenu } from "@/components/auth/user-account-menu";
 import { setGameSearchQuery, useGameSearchQuery } from "@/lib/games/game-search-store";
 import { cn } from "@/lib/utils/cn";
 
@@ -112,6 +113,7 @@ export function SiteHeader() {
           <MoreMenu />
           <ThemeSwitcher />
           <LevelBadge />
+          <UserAccountMenu />
         </nav>
 
         {/* Mobile Actions: LevelBadge + LanguageSelector + Hamburger Button */}

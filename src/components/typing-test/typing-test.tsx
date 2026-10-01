@@ -164,6 +164,11 @@ export function TypingTest() {
             : config.mode === "vocabulary"
               ? config.vocabDifficulty
               : "custom";
+    const grossWpm = calculateRawWpm(
+      engine.state.correctKeystrokes,
+      engine.state.incorrectKeystrokes,
+      engine.state.elapsedMs,
+    );
     const { isNewBest: newBest } = recordResult(
       config.mode,
       param,
@@ -171,15 +176,17 @@ export function TypingTest() {
       config.numbers,
       wpm,
       accuracy,
+      {
+        rawWpm: grossWpm,
+        durationSec: Math.max(1, Math.round(engine.state.elapsedMs / 1000)),
+        correctChars: engine.state.correctKeystrokes,
+        incorrectChars: engine.state.incorrectKeystrokes,
+        extraChars: engine.state.charTally.extra,
+        missedChars: engine.state.charTally.missed,
+      },
     );
     setIsNewBest(newBest);
     playSound(newBest ? "clear" : "lesson-clear", soundEnabled);
-
-    const grossWpm = calculateRawWpm(
-      engine.state.correctKeystrokes,
-      engine.state.incorrectKeystrokes,
-      engine.state.elapsedMs,
-    );
     trackEvent("typing_test_completed", {
       test_mode: config.mode,
       test_duration: config.mode === "time" ? config.timeDuration : undefined,

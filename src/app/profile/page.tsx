@@ -18,9 +18,8 @@ export default function ProfilePage() {
           Your profile
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-sub">
-          Everything below is stored on this device. There is no account and
-          nothing is uploaded, which means your progress is private — and also
-          that it lives in this browser only. Clearing site data clears it.
+          Your HeroTyping stats and cross-game progression. Sign in with Google
+          to enable automatic cloud backup across devices, or continue practicing freely as a guest.
         </p>
       </header>
 

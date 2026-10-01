@@ -1,5 +1,6 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import type { TestMode } from "@/lib/typing-engine/engine-types";
+import { getCurrentUserId } from "@/lib/auth/current-user";
 
 // Left unrenamed on the HeroTyping rebrand -- every existing player's
 // personal bests are saved under this prefix, and renaming it would orphan
@@ -49,6 +50,52 @@ function isValidPersonalBest(value: unknown): value is PersonalBest {
   );
 }
 
+// Signed-in players are cloud-only for typing-test bests: this cache is an
+// in-memory mirror of the authoritative server history, rebuilt on sign-in
+// and dropped on sign-out, so a different account signing in later on the
+// same browser can never inherit another player's bests from localStorage.
+const cloudBestCache = new Map<string, PersonalBest>();
+let cloudBestsPrimedForUserId: string | null = null;
+
+/** Called by AuthProvider right after sign-in. Fire-and-forget. */
+export function primeCloudPersonalBests(userId: string): Promise<void> {
+  if (cloudBestsPrimedForUserId === userId) return Promise.resolve();
+  cloudBestCache.clear();
+  cloudBestsPrimedForUserId = userId;
+  return fetch("/api/typing-results?limit=200")
+    .then((res) => res.json())
+    .then((json) => {
+      if (!json?.success || !Array.isArray(json.data)) return;
+      for (const row of json.data as Array<{
+        mode: string;
+        param: string | null;
+        punctuation: boolean;
+        numbers: boolean;
+        wpm: number;
+        accuracy: number;
+        created_at: string;
+      }>) {
+        if (!isTrackableMode(row.mode as TestMode)) continue;
+        const key = pbKey(row.mode as TestMode, row.param ?? "", row.punctuation, row.numbers);
+        const existing = cloudBestCache.get(key);
+        if (!existing || row.wpm > existing.wpm) {
+          cloudBestCache.set(key, {
+            wpm: row.wpm,
+            accuracy: row.accuracy,
+            achievedAt: new Date(row.created_at).getTime(),
+          });
+        }
+      }
+    })
+    .catch((err) => console.warn("[results-store] failed to load cloud bests:", err));
+}
+
+/** Called by AuthProvider on sign-out. */
+export function clearCloudPersonalBests(): void {
+  cloudBestCache.clear();
+  cloudBestsPrimedForUserId = null;
+}
+
 export function getPersonalBest(
   mode: TestMode,
   param: number | string,
@@ -56,6 +103,9 @@ export function getPersonalBest(
   numbers: boolean,
 ): PersonalBest | null {
   if (!isTrackableMode(mode)) return null;
+  if (getCurrentUserId()) {
+    return cloudBestCache.get(pbKey(mode, param, punctuation, numbers)) ?? null;
+  }
   const raw = getStorageItem(pbKey(mode, param, punctuation, numbers));
   if (!raw) return null;
   try {
@@ -64,6 +114,16 @@ export function getPersonalBest(
   } catch {
     return null;
   }
+}
+
+export interface RecordResultDetails {
+  rawWpm?: number;
+  consistency?: number;
+  durationSec: number;
+  correctChars: number;
+  incorrectChars: number;
+  extraChars?: number;
+  missedChars?: number;
 }
 
 export function recordResult(
@@ -75,15 +135,44 @@ export function recordResult(
   wpm: number,
   /** Unrounded accuracy percentage. */
   accuracy: number,
+  details?: RecordResultDetails,
 ): { isNewBest: boolean; best: PersonalBest | null } {
   if (!isTrackableMode(mode)) return { isNewBest: false, best: null };
 
   const existing = getPersonalBest(mode, param, punctuation, numbers);
-  if (existing && existing.wpm >= wpm) {
-    return { isNewBest: false, best: existing };
+  const isNewBest = !existing || wpm > existing.wpm;
+  const best: PersonalBest = { wpm, accuracy, achievedAt: Date.now() };
+
+  const userId = getCurrentUserId();
+  if (userId) {
+    if (isNewBest) cloudBestCache.set(pbKey(mode, param, punctuation, numbers), best);
+    if (details) {
+      fetch("/api/typing-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          duration: details.durationSec,
+          wpm,
+          rawWpm: details.rawWpm ?? null,
+          accuracy,
+          consistency: details.consistency ?? null,
+          correctChars: details.correctChars,
+          incorrectChars: details.incorrectChars,
+          extraChars: details.extraChars ?? 0,
+          missedChars: details.missedChars ?? 0,
+          param: String(param),
+          punctuation,
+          numbers,
+        }),
+      }).catch((err) => console.warn("[results-store] failed to save cloud result:", err));
+    }
+    return { isNewBest, best };
   }
 
-  const best: PersonalBest = { wpm, accuracy, achievedAt: Date.now() };
+  if (!isNewBest) {
+    return { isNewBest: false, best: existing };
+  }
   setStorageItem(pbKey(mode, param, punctuation, numbers), JSON.stringify(best));
   return { isNewBest: true, best };
 }

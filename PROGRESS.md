@@ -35,6 +35,56 @@ Open whatever URL `npm run dev` prints (usually `http://localhost:3000`; it'll p
 
 As of **2026-09-28**: a production-ready, feature-complete MVP, fully mobile-responsive, rebranded from ThunderTyping to **HeroTyping**, with a dedicated mobile **hamburger menu drawer** (with integrated theme switcher & level progress), zero-shake caret layout, responsive virtual keyboards for mobile viewports, **10 playable typing games** under `/games` (plus upcoming **Spellbound** preview, 11 total catalog games, including flagship **Fruit Fury**), a **28-unit, 3-tier touch-typing curriculum** under `/lessons` rebuilt with a strict **<=2 new alphanumeric keys per unit** pedagogical sequence, a **1-5 star motor mastery rating system**, a **10/10 animated lesson completion modal** with sequential star reveals and crystal chimes, an adaptive practice lab, diagnostic placement engine, and Bayesian mastery scoring, a **1,300-word daily vocabulary typing mode with offline TTS audio pronunciation & explanation**, **43 comprehensive SEO guides across 6 category hubs** under `/guides` with a scalable category-first information architecture, sub-100KB hierarchical WebP image pipeline, **Google Analytics 4 wired in**, AdSense safe unit ID architecture, and a **290-test suite across 61 suites**.
 
+**Session 2026-10-01 — Auth Fixes, Removed Guest Migration, Cloud-Only Sync For Signed-In Players:**
+- **Superseded from Part 6 below**: the automatic guest→account migration (`src/lib/auth/guest-sync.ts`, `/api/sync/migrate`, `src/lib/server/migration.ts`) has been **removed** (moved to `.removed-backup/`, not deleted outright) — it had a real bug where, on a shared browser, a second account signing in after a first could inherit the first account's (or a leftover guest session's) local scores, since the migration-done check only compared against the new user's own id, not whose data was actually sitting in localStorage.
+- **Signed-in players are now cloud-only, guests stay local-only** — no merging between the two, ever:
+  - Typing-test personal bests (`src/lib/persistence/results-store.ts`), game scores (`src/lib/games/game-scores.ts`), lesson progress (`src/lib/lessons/lesson-progress-store.ts`), XP, and achievements (`src/lib/profile/player-profile.ts`) each now check `getCurrentUserId()` (`src/lib/auth/current-user.ts`, a tiny non-React mirror of the signed-in id, kept in sync by `AuthProvider`) and branch: guest → localStorage exactly as before; signed-in → POST to the cloud API, read from an in-memory cache primed on sign-in and dropped on sign-out. No game/lesson/typing-test component needed to change — they all already went through one shared function per concern (`recordGameResult`, `recordAttempt`, `recordResult`, `awardXp`, `grantAchievement`), so the branching lives there, not at 12+ call sites.
+  - New endpoints: `POST /api/profile/xp` (atomic, race-safe increment on `player_streaks.total_xp`, same optimistic-retry pattern as the other aggregate writes) and `GET`/`POST /api/profile/achievements` (backed by the `achievements` table, which existed in the schema but had no route until now).
+  - Still local-only for everyone (disclosed, not a regression): unlocks and daily-challenge streaks have no database table yet — would need a new migration to close.
+- **Fixed the real "signed in with Google but still shows Guest Mode" bug**: `src/lib/auth/auth-context.tsx`'s `refreshProfile()` correctly read the valid local session via `getSession()` (instant, no network call) but then unconditionally wiped it back to `null` on *any* `/api/profile` 401 — and `/api/profile` uses `getUser()`, which re-verifies the JWT against Supabase's auth server over the network and can transiently fail right after a fresh sign-in, before the new token finishes propagating. Fixed both sides: the client now only clears sign-in state on a 401 if the local session also agrees nobody's signed in, and `src/lib/server/auth.ts`'s `getAuthenticatedUser()` retries once (300ms) when a session cookie is present but verification failed. Confirmed working live.
+- **Simplified email sign-in to a single magic-link flow**: Supabase's configured email template never actually included a 6-digit code (only a sign-in link), so the old two-step "enter the code we emailed you" UI was a dead end. `src/app/auth/login/page.tsx` now just sends the link and shows "check your email" — the dead `verifyOtp` plumbing and `/api/auth/verify` route were removed. The email sign-in button itself is currently **hidden from the UI** (not deleted — `signInWithOtp`/`/api/auth/otp` are intact) because Supabase's free-tier shared SMTP rate-limits project-wide, not per-recipient, and needs a dedicated SMTP provider (e.g. Resend) configured in the Supabase Dashboard before it's viable for real users — that's a dashboard setting, not something fixable from code.
+- **Removed the "Reset progress" button** from the profile page per product decision (was local-only and getting confusing alongside the new cloud-sync model); the underlying `resetProfile()` function stays, still used by a test for state isolation between runs.
+- Verification: `npm test` (325/325, up from 319), `npm run lint` (clean), `npm run typecheck` (clean), `npm run build` (clean) after every change in this session.
+
+**Session 2026-09-28 (Part 6) — Production Backend Foundation (Next.js 16 + Vercel + Supabase + RLS + Guest Migration):**
+- **Architecture & Infrastructure**:
+  - Maintained zero-server architecture: no Express, Fastify, standalone Node, Docker, or external microservices.
+  - All backend endpoints operate serverlessly through Next.js 16 App Router Route Handlers (`src/app/api/**`).
+  - Next.js 16 `src/proxy.ts` request proxy file implements session token refresh with `@supabase/ssr` (replacing deprecated `middleware.ts`).
+  - Typed Supabase browser and server clients (`@supabase/supabase-js` ^2.117.2 and `@supabase/ssr` ^0.12.7) with fallback tolerance for CI and static prerendering.
+- **Postgres Database Schema & Row Level Security**:
+  - Authored `supabase/migrations/20260928000000_initial_schema.sql` defining 9 production tables: `profiles`, `user_preferences`, `player_streaks`, `lesson_progress`, `lesson_attempts`, `typing_results`, `game_scores`, `daily_stats`, `achievements`.
+  - Configured automated PostgreSQL trigger `on_auth_user_created` to provision profile, preferences, and streak defaults upon user signup.
+  - Enabled Row Level Security (RLS) across all user tables with strict `auth.uid() = user_id` / `auth.uid() = id` policies.
+  - Generated complete database types in `src/lib/supabase/database.types.ts`.
+- **Server Utilities & API Route Handlers**:
+  - `src/lib/server/auth.ts`: `getAuthenticatedUser()` and `requireAuthUser()` verifying user identity server-side via Supabase Auth without trusting client-supplied user IDs.
+  - `src/lib/server/errors.ts`: Standardized API envelope (`{ success: true, data }` or `{ success: false, error }`).
+  - `src/lib/server/validation.ts`: Strict boundary validation for typing results, lesson progress, game scores, profile updates, and preferences.
+  - `src/app/api/auth/callback/route.ts`: OAuth code exchange with open-redirect protection.
+  - `src/app/api/profile/route.ts` & `src/app/api/profile/preferences/route.ts`: Profile and preferences GET/PATCH/PUT endpoints.
+  - `src/app/api/typing-results/route.ts`: Typing results history and record saves with daily rollup stats and streak/XP increments.
+  - `src/app/api/lessons/progress/route.ts`: Unit progress retrieval and upsert with star retention.
+  - `src/app/api/games/scores/route.ts`: Game score run recording, personal best calculation, and daily games played updates.
+  - `src/app/api/sync/migrate/route.ts`: Deterministic guest-to-cloud migration endpoint.
+- **Client Auth, UI & Deterministic Guest Migration**:
+  - `src/lib/auth/auth-context.tsx`: React AuthProvider and `useAuth` hook managing real-time auth state (`onAuthStateChange`).
+  - `src/lib/auth/guest-sync.ts`: Non-destructive guest data aggregator seamlessly migrating local storage to cloud upon login.
+  - `src/components/auth/user-account-menu.tsx`: User avatar, email, cloud sync status, and account dropdown for desktop and mobile drawer.
+  - `src/app/auth/login/page.tsx`: Google OAuth and Email OTP magic-link login page with clear guest mode guarantees.
+  - `src/components/profile/profile-client.tsx`: Account and cloud sync status card with inline profile display name and username editing.
+- **Privileged Server Client & Security Hardening (New Supabase API Key Model)**:
+  - Implemented `createAdminClient()` in `src/lib/supabase/admin.ts` using `SUPABASE_SECRET_KEY` (with fallback to `SUPABASE_SERVICE_ROLE_KEY` if configured).
+  - Enforced strict server isolation: `createAdminClient` is server-only, never exposed with `NEXT_PUBLIC_`, never imported into Client Components, and completely decoupled from user session cookies and auth headers.
+  - Rewrote server data services (`typing-results.ts`, `lesson-progress.ts`, `game-scores.ts`, `profiles.ts`, `migration.ts`) to execute verified writes via `createAdminClient()`.
+  - Maintained hardened RLS policies in `supabase/migrations/20260928000000_initial_schema.sql` (blocking direct browser mutations while allowing serverless Route Handlers to perform verified operations).
+  - Documented `SUPABASE_SECRET_KEY` in `.env.example` and `docs/backend.md`.
+- **Quality Gates & Verification**:
+  - `npm test`: 313 unit tests passing across 70 test suites (100% pass).
+  - `npm run lint`: 0 ESLint errors, 0 warnings.
+  - `npm run typecheck`: 0 TypeScript errors.
+  - `npm run build`: 158/158 routes compiled and prerendered successfully with Turbopack.
+
 **Session 2026-09-28 (Part 5) — Complete Games Rebuild: Mechanics, Depth, Mobile Viewport & Audio Hierarchy:**
 - **Game-by-Game Audit & Catalog Discovery**:
   - Authored comprehensive 26-question (A–Z) audit for all 11 catalog games at `docs/games-catalog-audit.md`.
