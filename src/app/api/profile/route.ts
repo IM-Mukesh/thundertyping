@@ -7,7 +7,6 @@ import { validateProfileUpdateInput } from "@/lib/server/validation";
 export async function GET() {
   try {
     const { user } = await requireAuthUser();
-    console.info("[api/profile] authenticated", { userId: user.id, email: user.email });
     const data = await getUserProfile(user.id);
     return apiSuccess({
       user: {
@@ -20,7 +19,6 @@ export async function GET() {
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Authentication required";
-    console.error("[api/profile] authentication/profile lookup failed", { message: msg });
     return apiError("UNAUTHORIZED", msg, 401);
   }
 }

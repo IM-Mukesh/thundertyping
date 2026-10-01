@@ -30,14 +30,6 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     .filter((name) => name.startsWith("sb-"));
   const hasAuthCookies = supabaseCookieNames.length > 0;
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[proxy] request", {
-      pathname,
-      hasAuthCookies,
-      supabaseCookieNames,
-    });
-  }
-
   if (!hasAuthCookies) {
     return NextResponse.next({ request });
   }

@@ -21,7 +21,7 @@ export interface AuthContextValue {
   streak: StreakRow | null;
   isLoading: boolean;
   isGuest: boolean;
-  signInWithGoogle: (redirectTo?: string) => Promise<{ error: string | null }>;
+  signInWithGoogleIdToken: (idToken: string, nonce: string) => Promise<{ error: string | null }>;
   signInWithOtp: (email: string, redirectTo?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<User | null>;
@@ -151,24 +151,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase, refreshProfile]);
 
-  const signInWithGoogle = useCallback(
-    async (redirectTo?: string): Promise<{ error: string | null }> => {
+  const signInWithGoogleIdToken = useCallback(
+    async (idToken: string, nonce: string): Promise<{ error: string | null }> => {
       try {
-        const callbackUrl = new URL("/api/auth/callback", window.location.origin);
-        if (redirectTo) {
-          callbackUrl.searchParams.set("next", redirectTo);
-        }
-
-        const { error } = await supabase.auth.signInWithOAuth({
+        // Exchanges an ID token obtained directly from Google Identity
+        // Services (client-side, no redirect through Supabase's hosted
+        // /authorize endpoint) for a real Supabase session. Supabase still
+        // verifies the token server-side against Google's public keys --
+        // same security guarantee as the redirect-based signInWithOAuth,
+        // just without the account picker being attributed to a Supabase
+        // subdomain instead of this site.
+        const { error } = await supabase.auth.signInWithIdToken({
           provider: "google",
-          options: {
-            redirectTo: callbackUrl.toString(),
-          },
+          token: idToken,
+          nonce,
         });
 
         return { error: error ? error.message : null };
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Failed to start Google sign-in";
+        const msg = err instanceof Error ? err.message : "Failed to sign in with Google";
         return { error: msg };
       }
     },
@@ -234,12 +235,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       streak,
       isLoading,
       isGuest: !user,
-      signInWithGoogle,
+      signInWithGoogleIdToken,
       signInWithOtp,
       signOut,
       refreshProfile,
     }),
-    [user, profile, preferences, streak, isLoading, signInWithGoogle, signInWithOtp, signOut, refreshProfile]
+    [user, profile, preferences, streak, isLoading, signInWithGoogleIdToken, signInWithOtp, signOut, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
