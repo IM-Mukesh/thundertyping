@@ -3,9 +3,7 @@ import { BookOpen, Gamepad2, GraduationCap, Library } from "lucide-react";
 
 /**
  * Four compact links, not a content section -- icon + one-word label each,
- * no descriptions. This is navigation, not the "small feature/navigation
- * section" turning into another block of text. Sits between the test and
- * the tiny SEO footnote (HomepageSeoContent).
+ * no descriptions. This is navigation, not another block of text.
  */
 const FEATURES = [
   { href: "/lessons", label: "Lessons", icon: GraduationCap },

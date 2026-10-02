@@ -1,4 +1,5 @@
 import type { VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
+import type { WordDifficulty } from "@/lib/typing-engine/word-generator";
 
 export type TestMode = "time" | "words" | "quote" | "custom" | "vocabulary";
 // Any positive integer is valid (see MIN/MAX_CUSTOM_TIME_DURATION below) -
@@ -23,6 +24,7 @@ export interface TestConfig {
   punctuation: boolean;
   numbers: boolean;
   vocabDifficulty: VocabDifficulty;
+  wordDifficulty: WordDifficulty;
 }
 
 // "missed" is a character the user skipped past by committing the word early.
@@ -83,6 +85,15 @@ export interface TestState {
    * scoring according to standard 5-character word normalization.
    */
   netWpmCharacters: number;
+  /**
+   * Net WPM characters already locked in from committed words (everything
+   * before `activeWordIndex`) -- the running total `netWpmCharacters` is
+   * rebuilt from on every keystroke as committedNetWpmChars + the active
+   * word's own contribution, an O(1) update instead of re-summing every
+   * committed word on every keystroke. Internal to the reducer; nothing
+   * outside use-typing-engine.ts should need this.
+   */
+  committedNetWpmChars: number;
   /**
    * Every printable character attempt, including the spaces between words.
    *

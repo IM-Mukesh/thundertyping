@@ -54,6 +54,16 @@ describe("vocabulary: word selection", () => {
     for (const w of words) assert.equal(typeof w, "string");
   });
 
+  it("pickPracticeWords fills the full requested count even past the pool size, by repeating", () => {
+    const pool = VOCAB_WORDS.hard;
+    const words = pickPracticeWords("hard", pool.length + 30);
+    // Must hand back exactly what was configured -- a typing test silently
+    // running shorter than the word count the user picked is the bug this
+    // guards against.
+    assert.equal(words.length, pool.length + 30);
+    for (const w of words) assert.ok(pool.some((p) => p.word === w));
+  });
+
   it("every tier has real, unique words with a definition", () => {
     const tiers: VocabDifficulty[] = ["easy", "medium", "hard"];
     for (const tier of tiers) {

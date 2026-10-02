@@ -42,6 +42,7 @@ export function TypingEngineDebug() {
       wordCount: 25,
       quoteLength: "medium",
       vocabDifficulty: "easy",
+      wordDifficulty: "all",
       customText: applied?.text ?? "",
       punctuation: false,
       numbers: false,

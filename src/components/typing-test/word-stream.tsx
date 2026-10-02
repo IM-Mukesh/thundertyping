@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
 import { cn } from "@/lib/utils/cn";
@@ -115,7 +115,12 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
   );
 }
 
-function Word({
+// Memoized so a keystroke -- which only ever changes the active word's state
+// object, since `wordStates` is a shallow copy that reuses every other
+// entry's reference -- only re-renders that one word's spans instead of
+// rebuilding the whole (potentially hundreds-long, for a long "time" mode
+// run) word list on every character typed.
+const Word = memo(function Word({
   word,
   isActive,
   registerRef,
@@ -149,7 +154,7 @@ function Word({
       {nodes}
     </span>
   );
-}
+});
 
 function Caret() {
   return (

@@ -91,6 +91,7 @@ function buildConfig(text: string): TestConfig {
     wordCount: 10,
     quoteLength: "short",
     vocabDifficulty: "easy",
+    wordDifficulty: "all",
     customText: text,
     punctuation: false,
     numbers: false,

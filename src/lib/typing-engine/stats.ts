@@ -15,6 +15,23 @@ const CHARS_PER_WORD = 5;
  *   prefix without error (i.e. target.startsWith(typed)). If there are any
  *   errors or extra characters, the active word contributes 0.
  */
+// A single already-committed word's own contribution (rule 1 above), so a
+// word's share of the total can be added incrementally the moment it commits
+// instead of re-summed from every word on every later keystroke -- see
+// calculateNetWpmCharacters for why that incremental sum matters.
+export function calculateCommittedWordNetWpmChars(word: WordState, isLastWord: boolean): number {
+  if (word.typed !== word.target) return 0;
+  return word.target.length + (isLastWord ? 0 : 1); // +1 for the inter-word separator
+}
+
+// The active (not yet committed) word's own contribution (rule 2 above).
+export function calculateActiveWordNetWpmChars(target: string, typed: string): number {
+  if (typed.length === 0) return 0;
+  if (typed === target) return target.length;
+  if (target.startsWith(typed)) return typed.length; // clean prefix in progress
+  return 0;
+}
+
 export function calculateNetWpmCharacters(
   words: readonly string[],
   wordStates: readonly WordState[],
@@ -27,25 +44,13 @@ export function calculateNetWpmCharacters(
   const committedCount = Math.min(activeWordIndex, wordStates.length);
   for (let i = 0; i < committedCount; i++) {
     const ws = wordStates[i];
-    if (ws && ws.typed === ws.target) {
-      chars += ws.target.length;
-      if (i < lastIndex) {
-        chars += 1; // Inter-word separator for correctly completed word
-      }
-    }
+    if (ws) chars += calculateCommittedWordNetWpmChars(ws, i === lastIndex);
   }
 
   // 2. Active word (if in-progress and within range)
   if (activeWordIndex < wordStates.length) {
     const active = wordStates[activeWordIndex];
-    if (active && active.typed.length > 0) {
-      if (active.typed === active.target) {
-        chars += active.target.length;
-      } else if (active.target.startsWith(active.typed)) {
-        // Clean prefix in progress without errors
-        chars += active.typed.length;
-      }
-    }
+    if (active) chars += calculateActiveWordNetWpmChars(active.target, active.typed);
   }
 
   return chars;
@@ -125,18 +130,23 @@ export function calculateConsistency(samples: WpmSample[]): number {
 
   // Reconstruct cumulative typed characters at each 1-second boundary (0, 1000, 2000, ..., tickCount * 1000).
   // Baseline at t = 0 is always 0 characters.
+  //
+  // A single forward pass over `samples` (chronologically ordered, since they
+  // are only ever appended as the test runs) rather than a full re-scan per
+  // boundary -- O(samples + tickCount) instead of O(samples * tickCount),
+  // which is the difference between instant and a multi-second freeze once a
+  // test runs long enough to accumulate thousands of ticks (the engine
+  // supports custom durations up to 24 hours).
   const typedAtBoundary = [0];
+  let sampleIndex = 0;
+  let lastTypedAtOrBefore = 0;
   for (let s = 1; s <= tickCount; s++) {
     const targetMs = s * CONSISTENCY_BUCKET_MS;
-    let closestSample: WpmSample | null = null;
-    for (const sample of samples) {
-      if (sample.t <= targetMs) {
-        if (!closestSample || sample.t > closestSample.t) {
-          closestSample = sample;
-        }
-      }
+    while (sampleIndex < samples.length && samples[sampleIndex].t <= targetMs) {
+      lastTypedAtOrBefore = samples[sampleIndex].typed;
+      sampleIndex++;
     }
-    typedAtBoundary.push(closestSample ? closestSample.typed : 0);
+    typedAtBoundary.push(lastTypedAtOrBefore);
   }
 
   // Derive per-second raw WPM rates across full 1-second intervals

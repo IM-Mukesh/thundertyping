@@ -4,8 +4,9 @@ import { generateWords } from "@/lib/typing-engine/word-generator";
 import { pickRandomQuote } from "@/lib/typing-engine/quotes";
 import { pickPracticeWords } from "@/lib/vocabulary/vocabulary-content";
 import {
+  calculateActiveWordNetWpmChars,
+  calculateCommittedWordNetWpmChars,
   calculateNetWpm,
-  calculateNetWpmCharacters,
   calculateRawWpm,
   emptyCharTally,
   MIN_LIVE_WPM_WINDOW_MS,
@@ -22,6 +23,37 @@ type EngineAction =
   | { type: "RESTART" }
   | { type: "APPLY_CONFIG"; config: TestConfig };
 
+// Finds the minimal edit region between two strings via common prefix/suffix,
+// so a diff isn't forced to assume every edit is a pure tail append or a pure
+// tail backspace. Native cursor movement (arrow keys, Home/End) plus
+// select-and-retype are not blocked by HiddenInput -- only Space/Tab/Escape
+// are -- so a same-length or mid-string edit is a real, reachable case, not
+// just a defensive guard.
+function computeEditRegion(
+  prev: string,
+  next: string,
+): { prevStart: number; prevEnd: number; nextStart: number; nextEnd: number } {
+  const maxPrefix = Math.min(prev.length, next.length);
+  let prefixLen = 0;
+  while (prefixLen < maxPrefix && prev[prefixLen] === next[prefixLen]) prefixLen++;
+
+  const maxSuffix = Math.min(prev.length, next.length) - prefixLen;
+  let suffixLen = 0;
+  while (
+    suffixLen < maxSuffix &&
+    prev[prev.length - 1 - suffixLen] === next[next.length - 1 - suffixLen]
+  ) {
+    suffixLen++;
+  }
+
+  return {
+    prevStart: prefixLen,
+    prevEnd: prev.length - suffixLen,
+    nextStart: prefixLen,
+    nextEnd: next.length - suffixLen,
+  };
+}
+
 function computeCharStates(target: string, typed: string): CharState[] {
   const len = Math.max(target.length, typed.length);
   const chars: CharState[] = new Array(len);
@@ -34,7 +66,11 @@ function computeCharStates(target: string, typed: string): CharState[] {
 }
 
 function buildWords(config: TestConfig): { words: string[]; quoteSource: string | null } {
-  const options = { punctuation: config.punctuation, numbers: config.numbers };
+  const options = {
+    punctuation: config.punctuation,
+    numbers: config.numbers,
+    wordDifficulty: config.wordDifficulty,
+  };
   switch (config.mode) {
     case "time":
       // Double the usual top-up batch so a fast typist doesn't hit the
@@ -69,6 +105,7 @@ export function createInitialState(config: TestConfig): TestState {
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     netWpmCharacters: 0,
+    committedNetWpmChars: 0,
     totalTyped: 0,
     totalKeypresses: 0,
     correctedErrors: 0,
@@ -178,22 +215,29 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       let totalTyped = state.totalTyped;
       let correctedErrors = state.correctedErrors;
 
-      if (newTyped.length < prevTyped.length) {
-        // Backspace. The removed characters keep their place in the keystroke
-        // history -- deleting a mistake does not un-make it -- but a wrong
-        // character that gets deleted is recorded as corrected, so the results
-        // screen can distinguish "typed badly" from "typed badly and fixed it".
-        for (let i = newTyped.length; i < prevTyped.length; i++) {
-          const wasWrong = i >= target.length || prevTyped[i] !== target[i];
-          if (wasWrong) correctedErrors += 1;
-        }
-      } else {
-        for (let i = prevTyped.length; i < newTyped.length; i++) {
-          const isCorrect = i < target.length && newTyped[i] === target[i];
-          if (isCorrect) correctKeystrokes += 1;
-          else incorrectKeystrokes += 1;
-          totalTyped += 1;
-        }
+      // A single contiguous edit region (common-prefix/common-suffix diff)
+      // covers pure append, pure backspace, AND a cursor-repositioned
+      // insert/delete/replace with the same logic -- rather than assuming
+      // the edit can only ever happen at the tail.
+      const region = computeEditRegion(prevTyped, newTyped);
+
+      // Characters removed from their old position: deleting a mistake does
+      // not un-make it (correctKeystrokes/incorrectKeystrokes are a running
+      // history, never decremented), but a wrong character that gets removed
+      // is recorded as corrected, so the results screen can distinguish
+      // "typed badly" from "typed badly and fixed it".
+      for (let i = region.prevStart; i < region.prevEnd; i++) {
+        const wasWrong = i >= target.length || prevTyped[i] !== target[i];
+        if (wasWrong) correctedErrors += 1;
+      }
+
+      // Characters newly present at their new position are genuinely new
+      // keystrokes, scored against what the target expects right there.
+      for (let i = region.nextStart; i < region.nextEnd; i++) {
+        const isCorrect = i < target.length && newTyped[i] === target[i];
+        if (isCorrect) correctKeystrokes += 1;
+        else incorrectKeystrokes += 1;
+        totalTyped += 1;
       }
 
       const nextWordStates = [...state.wordStates];
@@ -210,11 +254,14 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       const isExactMatch = newTyped === target;
       const shouldAutoFinish = state.config.mode !== "time" && isLastWord && isExactMatch;
 
-      const nextNetWpmCharacters = calculateNetWpmCharacters(
-        state.words,
-        nextWordStates,
-        activeIndex,
-      );
+      // committedNetWpmChars already accounts for every word before this one
+      // (updated once, on COMMIT_WORD) -- only the active word's own
+      // contribution needs recomputing here, so this stays O(1) per keystroke
+      // instead of re-summing every committed word every time, which would
+      // turn a long test (the engine supports custom durations up to 24
+      // hours) into an ever-slower-growing hang as words accumulate.
+      const nextNetWpmCharacters =
+        state.committedNetWpmChars + calculateActiveWordNetWpmChars(target, newTyped);
 
       const nextState: TestState = {
         ...state,
@@ -230,7 +277,21 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       };
 
       if (shouldAutoFinish) {
-        return finalize(nextState, tallyWord(state.charTally, nextWordStates[activeIndex]), action.now);
+        // A test whose very first keystroke batch also completes its only
+        // word (e.g. custom text "a") starts and finishes in this same
+        // action, so `now - startedAt` is exactly 0 -- not wrong, but not a
+        // meaningful rate either. Floor it to the same minimum window live
+        // display already uses for the identical reason (a few ms of elapsed
+        // time implies an absurd WPM), rather than reporting a literal 0 WPM
+        // for a test the user just successfully completed.
+        const elapsedMsOverride =
+          startedAt === action.now ? MIN_LIVE_WPM_WINDOW_MS : undefined;
+        return finalize(
+          nextState,
+          tallyWord(state.charTally, nextWordStates[activeIndex]),
+          action.now,
+          elapsedMsOverride,
+        );
       }
 
       return nextState;
@@ -273,18 +334,18 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       committedStates[activeIndex] = markMissedChars(wordState);
 
       if (state.config.mode !== "time" && isLastWord) {
-        const finalNetWpmCharacters = calculateNetWpmCharacters(
-          state.words,
-          committedStates,
-          activeIndex + 1,
-        );
+        // No lookahead refill ever runs outside time mode, so state.words is
+        // final here -- isLastWord is safe to use as-is.
+        const committedNetWpmChars =
+          state.committedNetWpmChars + calculateCommittedWordNetWpmChars(wordState, isLastWord);
         return finalize(
           {
             ...state,
             wordStates: committedStates,
             correctKeystrokes,
             incorrectKeystrokes,
-            netWpmCharacters: finalNetWpmCharacters,
+            netWpmCharacters: committedNetWpmChars,
+            committedNetWpmChars,
             totalTyped,
             totalKeypresses,
           },
@@ -301,17 +362,22 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         const more = generateWords(TIME_MODE_BATCH, {
           punctuation: state.config.punctuation,
           numbers: state.config.numbers,
+          wordDifficulty: state.config.wordDifficulty,
         });
         words = [...words, ...more];
         wordStates = [...wordStates, ...more.map((w) => ({ target: w, typed: "", chars: [] as CharState[] }))];
       }
 
-      const nextNetWpmCharacters = calculateNetWpmCharacters(
-        words,
-        wordStates,
-        nextIndex,
-      );
+      // Re-check against the possibly-just-extended `words`, not the earlier
+      // `isLastWord` -- a time-mode refill right on this exact commit (the
+      // word that trips the lookahead threshold) means this word is no
+      // longer actually last, and its separator must still be credited.
+      const committedIsLastWord = activeIndex === words.length - 1;
+      const committedNetWpmChars =
+        state.committedNetWpmChars + calculateCommittedWordNetWpmChars(wordState, committedIsLastWord);
 
+      // The next active word starts empty, so its own contribution is 0 --
+      // the running total is exactly committedNetWpmChars until it types.
       return {
         ...state,
         words,
@@ -320,7 +386,8 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         charTally: tally,
         correctKeystrokes,
         incorrectKeystrokes,
-        netWpmCharacters: nextNetWpmCharacters,
+        netWpmCharacters: committedNetWpmChars,
+        committedNetWpmChars,
         totalTyped,
         totalKeypresses,
       };

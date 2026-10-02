@@ -19,7 +19,14 @@ export function LiveStatsBar({ state }: LiveStatsBarProps) {
       : `${Math.min(activeWordIndex + 1, words.length)}/${words.length}`;
 
   return (
-    <div className="flex items-center justify-start font-mono" aria-live="polite">
+    // No aria-live here on purpose: this updates roughly once a second for
+    // the whole test (or once per word), and a live region on it read the
+    // countdown aloud continuously for a screen-reader user -- talking over
+    // everything else and making the test unusable with assistive tech. A
+    // typist isn't listening for a running countdown any more than a sighted
+    // one is meant to stare at it; the number that matters gets announced
+    // once, on the results screen, when the test actually ends.
+    <div className="flex items-center justify-start font-mono">
       {/* The countdown/progress keeps the large flip treatment: it steps once
           per second (or once per word), so the animation reads as a clock
           rather than as flicker, and it's information you act on. */}

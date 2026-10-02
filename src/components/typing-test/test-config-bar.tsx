@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
-import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen } from "lucide-react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen, Gauge } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
@@ -43,6 +43,7 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const wordCount = useSettingsStore((s) => s.wordCount);
   const quoteLength = useSettingsStore((s) => s.quoteLength);
   const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
+  const wordDifficulty = useSettingsStore((s) => s.wordDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
   const setMode = useSettingsStore((s) => s.setMode);
@@ -50,6 +51,7 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const setWordCount = useSettingsStore((s) => s.setWordCount);
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
   const setVocabDifficulty = useSettingsStore((s) => s.setVocabDifficulty);
+  const setWordDifficulty = useSettingsStore((s) => s.setWordDifficulty);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
@@ -121,6 +123,14 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
               </Pill>
               <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers" icon={<Hash size={14} />}>
                 numbers
+              </Pill>
+              <Pill
+                active={wordDifficulty === "common"}
+                onClick={() => setWordDifficulty(wordDifficulty === "common" ? "all" : "common")}
+                ariaLabel="Common words only — the 200 most frequent words"
+                icon={<Gauge size={14} />}
+              >
+                common
               </Pill>
             </>
           ) : (
@@ -258,40 +268,65 @@ function CustomDurationInput({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [invalid, setInvalid] = useState(false);
 
   const commit = () => {
     const parsed = Number(draft);
-    if (draft.trim() !== "" && Number.isFinite(parsed)) onApply(clampDuration(parsed));
-    setDraft("");
-    setEditing(false);
+    const isValid = draft.trim() !== "" && Number.isFinite(parsed);
+    if (isValid) {
+      onApply(clampDuration(parsed));
+      setDraft("");
+      setInvalid(false);
+      setEditing(false);
+      return;
+    }
+    // Invalid input (e.g. non-numeric text pasted in) used to silently
+    // discard and close with no feedback, so the user had no idea their
+    // input was rejected. Stay open with a visible error instead of
+    // pretending nothing happened.
+    setInvalid(true);
   };
 
   if (editing) {
     return (
-      <input
-        type="number"
-        inputMode="numeric"
-        min={MIN_CUSTOM_TIME_DURATION}
-        max={MAX_CUSTOM_TIME_DURATION}
-        value={draft}
-        autoFocus
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            commit();
-            (e.target as HTMLInputElement).blur();
-          } else if (e.key === "Escape") {
-            e.preventDefault();
-            setDraft("");
-            setEditing(false);
-          }
-        }}
-        placeholder="sec"
-        aria-label="Custom time duration in seconds"
-        className="w-20 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none"
-      />
+      <div className="flex flex-col items-center gap-0.5">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={MIN_CUSTOM_TIME_DURATION}
+          max={MAX_CUSTOM_TIME_DURATION}
+          value={draft}
+          autoFocus
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (invalid) setInvalid(false);
+          }}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setDraft("");
+              setInvalid(false);
+              setEditing(false);
+            }
+          }}
+          placeholder="sec"
+          aria-label="Custom time duration in seconds"
+          aria-invalid={invalid}
+          className={cn(
+            "w-20 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none",
+            invalid && "text-error",
+          )}
+        />
+        {invalid && (
+          <span className="text-[10px] text-error" role="alert">
+            Enter a number
+          </span>
+        )}
+      </div>
     );
   }
 

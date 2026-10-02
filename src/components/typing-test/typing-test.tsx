@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RotateCcw, SlidersHorizontal, Volume2, VolumeX, Wrench } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
@@ -31,6 +31,7 @@ export function TypingTest() {
   const wordCount = useSettingsStore((s) => s.wordCount);
   const quoteLength = useSettingsStore((s) => s.quoteLength);
   const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
+  const wordDifficulty = useSettingsStore((s) => s.wordDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -67,6 +68,7 @@ export function TypingTest() {
       punctuation,
       numbers,
       vocabDifficulty,
+      wordDifficulty,
     }),
     [
       mode,
@@ -77,6 +79,7 @@ export function TypingTest() {
       punctuation,
       numbers,
       vocabDifficulty,
+      wordDifficulty,
     ],
   );
 
@@ -101,9 +104,18 @@ export function TypingTest() {
     punctuation,
     numbers,
     vocabDifficulty,
+    wordDifficulty,
   ]);
 
-  useEffect(() => {
+  // useLayoutEffect, not useEffect: this island's own idle-chrome hiding
+  // happens synchronously during render (showIdleChrome below), but sibling
+  // header/footer chrome reacts to this broadcast in their own effects. A
+  // post-paint effect here left a one-frame window where this island had
+  // already hidden/shown its own chrome but the header/footer hadn't caught
+  // up yet -- a visible flash at test start/finish, a smaller instance of the
+  // exact bug class test-status-store.ts's own comment describes shipping
+  // before.
+  useLayoutEffect(() => {
     setTestStatus(engine.state.status);
   }, [engine.state.status]);
 
@@ -268,15 +280,25 @@ export function TypingTest() {
   const activeWord = engine.state.wordStates[engine.state.activeWordIndex];
 
   const isRunning = engine.state.status === "running";
-  const showIdleChrome = engine.state.status !== "running";
+  // Config bar + mode settings are for setting up a test you haven't started
+  // yet -- they used to also show on the results screen (status "finished"),
+  // which put a full mode/duration switcher above the result you just earned.
+  // Idle-only now; the results panel below has its own Restart / Practice
+  // Weak Keys actions for "what next".
+  const showIdleChrome = engine.state.status === "idle";
 
   return (
     <div className="flex w-full flex-col items-center gap-4 sm:gap-5">
       {/* Both children share this grid cell and align to bottom (items-end)
           so the top of the word-stream below never shifts when the test starts. */}
       <div className="grid w-full items-end">
-        {/* Idle & Results Chrome (Config bar and mode settings) */}
+        {/* Idle-only Chrome (Config bar and mode settings). `inert` while
+            hidden removes it from Tab order and the a11y tree entirely --
+            `pointer-events-none`/`opacity-0` alone still let Shift+Tab reach
+            it during a running test and silently reset the test by activating
+            a mode/duration button underneath. */}
         <div
+          inert={!showIdleChrome}
           className={cn(
             "[grid-area:1/1] w-full transition duration-200",
             showIdleChrome ? "opacity-100" : "pointer-events-none opacity-0",

@@ -12,6 +12,7 @@ import {
   type QuoteLength,
 } from "@/lib/typing-engine/engine-types";
 import { VOCAB_DIFFICULTIES, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
+import { WORD_DIFFICULTIES, type WordDifficulty } from "@/lib/typing-engine/word-generator";
 
 interface SettingsState {
   theme: ThemeId;
@@ -20,6 +21,7 @@ interface SettingsState {
   wordCount: WordCountOption;
   quoteLength: QuoteLength;
   vocabDifficulty: VocabDifficulty;
+  wordDifficulty: WordDifficulty;
   punctuation: boolean;
   numbers: boolean;
   soundEnabled: boolean;
@@ -33,6 +35,7 @@ interface SettingsState {
   setWordCount: (count: WordCountOption) => void;
   setQuoteLength: (length: QuoteLength) => void;
   setVocabDifficulty: (difficulty: VocabDifficulty) => void;
+  setWordDifficulty: (difficulty: WordDifficulty) => void;
   togglePunctuation: () => void;
   toggleNumbers: () => void;
   toggleSound: () => void;
@@ -55,6 +58,7 @@ type PersistedSettings = Pick<
   | "wordCount"
   | "quoteLength"
   | "vocabDifficulty"
+  | "wordDifficulty"
   | "punctuation"
   | "numbers"
   | "soundEnabled"
@@ -86,6 +90,9 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
     vocabDifficulty: VOCAB_DIFFICULTIES.includes(p.vocabDifficulty as VocabDifficulty)
       ? (p.vocabDifficulty as VocabDifficulty)
       : fallback.vocabDifficulty,
+    wordDifficulty: WORD_DIFFICULTIES.includes(p.wordDifficulty as WordDifficulty)
+      ? (p.wordDifficulty as WordDifficulty)
+      : fallback.wordDifficulty,
     punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,
     numbers: typeof p.numbers === "boolean" ? p.numbers : fallback.numbers,
     soundEnabled: typeof p.soundEnabled === "boolean" ? p.soundEnabled : fallback.soundEnabled,
@@ -107,10 +114,11 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       theme: DEFAULT_THEME,
       mode: "time",
-      timeDuration: 30,
+      timeDuration: 60,
       wordCount: 25,
       quoteLength: "medium",
       vocabDifficulty: "easy",
+      wordDifficulty: "all",
       punctuation: false,
       numbers: false,
       // On by default for the games, which feel inert without it. Nothing can
@@ -129,6 +137,7 @@ export const useSettingsStore = create<SettingsState>()(
       setWordCount: (wordCount) => set({ wordCount }),
       setQuoteLength: (quoteLength) => set({ quoteLength }),
       setVocabDifficulty: (vocabDifficulty) => set({ vocabDifficulty }),
+      setWordDifficulty: (wordDifficulty) => set({ wordDifficulty }),
       togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
       toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),

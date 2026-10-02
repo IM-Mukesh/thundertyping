@@ -37,7 +37,15 @@ export function pickSessionWords(
  */
 export function pickPracticeWords(difficulty: VocabDifficulty, count: number): string[] {
   const pool = VOCAB_WORDS[difficulty];
-  return shuffle(pool)
-    .slice(0, Math.min(count, pool.length))
-    .map((w) => w.word);
+  if (pool.length === 0) return [];
+  const words: string[] = [];
+  // Reshuffle per lap rather than one shuffle sliced/repeated -- a tier
+  // smaller than `count` (or a future shorter tier) still fills the request
+  // instead of silently handing back fewer words than the user configured,
+  // and each lap through the pool gets its own random order.
+  while (words.length < count) {
+    const lap = shuffle(pool).map((w) => w.word);
+    words.push(...lap.slice(0, count - words.length));
+  }
+  return words;
 }

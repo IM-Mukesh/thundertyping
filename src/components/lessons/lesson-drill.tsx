@@ -36,6 +36,7 @@ function buildConfig(content: SubLessonSpec["content"], seed?: number): TestConf
     wordCount: 10,
     quoteLength: "short",
     vocabDifficulty: "easy",
+    wordDifficulty: "all",
     customText: buildTextForContent(content, seed),
     punctuation: false,
     numbers: false,

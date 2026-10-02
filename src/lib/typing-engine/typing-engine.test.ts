@@ -28,6 +28,7 @@ const BASE: TestConfig = {
   wordCount: 10,
   quoteLength: "short",
   vocabDifficulty: "easy",
+  wordDifficulty: "all",
   customText: "",
   punctuation: false,
   numbers: false,
@@ -368,6 +369,7 @@ describe("custom mode fallback", () => {
       punctuation: false,
       numbers: false,
       vocabDifficulty: "easy" as const,
+      wordDifficulty: "all" as const,
     };
     const s = createInitialState(config);
     assert.ok(s.words.length > 0, "must provide fallback words rather than an empty array");
@@ -561,5 +563,36 @@ describe("scoring integrity and Monkeytype-parity regression tests", () => {
     assert.equal(s.totalKeypresses, 2);
     assert.equal(s.correctKeystrokes, 2);
     assert.equal(s.incorrectKeystrokes, 0);
+  });
+
+  // 13. A mid-string edit (cursor moved back via arrow keys, a character
+  // changed, then returned) is not a pure backspace or a pure append -- the
+  // common-prefix/common-suffix diff must still score exactly the edited
+  // character, not silently no-op on a same-length change.
+  it("13. A same-length mid-string edit is scored at the actual edit point", () => {
+    // A second word keeps this one from auto-finishing the instant it's
+    // typed correctly, which would otherwise reject the follow-up edit.
+    let s = stateFor(["abcde", "next"]);
+    s = reducer(s, { type: "SET_TYPED", value: "abcde", now: 10 });
+    assert.equal(s.correctKeystrokes, 5);
+    // Retype the same length with the 3rd character now wrong.
+    s = reducer(s, { type: "SET_TYPED", value: "abXde", now: 20 });
+    assert.equal(s.incorrectKeystrokes, 1, "the edited character must be scored as wrong");
+    assert.equal(s.correctKeystrokes, 5, "the untouched prefix/suffix must not be re-scored");
+    assert.equal(s.wordStates[0].chars[2], "incorrect");
+  });
+
+  // 14. The committedNetWpmChars incremental total (added so SET_TYPED no
+  // longer re-sums every committed word on every keystroke) must agree with
+  // a full recomputation exactly at the one point where it is hardest to get
+  // right: a time-mode word that both completes the current word batch AND
+  // triggers the lookahead refill in the same COMMIT_WORD action. The word
+  // is no longer actually last once the batch is extended, so its separator
+  // must still be credited.
+  it("14. A time-mode commit that triggers the lookahead refill still credits its separator", () => {
+    const s = type(stateFor(["abc"], { mode: "time", timeDuration: 60 }), "abc ");
+    assert.ok(s.words.length > 1, "the lookahead refill must have appended more words");
+    assert.equal(s.netWpmCharacters, 4, "3 letters + 1 separator, not withheld as a false 'last word'");
+    assert.equal(s.committedNetWpmChars, 4);
   });
 });

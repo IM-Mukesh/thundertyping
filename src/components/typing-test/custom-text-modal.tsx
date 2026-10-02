@@ -15,6 +15,28 @@ interface CustomTextModalProps {
 // paragraph (roughly 300-400 words).
 const MAX_CUSTOM_TEXT_LENGTH = 2000;
 
+// A textarea's native `maxLength` enforces this at the browser level on
+// every keystroke AND on paste -- before onChange, before React, before
+// truncateAtWordBoundary ever runs -- so it can't be used for the real limit
+// without silently hard-cutting a paste mid-word itself. This is a much
+// higher safety ceiling applied live (so the textarea itself can't be used
+// for an unbounded-paste DoS), while the real, word-boundary-aware limit is
+// enforced once at submit time in truncateAtWordBoundary below, where it can
+// actually see -- and trim -- text past MAX_CUSTOM_TEXT_LENGTH.
+const LIVE_SAFETY_CEILING = MAX_CUSTOM_TEXT_LENGTH * 2;
+
+// A blind slice(0, N) can land mid-word, leaving an odd truncated fragment as
+// the test's last "word". Only backs off to the previous space when the text
+// actually needed truncating -- normal typing under the limit is untouched.
+function truncateAtWordBoundary(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  const truncated = text.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(" ");
+  // No space to back off to (one very long run) -- keep the hard cut rather
+  // than returning an empty string.
+  return lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated;
+}
+
 interface CustomTextDialogContentProps {
   initialValue: string;
   onSubmit: (text: string) => void;
@@ -98,14 +120,16 @@ function CustomTextDialogContent({ initialValue, onSubmit, onClose }: CustomText
         <textarea
           ref={textareaRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value.slice(0, MAX_CUSTOM_TEXT_LENGTH))}
-          maxLength={MAX_CUSTOM_TEXT_LENGTH}
+          onChange={(e) => setDraft(e.target.value.slice(0, LIVE_SAFETY_CEILING))}
+          maxLength={LIVE_SAFETY_CEILING}
           rows={6}
           aria-label="Custom text to practice with"
           placeholder="Paste or type the text you want to practice with..."
           className="resize-none rounded-md border border-border bg-sub-alt p-3 text-sm text-foreground outline-none focus:border-accent focus-visible:ring-1 focus-visible:ring-accent"
         />
-        <p className="-mt-1 text-right text-xs text-sub">
+        <p
+          className={`-mt-1 text-right text-xs ${draft.length > MAX_CUSTOM_TEXT_LENGTH ? "text-error" : "text-sub"}`}
+        >
           {draft.length}/{MAX_CUSTOM_TEXT_LENGTH}
         </p>
         <div className="flex justify-end gap-3">
@@ -120,7 +144,11 @@ function CustomTextDialogContent({ initialValue, onSubmit, onClose }: CustomText
             type="button"
             disabled={draft.trim().length === 0}
             onClick={() => {
-              onSubmit(draft.trim());
+              // Word-boundary trim happens here (submit time), not on every
+              // keystroke in onChange -- doing it live would fight anyone
+              // typing a long word right at the character limit, repeatedly
+              // snapping their text back before they can ever finish it.
+              onSubmit(truncateAtWordBoundary(draft.trim(), MAX_CUSTOM_TEXT_LENGTH));
               onClose();
             }}
             className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-background disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"

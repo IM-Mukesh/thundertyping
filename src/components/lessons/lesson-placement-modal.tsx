@@ -36,6 +36,7 @@ function buildPlacementConfig(): TestConfig {
     wordCount: 25,
     quoteLength: "short",
     vocabDifficulty: "easy",
+    wordDifficulty: "all",
     customText: PLACEMENT_DIAGNOSTIC_PASSAGE,
     punctuation: true,
     numbers: false,

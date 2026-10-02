@@ -59,9 +59,15 @@ export function ResultsGraph({ samples }: ResultsGraphProps) {
   if (!plot) return null;
 
   const handleMove = (e: ReactPointerEvent<SVGRectElement>) => {
+    // The hit-test rect itself is already positioned/sized to exactly the
+    // plot area (x=PADDING.left, width=plot.innerW) -- its own bounding box
+    // already excludes the axis padding, so the mouse's fraction across it
+    // maps directly to a fraction of plot.maxT. Scaling against the full SVG
+    // `WIDTH` here (which includes padding the rect doesn't cover) introduced
+    // a systematic ~7% offset between the hovered point and the cursor.
     const rect = e.currentTarget.getBoundingClientRect();
-    const relX = ((e.clientX - rect.left) / rect.width) * WIDTH;
-    const targetT = ((relX - PADDING.left) / plot.innerW) * plot.maxT;
+    const fractionAcrossPlot = (e.clientX - rect.left) / rect.width;
+    const targetT = fractionAcrossPlot * plot.maxT;
 
     let nearest = 0;
     let nearestDist = Infinity;

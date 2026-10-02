@@ -6,6 +6,7 @@ import {
   AtSign,
   BookOpen,
   Clock,
+  Gauge,
   Hash,
   Pencil,
   Quote as QuoteIcon,
@@ -74,6 +75,7 @@ export function MobileTestSettingsModal({
   const wordCount = useSettingsStore((s) => s.wordCount);
   const quoteLength = useSettingsStore((s) => s.quoteLength);
   const vocabDifficulty = useSettingsStore((s) => s.vocabDifficulty);
+  const wordDifficulty = useSettingsStore((s) => s.wordDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -84,11 +86,13 @@ export function MobileTestSettingsModal({
   const setWordCount = useSettingsStore((s) => s.setWordCount);
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
   const setVocabDifficulty = useSettingsStore((s) => s.setVocabDifficulty);
+  const setWordDifficulty = useSettingsStore((s) => s.setWordDifficulty);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
   const [customEditing, setCustomEditing] = useState(false);
   const [customDraft, setCustomDraft] = useState("");
+  const [customDraftInvalid, setCustomDraftInvalid] = useState(false);
 
   const showTextToggles = mode === "time" || mode === "words";
 
@@ -111,15 +115,21 @@ export function MobileTestSettingsModal({
 
   const commitCustomDuration = () => {
     const parsed = Number(customDraft);
-    if (customDraft.trim() !== "" && Number.isFinite(parsed)) {
+    const isValid = customDraft.trim() !== "" && Number.isFinite(parsed);
+    if (isValid) {
       const clamped = Math.min(
         MAX_CUSTOM_TIME_DURATION,
         Math.max(MIN_CUSTOM_TIME_DURATION, Math.round(parsed)),
       );
       setTimeDuration(clamped);
+      setCustomDraft("");
+      setCustomDraftInvalid(false);
+      setCustomEditing(false);
+      return;
     }
-    setCustomDraft("");
-    setCustomEditing(false);
+    // Used to silently discard invalid input (e.g. non-numeric text) and
+    // close with no feedback. Stay open with a visible error instead.
+    setCustomDraftInvalid(true);
   };
 
   return (
@@ -231,36 +241,51 @@ export function MobileTestSettingsModal({
                   {/* Custom duration row */}
                   <div className="mt-2 flex items-center gap-2">
                     {customEditing ? (
-                      <div className="flex w-full items-center gap-2">
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min={MIN_CUSTOM_TIME_DURATION}
-                          max={MAX_CUSTOM_TIME_DURATION}
-                          value={customDraft}
-                          autoFocus
-                          onChange={(e) => setCustomDraft(e.target.value)}
-                          onBlur={commitCustomDuration}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              commitCustomDuration();
-                            } else if (e.key === "Escape") {
-                              e.preventDefault();
-                              setCustomEditing(false);
-                            }
-                          }}
-                          placeholder="Seconds"
-                          aria-label="Custom duration in seconds"
-                          className="flex-1 rounded-lg border border-accent bg-sub-alt/40 px-3 py-1.5 font-mono text-xs text-foreground outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={commitCustomDuration}
-                          className="rounded-lg bg-accent px-3 py-1.5 font-display text-xs font-bold text-accent-foreground"
-                        >
-                          Set
-                        </button>
+                      <div className="flex w-full flex-col gap-1">
+                        <div className="flex w-full items-center gap-2">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={MIN_CUSTOM_TIME_DURATION}
+                            max={MAX_CUSTOM_TIME_DURATION}
+                            value={customDraft}
+                            autoFocus
+                            onChange={(e) => {
+                              setCustomDraft(e.target.value);
+                              if (customDraftInvalid) setCustomDraftInvalid(false);
+                            }}
+                            onBlur={commitCustomDuration}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                commitCustomDuration();
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                setCustomDraftInvalid(false);
+                                setCustomEditing(false);
+                              }
+                            }}
+                            placeholder="Seconds"
+                            aria-label="Custom duration in seconds"
+                            aria-invalid={customDraftInvalid}
+                            className={cn(
+                              "flex-1 rounded-lg border bg-sub-alt/40 px-3 py-1.5 font-mono text-xs text-foreground outline-none",
+                              customDraftInvalid ? "border-error" : "border-accent",
+                            )}
+                          />
+                          <button
+                            type="button"
+                            onClick={commitCustomDuration}
+                            className="rounded-lg bg-accent px-3 py-1.5 font-display text-xs font-bold text-accent-foreground"
+                          >
+                            Set
+                          </button>
+                        </div>
+                        {customDraftInvalid && (
+                          <span className="px-1 text-[10px] text-error" role="alert">
+                            Enter a number
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <button
@@ -406,7 +431,7 @@ export function MobileTestSettingsModal({
                   <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
                     Text Modifiers
                   </span>
-                  <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <div className="mt-2 grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={togglePunctuation}
@@ -432,6 +457,19 @@ export function MobileTestSettingsModal({
                     >
                       <Hash size={14} />
                       <span>Numbers</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWordDifficulty(wordDifficulty === "common" ? "all" : "common")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 rounded-xl border py-2.5 font-mono text-xs transition-colors",
+                        wordDifficulty === "common"
+                          ? "border-accent bg-accent/15 text-accent font-bold"
+                          : "border-border/70 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
+                      )}
+                    >
+                      <Gauge size={14} />
+                      <span>Common</span>
                     </button>
                   </div>
                 </div>

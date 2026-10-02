@@ -17,9 +17,11 @@ export default function AboutPage() {
         {SITE_NAME} started as a free, fast typing speed test — pick a mode, start typing, and see
         your words per minute, accuracy, and consistency the moment you finish, no account or
         sign-up required. It&apos;s grown into a fuller practice platform since: structured{" "}
-        <Link href="/lessons">typing lessons</Link> from the home row up, a set of{" "}
-        <Link href="/games">typing games</Link>, <Link href="/vocabulary">vocabulary practice</Link>, and a
-        handful of <Link href="/guides">guides</Link> on technique and what the numbers actually mean.
+        <Link href="/lessons">typing lessons</Link> from the home row up, targeted{" "}
+        <Link href="/lessons/practice">weak-key practice</Link> once the lessons know where you
+        struggle, a set of <Link href="/games">typing games</Link>,{" "}
+        <Link href="/vocabulary">vocabulary practice</Link>, and a handful of{" "}
+        <Link href="/guides">guides</Link> on technique and what the numbers actually mean.
       </p>
 
       <h2>How your stats are calculated</h2>
@@ -27,7 +29,9 @@ export default function AboutPage() {
         <strong>Words per minute (WPM)</strong> counts every correctly typed character, divides by
         five (the standard word length used by typing tests), and divides again by the minutes
         elapsed. <strong>Raw WPM</strong> uses the same formula but counts every keystroke,
-        correct or not, so it reflects your typing speed before mistakes are factored in.
+        correct or not, so it reflects your typing speed before mistakes are factored in. See the{" "}
+        <Link href="/guides/net-wpm-vs-gross-wpm">WPM calculation guide</Link> for the full
+        breakdown, including why a single typo can cost a whole word&apos;s credit.
       </p>
       <p>
         <strong>Accuracy</strong> is the share of keystrokes that were correct.{" "}
