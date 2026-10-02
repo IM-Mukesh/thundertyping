@@ -377,7 +377,15 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      rate_limit_increment: {
+        Args: {
+          p_key: string;
+          p_window_seconds: number;
+        };
+        Returns: { count: number; reset_at: string }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

@@ -429,6 +429,34 @@ describe("Distributed Rate Limiting (FINDING 6 & 7)", () => {
     assert.equal(blockedRes.remaining, 0);
     assert.ok(blockedRes.retryAfter > 0);
   });
+
+  // Proves the increment itself is atomic: fire many concurrent callers at
+  // the same key and check nobody's increment went missing. A lost-update
+  // race (the old SELECT-then-UPDATE Postgres path) would show up here as
+  // two callers reporting the same `remaining`, or a follow-up call seeing
+  // fewer than `concurrency` prior requests. This asserts the invariant
+  // itself rather than which tier handled it, so it validates whichever
+  // backend `checkRateLimit` resolves to in a given environment -- the
+  // atomic `rate_limit_increment` RPC once its migration is applied, or the
+  // in-memory tier (safe for a different reason: it's fully synchronous, so
+  // no other JS can interleave mid read-modify-write) when Postgres/Upstash
+  // aren't reachable.
+  it("loses no increments under concurrent calls for the same key (FINDING 3 atomicity)", async () => {
+    const key = `test:ratelimit:concurrent:${Date.now()}_${Math.random()}`;
+    const limit = 50;
+    const concurrency = 20;
+
+    const results = await Promise.all(
+      Array.from({ length: concurrency }, () => checkRateLimit(key, limit, 60))
+    );
+
+    const remainders = results.map((r) => r.remaining).sort((a, b) => b - a);
+    const expected = Array.from({ length: concurrency }, (_, i) => limit - 1 - i);
+    assert.deepEqual(remainders, expected);
+
+    const followUp = await checkRateLimit(key, limit, 60);
+    assert.equal(followUp.remaining, limit - concurrency - 1);
+  });
 });
 
 describe("getTrustedOrigin (FINDING 10 X-Forwarded-Host Hardening)", () => {

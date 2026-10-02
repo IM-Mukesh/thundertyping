@@ -131,7 +131,17 @@ async function checkUpstashRateLimit(
 }
 
 /**
- * Checks and increments rate limit using Supabase PostgreSQL table `api_rate_limits`.
+ * Checks and increments rate limit using the atomic `rate_limit_increment`
+ * Postgres function (supabase/migrations/20261003000000_atomic_rate_limit.sql).
+ *
+ * This used to be a SELECT, then a JS-side count+1, then an UPDATE -- three
+ * separate round-trips with no locking between them. Two concurrent requests
+ * for the same key could both read the same count, both compute the same
+ * new count, and both write it back: one increment silently lost, so the
+ * real limit was weaker than configured under any real concurrency. The RPC
+ * does the read-decide-write as one atomic statement inside Postgres, so
+ * concurrent callers for the same key are serialized by the database's own
+ * row lock, not by anything in this process.
  */
 async function checkPostgresRateLimit(
   key: string,
@@ -140,61 +150,23 @@ async function checkPostgresRateLimit(
 ): Promise<RateLimitResult | null> {
   try {
     const supabase = createAdminClient();
-    const now = new Date();
-    const resetTime = new Date(now.getTime() + windowSeconds * 1000);
-
-    // Fetch existing bucket
-    const { data: existing, error: selectErr } = await supabase
-      .from("api_rate_limits")
-      .select("count, reset_at")
-      .eq("key", key)
+    const { data, error } = await supabase
+      .rpc("rate_limit_increment", { p_key: key, p_window_seconds: windowSeconds })
       .maybeSingle();
 
-    if (selectErr) {
-      return null;
-    }
+    if (error || !data) return null;
 
-    if (!existing || new Date(existing.reset_at).getTime() <= now.getTime()) {
-      // Upsert new or expired bucket
-      const { error: upsertErr } = await supabase
-        .from("api_rate_limits")
-        .upsert(
-          {
-            key,
-            count: 1,
-            reset_at: resetTime.toISOString(),
-          },
-          { onConflict: "key" }
-        );
-
-      if (upsertErr) return null;
-
-      return {
-        success: true,
-        limit,
-        remaining: Math.max(0, limit - 1),
-        resetAt: Math.ceil(resetTime.getTime() / 1000),
-        retryAfter: 0,
-      };
-    }
-
-    const currentCount = existing.count + 1;
-    const resetAtDate = new Date(existing.reset_at);
-    const resetAtSec = Math.ceil(resetAtDate.getTime() / 1000);
-    const retryAfter = Math.max(1, Math.ceil((resetAtDate.getTime() - now.getTime()) / 1000));
-
-    // Increment count
-    await supabase
-      .from("api_rate_limits")
-      .update({ count: currentCount })
-      .eq("key", key);
+    const resetAtMs = new Date(data.reset_at).getTime();
+    const nowMs = Date.now();
+    const resetAtSec = Math.ceil(resetAtMs / 1000);
+    const retryAfter = Math.max(1, Math.ceil((resetAtMs - nowMs) / 1000));
 
     return {
-      success: currentCount <= limit,
+      success: data.count <= limit,
       limit,
-      remaining: Math.max(0, limit - currentCount),
+      remaining: Math.max(0, limit - data.count),
       resetAt: resetAtSec,
-      retryAfter: currentCount <= limit ? 0 : retryAfter,
+      retryAfter: data.count <= limit ? 0 : retryAfter,
     };
   } catch {
     return null;

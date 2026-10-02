@@ -114,6 +114,35 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Vercel's edge adds `Access-Control-Allow-Origin: *` by default to
+      // static/prerendered output (the cache-control: public, max-age=0,
+      // must-revalidate signature on pages like /, /profile, /auth/login,
+      // and the 404 page -- confirmed in production) when the origin
+      // response doesn't already set the header itself. That default is
+      // harmless for a plain page load (CORS only governs cross-origin
+      // fetch/XHR reading a response body, not navigation), but it's
+      // unnecessary for a site with no legitimate cross-origin consumer,
+      // and a blanket wildcard is the wrong thing to have sitting around if
+      // a future route ever reuses this response shape for something
+      // sensitive. Setting it explicitly to the canonical origin here is
+      // enough for Vercel to skip its own default (CDN "fill the gap"
+      // defaults don't double up on headers the origin already set).
+      //
+      // Deliberately scoped to exclude /api/*: API routes already emit no
+      // CORS header at all (confirmed in production), which is the
+      // correct state for same-origin-only APIs per the audit's own
+      // guidance ("prefer no CORS header rather than broad CORS" over
+      // adding an explicit one where none is needed) -- this rule must not
+      // change that.
+      {
+        source: "/((?!api/).*)",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: process.env.NEXT_PUBLIC_SITE_URL ?? "https://herotyping.com",
+          },
+        ],
+      },
     ];
   },
 };
