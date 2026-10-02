@@ -239,6 +239,36 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       lastModified: "2026-09-27",
     },
     {
+      path: "/guides/improve-typing-speed-with-ghost-caret",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-02",
+    },
+    {
+      path: "/guides/beat-your-personal-best-typing-speed",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-02",
+    },
+    {
+      path: "/guides/fix-burst-and-stall-typing-pace-caret",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-02",
+    },
+    {
+      path: "/guides/how-to-set-a-typing-speed-goal",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-02",
+    },
+    {
+      path: "/guides/typing-test-vs-typing-race",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-02",
+    },
+    {
       path: "/guides/how-many-minutes-a-day-to-practice-typing",
       priority: 0.7,
       changeFrequency: "monthly",

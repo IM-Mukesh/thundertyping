@@ -35,9 +35,9 @@ describe("Guide Content Architecture & Registry", () => {
     }
   });
 
-  it("registers exactly 43 unique, valid guides", () => {
+  it("registers exactly 48 unique, valid guides", () => {
     const guides = getAllGuides();
-    assert.equal(guides.length, 43);
+    assert.equal(guides.length, 48);
 
     const slugSet = new Set<string>();
     for (const guide of guides) {
