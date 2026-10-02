@@ -1,35 +1,41 @@
+import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/supabase/database.types";
+import { sanitizeInternalRedirect, getTrustedOrigin } from "@/lib/server/security";
+import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit";
 
 export async function GET(request: NextRequest) {
+  const clientIp = getClientIp(request);
+  // Rate limit callback attempts per IP to prevent authorization code brute forcing
+  const rateLimit = await checkRateLimit(`auth:callback:${clientIp}`, 30, 60);
+  if (!rateLimit.success) {
+    const trustedOrigin = getTrustedOrigin(request);
+    return NextResponse.redirect(
+      new URL("/auth/login?error=Too+many+attempts.+Please+try+again+later.", trustedOrigin)
+    );
+  }
+
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const oauthError = searchParams.get("error");
   const oauthErrorDescription = searchParams.get("error_description");
 
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const isLocalEnv = process.env.NODE_ENV === "development";
-  const baseUrl = isLocalEnv
-    ? request.nextUrl.origin
-    : forwardedHost
-      ? `https://${forwardedHost}`
-      : request.nextUrl.origin;
+  // Harden forwarded host trust
+  const baseUrl = getTrustedOrigin(request);
 
   // If OAuth provider returned an error (e.g. user cancelled or denied access)
   if (oauthError || oauthErrorDescription) {
-    const msg = oauthErrorDescription || oauthError || "Authentication cancelled";
-    console.warn("[auth/callback] OAuth error:", oauthError, oauthErrorDescription);
-    return NextResponse.redirect(new URL(`/auth/login?error=${encodeURIComponent(msg)}`, baseUrl));
+    console.warn("[auth/callback] OAuth provider error:", oauthError, oauthErrorDescription);
+    return NextResponse.redirect(
+      new URL("/auth/login?error=Authentication+was+cancelled+or+denied.", baseUrl)
+    );
   }
 
-  let next = searchParams.get("next") ?? "/profile";
-
-  // Open-redirect protection: only allow relative local paths starting with /
-  if (!next.startsWith("/") || next.startsWith("//") || next.includes("://")) {
-    next = "/profile";
-  }
+  // Open-redirect protection
+  const rawNext = searchParams.get("next");
+  const next = sanitizeInternalRedirect(rawNext, "/profile");
 
   if (code) {
     try {
@@ -71,10 +77,14 @@ export async function GET(request: NextRequest) {
       }
 
       console.error("[auth/callback] exchangeCodeForSession error:", error.message);
-      return NextResponse.redirect(new URL(`/auth/login?error=${encodeURIComponent(error.message)}`, baseUrl));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=Failed+to+authenticate.+Please+try+again.", baseUrl)
+      );
     } catch (err) {
       console.error("[auth/callback] unexpected exception during session exchange:", err);
-      return NextResponse.redirect(new URL("/auth/login?error=Session+exchange+failed", baseUrl));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=Session+exchange+failed", baseUrl)
+      );
     }
   }
 

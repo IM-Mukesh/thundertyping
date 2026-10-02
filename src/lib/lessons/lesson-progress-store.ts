@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import { LESSON_LIST, type LessonId } from "@/lib/lessons/lesson-types";
 import { getCurrentUserId } from "@/lib/auth/current-user";
+import { primeCloudXp } from "@/lib/profile/player-profile";
 
 export type LearnerGoal =
   | "touch-typing"
@@ -226,10 +227,12 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
         const userId = getCurrentUserId();
         if (userId) {
+          const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
           fetch("/api/lessons/progress", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              runId,
               lessonId: unitId,
               completed: unit.completed,
               stars,
@@ -237,7 +240,14 @@ export const useLessonProgressStore = create<LessonProgressState>()(
               accuracy: input.accuracy,
               attemptCount: 1,
             }),
-          }).catch((err) => console.warn("[lessons] failed to save cloud progress:", err));
+          })
+            .then((res) => res.json())
+            .then((json) => {
+              if (json?.success && json.data?.totalXp !== undefined) {
+                primeCloudXp(json.data.totalXp);
+              }
+            })
+            .catch((err) => console.warn("[lessons] failed to save cloud progress:", err));
         }
 
         return { passed, unitCompleted };

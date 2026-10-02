@@ -2,6 +2,7 @@ import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import { GAME_DEFINITIONS, type GameId } from "@/lib/games/game-types";
 import { trackEvent } from "@/lib/analytics";
 import { getCurrentUserId } from "@/lib/auth/current-user";
+import { primeCloudXp } from "@/lib/profile/player-profile";
 
 // Separate from results-store.ts on purpose: that one keys personal bests by
 // typing-test mode + config and only tracks WPM/accuracy, which doesn't
@@ -158,17 +159,26 @@ export function recordGameResult(
 
   if (userId) {
     if (isNewBest) cloudBestCache.set(gameId, best);
+    const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
     fetch("/api/games/scores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        runId,
         gameId,
         score: run.score,
         cleared: run.cleared,
         bestCombo: run.bestCombo,
         survivedMs: run.survivedMs,
       }),
-    }).catch((err) => console.warn("[game-scores] failed to save cloud score:", err));
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.success && json.data?.totalXp !== undefined) {
+          primeCloudXp(json.data.totalXp);
+        }
+      })
+      .catch((err) => console.warn("[game-scores] failed to save cloud score:", err));
     return { isNewBest, best };
   }
 

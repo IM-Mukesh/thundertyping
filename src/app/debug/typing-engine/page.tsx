@@ -7,6 +7,6 @@ import { TypingEngineDebug } from "@/components/typing-test/typing-engine-debug"
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function TypingEngineDebugPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") notFound();
   return <TypingEngineDebug />;
 }

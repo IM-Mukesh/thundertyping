@@ -7,13 +7,14 @@ import Image from "next/image";
 import { ArrowRight, ShieldCheck, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { sanitizeInternalRedirect } from "@/lib/utils/redirect";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextParam = searchParams.get("next") || "/profile";
+  const nextParam = sanitizeInternalRedirect(searchParams.get("next"), "/profile");
   const urlError = searchParams.get("error");
 
   const { signInWithGoogleIdToken, user } = useAuth();

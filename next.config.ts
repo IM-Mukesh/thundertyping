@@ -57,6 +57,20 @@ const nextConfig: NextConfig = {
     // straight to the project's own REST/Auth endpoint, not through our API
     // routes, so it needs to be an explicit connect-src origin.
     const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const isDev = process.env.NODE_ENV === "development";
+
+    // React 19 / Next.js dev tooling (Fast Refresh, error overlay, callstack reconstruction)
+    // requires eval() in development mode. 'unsafe-eval' is strictly excluded in production.
+    const scriptSrc = [
+      "'self'",
+      "'unsafe-inline'",
+      ...(isDev ? ["'unsafe-eval'"] : []),
+      "https://www.googletagmanager.com",
+      "https://www.google-analytics.com",
+      "https://pagead2.googlesyndication.com",
+      "https://accounts.google.com/gsi/client",
+    ].join(" ");
+
     return [
       {
         source: "/:path*",
@@ -85,13 +99,14 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://accounts.google.com/gsi/client",
+              `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
               "img-src 'self' blob: data: https://www.google-analytics.com https://www.googletagmanager.com https://pagead2.googlesyndication.com",
               "font-src 'self' data:",
               `connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://accounts.google.com/gsi/ ${supabaseOrigin}`.trim(),
               "media-src 'self' blob: data:",
               "frame-src 'self' https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://accounts.google.com",
+              "frame-ancestors 'self'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

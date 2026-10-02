@@ -1,28 +1,53 @@
+import "server-only";
 import { NextRequest } from "next/server";
 import { requireAuthUser } from "@/lib/server/auth";
-import { apiSuccess, apiError } from "@/lib/server/errors";
+import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
 import { getUserPreferences, updateUserPreferences } from "@/lib/server/profiles";
 import { validatePreferencesInput } from "@/lib/server/validation";
+import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
+import { createRequestId, readBoundedJson } from "@/lib/server/security";
 
 export async function GET() {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthUser();
     const data = await getUserPreferences(user.id);
     return apiSuccess(data);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Authentication required";
-    return apiError("UNAUTHORIZED", msg, 401);
+    if (msg === "UNAUTHORIZED") {
+      return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
+    }
+    return safeInternalError(error, "Failed to load preferences", requestId);
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthUser();
-    const body = await request.json().catch(() => null);
 
-    const validation = validatePreferencesInput(body);
+    // Rate limit preferences updates (max 30 per minute per user)
+    const rateLimit = await checkRateLimit(`profile:prefs:${user.id}`, 30, 60);
+    if (!rateLimit.success) {
+      return apiError(
+        "RATE_LIMITED",
+        "Too many updates. Please wait a moment before trying again.",
+        429,
+        undefined,
+        getRateLimitHeaders(rateLimit),
+        requestId
+      );
+    }
+
+    const bodyResult = await readBoundedJson<unknown>(request, 16384);
+    if (!bodyResult.ok) {
+      return apiError("INVALID_INPUT", bodyResult.error, bodyResult.status, undefined, undefined, requestId);
+    }
+
+    const validation = validatePreferencesInput(bodyResult.data);
     if (!validation.valid) {
-      return apiError("INVALID_INPUT", validation.message, 400);
+      return apiError("INVALID_INPUT", validation.message, 400, undefined, undefined, requestId);
     }
 
     const updated = await updateUserPreferences(user.id, validation.data);
@@ -30,8 +55,8 @@ export async function PUT(request: NextRequest) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Failed to update preferences";
     if (msg === "UNAUTHORIZED") {
-      return apiError("UNAUTHORIZED", "Authentication required", 401);
+      return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
     }
-    return apiError("INTERNAL_ERROR", msg, 500);
+    return safeInternalError(error, "Failed to update preferences", requestId);
   }
 }

@@ -1,11 +1,19 @@
+import "server-only";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import { GAME_LIST } from "@/lib/games/game-types";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
+import { calculateLessonStars, calculateLessonPass } from "@/lib/lessons/star-system";
 
 const VALID_LESSON_IDS = new Set<string>(LESSON_LIST.map((l) => l.id));
 const VALID_GAME_IDS = new Set<string>(GAME_LIST.map((g) => g.id));
 const VALID_ACHIEVEMENT_IDS = new Set<string>(ACHIEVEMENT_LIST.map((a) => a.id));
 const VALID_TEST_MODES = new Set<string>(["time", "words", "quote", "custom", "vocabulary"]);
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUuid(val: unknown): val is string {
+  return typeof val === "string" && UUID_REGEX.test(val);
+}
 
 function isFiniteNumber(val: unknown): val is number {
   return typeof val === "number" && Number.isFinite(val);
@@ -13,6 +21,10 @@ function isFiniteNumber(val: unknown): val is number {
 
 function isNonNegativeNumber(val: unknown): val is number {
   return isFiniteNumber(val) && val >= 0;
+}
+
+function isNonNegativeInteger(val: unknown): val is number {
+  return typeof val === "number" && Number.isInteger(val) && val >= 0;
 }
 
 export interface ValidatedTypingResultInput {
@@ -29,10 +41,12 @@ export interface ValidatedTypingResultInput {
   param: string | null;
   punctuation: boolean;
   numbers: boolean;
-  createdAt?: string;
+  runId?: string;
 }
 
-export function validateTypingResultInput(data: unknown): { valid: true; data: ValidatedTypingResultInput } | { valid: false; message: string } {
+export function validateTypingResultInput(
+  data: unknown
+): { valid: true; data: ValidatedTypingResultInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }
@@ -63,20 +77,70 @@ export function validateTypingResultInput(data: unknown): { valid: true; data: V
     return { valid: false, message: "consistency must be between 0 and 100 or null" };
   }
 
-  if (!isNonNegativeNumber(p.correctChars) || !Number.isInteger(p.correctChars)) {
+  if (!isNonNegativeInteger(p.correctChars)) {
     return { valid: false, message: "correctChars must be a non-negative integer" };
   }
 
-  if (!isNonNegativeNumber(p.incorrectChars) || !Number.isInteger(p.incorrectChars)) {
+  if (!isNonNegativeInteger(p.incorrectChars)) {
     return { valid: false, message: "incorrectChars must be a non-negative integer" };
   }
 
-  const extraChars = isNonNegativeNumber(p.extraChars) && Number.isInteger(p.extraChars) ? p.extraChars : 0;
-  const missedChars = isNonNegativeNumber(p.missedChars) && Number.isInteger(p.missedChars) ? p.missedChars : 0;
+  const extraChars = isNonNegativeInteger(p.extraChars) ? p.extraChars : 0;
+  const missedChars = isNonNegativeInteger(p.missedChars) ? p.missedChars : 0;
+
+  // Strict boolean validation (Rule: Boolean("false") is NOT validation)
+  if (p.punctuation !== undefined && typeof p.punctuation !== "boolean") {
+    return { valid: false, message: "punctuation must be a boolean" };
+  }
+  if (p.numbers !== undefined && typeof p.numbers !== "boolean") {
+    return { valid: false, message: "numbers must be a boolean" };
+  }
   const punctuation = Boolean(p.punctuation);
   const numbers = Boolean(p.numbers);
+
+  // Optional runId for idempotency
+  let runId: string | undefined;
+  if (p.runId !== undefined) {
+    if (!isValidUuid(p.runId)) {
+      return { valid: false, message: "runId must be a valid UUID v4" };
+    }
+    runId = p.runId;
+  }
+
+  // --- Mathematical and Physical Integrity Checks ---
+  // 1. Human typing speed limit check:
+  // Sustaining over 40 characters per second (>480 raw WPM) is physically impossible for human hands.
+  const totalTyped = p.correctChars + p.incorrectChars;
+  const cps = totalTyped / p.duration;
+  if (cps > 40) {
+    return { valid: false, message: "Typing speed exceeds maximum possible human keystroke rate" };
+  }
+
+  // 2. Net WPM consistency check:
+  // Expected net WPM = (correctChars / 5) / (duration / 60)
+  // We allow a reasonable tolerance of +/- 2.5 WPM for fractional timing / word separator nuances
+  const expectedWpm = (p.correctChars / 5) / (p.duration / 60);
+  if (p.correctChars > 0 && Math.abs(p.wpm - expectedWpm) > 2.5) {
+    return {
+      valid: false,
+      message: `Claimed WPM (${p.wpm}) does not match characters typed (${p.correctChars}) over duration (${p.duration}s)`,
+    };
+  }
+
+  // 3. Accuracy consistency check:
+  // Expected accuracy = (correctChars / (correctChars + incorrectChars + missedChars)) * 100
+  const totalRelevantChars = p.correctChars + p.incorrectChars + missedChars;
+  if (totalRelevantChars > 0) {
+    const expectedAccuracy = (p.correctChars / totalRelevantChars) * 100;
+    if (Math.abs(p.accuracy - expectedAccuracy) > 2.0) {
+      return {
+        valid: false,
+        message: `Claimed accuracy (${p.accuracy}%) does not match character counts`,
+      };
+    }
+  }
+
   const param = p.param !== undefined && p.param !== null ? String(p.param).slice(0, 50) : null;
-  const createdAt = typeof p.createdAt === "string" && !isNaN(Date.parse(p.createdAt)) ? p.createdAt : undefined;
 
   return {
     valid: true,
@@ -94,7 +158,7 @@ export function validateTypingResultInput(data: unknown): { valid: true; data: V
       param,
       punctuation,
       numbers,
-      createdAt,
+      runId,
     },
   };
 }
@@ -105,10 +169,13 @@ export interface ValidatedLessonProgressInput {
   stars: number;
   wpm: number;
   accuracy: number;
-  attemptCount?: number;
+  attemptCount: number;
+  runId?: string;
 }
 
-export function validateLessonProgressInput(data: unknown): { valid: true; data: ValidatedLessonProgressInput } | { valid: false; message: string } {
+export function validateLessonProgressInput(
+  data: unknown
+): { valid: true; data: ValidatedLessonProgressInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }
@@ -117,6 +184,11 @@ export function validateLessonProgressInput(data: unknown): { valid: true; data:
 
   if (typeof p.lessonId !== "string" || !VALID_LESSON_IDS.has(p.lessonId)) {
     return { valid: false, message: "Invalid or unknown lessonId" };
+  }
+
+  // Strict boolean validation for completed
+  if (p.completed !== undefined && typeof p.completed !== "boolean") {
+    return { valid: false, message: "completed must be a boolean" };
   }
 
   if (!isNonNegativeNumber(p.stars) || !Number.isInteger(p.stars) || p.stars > 5) {
@@ -131,18 +203,34 @@ export function validateLessonProgressInput(data: unknown): { valid: true; data:
     return { valid: false, message: "accuracy must be between 0 and 100" };
   }
 
-  const completed = Boolean(p.completed);
-  const attemptCount = isNonNegativeNumber(p.attemptCount) ? Math.floor(p.attemptCount) : 1;
+  let runId: string | undefined;
+  if (p.runId !== undefined) {
+    if (!isValidUuid(p.runId)) {
+      return { valid: false, message: "runId must be a valid UUID v4" };
+    }
+    runId = p.runId;
+  }
+
+  // --- Authoritative Server-Side Derivation ---
+  // The server independently calculates pass and star rating using the lesson curriculum rules
+  const lessonMeta = LESSON_LIST.find((l) => l.id === p.lessonId);
+  const isBeginner = lessonMeta?.tier === "beginner";
+  const authoritativeStars = calculateLessonStars(p.accuracy, p.wpm, { isBeginner });
+  const authoritativePassed = calculateLessonPass(p.accuracy);
+
+  // If client claims completion but accuracy does not satisfy pass requirement, reject false completion
+  const completed = Boolean(p.completed) && authoritativePassed;
 
   return {
     valid: true,
     data: {
       lessonId: p.lessonId,
       completed,
-      stars: p.stars,
+      stars: authoritativeStars,
       wpm: p.wpm,
       accuracy: p.accuracy,
-      attemptCount,
+      attemptCount: 1, // Server always enforces 1 attempt per valid submission
+      runId,
     },
   };
 }
@@ -150,14 +238,32 @@ export function validateLessonProgressInput(data: unknown): { valid: true; data:
 export interface ValidatedGameScoreInput {
   gameId: string;
   score: number;
-  cleared?: number;
-  bestCombo?: number;
-  survivedMs?: number;
-  wpm?: number | null;
-  accuracy?: number | null;
+  cleared: number;
+  bestCombo: number;
+  survivedMs: number;
+  wpm: number | null;
+  accuracy: number | null;
+  runId?: string;
 }
 
-export function validateGameScoreInput(data: unknown): { valid: true; data: ValidatedGameScoreInput } | { valid: false; message: string } {
+// Game-specific maximum realistic score limits
+const MAX_GAME_SCORES: Record<string, { maxScore: number; maxCombo: number; maxCleared: number }> = {
+  "falling-words": { maxScore: 100_000, maxCombo: 200, maxCleared: 1_000 },
+  "word-rain": { maxScore: 100_000, maxCombo: 200, maxCleared: 1_000 },
+  "word-blaster": { maxScore: 100_000, maxCombo: 200, maxCleared: 500 },
+  "typing-grand-prix": { maxScore: 50_000, maxCombo: 100, maxCleared: 200 },
+  "boss-battle": { maxScore: 100_000, maxCombo: 100, maxCleared: 100 },
+  "combo-rush": { maxScore: 100_000, maxCombo: 150, maxCleared: 150 },
+  spellbound: { maxScore: 100_000, maxCombo: 100, maxCleared: 100 },
+  "typing-survivor": { maxScore: 100_000, maxCombo: 150, maxCleared: 250 },
+  "ghost-racer": { maxScore: 50_000, maxCombo: 100, maxCleared: 150 },
+  "card-battle": { maxScore: 50_000, maxCombo: 50, maxCleared: 50 },
+  "fruit-fury": { maxScore: 200_000, maxCombo: 150, maxCleared: 1_500 },
+};
+
+export function validateGameScoreInput(
+  data: unknown
+): { valid: true; data: ValidatedGameScoreInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }
@@ -168,26 +274,55 @@ export function validateGameScoreInput(data: unknown): { valid: true; data: Vali
     return { valid: false, message: "Invalid or unknown gameId" };
   }
 
-  if (!isNonNegativeNumber(p.score) || p.score > 50_000_000) {
-    return { valid: false, message: "score must be a non-negative number up to 50,000,000" };
+  const limits = MAX_GAME_SCORES[p.gameId] || { maxScore: 100_000, maxCombo: 200, maxCleared: 1000 };
+
+  if (!isNonNegativeNumber(p.score) || !Number.isInteger(p.score) || p.score > limits.maxScore) {
+    return { valid: false, message: `score must be a non-negative integer up to ${limits.maxScore.toLocaleString()}` };
   }
 
-  const cleared = isNonNegativeNumber(p.cleared) ? Math.floor(p.cleared) : 0;
-  const bestCombo = isNonNegativeNumber(p.bestCombo) ? Math.floor(p.bestCombo) : 0;
-  const survivedMs = isNonNegativeNumber(p.survivedMs) ? Math.floor(p.survivedMs) : 0;
+  const cleared = isNonNegativeInteger(p.cleared) ? p.cleared : 0;
+  if (cleared > limits.maxCleared) {
+    return { valid: false, message: `cleared exceeds maximum possible limit (${limits.maxCleared})` };
+  }
+
+  const bestCombo = isNonNegativeInteger(p.bestCombo) ? p.bestCombo : 0;
+  if (bestCombo > limits.maxCombo) {
+    return { valid: false, message: `bestCombo exceeds maximum possible limit (${limits.maxCombo})` };
+  }
+
+  const survivedMs = isNonNegativeInteger(p.survivedMs) ? p.survivedMs : 0;
+  // Maximum survival time: 2 hours (7,200,000 ms)
+  if (survivedMs > 7_200_000) {
+    return { valid: false, message: "survivedMs exceeds maximum session limit (2 hours)" };
+  }
+
+  // Plausibility check: Cannot score > 0 with 0ms survival time and 0 cleared
+  if (p.score > 0 && survivedMs < 500 && cleared === 0) {
+    return { valid: false, message: "Mathematically impossible score for game duration" };
+  }
+
   const wpm = isNonNegativeNumber(p.wpm) && p.wpm <= 350 ? p.wpm : null;
   const accuracy = isNonNegativeNumber(p.accuracy) && p.accuracy <= 100 ? p.accuracy : null;
+
+  let runId: string | undefined;
+  if (p.runId !== undefined) {
+    if (!isValidUuid(p.runId)) {
+      return { valid: false, message: "runId must be a valid UUID v4" };
+    }
+    runId = p.runId;
+  }
 
   return {
     valid: true,
     data: {
       gameId: p.gameId,
-      score: Math.floor(p.score),
+      score: p.score,
       cleared,
       bestCombo,
       survivedMs,
       wpm,
       accuracy,
+      runId,
     },
   };
 }
@@ -197,7 +332,9 @@ export interface ValidatedProfileUpdateInput {
   username?: string;
 }
 
-export function validateProfileUpdateInput(data: unknown): { valid: true; data: ValidatedProfileUpdateInput } | { valid: false; message: string } {
+export function validateProfileUpdateInput(
+  data: unknown
+): { valid: true; data: ValidatedProfileUpdateInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }
@@ -208,6 +345,10 @@ export function validateProfileUpdateInput(data: unknown): { valid: true; data: 
   if (p.displayName !== undefined) {
     if (typeof p.displayName !== "string" || p.displayName.trim().length === 0 || p.displayName.length > 50) {
       return { valid: false, message: "displayName must be between 1 and 50 characters" };
+    }
+    // Reject control characters
+    if (/[\x00-\x1F\x7F]/.test(p.displayName)) {
+      return { valid: false, message: "displayName contains invalid control characters" };
     }
     out.displayName = p.displayName.trim();
   }
@@ -238,7 +379,9 @@ export interface ValidatedPreferencesInput {
   numbers?: boolean;
 }
 
-export function validatePreferencesInput(data: unknown): { valid: true; data: ValidatedPreferencesInput } | { valid: false; message: string } {
+export function validatePreferencesInput(
+  data: unknown
+): { valid: true; data: ValidatedPreferencesInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }
@@ -251,11 +394,12 @@ export function validatePreferencesInput(data: unknown): { valid: true; data: Va
     out.theme = p.theme;
   }
   if (p.soundEnabled !== undefined) {
-    out.soundEnabled = Boolean(p.soundEnabled);
+    if (typeof p.soundEnabled !== "boolean") return { valid: false, message: "soundEnabled must be a boolean" };
+    out.soundEnabled = p.soundEnabled;
   }
   if (p.soundVolume !== undefined) {
-    if (typeof p.soundVolume !== "number" || p.soundVolume < 0 || p.soundVolume > 1) {
-      return { valid: false, message: "soundVolume must be between 0 and 1" };
+    if (typeof p.soundVolume !== "number" || !Number.isFinite(p.soundVolume) || p.soundVolume < 0 || p.soundVolume > 1) {
+      return { valid: false, message: "soundVolume must be a number between 0 and 1" };
     }
     out.soundVolume = p.soundVolume;
   }
@@ -304,38 +448,68 @@ export function validatePreferencesInput(data: unknown): { valid: true; data: Va
     out.defaultTestDuration = Math.round(p.defaultTestDuration);
   }
   if (p.punctuation !== undefined) {
-    out.punctuation = Boolean(p.punctuation);
+    if (typeof p.punctuation !== "boolean") return { valid: false, message: "punctuation must be a boolean" };
+    out.punctuation = p.punctuation;
   }
   if (p.numbers !== undefined) {
-    out.numbers = Boolean(p.numbers);
+    if (typeof p.numbers !== "boolean") return { valid: false, message: "numbers must be a boolean" };
+    out.numbers = p.numbers;
   }
 
   return { valid: true, data: out };
 }
 
 export interface ValidatedXpAwardInput {
-  amount: number;
+  eventType: "game_completion" | "lesson_completion" | "typing_test";
+  runId: string;
 }
 
-export function validateXpAwardInput(data: unknown): { valid: true; data: ValidatedXpAwardInput } | { valid: false; message: string } {
+/**
+ * Validates XP request.
+ * CRITICAL SECURITY INVARIANT: Arbitrary client-selected amounts (e.g. { amount: 2000 })
+ * are strictly forbidden. XP can only be earned through verified server events.
+ */
+export function validateXpAwardInput(
+  data: unknown
+): { valid: true; data: ValidatedXpAwardInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }
 
   const p = data as Record<string, unknown>;
 
-  if (!isNonNegativeNumber(p.amount) || !Number.isInteger(p.amount) || p.amount <= 0 || p.amount > 2000) {
-    return { valid: false, message: "amount must be a positive integer up to 2000" };
+  // Reject legacy client-chosen amount vulnerability
+  if ("amount" in p) {
+    return {
+      valid: false,
+      message: "Arbitrary XP granting is forbidden. XP is awarded authoritatively through game, lesson, and typing test completions.",
+    };
   }
 
-  return { valid: true, data: { amount: p.amount } };
+  if (typeof p.eventType !== "string" || !["game_completion", "lesson_completion", "typing_test"].includes(p.eventType)) {
+    return { valid: false, message: "Invalid or missing eventType" };
+  }
+
+  if (!isValidUuid(p.runId)) {
+    return { valid: false, message: "runId must be a valid UUID v4" };
+  }
+
+  return {
+    valid: true,
+    data: {
+      eventType: p.eventType as ValidatedXpAwardInput["eventType"],
+      runId: p.runId,
+    },
+  };
 }
 
 export interface ValidatedAchievementGrantInput {
   achievementId: string;
 }
 
-export function validateAchievementGrantInput(data: unknown): { valid: true; data: ValidatedAchievementGrantInput } | { valid: false; message: string } {
+export function validateAchievementGrantInput(
+  data: unknown
+): { valid: true; data: ValidatedAchievementGrantInput } | { valid: false; message: string } {
   if (typeof data !== "object" || data === null) {
     return { valid: false, message: "Payload must be a non-null object" };
   }

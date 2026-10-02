@@ -70,3 +70,5 @@ next-env.d.ts
 # full size for good. Tailwind v4's content detection also honours this file,
 # so keeping the folder ignored keeps it out of the build scan.
 /assets-raw/
+# scratch files
+/scratch/

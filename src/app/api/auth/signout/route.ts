@@ -1,6 +1,8 @@
+import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeInternalRedirect, getTrustedOrigin } from "@/lib/server/security";
 
 export async function POST() {
   try {
@@ -53,9 +55,11 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const url = new URL(request.url);
-  const redirectPath = url.searchParams.get("redirect") || "/auth/login";
-  const response = NextResponse.redirect(new URL(redirectPath, request.url));
+  const rawRedirect = request.nextUrl.searchParams.get("redirect");
+  const safeRedirectPath = sanitizeInternalRedirect(rawRedirect, "/auth/login");
+  const trustedOrigin = getTrustedOrigin(request);
+
+  const response = NextResponse.redirect(new URL(safeRedirectPath, trustedOrigin));
   for (const cookie of allCookies) {
     if (cookie.name.startsWith("sb-")) {
       response.cookies.delete(cookie.name);

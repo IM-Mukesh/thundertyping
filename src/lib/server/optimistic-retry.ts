@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Retries an optimistic-concurrency-controlled read-modify-write. `fn` must
  * throw an Error whose message starts with "CONFLICT" when its write was

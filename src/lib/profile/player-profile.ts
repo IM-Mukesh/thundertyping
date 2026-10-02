@@ -228,13 +228,6 @@ export function awardXp(amount: number): XpResult {
     const before = levelForXp(cloudXp);
     cloudXp += gained;
     const after = levelForXp(cloudXp);
-    if (gained > 0) {
-      fetch("/api/profile/xp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: gained }),
-      }).catch((err) => console.warn("[profile] failed to award cloud XP:", err));
-    }
     if (typeof window !== "undefined") {
       queueMicrotask(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
     }

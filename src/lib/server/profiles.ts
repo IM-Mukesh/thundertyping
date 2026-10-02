@@ -1,3 +1,4 @@
+import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { ValidatedProfileUpdateInput, ValidatedPreferencesInput } from "@/lib/server/validation";

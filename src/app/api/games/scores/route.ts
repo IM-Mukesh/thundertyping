@@ -1,28 +1,53 @@
+import "server-only";
 import { NextRequest } from "next/server";
 import { requireAuthUser } from "@/lib/server/auth";
-import { apiSuccess, apiError } from "@/lib/server/errors";
+import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
 import { saveGameScore, getUserGameBests } from "@/lib/server/game-scores";
 import { validateGameScoreInput } from "@/lib/server/validation";
+import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
+import { createRequestId, readBoundedJson } from "@/lib/server/security";
 
 export async function GET() {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthUser();
     const bests = await getUserGameBests(user.id);
     return apiSuccess(bests);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Authentication required";
-    return apiError("UNAUTHORIZED", msg, 401);
+    if (msg === "UNAUTHORIZED") {
+      return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
+    }
+    return safeInternalError(error, "Failed to load game bests", requestId);
   }
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = createRequestId();
   try {
     const { user } = await requireAuthUser();
-    const body = await request.json().catch(() => null);
 
-    const validation = validateGameScoreInput(body);
+    // Rate limit game score submissions (max 60 per minute per user)
+    const rateLimit = await checkRateLimit(`games_scores:post:${user.id}`, 60, 60);
+    if (!rateLimit.success) {
+      return apiError(
+        "RATE_LIMITED",
+        "Too many submissions. Please wait a moment before trying again.",
+        429,
+        undefined,
+        getRateLimitHeaders(rateLimit),
+        requestId
+      );
+    }
+
+    const bodyResult = await readBoundedJson<unknown>(request, 16384);
+    if (!bodyResult.ok) {
+      return apiError("INVALID_INPUT", bodyResult.error, bodyResult.status, undefined, undefined, requestId);
+    }
+
+    const validation = validateGameScoreInput(bodyResult.data);
     if (!validation.valid) {
-      return apiError("INVALID_INPUT", validation.message, 400);
+      return apiError("INVALID_INPUT", validation.message, 400, undefined, undefined, requestId);
     }
 
     const result = await saveGameScore(user.id, validation.data);
@@ -30,8 +55,8 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Failed to record game score";
     if (msg === "UNAUTHORIZED") {
-      return apiError("UNAUTHORIZED", "Authentication required", 401);
+      return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
     }
-    return apiError("INTERNAL_ERROR", msg, 500);
+    return safeInternalError(error, "Failed to record game score", requestId);
   }
 }

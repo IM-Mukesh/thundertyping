@@ -1,6 +1,7 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import type { TestConfig, TestMode } from "@/lib/typing-engine/engine-types";
 import { getCurrentUserId } from "@/lib/auth/current-user";
+import { primeCloudXp } from "@/lib/profile/player-profile";
 
 // Left unrenamed on the HeroTyping rebrand -- every existing player's
 // personal bests are saved under this prefix, and renaming it would orphan
@@ -167,10 +168,12 @@ export function recordResult(
   if (userId) {
     if (isNewBest) cloudBestCache.set(pbKey(mode, param, punctuation, numbers), best);
     if (details) {
+      const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
       fetch("/api/typing-results", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          runId,
           mode,
           duration: details.durationSec,
           wpm,
@@ -185,7 +188,14 @@ export function recordResult(
           punctuation,
           numbers,
         }),
-      }).catch((err) => console.warn("[results-store] failed to save cloud result:", err));
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json?.success && json.data?.totalXp !== undefined) {
+            primeCloudXp(json.data.totalXp);
+          }
+        })
+        .catch((err) => console.warn("[results-store] failed to save cloud result:", err));
     }
     return { isNewBest, best };
   }

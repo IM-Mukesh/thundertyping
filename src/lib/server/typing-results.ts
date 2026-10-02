@@ -1,7 +1,12 @@
+import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { ValidatedTypingResultInput } from "@/lib/server/validation";
 import { withOptimisticRetry, UNIQUE_VIOLATION } from "@/lib/server/optimistic-retry";
+import { evaluateAndSyncAchievements } from "@/lib/server/progress";
+import type { Database } from "@/lib/supabase/database.types";
+
+type TypingResultInsert = Database["public"]["Tables"]["typing_results"]["Insert"];
 
 async function getSupabaseForRead() {
   try {
@@ -14,36 +19,89 @@ async function getSupabaseForRead() {
 export async function saveTypingResult(userId: string, input: ValidatedTypingResultInput) {
   const supabase = createAdminClient();
 
-  // 1. Insert result record
+  // 1. Idempotency Check: if runId is supplied, check if already recorded
+  if (input.runId) {
+    const { data: existingRun } = await supabase
+      .from("typing_results")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("id", input.runId)
+      .maybeSingle();
+
+    if (existingRun) {
+      // Already processed idempotently; return existing record without double-rewarding
+      const { data: streak } = await supabase
+        .from("player_streaks")
+        .select("total_xp")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      return {
+        result: existingRun,
+        earnedXp: 0,
+        totalXp: streak?.total_xp ?? 0,
+        idempotent: true,
+      };
+    }
+  }
+
+  // 2. Authoritative Metric Derivation
+  // Calculate authoritative Net WPM and accuracy server-side from verifiable raw counts
+  const authoritativeWpm =
+    input.duration > 0
+      ? Math.round(((input.correctChars / 5) / (input.duration / 60)) * 100) / 100
+      : input.wpm;
+
+  const totalChars = input.correctChars + input.incorrectChars + input.missedChars;
+  const authoritativeAccuracy =
+    totalChars > 0
+      ? Math.round((input.correctChars / totalChars) * 10000) / 100
+      : 100;
+
+  // 3. Insert result record with authoritative server timestamp
+  const insertPayload: TypingResultInsert = {
+    user_id: userId,
+    mode: input.mode,
+    duration: input.duration,
+    wpm: authoritativeWpm,
+    raw_wpm: input.rawWpm,
+    accuracy: authoritativeAccuracy,
+    consistency: input.consistency,
+    correct_chars: input.correctChars,
+    incorrect_chars: input.incorrectChars,
+    extra_chars: input.extraChars,
+    missed_chars: input.missedChars,
+    param: input.param,
+    punctuation: input.punctuation,
+    numbers: input.numbers,
+    ...(input.runId ? { id: input.runId } : {}),
+  };
+
   const { data: result, error: insertError } = await supabase
     .from("typing_results")
-    .insert({
-      user_id: userId,
-      mode: input.mode,
-      duration: input.duration,
-      wpm: input.wpm,
-      raw_wpm: input.rawWpm,
-      accuracy: input.accuracy,
-      consistency: input.consistency,
-      correct_chars: input.correctChars,
-      incorrect_chars: input.incorrectChars,
-      extra_chars: input.extraChars,
-      missed_chars: input.missedChars,
-      param: input.param,
-      punctuation: input.punctuation,
-      numbers: input.numbers,
-      ...(input.createdAt ? { created_at: input.createdAt } : {}),
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
   if (insertError) {
+    if (insertError.code === UNIQUE_VIOLATION && input.runId) {
+      // Race condition idempotency recovery
+      const { data: duplicate } = await supabase
+        .from("typing_results")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", input.runId)
+        .single();
+      if (duplicate) return { result: duplicate, earnedXp: 0, idempotent: true };
+    }
     throw new Error(`Failed to save typing result: ${insertError.message}`);
   }
 
-  // 2. Update daily aggregate stats (optimistic-concurrency: retries on a
-  // conflicting concurrent writer instead of blindly overwriting its update)
+  // 4. Update daily aggregate stats
   const today = new Date().toISOString().split("T")[0];
+  let finalTotalXp = 0;
+  const earnedXp = Math.max(5, Math.min(150, Math.round(authoritativeWpm / 2)));
+
   try {
     await withOptimisticRetry(async () => {
       const { data: existingDaily } = await supabase
@@ -55,9 +113,14 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
 
       if (existingDaily) {
         const newTestsCompleted = existingDaily.tests_completed + 1;
-        const newAvgWpm = Math.round(((existingDaily.average_wpm * existingDaily.tests_completed) + input.wpm) / newTestsCompleted);
-        const newBestWpm = Math.max(existingDaily.best_wpm, input.wpm);
-        const newAvgAcc = Math.round(((existingDaily.average_accuracy * existingDaily.tests_completed) + input.accuracy) / newTestsCompleted);
+        const newAvgWpm = Math.round(
+          (existingDaily.average_wpm * existingDaily.tests_completed + authoritativeWpm) / newTestsCompleted
+        );
+        const newBestWpm = Math.max(existingDaily.best_wpm, authoritativeWpm);
+        const newAvgAcc = Math.round(
+          (existingDaily.average_accuracy * existingDaily.tests_completed + authoritativeAccuracy) /
+            newTestsCompleted
+        );
 
         const { data: updatedRows, error } = await supabase
           .from("daily_stats")
@@ -66,7 +129,9 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
             average_wpm: newAvgWpm,
             best_wpm: newBestWpm,
             average_accuracy: newAvgAcc,
-            practice_minutes: Number((existingDaily.practice_minutes + (input.duration / 60)).toFixed(2)),
+            practice_minutes: Number(
+              (existingDaily.practice_minutes + input.duration / 60).toFixed(2)
+            ),
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
@@ -83,9 +148,9 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
           user_id: userId,
           date: today,
           tests_completed: 1,
-          average_wpm: Math.round(input.wpm),
-          best_wpm: Math.round(input.wpm),
-          average_accuracy: Math.round(input.accuracy),
+          average_wpm: Math.round(authoritativeWpm),
+          best_wpm: Math.round(authoritativeWpm),
+          average_accuracy: Math.round(authoritativeAccuracy),
           practice_minutes: Number((input.duration / 60).toFixed(2)),
         });
         if (error) {
@@ -97,8 +162,7 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
       }
     });
 
-    // 3. Update player streak & XP
-    const earnedXp = Math.max(5, Math.round(input.wpm / 2));
+    // 5. Update player streak & authoritative XP
     await withOptimisticRetry(async () => {
       const { data: streak } = await supabase
         .from("player_streaks")
@@ -116,13 +180,16 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
           newStreak = 1;
         }
 
+        const newTotalXp = streak.total_xp + earnedXp;
+        finalTotalXp = newTotalXp;
+
         const { data: updatedRows, error } = await supabase
           .from("player_streaks")
           .update({
             current_streak: newStreak,
             longest_streak: Math.max(streak.longest_streak, newStreak),
             last_active_date: today,
-            total_xp: streak.total_xp + earnedXp,
+            total_xp: newTotalXp,
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
@@ -135,12 +202,20 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
         }
       }
     });
+
+    // 6. Check eligible achievements authoritatively
+    await evaluateAndSyncAchievements(userId).catch((err) =>
+      console.warn("[typing-results] achievement sync non-fatal error:", err)
+    );
   } catch (err) {
-    // Non-blocking: daily stats / streak update should not fail the primary result insert
     console.error("Non-fatal error updating daily stats/streaks:", err);
   }
 
-  return result;
+  return {
+    result,
+    earnedXp,
+    totalXp: finalTotalXp,
+  };
 }
 
 export async function getTypingResultsHistory(userId: string, limit = 50) {

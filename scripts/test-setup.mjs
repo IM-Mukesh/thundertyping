@@ -33,6 +33,9 @@ export async function resolve(specifier, context, next) {
   if (specifier === "next/server") {
     return next("next/server.js", context);
   }
+  if (specifier === "server-only") {
+    return { url: "data:text/javascript,export {};", format: "module", shortCircuit: true };
+  }
   if (specifier.startsWith("@/")) {
     let url = ${JSON.stringify(root)} + specifier.slice(2);
     if (!/\\.[a-z]+$/.test(url)) url += ".ts";
