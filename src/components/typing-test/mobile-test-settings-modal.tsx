@@ -11,6 +11,7 @@ import {
   Pencil,
   Quote as QuoteIcon,
   SlidersHorizontal,
+  Target,
   Type,
   Volume2,
   VolumeX,
@@ -30,6 +31,7 @@ import {
   VOCAB_DIFFICULTIES,
   type VocabDifficulty,
 } from "@/lib/vocabulary/vocabulary-words";
+import { MIN_PACE_CARET_WPM, MAX_PACE_CARET_WPM } from "@/lib/typing-engine/pace-caret";
 import { cn } from "@/lib/utils/cn";
 
 const VOCAB_DIFFICULTY_LABEL: Record<VocabDifficulty, string> = {
@@ -78,6 +80,8 @@ export function MobileTestSettingsModal({
   const wordDifficulty = useSettingsStore((s) => s.wordDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
+  const paceCaretMode = useSettingsStore((s) => s.paceCaretMode);
+  const paceCaretCustomWpm = useSettingsStore((s) => s.paceCaretCustomWpm);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
 
@@ -87,12 +91,18 @@ export function MobileTestSettingsModal({
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
   const setVocabDifficulty = useSettingsStore((s) => s.setVocabDifficulty);
   const setWordDifficulty = useSettingsStore((s) => s.setWordDifficulty);
+  const setPaceCaretMode = useSettingsStore((s) => s.setPaceCaretMode);
+  const setPaceCaretCustomWpm = useSettingsStore((s) => s.setPaceCaretCustomWpm);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
   const [customEditing, setCustomEditing] = useState(false);
   const [customDraft, setCustomDraft] = useState("");
   const [customDraftInvalid, setCustomDraftInvalid] = useState(false);
+
+  const [paceEditing, setPaceEditing] = useState(false);
+  const [paceDraft, setPaceDraft] = useState("");
+  const [paceDraftInvalid, setPaceDraftInvalid] = useState(false);
 
   const showTextToggles = mode === "time" || mode === "words";
 
@@ -130,6 +140,21 @@ export function MobileTestSettingsModal({
     // Used to silently discard invalid input (e.g. non-numeric text) and
     // close with no feedback. Stay open with a visible error instead.
     setCustomDraftInvalid(true);
+  };
+
+  const commitPaceDraft = () => {
+    const parsed = Number(paceDraft);
+    const isValid = paceDraft.trim() !== "" && Number.isFinite(parsed);
+    if (isValid) {
+      const clamped = Math.min(MAX_PACE_CARET_WPM, Math.max(MIN_PACE_CARET_WPM, Math.round(parsed)));
+      setPaceCaretCustomWpm(clamped);
+      setPaceCaretMode("custom");
+      setPaceDraft("");
+      setPaceDraftInvalid(false);
+      setPaceEditing(false);
+      return;
+    }
+    setPaceDraftInvalid(true);
   };
 
   return (
@@ -474,6 +499,93 @@ export function MobileTestSettingsModal({
                   </div>
                 </div>
               )}
+
+              {/* Pace Caret -- a second, ghost caret racing a target speed */}
+              <div>
+                <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
+                  Pace Caret
+                </span>
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPaceCaretMode(paceCaretMode === "pb" ? "off" : "pb")}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-xl border py-2.5 font-mono text-xs transition-colors",
+                      paceCaretMode === "pb"
+                        ? "border-accent bg-accent/15 text-accent font-bold"
+                        : "border-border/70 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
+                    )}
+                  >
+                    <Target size={14} />
+                    <span>Your PB</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaceDraft(String(paceCaretCustomWpm));
+                      setPaceEditing(true);
+                    }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-xl border py-2.5 font-mono text-xs transition-colors",
+                      paceCaretMode === "custom"
+                        ? "border-accent bg-accent/15 text-accent font-bold"
+                        : "border-border/70 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
+                    )}
+                  >
+                    <Pencil size={14} />
+                    <span>{paceCaretMode === "custom" ? `${paceCaretCustomWpm} wpm` : "Custom"}</span>
+                  </button>
+                </div>
+                {paceEditing && (
+                  <div className="mt-2 flex w-full flex-col gap-1">
+                    <div className="flex w-full items-center gap-2">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={MIN_PACE_CARET_WPM}
+                        max={MAX_PACE_CARET_WPM}
+                        value={paceDraft}
+                        autoFocus
+                        onChange={(e) => {
+                          setPaceDraft(e.target.value);
+                          if (paceDraftInvalid) setPaceDraftInvalid(false);
+                        }}
+                        onBlur={commitPaceDraft}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitPaceDraft();
+                          } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            setPaceDraftInvalid(false);
+                            setPaceEditing(false);
+                          }
+                        }}
+                        placeholder="Target WPM"
+                        aria-label="Pace caret custom target WPM"
+                        aria-invalid={paceDraftInvalid}
+                        className={cn(
+                          "flex-1 rounded-lg border bg-sub-alt/40 px-3 py-1.5 font-mono text-xs text-foreground outline-none",
+                          paceDraftInvalid ? "border-error" : "border-accent",
+                        )}
+                      />
+                      <button
+                        type="button"
+                        onClick={commitPaceDraft}
+                        className="rounded-lg bg-accent px-3 py-1.5 font-display text-xs font-bold text-accent-foreground"
+                      >
+                        Set
+                      </button>
+                    </div>
+                    {paceDraftInvalid && (
+                      <span className="px-1 text-[10px] text-error" role="alert">
+                        Enter a number
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Audio Feedback */}
               <div>
                 <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">

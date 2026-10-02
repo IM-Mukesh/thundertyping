@@ -5,12 +5,13 @@ import { RotateCcw, SlidersHorizontal, Volume2, VolumeX, Wrench } from "lucide-r
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
-import { recordResult } from "@/lib/persistence/results-store";
+import { getPersonalBest, paramForConfig, recordResult } from "@/lib/persistence/results-store";
 import {
   calculateAccuracy,
   calculateNetWpm,
   calculateRawWpm,
 } from "@/lib/typing-engine/stats";
+import { computePaceCaretPosition } from "@/lib/typing-engine/pace-caret";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils/cn";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
@@ -34,6 +35,8 @@ export function TypingTest() {
   const wordDifficulty = useSettingsStore((s) => s.wordDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
+  const paceCaretMode = useSettingsStore((s) => s.paceCaretMode);
+  const paceCaretCustomWpm = useSettingsStore((s) => s.paceCaretCustomWpm);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
   const setMode = useSettingsStore((s) => s.setMode);
@@ -84,6 +87,25 @@ export function TypingTest() {
   );
 
   const engine = useTypingEngine(config);
+
+  // Resolved fresh on every status change (not memoized on config alone) so
+  // a PB set by the attempt that just finished is what the very next attempt
+  // races, instead of a stale number from before that run. getPersonalBest
+  // is a synchronous local/cached-cloud read, cheap enough to not need its
+  // own memoization.
+  const paceCaretTargetWpm =
+    paceCaretMode === "custom"
+      ? paceCaretCustomWpm
+      : paceCaretMode === "pb"
+        ? (getPersonalBest(config.mode, paramForConfig(config), config.punctuation, config.numbers)?.wpm ?? null)
+        : null;
+  const paceCaretPosition = useMemo(
+    () =>
+      paceCaretTargetWpm !== null && engine.state.status === "running"
+        ? computePaceCaretPosition(engine.state.words, engine.state.elapsedMs, paceCaretTargetWpm)
+        : null,
+    [paceCaretTargetWpm, engine.state.status, engine.state.words, engine.state.elapsedMs],
+  );
 
   // Compares by reference (not a mount/unmount flag) so React Strict Mode's
   // dev-only double effect invocation can't defeat the "skip on mount" guard.
@@ -166,16 +188,7 @@ export function TypingTest() {
       engine.state.incorrectKeystrokes,
       engine.state.charTally.missed,
     );
-    const param =
-      config.mode === "time"
-        ? config.timeDuration
-        : config.mode === "words"
-          ? config.wordCount
-          : config.mode === "quote"
-            ? config.quoteLength
-            : config.mode === "vocabulary"
-              ? config.vocabDifficulty
-              : "custom";
+    const param = paramForConfig(config);
     const grossWpm = calculateRawWpm(
       engine.state.correctKeystrokes,
       engine.state.incorrectKeystrokes,
@@ -358,6 +371,7 @@ export function TypingTest() {
             <WordStream
               wordStates={engine.state.wordStates}
               activeWordIndex={engine.state.activeWordIndex}
+              paceCaretPosition={paceCaretPosition}
             />
             {engine.state.quoteSource && (
               <p className="mt-2 text-center text-xs text-sub">— {engine.state.quoteSource}</p>

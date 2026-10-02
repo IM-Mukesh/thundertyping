@@ -13,6 +13,12 @@ import {
 } from "@/lib/typing-engine/engine-types";
 import { VOCAB_DIFFICULTIES, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 import { WORD_DIFFICULTIES, type WordDifficulty } from "@/lib/typing-engine/word-generator";
+import {
+  MAX_PACE_CARET_WPM,
+  MIN_PACE_CARET_WPM,
+  PACE_CARET_MODES,
+  type PaceCaretMode,
+} from "@/lib/typing-engine/pace-caret";
 
 interface SettingsState {
   theme: ThemeId;
@@ -24,6 +30,9 @@ interface SettingsState {
   wordDifficulty: WordDifficulty;
   punctuation: boolean;
   numbers: boolean;
+  paceCaretMode: PaceCaretMode;
+  /** WPM, used only while paceCaretMode === "custom". */
+  paceCaretCustomWpm: number;
   soundEnabled: boolean;
   /** 0-1. Applied to the music bus in audio-bus.ts. */
   musicVolume: number;
@@ -36,6 +45,8 @@ interface SettingsState {
   setQuoteLength: (length: QuoteLength) => void;
   setVocabDifficulty: (difficulty: VocabDifficulty) => void;
   setWordDifficulty: (difficulty: WordDifficulty) => void;
+  setPaceCaretMode: (mode: PaceCaretMode) => void;
+  setPaceCaretCustomWpm: (wpm: number) => void;
   togglePunctuation: () => void;
   toggleNumbers: () => void;
   toggleSound: () => void;
@@ -61,6 +72,8 @@ type PersistedSettings = Pick<
   | "wordDifficulty"
   | "punctuation"
   | "numbers"
+  | "paceCaretMode"
+  | "paceCaretCustomWpm"
   | "soundEnabled"
   | "musicVolume"
   | "sfxVolume"
@@ -95,6 +108,16 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
       : fallback.wordDifficulty,
     punctuation: typeof p.punctuation === "boolean" ? p.punctuation : fallback.punctuation,
     numbers: typeof p.numbers === "boolean" ? p.numbers : fallback.numbers,
+    paceCaretMode: PACE_CARET_MODES.includes(p.paceCaretMode as PaceCaretMode)
+      ? (p.paceCaretMode as PaceCaretMode)
+      : fallback.paceCaretMode,
+    paceCaretCustomWpm:
+      typeof p.paceCaretCustomWpm === "number" &&
+      Number.isFinite(p.paceCaretCustomWpm) &&
+      p.paceCaretCustomWpm >= MIN_PACE_CARET_WPM &&
+      p.paceCaretCustomWpm <= MAX_PACE_CARET_WPM
+        ? p.paceCaretCustomWpm
+        : fallback.paceCaretCustomWpm,
     soundEnabled: typeof p.soundEnabled === "boolean" ? p.soundEnabled : fallback.soundEnabled,
     // Clamped on read as well as write: a hand-edited or partially-written
     // value must not leave the mixer at an impossible gain.
@@ -121,6 +144,8 @@ export const useSettingsStore = create<SettingsState>()(
       wordDifficulty: "all",
       punctuation: false,
       numbers: false,
+      paceCaretMode: "off",
+      paceCaretCustomWpm: 60,
       // On by default for the games, which feel inert without it. Nothing can
       // actually sound until the player clicks Start (browsers gate audio
       // behind a gesture), so this never autoplays at someone, and the games
@@ -138,6 +163,9 @@ export const useSettingsStore = create<SettingsState>()(
       setQuoteLength: (quoteLength) => set({ quoteLength }),
       setVocabDifficulty: (vocabDifficulty) => set({ vocabDifficulty }),
       setWordDifficulty: (wordDifficulty) => set({ wordDifficulty }),
+      setPaceCaretMode: (paceCaretMode) => set({ paceCaretMode }),
+      setPaceCaretCustomWpm: (wpm) =>
+        set({ paceCaretCustomWpm: Math.round(Math.max(MIN_PACE_CARET_WPM, Math.min(MAX_PACE_CARET_WPM, wpm))) }),
       togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
       toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),

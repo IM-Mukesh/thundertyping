@@ -3,6 +3,7 @@
 import { memo, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
+import type { PaceCaretPosition } from "@/lib/typing-engine/pace-caret";
 import { cn } from "@/lib/utils/cn";
 
 // Starting guess only. The real pitch is measured from the laid-out words on
@@ -56,9 +57,11 @@ function measureLinePitch(container: HTMLElement): number {
 interface WordStreamProps {
   wordStates: WordState[];
   activeWordIndex: number;
+  /** Where a ghost typist holding a target pace would be right now, or null to show no pace caret. */
+  paceCaretPosition?: PaceCaretPosition | null;
 }
 
-export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
+export function WordStream({ wordStates, activeWordIndex, paceCaretPosition }: WordStreamProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeWordElRef = useRef<HTMLSpanElement | null>(null);
   const linePitchRef = useRef(LINE_HEIGHT_FALLBACK);
@@ -108,6 +111,7 @@ export function WordStream({ wordStates, activeWordIndex }: WordStreamProps) {
             word={word}
             isActive={index === activeWordIndex}
             registerRef={index === activeWordIndex ? (el) => (activeWordElRef.current = el) : undefined}
+            paceCaretCharIndex={paceCaretPosition?.wordIndex === index ? paceCaretPosition.charIndex : undefined}
           />
         ))}
       </div>
@@ -124,10 +128,13 @@ const Word = memo(function Word({
   word,
   isActive,
   registerRef,
+  paceCaretCharIndex,
 }: {
   word: WordState;
   isActive: boolean;
   registerRef?: (el: HTMLSpanElement | null) => void;
+  /** Index within THIS word, or undefined when the pace caret is elsewhere. */
+  paceCaretCharIndex?: number;
 }) {
   const target = word.target;
   const renderLength = Math.max(target.length, word.chars.length);
@@ -137,6 +144,9 @@ const Word = memo(function Word({
   for (let i = 0; i <= renderLength; i++) {
     if (isActive && i === caretIndex) {
       nodes.push(<Caret key="caret" />);
+    }
+    if (i === paceCaretCharIndex) {
+      nodes.push(<PaceCaret key="pace-caret" />);
     }
     if (i === renderLength) break;
 
@@ -165,6 +175,22 @@ function Caret() {
       style={{ height: "1.2em" }}
     >
       <span className="absolute left-0 -ml-[1px] w-[2px] h-full bg-caret rounded-full" />
+    </motion.span>
+  );
+}
+
+// A ghost typist's position at a target pace -- deliberately duller and
+// slower-moving than the real caret (own layoutId, softer spring) so the two
+// never get mistaken for each other even when they land on the same spot.
+function PaceCaret() {
+  return (
+    <motion.span
+      layoutId="pace-caret"
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="relative inline-flex items-center w-0 self-center pointer-events-none"
+      style={{ height: "1.2em" }}
+    >
+      <span className="absolute left-0 -ml-[1px] w-[2px] h-full rounded-full bg-foreground/40" />
     </motion.span>
   );
 }

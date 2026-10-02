@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
-import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen, Gauge } from "lucide-react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen, Gauge, Target } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
@@ -12,6 +12,7 @@ import {
   type TestMode,
 } from "@/lib/typing-engine/engine-types";
 import { VOCAB_DIFFICULTIES, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
+import { MIN_PACE_CARET_WPM, MAX_PACE_CARET_WPM } from "@/lib/typing-engine/pace-caret";
 import { cn } from "@/lib/utils/cn";
 
 const VOCAB_DIFFICULTY_LABEL: Record<VocabDifficulty, string> = {
@@ -46,12 +47,16 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
   const wordDifficulty = useSettingsStore((s) => s.wordDifficulty);
   const punctuation = useSettingsStore((s) => s.punctuation);
   const numbers = useSettingsStore((s) => s.numbers);
+  const paceCaretMode = useSettingsStore((s) => s.paceCaretMode);
+  const paceCaretCustomWpm = useSettingsStore((s) => s.paceCaretCustomWpm);
   const setMode = useSettingsStore((s) => s.setMode);
   const setTimeDuration = useSettingsStore((s) => s.setTimeDuration);
   const setWordCount = useSettingsStore((s) => s.setWordCount);
   const setQuoteLength = useSettingsStore((s) => s.setQuoteLength);
   const setVocabDifficulty = useSettingsStore((s) => s.setVocabDifficulty);
   const setWordDifficulty = useSettingsStore((s) => s.setWordDifficulty);
+  const setPaceCaretMode = useSettingsStore((s) => s.setPaceCaretMode);
+  const setPaceCaretCustomWpm = useSettingsStore((s) => s.setPaceCaretCustomWpm);
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
@@ -114,9 +119,9 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
         style={maskStyle}
         className="flex items-center justify-between text-sm overflow-x-auto scrollbar-none transition-all duration-150"
       >
-        {/* Part 1: Modifiers (punctuation, numbers) */}
+        {/* Part 1: Modifiers (punctuation, numbers) + pace caret (every mode has a word stream) */}
         <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 min-h-9">
-          {showTextToggles ? (
+          {showTextToggles && (
             <>
               <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation" icon={<AtSign size={14} />}>
                 punctuation
@@ -133,9 +138,23 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
                 common
               </Pill>
             </>
-          ) : (
-            <span className="text-xs text-sub/40 font-mono select-none px-2">—</span>
           )}
+          <Pill
+            active={paceCaretMode === "pb"}
+            onClick={() => setPaceCaretMode(paceCaretMode === "pb" ? "off" : "pb")}
+            ariaLabel="Pace caret: race your personal best"
+            icon={<Target size={14} />}
+          >
+            pb
+          </Pill>
+          <PaceCaretCustomInput
+            active={paceCaretMode === "custom"}
+            value={paceCaretCustomWpm}
+            onActivate={(wpm) => {
+              setPaceCaretCustomWpm(wpm);
+              setPaceCaretMode("custom");
+            }}
+          />
         </div>
 
         {/* Divider 1 */}
@@ -354,6 +373,116 @@ function CustomDurationInput({
       className="flex min-h-8 sm:min-h-9 items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground shrink-0"
     >
       <Pencil size={14} />
+    </button>
+  );
+}
+
+// Same editable-pill pattern as CustomDurationInput, for the pace caret's
+// custom-WPM target. "active" here means paceCaretMode === "custom" --
+// there's no preset list to compare against (unlike duration), so the
+// caller drives activation directly: committing a number both sets the WPM
+// and switches the mode to "custom" in one action. Turning pace caret off
+// entirely is done via the "pb" pill (click it twice from "custom": once to
+// switch to "pb", again to reach "off") -- same exclusive-choice shape as
+// duration presets already overriding CustomDurationInput, just one extra
+// click since "off" is a third state here that duration doesn't have.
+function PaceCaretCustomInput({
+  active,
+  value,
+  onActivate,
+}: {
+  active: boolean;
+  value: number;
+  onActivate: (wpm: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [invalid, setInvalid] = useState(false);
+
+  const commit = () => {
+    const parsed = Number(draft);
+    const isValid = draft.trim() !== "" && Number.isFinite(parsed);
+    if (isValid) {
+      onActivate(Math.round(Math.min(MAX_PACE_CARET_WPM, Math.max(MIN_PACE_CARET_WPM, parsed))));
+      setDraft("");
+      setInvalid(false);
+      setEditing(false);
+      return;
+    }
+    setInvalid(true);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-col items-center gap-0.5">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={MIN_PACE_CARET_WPM}
+          max={MAX_PACE_CARET_WPM}
+          value={draft}
+          autoFocus
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (invalid) setInvalid(false);
+          }}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setDraft("");
+              setInvalid(false);
+              setEditing(false);
+            }
+          }}
+          placeholder="wpm"
+          aria-label="Pace caret custom target WPM"
+          aria-invalid={invalid}
+          className={cn(
+            "w-16 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none",
+            invalid && "text-error",
+          )}
+        />
+        {invalid && (
+          <span className="text-[10px] text-error" role="alert">
+            Enter a number
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (active) {
+    return (
+      <Pill
+        active
+        onClick={() => {
+          setDraft(String(value));
+          setEditing(true);
+        }}
+        ariaLabel={`Pace caret custom target: ${value} wpm. Click to edit, or deactivate below.`}
+        icon={<Target size={14} />}
+      >
+        {value}wpm
+      </Pill>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setDraft(String(value));
+        setEditing(true);
+      }}
+      aria-label="Set a custom pace caret target WPM"
+      title="Set a custom pace caret target WPM"
+      className="flex min-h-8 sm:min-h-9 items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground shrink-0"
+    >
+      <Target size={14} />
     </button>
   );
 }

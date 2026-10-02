@@ -1,6 +1,6 @@
 import type { CharTally, WordState, WpmSample } from "@/lib/typing-engine/engine-types";
 
-const CHARS_PER_WORD = 5;
+export const CHARS_PER_WORD = 5;
 
 /**
  * Net WPM scoring characters (Concept F).

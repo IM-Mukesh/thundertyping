@@ -1,5 +1,5 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
-import type { TestMode } from "@/lib/typing-engine/engine-types";
+import type { TestConfig, TestMode } from "@/lib/typing-engine/engine-types";
 import { getCurrentUserId } from "@/lib/auth/current-user";
 
 // Left unrenamed on the HeroTyping rebrand -- every existing player's
@@ -9,6 +9,26 @@ const KEY_PREFIX = "thundertyping-pb";
 
 function pbKey(mode: TestMode, param: number | string, punctuation: boolean, numbers: boolean): string {
   return `${KEY_PREFIX}:${mode}:${param}:${punctuation ? 1 : 0}:${numbers ? 1 : 0}`;
+}
+
+// The mode-specific dimension that, together with mode/punctuation/numbers,
+// identifies one PB "bucket" -- e.g. words-mode PBs are tracked per word
+// count, time-mode per duration, so a 15s PB and a 60s PB never overwrite
+// each other. "custom" text has no natural param, so it isn't trackable
+// (see isTrackableMode) and falls back to a fixed label.
+export function paramForConfig(config: TestConfig): number | string {
+  switch (config.mode) {
+    case "time":
+      return config.timeDuration;
+    case "words":
+      return config.wordCount;
+    case "quote":
+      return config.quoteLength;
+    case "vocabulary":
+      return config.vocabDifficulty;
+    case "custom":
+      return "custom";
+  }
 }
 
 export interface PersonalBest {
