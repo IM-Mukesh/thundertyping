@@ -99,7 +99,8 @@ export function validateTypingResultInput(
   const punctuation = Boolean(p.punctuation);
   const numbers = Boolean(p.numbers);
 
-  // Optional runId for idempotency
+  // Every persisted run must have an idempotency key. Without it a captured
+  // request can be replayed indefinitely and mint aggregate rewards.
   let runId: string | undefined;
   if (p.runId !== undefined) {
     if (!isValidUuid(p.runId)) {
@@ -112,7 +113,8 @@ export function validateTypingResultInput(
   // 1. Human typing speed limit check:
   // Sustaining over 40 characters per second (>480 raw WPM) is physically impossible for human hands.
   const scoringChars = p.scoringChars === undefined ? p.correctChars : p.scoringChars;
-  if (!isNonNegativeNumber(scoringChars)) return { valid: false, message: "scoringChars must be non-negative" };
+  if (!isNonNegativeInteger(scoringChars)) return { valid: false, message: "scoringChars must be a non-negative integer" };
+  if (scoringChars > p.correctChars) return { valid: false, message: "scoringChars cannot exceed correctChars" };
   const totalTyped = p.correctChars + p.incorrectChars;
   if (totalTyped < 1 || scoringChars < 1) {
     return { valid: false, message: "A typing result must contain at least one typed character" };
@@ -224,8 +226,12 @@ export function validateLessonProgressInput(
     return { valid: false, message: "step must be an integer within totalSteps" };
   }
   for (const field of ["typedChars", "correctChars", "incorrectChars", "elapsedMs"] as const) {
-    if (p[field] !== undefined && !isNonNegativeNumber(p[field])) return { valid: false, message: `${field} must be non-negative` };
+    if (p[field] !== undefined && !isNonNegativeInteger(p[field])) return { valid: false, message: `${field} must be a non-negative integer` };
   }
+  const typedChars = (p.typedChars as number | undefined) ?? 0;
+  const correctChars = (p.correctChars as number | undefined) ?? 0;
+  const incorrectChars = (p.incorrectChars as number | undefined) ?? 0;
+  if (p.typedChars !== undefined && typedChars < correctChars + incorrectChars) return { valid: false, message: "typedChars must include correctChars and incorrectChars" };
 
   let runId: string | undefined;
   if (p.runId !== undefined) {
@@ -243,7 +249,7 @@ export function validateLessonProgressInput(
   const authoritativePassed = calculateLessonPass(p.accuracy);
 
   // If client claims completion but accuracy does not satisfy pass requirement, reject false completion
-  const completed = Boolean(p.completed) && authoritativePassed;
+  const completed = authoritativePassed;
 
   return {
     valid: true,
@@ -257,9 +263,9 @@ export function validateLessonProgressInput(
       runId,
       step: step as number,
       totalSteps: totalSteps as number,
-      typedChars: (p.typedChars as number | undefined) ?? 0,
-      correctChars: (p.correctChars as number | undefined) ?? 0,
-      incorrectChars: (p.incorrectChars as number | undefined) ?? 0,
+      typedChars,
+      correctChars,
+      incorrectChars,
       elapsedMs: (p.elapsedMs as number | undefined) ?? 0,
     },
   };
@@ -310,17 +316,20 @@ export function validateGameScoreInput(
     return { valid: false, message: `score must be a non-negative integer up to ${limits.maxScore.toLocaleString()}` };
   }
 
-  const cleared = isNonNegativeInteger(p.cleared) ? p.cleared : 0;
+  if (!isNonNegativeInteger(p.cleared)) return { valid: false, message: "cleared must be a non-negative integer" };
+  const cleared = p.cleared;
   if (cleared > limits.maxCleared) {
     return { valid: false, message: `cleared exceeds maximum possible limit (${limits.maxCleared})` };
   }
 
-  const bestCombo = isNonNegativeInteger(p.bestCombo) ? p.bestCombo : 0;
+  if (!isNonNegativeInteger(p.bestCombo)) return { valid: false, message: "bestCombo must be a non-negative integer" };
+  const bestCombo = p.bestCombo;
   if (bestCombo > limits.maxCombo) {
     return { valid: false, message: `bestCombo exceeds maximum possible limit (${limits.maxCombo})` };
   }
 
-  const survivedMs = isNonNegativeInteger(p.survivedMs) ? p.survivedMs : 0;
+  if (!isNonNegativeInteger(p.survivedMs)) return { valid: false, message: "survivedMs must be a non-negative integer" };
+  const survivedMs = p.survivedMs;
   // Maximum survival time: 2 hours (7,200,000 ms)
   if (survivedMs > 7_200_000) {
     return { valid: false, message: "survivedMs exceeds maximum session limit (2 hours)" };
@@ -331,8 +340,10 @@ export function validateGameScoreInput(
     return { valid: false, message: "Mathematically impossible score for game duration" };
   }
 
-  const wpm = isNonNegativeNumber(p.wpm) && p.wpm <= 350 ? p.wpm : null;
-  const accuracy = isNonNegativeNumber(p.accuracy) && p.accuracy <= 100 ? p.accuracy : null;
+  if (p.wpm !== null && p.wpm !== undefined && (!isNonNegativeNumber(p.wpm) || p.wpm > 350)) return { valid: false, message: "wpm must be between 0 and 350 or null" };
+  if (p.accuracy !== null && p.accuracy !== undefined && (!isNonNegativeNumber(p.accuracy) || p.accuracy > 100)) return { valid: false, message: "accuracy must be between 0 and 100 or null" };
+  const wpm = p.wpm == null ? null : p.wpm;
+  const accuracy = p.accuracy == null ? null : p.accuracy;
 
   let runId: string | undefined;
   if (p.runId !== undefined) {

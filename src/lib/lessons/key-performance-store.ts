@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { accountStorageKey, subscribeCurrentUser } from "@/lib/auth/current-user";
 import type { WordState } from "@/lib/typing-engine/engine-types";
 import { tallyKeyOutcomes, statFromOutcomes, type KeyStat } from "@/lib/lessons/key-performance";
 
@@ -95,7 +96,7 @@ export const useKeyPerformanceStore = create<KeyPerformanceState>()(
       // Left unrenamed on the HeroTyping rebrand -- every existing player's
       // key-performance history is saved under this name, and renaming it
       // would orphan it.
-      name: "thundertyping-lesson-key-performance",
+      name: accountStorageKey("thundertyping-lesson-key-performance"),
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ keys: state.keys, transitions: state.transitions, lastUpdated: state.lastUpdated }),
       merge: (persistedState, currentState) => {
@@ -114,6 +115,18 @@ export const useKeyPerformanceStore = create<KeyPerformanceState>()(
     },
   ),
 );
+
+subscribeCurrentUser(() => {
+  // Reset under the old key before changing persistence options would destroy
+  // that account's history. Read the new key first, then reset and hydrate.
+  const name = accountStorageKey("thundertyping-lesson-key-performance");
+  const storage = useKeyPerformanceStore.persist.getOptions().storage;
+  const saved = storage?.getItem(name);
+  useKeyPerformanceStore.persist.setOptions({ name });
+  useKeyPerformanceStore.setState({ keys: {}, transitions: {}, lastUpdated: 0 });
+  if (saved && !(saved instanceof Promise)) storage?.setItem(name, saved);
+  void useKeyPerformanceStore.persist.rehydrate();
+});
 
 /** Reduces the rolling windows into a plain attempts/errors map for the callers in key-performance.ts. */
 export function getKeyStats(keys: Readonly<Record<string, boolean[]>>): Record<string, KeyStat> {

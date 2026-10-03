@@ -12,8 +12,7 @@ import {
 } from "motion/react";
 import { BarChart3, Clock, Play, Trophy } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
-import { gameBestKey, parseGameBest } from "@/lib/games/game-scores";
-import { getStorageItem } from "@/lib/persistence/storage";
+import { readGameBestRaw, subscribeGameBests, parseGameBest } from "@/lib/games/game-scores";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -39,13 +38,6 @@ import { cn } from "@/lib/utils/cn";
  * would be invented. The third metric is the player's own best.
  */
 
-/** Cross-tab only: same-tab writes happen on a different route entirely. */
-function subscribeStorage(listener: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener("storage", listener);
-  return () => window.removeEventListener("storage", listener);
-}
-
 interface GameHubCardProps {
   game: GameDefinition;
   art: string | null;
@@ -64,8 +56,8 @@ export function GameHubCard({
   const ref = useRef<HTMLElement | null>(null);
 
   const raw = useSyncExternalStore(
-    subscribeStorage,
-    () => getStorageItem(gameBestKey(game.id)),
+    subscribeGameBests,
+    () => readGameBestRaw(game.id),
     () => null,
   );
   const best = useMemo(() => parseGameBest(raw), [raw]);

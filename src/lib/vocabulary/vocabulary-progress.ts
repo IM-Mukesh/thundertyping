@@ -1,4 +1,5 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
+import { accountStorageKey } from "@/lib/auth/current-user";
 import type { VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 import type { VocabWordResult } from "@/lib/vocabulary/use-vocabulary-test";
 
@@ -15,7 +16,7 @@ const KEY = "thundertyping-vocabulary-progress";
 /** Exposed so a component can key `useSyncExternalStore` off the raw storage
  *  string (a stable primitive) instead of setting state from a mount effect. */
 export function vocabProgressKey(): string {
-  return KEY;
+  return accountStorageKey(KEY);
 }
 
 export interface VocabDifficultyProgress {
@@ -41,10 +42,11 @@ function isValidDifficultyProgress(value: unknown): value is VocabDifficultyProg
   const v = value as Partial<VocabDifficultyProgress>;
   return (
     Array.isArray(v.mastered) &&
-    v.mastered.every((w) => typeof w === "string") &&
-    typeof v.bestWpm === "number" &&
-    typeof v.bestAccuracy === "number" &&
-    typeof v.sessionsCompleted === "number"
+    v.mastered.length <= 10000 &&
+    v.mastered.every((w) => typeof w === "string" && w.length <= 100) &&
+    typeof v.bestWpm === "number" && Number.isFinite(v.bestWpm) && v.bestWpm >= 0 && v.bestWpm <= 400 &&
+    typeof v.bestAccuracy === "number" && Number.isFinite(v.bestAccuracy) && v.bestAccuracy >= 0 && v.bestAccuracy <= 100 &&
+    typeof v.sessionsCompleted === "number" && Number.isSafeInteger(v.sessionsCompleted) && v.sessionsCompleted >= 0
   );
 }
 
@@ -57,7 +59,7 @@ export function isValidVocabProgress(value: unknown): value is VocabProgress {
 }
 
 export function parseVocabProgress(raw: string | null): VocabProgress {
-  if (!raw) return emptyProgress();
+  if (!raw || raw.length > 1_000_000) return emptyProgress();
   try {
     const parsed: unknown = JSON.parse(raw);
     return isValidVocabProgress(parsed) ? parsed : emptyProgress();
@@ -67,7 +69,7 @@ export function parseVocabProgress(raw: string | null): VocabProgress {
 }
 
 export function getVocabProgress(): VocabProgress {
-  return parseVocabProgress(getStorageItem(KEY));
+  return parseVocabProgress(getStorageItem(vocabProgressKey()));
 }
 
 export interface RecordVocabSessionResult {
@@ -102,6 +104,6 @@ export function recordVocabSession(
     sessionsCompleted: tier.sessionsCompleted + 1,
   };
   const next: VocabProgress = { ...progress, [difficulty]: updatedTier };
-  setStorageItem(KEY, JSON.stringify(next));
+  setStorageItem(vocabProgressKey(), JSON.stringify(next));
   return { newlyMastered, isNewBest, progress: next };
 }

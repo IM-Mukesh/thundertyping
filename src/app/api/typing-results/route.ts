@@ -5,11 +5,12 @@ import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
 import { saveTypingResult, getTypingResultsHistory } from "@/lib/server/typing-results";
 import { validateTypingResultInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
-import { createRequestId, readBoundedJson } from "@/lib/server/security";
+import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
   try {
+    if (!hasTrustedMutationOrigin(request)) return apiError("FORBIDDEN", "Invalid request origin", 403, undefined, undefined, requestId);
     const { user } = await requireAuthUser();
     const limitParam = request.nextUrl.searchParams.get("limit");
     const parsedLimit = limitParam ? parseInt(limitParam, 10) : 50;

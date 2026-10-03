@@ -2,12 +2,13 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/server/rate-limit";
-import { sanitizeInternalRedirect, getTrustedOrigin, readBoundedJson } from "@/lib/server/security";
+import { sanitizeInternalRedirect, getTrustedOrigin, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!hasTrustedMutationOrigin(request)) return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
     const clientIp = getClientIp(request);
 
     // 1. Rate Limit Check: IP level (max 5 requests per 10 minutes)

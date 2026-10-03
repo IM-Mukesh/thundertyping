@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
-import { setCurrentUserId } from "@/lib/auth/current-user";
+import { getAuthGeneration, getCurrentUserId, setCurrentUserId } from "@/lib/auth/current-user";
 import { primeCloudGameBests, clearCloudGameBests } from "@/lib/games/game-scores";
 import { primeCloudLessonProgress, restoreLocalLessonProgress } from "@/lib/lessons/lesson-progress-store";
 import { primeCloudPersonalBests, clearCloudPersonalBests } from "@/lib/persistence/results-store";
@@ -39,13 +39,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
   const refreshProfile = useCallback(async () => {
+    let generation = getAuthGeneration();
     // The session is the source of truth for authentication. Profile loading
     // may fail independently (for example while the server key is being
     // configured), but that must not make an authenticated user appear as a
     // guest in the UI.
     try {
       const { data } = await supabase.auth.getSession();
-      if (data.session?.user) setUser(data.session.user);
+      if (generation !== getAuthGeneration()) return null;
+      const sessionUser = data.session?.user ?? null;
+      if (getCurrentUserId() !== (sessionUser?.id ?? null)) {
+        setCurrentUserId(sessionUser?.id ?? null);
+        setProfile(null);
+        setPreferences(null);
+        setStreak(null);
+      }
+      generation = getAuthGeneration();
+      setUser(sessionUser);
     } catch {
       // Falls through to the /api/profile check below.
     }
@@ -54,7 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/profile");
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.data) {
+        if (generation !== getAuthGeneration()) return null;
+        if (json.success && json.data && json.data.user?.id === getCurrentUserId()) {
           if (json.data.user) {
             setUser(json.data.user as User);
           }
@@ -73,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // session agrees there's no one signed in; otherwise keep the user
         // signed in in the UI and let the next refresh retry the profile load.
         const { data: recheck } = await supabase.auth.getSession();
+        if (generation !== getAuthGeneration()) return null;
         if (!recheck.session?.user) {
           setUser(null);
           setProfile(null);
@@ -84,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Falls through to the session check below.
     }
     const { data: sessionData } = await supabase.auth.getSession();
+    if (generation !== getAuthGeneration()) return null;
     return sessionData.session?.user ?? null;
   }, [supabase]);
 
@@ -93,8 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function initAuth() {
       try {
         const verifiedUser = await refreshProfile();
-        const id = mounted ? (verifiedUser?.id ?? null) : null;
-        setCurrentUserId(id);
+        if (!mounted) return;
+        const id = verifiedUser?.id ?? null;
+        if (id !== getCurrentUserId()) return;
         if (id) {
           primeCloudGameBests(id);
           primeCloudLessonProgress();
@@ -118,9 +132,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
         if (event === "SIGNED_IN" || (event === "INITIAL_SESSION" && session?.user)) {
+          if (!mounted) return;
+          const id = session?.user.id ?? null;
+          if (id !== getCurrentUserId()) {
+            setCurrentUserId(id);
+            setProfile(null);
+            setPreferences(null);
+            setStreak(null);
+          }
+          setUser(session?.user ?? null);
           const u = await refreshProfile();
-          setCurrentUserId(u?.id ?? null);
-          if (u) {
+          if (mounted && u && u.id === getCurrentUserId()) {
             primeCloudGameBests(u.id);
             primeCloudLessonProgress();
             primeCloudPersonalBests(u.id);

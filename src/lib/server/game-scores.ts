@@ -183,8 +183,9 @@ export async function saveGameScore(userId: string, input: ValidatedGameScoreInp
     await evaluateAndSyncAchievements(userId).catch((err) =>
       console.warn("[game-scores] achievement sync non-fatal error:", err)
     );
-  } catch (err) {
-    console.error("Non-fatal: failed to update daily game stats:", err);
+    } catch (err) {
+    console.error("Failed to update daily game stats/XP:", err);
+    throw err;
   }
 
   return {

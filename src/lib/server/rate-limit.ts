@@ -34,19 +34,23 @@ if (typeof setInterval !== "undefined") {
  * Extracts a client IP from NextRequest safely.
  */
 export function getClientIp(request: NextRequest): string {
-  const xForwardedFor = request.headers.get("x-forwarded-for");
-  if (xForwardedFor) {
-    const firstIp = xForwardedFor.split(",")[0].trim();
-    if (firstIp) return firstIp;
-  }
-
-  const xRealIp = request.headers.get("x-real-ip");
-  if (xRealIp) return xRealIp.trim();
-
+  const inetMax = 45;
   const cfConnectingIp = request.headers.get("cf-connecting-ip");
-  if (cfConnectingIp) return cfConnectingIp.trim();
+  const validIp = (value: string | null) => {
+    if (!value) return null;
+    const candidate = value.trim();
+    // A bounded, syntactically valid address prevents arbitrary key injection.
+    if (candidate.length >  inetMax) return null;
+    if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(candidate) && candidate.split(".").every((n) => Number(n) <= 255)) return candidate;
+    if (/^[0-9a-f:]+$/i.test(candidate) && candidate.includes(":")) return candidate.toLowerCase();
+    return null;
+  };
+  const trusted = validIp(cfConnectingIp) || validIp(request.headers.get("x-real-ip"));
+  if (trusted) return trusted;
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((ip) => validIp(ip)).filter(Boolean).at(-1);
+  if (forwarded) return forwarded;
 
-  return "127.0.0.1";
+  return "unknown";
 }
 
 /**

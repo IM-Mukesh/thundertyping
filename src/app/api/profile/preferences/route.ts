@@ -5,7 +5,7 @@ import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
 import { getUserPreferences, updateUserPreferences } from "@/lib/server/profiles";
 import { validatePreferencesInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
-import { createRequestId, readBoundedJson } from "@/lib/server/security";
+import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
 
 export async function GET() {
   const requestId = createRequestId();
@@ -25,6 +25,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   const requestId = createRequestId();
   try {
+    if (!hasTrustedMutationOrigin(request)) return apiError("FORBIDDEN", "Invalid request origin", 403, undefined, undefined, requestId);
     const { user } = await requireAuthUser();
 
     // Rate limit preferences updates (max 30 per minute per user)

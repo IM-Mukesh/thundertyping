@@ -2,13 +2,9 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import { Trophy } from "lucide-react";
-import { gameBestKey, parseGameBest } from "@/lib/games/game-scores";
-import { getStorageItem } from "@/lib/persistence/storage";
+import { readGameBestRaw, subscribeGameBests, parseGameBest } from "@/lib/games/game-scores";
 import type { GameDefinition } from "@/lib/games/game-types";
 
-// A score only changes by playing the game, which means leaving this page and
-// coming back — so there's nothing to subscribe to while the hub is open.
-const noopSubscribe = () => () => {};
 
 /**
  * Personal best for one game, read on the client only.
@@ -23,8 +19,8 @@ const noopSubscribe = () => () => {};
  */
 export function GameBestBadge({ definition }: { definition: GameDefinition }) {
   const raw = useSyncExternalStore(
-    noopSubscribe,
-    () => getStorageItem(gameBestKey(definition.id)),
+    subscribeGameBests,
+    () => readGameBestRaw(definition.id),
     () => null,
   );
   const best = useMemo(() => parseGameBest(raw), [raw]);

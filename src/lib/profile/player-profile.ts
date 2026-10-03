@@ -15,7 +15,7 @@ import {
   setStorageItem,
 } from "@/lib/persistence/storage";
 import { PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
-import { getCurrentUserId } from "@/lib/auth/current-user";
+import { accountStorageKey, getAuthGeneration, getCurrentUserId, subscribeCurrentUser } from "@/lib/auth/current-user";
 import { getGameBest } from "@/lib/games/game-scores";
 
 // Storage key deliberately left unrenamed on the HeroTyping (formerly
@@ -84,13 +84,25 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+function validProfile(p: Record<string, unknown>): boolean {
+  const number = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= Number.MAX_SAFE_INTEGER;
+  const key = (k: string) => k.length <= 100 && !["__proto__", "constructor", "prototype"].includes(k);
+  const map = (v: unknown, check: (v: unknown) => boolean, limit = 1000): boolean =>
+    isRecord(v) && Object.keys(v).length <= limit && Object.entries(v).every(([k, value]) => key(k) && check(value));
+  const date = (v: unknown) => typeof v === "string" && v.length <= 30 && Number.isFinite(Date.parse(v));
+  return number(p.xp) && map(p.achievements, date) && map(p.unlocks, date) &&
+    map(p.stats, (v) => map(v, number, 100), 100) && map(p.dailies, number) &&
+    isRecord(p.streak) && number(p.streak.count) && Number.isInteger(p.streak.count) &&
+    (p.streak.lastDate === "" || (typeof p.streak.lastDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.streak.lastDate) && date(p.streak.lastDate)));
+}
+
 /**
  * Reads defensively. A profile that fails to parse, or that has been hand-edited
  * into a bad shape, must degrade to an empty profile rather than throwing on
  * every render -- corrupted local state is a normal condition, not an error.
  */
 export function readProfile(): PlayerProfile {
-  return parseProfile(getStorageItem(KEY));
+  return parseProfile(getStorageItem(accountStorageKey(KEY)));
 }
 
 /**
@@ -103,11 +115,12 @@ export function readProfile(): PlayerProfile {
  * is not the value it depends on.
  */
 export function parseProfile(raw: string | null): PlayerProfile {
-  if (!raw) return emptyProfile();
+  if (!raw || raw.length > 256_000) return emptyProfile();
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return emptyProfile();
-    const streak = isRecord(parsed.streak) ? parsed.streak : {};
+    if (!validProfile(parsed)) return emptyProfile();
+    const streak = parsed.streak as Record<string, unknown>;
     return {
       xp: typeof parsed.xp === "number" && Number.isFinite(parsed.xp) && parsed.xp >= 0 ? parsed.xp : 0,
       achievements: isRecord(parsed.achievements)
@@ -133,7 +146,7 @@ export function parseProfile(raw: string | null): PlayerProfile {
 }
 
 function write(profile: PlayerProfile): void {
-  setStorageItem(KEY, JSON.stringify(profile));
+  setStorageItem(accountStorageKey(KEY), JSON.stringify(profile));
   if (typeof window !== "undefined") {
     queueMicrotask(() => {
       window.dispatchEvent(new Event(CHANGE_EVENT));
@@ -151,7 +164,8 @@ function write(profile: PlayerProfile): void {
  * exactly this bug.
  */
 export function readProfileRaw(): string | null {
-  return getStorageItem(KEY);
+  if (!getCurrentUserId()) return getStorageItem(KEY);
+  return JSON.stringify({ ...readProfile(), xp: cloudXp, achievements: Object.fromEntries([...cloudAchievements].map((id) => [id, "1970-01-01T00:00:00.000Z"])) });
 }
 
 export function profileServerSnapshot(): string | null {
@@ -182,10 +196,13 @@ export function primeCloudXp(totalXp: number): void {
 
 /** Called by AuthProvider right after sign-in. Fire-and-forget. */
 export function primeCloudAchievements(): Promise<void> {
+  const userId = getCurrentUserId();
+  const generation = getAuthGeneration();
+  if (!userId) return Promise.resolve();
   return fetch("/api/profile/achievements")
     .then((res) => res.json())
     .then((json) => {
-      if (json?.success && Array.isArray(json.data)) {
+      if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && Array.isArray(json.data)) {
         cloudAchievements.clear();
         for (const id of json.data as string[]) cloudAchievements.add(id);
         if (typeof window !== "undefined") {
@@ -200,7 +217,12 @@ export function primeCloudAchievements(): Promise<void> {
 export function clearCloudProfile(): void {
   cloudXp = 0;
   cloudAchievements.clear();
+  pendingAchievements.clear();
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(CHANGE_EVENT));
 }
+
+subscribeCurrentUser(clearCloudProfile);
+const pendingAchievements = new Set<string>();
 
 /** Cloud-aware count of earned game achievements, for display. */
 export function getEarnedAchievementCount(): number {
@@ -241,17 +263,21 @@ export function awardXp(amount: number): XpResult {
 export function grantAchievement(id: string): boolean {
   const userId = getCurrentUserId();
   if (userId) {
-    if (cloudAchievements.has(id)) return false;
-    cloudAchievements.add(id);
+    if (cloudAchievements.has(id) || pendingAchievements.has(id)) return false;
+    const generation = getAuthGeneration();
+    pendingAchievements.add(id);
     fetch("/api/profile/achievements", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ achievementId: id }),
-    }).catch((err) => console.warn("[profile] failed to grant cloud achievement:", err));
-    if (typeof window !== "undefined") {
-      queueMicrotask(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
-    }
-    return true;
+    }).then(async (res) => {
+      const json = await res.json();
+      if (generation !== getAuthGeneration() || userId !== getCurrentUserId()) return;
+      if (res.ok && json?.success) await primeCloudAchievements();
+    }).catch((err) => console.warn("[profile] failed to grant cloud achievement:", err))
+      .finally(() => { if (generation === getAuthGeneration()) pendingAchievements.delete(id); });
+    // Synchronous callers must not celebrate an unconfirmed award.
+    return false;
   }
 
   const profile = readProfile();
@@ -359,11 +385,11 @@ export function checkSiteAchievements(playableGameIds?: readonly string[]): stri
   }
   // Day streak and daily-challenge completions are not cloud-tracked yet --
   // these two checks stay local-only for both guests and signed-in players.
-  if (profile.streak.count >= 7 && grantAchievement("site:streak-7")) {
+  if (!userId && profile.streak.count >= 7 && grantAchievement("site:streak-7")) {
     granted.push("site:streak-7");
   }
   if (
-    Object.keys(profile.dailies).length > 0 &&
+    !userId && Object.keys(profile.dailies).length > 0 &&
     grantAchievement("site:daily")
   ) {
     granted.push("site:daily");

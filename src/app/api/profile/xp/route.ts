@@ -4,12 +4,13 @@ import { requireAuthUser } from "@/lib/server/auth";
 import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
 import { validateXpAwardInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
-import { createRequestId, readBoundedJson } from "@/lib/server/security";
+import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
   try {
+    if (!hasTrustedMutationOrigin(request)) return apiError("FORBIDDEN", "Invalid request origin", 403, undefined, undefined, requestId);
     const { user } = await requireAuthUser();
 
     const rateLimit = await checkRateLimit(`xp:post:${user.id}`, 30, 60);

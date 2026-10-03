@@ -5,10 +5,22 @@
  */
 let currentUserId: string | null = null;
 let authGeneration = 0;
+const listeners = new Set<() => void>();
 
 export function setCurrentUserId(id: string | null): void {
-  if (id !== currentUserId) authGeneration += 1;
+  const changed = id !== currentUserId;
+  if (changed) authGeneration += 1;
   currentUserId = id;
+  if (changed) for (const listener of listeners) listener();
+}
+
+export function subscribeCurrentUser(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+export function accountStorageKey(key: string): string {
+  return currentUserId ? `${key}:account:${currentUserId}` : key;
 }
 
 export function getCurrentUserId(): string | null {

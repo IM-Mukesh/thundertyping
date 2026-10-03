@@ -1,9 +1,14 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { hasTrustedMutationOrigin, createRequestId } from "@/lib/server/security";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  if (!hasTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: "Invalid request origin", requestId: createRequestId() }, { status: 403 });
+  }
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();

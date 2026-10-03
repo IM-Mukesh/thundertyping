@@ -190,7 +190,8 @@ export async function evaluateAndSyncAchievements(
       user_id: userId,
       achievement_id,
     }));
-    await supabase.from("achievements").insert(rows);
+    const { error } = await supabase.from("achievements").upsert(rows, { onConflict: "user_id,achievement_id", ignoreDuplicates: true });
+    if (error) throw new Error(`Failed to persist achievements: ${error.message}`);
     for (const id of toInsert) {
       existingUnlocked.add(id);
     }

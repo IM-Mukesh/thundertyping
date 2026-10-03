@@ -80,7 +80,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .maybeSingle();
       if (currentProgress) return { progress: currentProgress, earnedXp: 0, idempotent: true };
     }
-    console.error("Non-fatal: failed to record lesson attempt:", attemptError);
+    throw new Error(`Failed to record lesson attempt: ${attemptError.message}`);
   }
 
   // 3. Fetch existing aggregate progress and determine whether this is a FIRST-TIME completion
@@ -263,7 +263,8 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         console.warn("[lessons] achievement sync non-fatal error:", err)
       );
     } catch (err) {
-      console.error("Non-fatal: failed to update daily lesson stats/XP:", err);
+      console.error("Failed to update daily lesson stats/XP:", err);
+      throw err;
     }
   }
 

@@ -146,6 +146,11 @@ export function LessonDashboard() {
   function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 1_000_000 || file.type && file.type !== "application/json") {
+      alert("Could not restore file: choose a JSON progress export under 1 MB.");
+      e.target.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
@@ -158,6 +163,7 @@ export function LessonDashboard() {
         }
       }
     };
+    reader.onerror = () => alert("Could not read the selected file.");
     reader.readAsText(file);
   }
 

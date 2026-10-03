@@ -62,6 +62,17 @@ export function getTrustedOrigin(request: NextRequest): string {
   return canonicalOrigin;
 }
 
+/** Reject cross-site requests to cookie-authenticated mutation endpoints. */
+export function hasTrustedMutationOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  if (origin) {
+    try { return new URL(origin).origin === getTrustedOrigin(request); } catch { return false; }
+  }
+  // Modern browsers send Sec-Fetch-Site for fetch/navigation requests.  Do not
+  // treat a missing Origin as proof of same-site (old browsers are ambiguous).
+  return request.headers.get("sec-fetch-site") === "same-origin";
+}
+
 /**
  * Generates a collision-resistant unique request ID for observability.
  */

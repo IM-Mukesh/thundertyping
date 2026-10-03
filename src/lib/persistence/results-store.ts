@@ -1,6 +1,6 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import type { TestConfig, TestMode } from "@/lib/typing-engine/engine-types";
-import { getCurrentUserId } from "@/lib/auth/current-user";
+import { getAuthGeneration, getCurrentUserId, subscribeCurrentUser } from "@/lib/auth/current-user";
 import { primeCloudXp } from "@/lib/profile/player-profile";
 
 // Left unrenamed on the HeroTyping rebrand -- every existing player's
@@ -80,13 +80,15 @@ let cloudBestsPrimedForUserId: string | null = null;
 
 /** Called by AuthProvider right after sign-in. Fire-and-forget. */
 export function primeCloudPersonalBests(userId: string): Promise<void> {
+  const generation = getAuthGeneration();
+  if (userId !== getCurrentUserId()) return Promise.resolve();
   if (cloudBestsPrimedForUserId === userId) return Promise.resolve();
   cloudBestCache.clear();
   cloudBestsPrimedForUserId = userId;
   return fetch("/api/typing-results?limit=200")
     .then((res) => res.json())
     .then((json) => {
-      if (!json?.success || !Array.isArray(json.data)) return;
+      if (generation !== getAuthGeneration() || userId !== getCurrentUserId() || !json?.success || !Array.isArray(json.data)) return;
       for (const row of json.data as Array<{
         mode: string;
         param: string | null;
@@ -116,6 +118,8 @@ export function clearCloudPersonalBests(): void {
   cloudBestCache.clear();
   cloudBestsPrimedForUserId = null;
 }
+
+subscribeCurrentUser(clearCloudPersonalBests);
 
 export function getPersonalBest(
   mode: TestMode,
@@ -166,6 +170,7 @@ export function recordResult(
   const best: PersonalBest = { wpm, accuracy, achievedAt: Date.now() };
 
   const userId = getCurrentUserId();
+  const generation = getAuthGeneration();
   if (userId) {
     if (isNewBest) cloudBestCache.set(pbKey(mode, param, punctuation, numbers), best);
     if (details) {
@@ -193,7 +198,7 @@ export function recordResult(
       })
         .then((res) => res.json())
         .then((json) => {
-          if (json?.success && json.data?.totalXp !== undefined) {
+          if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && json.data?.totalXp !== undefined) {
             primeCloudXp(json.data.totalXp);
           }
         })

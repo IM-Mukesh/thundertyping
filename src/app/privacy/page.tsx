@@ -13,17 +13,15 @@ export default function PrivacyPage() {
   return (
     <ContentPage title="Privacy Policy" subtitle="Last updated: September 27, 2026">
       <p>
-        {SITE_NAME} is designed to work without collecting personal information. This page
-        explains exactly what is and isn&apos;t stored, and will be updated if that ever changes.
+         {SITE_NAME} stores guest settings and progress locally. Signed-in accounts sync profile,
+         lesson, game, and typing-result data to the service so it is available across sessions.
       </p>
 
       <h2>What we store</h2>
       <p>
-        {SITE_NAME} does not have user accounts and does not run its own server-side database.
-        Your test settings (mode, duration, theme, and similar preferences) and personal-best
-        scores are saved using your browser&apos;s <code>localStorage</code>. This data stays on
-        your device — it is never transmitted to us or to any server, and clearing your browser&apos;s
-        site data removes it completely.
+         Guest test settings, vocabulary, lesson progress, and personal-best scores are saved in
+         your browser&apos;s <code>localStorage</code>. Signed-in profile and gameplay progress is saved
+         to your account. Clearing browser site data removes guest data, but does not remove cloud data.
       </p>
       <p>
         If you use the custom-text typing mode, the text you paste is held only in your

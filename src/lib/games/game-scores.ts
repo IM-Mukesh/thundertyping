@@ -1,7 +1,7 @@
 import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import { GAME_DEFINITIONS, type GameId } from "@/lib/games/game-types";
 import { trackEvent } from "@/lib/analytics";
-import { getCurrentUserId } from "@/lib/auth/current-user";
+import { getAuthGeneration, getCurrentUserId, subscribeCurrentUser } from "@/lib/auth/current-user";
 import { primeCloudXp } from "@/lib/profile/player-profile";
 
 // Separate from results-store.ts on purpose: that one keys personal bests by
@@ -89,23 +89,26 @@ function cloudRowToBest(row: {
 
 /** Called by AuthProvider right after sign-in. Fire-and-forget. */
 export function primeCloudGameBests(userId: string): Promise<void> {
-  if (cloudBestsPrimedForUserId === userId && primeInFlight === null) {
-    return Promise.resolve();
+  const generation = getAuthGeneration();
+  if (userId !== getCurrentUserId()) return Promise.resolve();
+  if (cloudBestsPrimedForUserId === userId) {
+    return primeInFlight ?? Promise.resolve();
   }
   cloudBestCache.clear();
   cloudBestsPrimedForUserId = userId;
   primeInFlight = fetch("/api/games/scores")
     .then((res) => res.json())
     .then((json) => {
-      if (json?.success && Array.isArray(json.data)) {
+      if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && Array.isArray(json.data)) {
         for (const row of json.data) {
           if (row?.game_id) cloudBestCache.set(row.game_id as GameId, cloudRowToBest(row));
         }
+        notifyGameBests();
       }
     })
     .catch((err) => console.warn("[game-scores] failed to load cloud bests:", err))
     .finally(() => {
-      primeInFlight = null;
+      if (generation === getAuthGeneration()) primeInFlight = null;
     });
   return primeInFlight;
 }
@@ -114,6 +117,29 @@ export function primeCloudGameBests(userId: string): Promise<void> {
 export function clearCloudGameBests(): void {
   cloudBestCache.clear();
   cloudBestsPrimedForUserId = null;
+  primeInFlight = null;
+  notifyGameBests();
+}
+
+subscribeCurrentUser(clearCloudGameBests);
+
+function notifyGameBests(): void {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("herotyping:game-bests"));
+}
+
+export function subscribeGameBests(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("herotyping:game-bests", listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener("herotyping:game-bests", listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+export function readGameBestRaw(gameId: GameId): string | null {
+  const best = getGameBest(gameId);
+  return best ? JSON.stringify(best) : null;
 }
 
 export function getGameBest(gameId: GameId): GameBest | null {
@@ -153,12 +179,13 @@ export function recordGameResult(
   });
 
   const userId = getCurrentUserId();
+  const generation = getAuthGeneration();
   const existing = getGameBest(gameId);
   const isNewBest = !existing || run.score > existing.score;
   const best: GameBest = { ...run, achievedAt: Date.now() };
 
   if (userId) {
-    if (isNewBest) cloudBestCache.set(gameId, best);
+    if (isNewBest) { cloudBestCache.set(gameId, best); notifyGameBests(); }
     const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
     fetch("/api/games/scores", {
       method: "POST",
@@ -174,7 +201,7 @@ export function recordGameResult(
     })
       .then((res) => res.json())
       .then((json) => {
-        if (json?.success && json.data?.totalXp !== undefined) {
+        if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && json.data?.totalXp !== undefined) {
           primeCloudXp(json.data.totalXp);
         }
       })
@@ -186,5 +213,6 @@ export function recordGameResult(
     return { isNewBest: false, best: existing! };
   }
   setStorageItem(bestKey(gameId), JSON.stringify(best));
+  notifyGameBests();
   return { isNewBest: true, best };
 }

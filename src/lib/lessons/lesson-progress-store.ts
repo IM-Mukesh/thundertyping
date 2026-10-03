@@ -349,6 +349,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
         }), emptyTotals()) });
       },
       importProgress: (jsonString: string) => {
+        if (getCurrentUserId() || jsonString.length > 1_000_000) return false;
         try {
           const parsed = JSON.parse(jsonString);
           if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return false;
@@ -357,7 +358,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
           const cleanUnits = sanitizeUnits(parsed.units);
           const cleanTotals = isValidTotals(parsed.totals) ? parsed.totals : emptyTotals();
           const cleanGoal: LearnerGoal =
-            parsed.learnerGoal && parsed.learnerGoal in LEARNER_GOAL_CONFIGS
+            typeof parsed.learnerGoal === "string" && Object.hasOwn(LEARNER_GOAL_CONFIGS, parsed.learnerGoal)
               ? parsed.learnerGoal
               : "touch-typing";
 
