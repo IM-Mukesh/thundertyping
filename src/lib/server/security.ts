@@ -43,10 +43,8 @@ export function getTrustedOrigin(request: NextRequest): string {
   // Clean the host (remove any port if needed)
   const hostOnly = forwardedHost.split(":")[0].toLowerCase();
 
-  // Trusted host allowlist:
-  // 1. herotyping.com and www.herotyping.com
-  // 2. Vercel deployment URLs (*.vercel.app)
-  // 3. Exact host from NEXT_PUBLIC_SITE_URL or VERCEL_URL
+  // Trusted host allowlist. Never trust arbitrary Vercel tenant hosts: a
+  // forwarded host is only useful when it is one of our configured origins.
   const canonicalHost = new URL(canonicalOrigin).hostname.toLowerCase();
   const vercelUrlHost = process.env.VERCEL_URL ? process.env.VERCEL_URL.split(":")[0].toLowerCase() : null;
 
@@ -54,8 +52,7 @@ export function getTrustedOrigin(request: NextRequest): string {
     hostOnly === canonicalHost ||
     hostOnly === "herotyping.com" ||
     hostOnly === "www.herotyping.com" ||
-    (vercelUrlHost && hostOnly === vercelUrlHost) ||
-    hostOnly.endsWith(".vercel.app");
+    (vercelUrlHost && hostOnly === vercelUrlHost);
 
   if (isTrusted) {
     return `https://${forwardedHost}`;
@@ -85,9 +82,25 @@ export async function readBoundedJson<T = unknown>(
       return { ok: false, error: "Payload too large", status: 413 };
     }
 
-    const text = await request.text();
-    if (text.length > maxSizeBytes) {
-      return { ok: false, error: "Payload too large", status: 413 };
+    let text = "";
+    if (!request.body) return { ok: false, error: "Request body is empty", status: 400 };
+    const reader = request.body.getReader();
+    const decoder = new TextDecoder();
+    let byteCount = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        byteCount += value.byteLength;
+        if (byteCount > maxSizeBytes) {
+          await reader.cancel();
+          return { ok: false, error: "Payload too large", status: 413 };
+        }
+        text += decoder.decode(value, { stream: true });
+      }
+      text += decoder.decode();
+    } finally {
+      reader.releaseLock();
     }
 
     if (!text.trim()) {

@@ -197,6 +197,12 @@ export function reducer(state: TestState, action: EngineAction): TestState {
 
     case "SET_TYPED": {
       if (state.status === "finished") return state;
+      if (state.status === "running" && state.config.mode === "time" && state.startedAt !== null &&
+          action.now - state.startedAt >= state.config.timeDuration * 1000) {
+        const activeWord = state.wordStates[state.activeWordIndex];
+        return finalize(state, activeWord ? tallyWord(state.charTally, activeWord, { countMissedChars: false }) : state.charTally,
+          action.now, state.config.timeDuration * 1000);
+      }
       const activeIndex = state.activeWordIndex;
       const target = state.words[activeIndex];
       if (target === undefined) return state;
@@ -299,6 +305,12 @@ export function reducer(state: TestState, action: EngineAction): TestState {
 
     case "COMMIT_WORD": {
       if (state.status === "finished") return state;
+      if (state.status === "running" && state.config.mode === "time" && state.startedAt !== null &&
+          action.now - state.startedAt >= state.config.timeDuration * 1000) {
+        const activeWord = state.wordStates[state.activeWordIndex];
+        return finalize(state, activeWord ? tallyWord(state.charTally, activeWord, { countMissedChars: false }) : state.charTally,
+          action.now, state.config.timeDuration * 1000);
+      }
       const activeIndex = state.activeWordIndex;
       const wordState = state.wordStates[activeIndex];
       if (!wordState || wordState.typed.length === 0) return state;

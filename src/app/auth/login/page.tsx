@@ -22,7 +22,9 @@ function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const errorMessage = formError ?? (urlError ? decodeURIComponent(urlError) : null);
+  // URLSearchParams has already percent-decoded this value. Decoding again
+  // turns valid values such as "100%" into a client-rendering URIError.
+  const errorMessage = formError ?? urlError;
   const setErrorMessage = (msg: string | null) => setFormError(msg);
 
   // If already logged in, show synced notice and button to profile

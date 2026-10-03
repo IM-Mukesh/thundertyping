@@ -35,6 +35,7 @@ export interface ValidatedTypingResultInput {
   accuracy: number;
   consistency: number | null;
   correctChars: number;
+  scoringChars: number;
   incorrectChars: number;
   extraChars: number;
   missedChars: number;
@@ -110,7 +111,12 @@ export function validateTypingResultInput(
   // --- Mathematical and Physical Integrity Checks ---
   // 1. Human typing speed limit check:
   // Sustaining over 40 characters per second (>480 raw WPM) is physically impossible for human hands.
+  const scoringChars = p.scoringChars === undefined ? p.correctChars : p.scoringChars;
+  if (!isNonNegativeNumber(scoringChars)) return { valid: false, message: "scoringChars must be non-negative" };
   const totalTyped = p.correctChars + p.incorrectChars;
+  if (totalTyped < 1 || scoringChars < 1) {
+    return { valid: false, message: "A typing result must contain at least one typed character" };
+  }
   const cps = totalTyped / p.duration;
   if (cps > 40) {
     return { valid: false, message: "Typing speed exceeds maximum possible human keystroke rate" };
@@ -119,7 +125,7 @@ export function validateTypingResultInput(
   // 2. Net WPM consistency check:
   // Expected net WPM = (correctChars / 5) / (duration / 60)
   // We allow a reasonable tolerance of +/- 2.5 WPM for fractional timing / word separator nuances
-  const expectedWpm = (p.correctChars / 5) / (p.duration / 60);
+  const expectedWpm = (scoringChars / 5) / (p.duration / 60);
   if (p.correctChars > 0 && Math.abs(p.wpm - expectedWpm) > 2.5) {
     return {
       valid: false,
@@ -152,6 +158,7 @@ export function validateTypingResultInput(
       accuracy: p.accuracy,
       consistency: p.consistency !== undefined && p.consistency !== null ? (p.consistency as number) : null,
       correctChars: p.correctChars,
+      scoringChars,
       incorrectChars: p.incorrectChars,
       extraChars,
       missedChars,
@@ -171,6 +178,12 @@ export interface ValidatedLessonProgressInput {
   accuracy: number;
   attemptCount: number;
   runId?: string;
+  step: number;
+  totalSteps: number;
+  typedChars: number;
+  correctChars: number;
+  incorrectChars: number;
+  elapsedMs: number;
 }
 
 export function validateLessonProgressInput(
@@ -203,6 +216,17 @@ export function validateLessonProgressInput(
     return { valid: false, message: "accuracy must be between 0 and 100" };
   }
 
+  const step = p.step === undefined ? 1 : p.step;
+  const totalSteps = p.totalSteps === undefined ? 1 : p.totalSteps;
+  if (!Number.isInteger(step) || !Number.isInteger(totalSteps) ||
+      (step as number) < 0 || (totalSteps as number) < 1 ||
+      (step as number) > (totalSteps as number)) {
+    return { valid: false, message: "step must be an integer within totalSteps" };
+  }
+  for (const field of ["typedChars", "correctChars", "incorrectChars", "elapsedMs"] as const) {
+    if (p[field] !== undefined && !isNonNegativeNumber(p[field])) return { valid: false, message: `${field} must be non-negative` };
+  }
+
   let runId: string | undefined;
   if (p.runId !== undefined) {
     if (!isValidUuid(p.runId)) {
@@ -231,6 +255,12 @@ export function validateLessonProgressInput(
       accuracy: p.accuracy,
       attemptCount: 1, // Server always enforces 1 attempt per valid submission
       runId,
+      step: step as number,
+      totalSteps: totalSteps as number,
+      typedChars: (p.typedChars as number | undefined) ?? 0,
+      correctChars: (p.correctChars as number | undefined) ?? 0,
+      incorrectChars: (p.incorrectChars as number | undefined) ?? 0,
+      elapsedMs: (p.elapsedMs as number | undefined) ?? 0,
     },
   };
 }

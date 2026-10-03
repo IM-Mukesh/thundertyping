@@ -138,4 +138,27 @@ describe("lesson-progress-store: schema v2 persistence, migrations, and progress
     // target itself is unlocked for playing, but not marked completed yet
     assert.equal(updated.units["top-row-left"]?.completed ?? false, false);
   });
+
+  it("hydrates the saved checkpoint and aggregate totals without inventing completion dates", () => {
+    useLessonProgressStore.getState().replaceCloudUnits([{
+      lesson_id: "home-row-left",
+      completed: false,
+      current_step: 2,
+      stars: 4,
+      best_wpm: 42,
+      best_accuracy: 97,
+      attempt_count: 3,
+      total_time_ms: 12_500,
+      completed_at: null,
+      typed_chars: 120,
+      correct_chars: 116,
+      incorrect_chars: 4,
+    }]);
+
+    const state = useLessonProgressStore.getState();
+    assert.equal(state.units["home-row-left"]?.currentStep, 2);
+    assert.equal(state.units["home-row-left"]?.completedAt, 0);
+    assert.equal(state.units["home-row-left"]?.totalTimeMs, 12_500);
+    assert.deepEqual(state.totals, { typedChars: 120, correctChars: 116, incorrectChars: 4, timeMs: 12_500 });
+  });
 });

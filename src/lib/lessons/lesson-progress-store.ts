@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import { LESSON_LIST, type LessonId } from "@/lib/lessons/lesson-types";
-import { getCurrentUserId } from "@/lib/auth/current-user";
+import { getAuthGeneration, getCurrentUserId } from "@/lib/auth/current-user";
 import { primeCloudXp } from "@/lib/profile/player-profile";
 
 export type LearnerGoal =
@@ -73,7 +73,7 @@ export interface LessonProgressState {
   /** Replaces (not merges) local state with the signed-in player's cloud
    * progress — cloud is authoritative while signed in, so this never blends
    * with whatever was last in this browser's local storage. */
-  replaceCloudUnits: (rows: Array<{ lesson_id: string; completed: boolean; stars: number; best_wpm: number; best_accuracy: number; attempt_count: number }>) => void;
+  replaceCloudUnits: (rows: Array<{ lesson_id: string; completed: boolean; stars: number; best_wpm: number; best_accuracy: number; attempt_count: number; current_step?: number; total_time_ms?: number; completed_at?: string | null; typed_chars?: number; correct_chars?: number; incorrect_chars?: number }>) => void;
 }
 
 // Signed-in players are cloud-only for lesson progress: this storage adapter
@@ -227,6 +227,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
         const userId = getCurrentUserId();
         if (userId) {
+          const generation = getAuthGeneration();
           const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
           fetch("/api/lessons/progress", {
             method: "POST",
@@ -239,15 +240,27 @@ export const useLessonProgressStore = create<LessonProgressState>()(
               wpm: input.wpm,
               accuracy: input.accuracy,
               attemptCount: 1,
+              step: input.step,
+              totalSteps: input.totalSteps,
+              typedChars: input.typedChars,
+              correctChars: input.correctChars,
+              incorrectChars: input.incorrectChars,
+              elapsedMs: input.elapsedMs,
             }),
+          }).then(async (res) => {
+            if (!res.ok) throw new Error(`Cloud save failed (${res.status})`);
+            return res.json();
           })
-            .then((res) => res.json())
             .then((json) => {
+              if (generation !== getAuthGeneration() || userId !== getCurrentUserId()) return;
               if (json?.success && json.data?.totalXp !== undefined) {
                 primeCloudXp(json.data.totalXp);
               }
             })
-            .catch((err) => console.warn("[lessons] failed to save cloud progress:", err));
+            .catch((err) => {
+              if (generation !== getAuthGeneration() || userId !== getCurrentUserId()) return;
+              console.warn("[lessons] failed to save cloud progress:", err);
+            });
         }
 
         return { passed, unitCompleted };
@@ -311,12 +324,12 @@ export const useLessonProgressStore = create<LessonProgressState>()(
           const completed = Boolean(row.completed);
           units[lesson.id] = {
             completed,
-            currentStep: completed ? lesson.subLessonCount : 0,
+            currentStep: Math.min(lesson.subLessonCount, Math.max(0, Number(row.current_step ?? (completed ? lesson.subLessonCount : 0)))),
             passCount: row.attempt_count || 0,
             avgAccuracy: row.best_accuracy || 0,
             avgWpm: row.best_wpm || 0,
-            totalTimeMs: 0,
-            completedAt: completed ? Date.now() : 0,
+            totalTimeMs: Number(row.total_time_ms ?? 0),
+            completedAt: completed ? (row.completed_at ? Date.parse(row.completed_at) : 0) : 0,
             bestWpm: row.best_wpm || 0,
             bestAccuracy: row.best_accuracy || 0,
             attemptsCount: row.attempt_count || 0,
@@ -324,7 +337,12 @@ export const useLessonProgressStore = create<LessonProgressState>()(
             latestStars: row.stars || 0,
           };
         }
-        set({ units, totals: emptyTotals() });
+        set({ units, totals: rows.reduce((totals, row) => ({
+          typedChars: totals.typedChars + Number(row.typed_chars ?? 0),
+          correctChars: totals.correctChars + Number(row.correct_chars ?? 0),
+          incorrectChars: totals.incorrectChars + Number(row.incorrect_chars ?? 0),
+          timeMs: totals.timeMs + Number(row.total_time_ms ?? 0),
+        }), emptyTotals()) });
       },
       importProgress: (jsonString: string) => {
         try {
@@ -383,10 +401,13 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
 /** Called by AuthProvider right after sign-in. Cloud is authoritative. */
 export async function primeCloudLessonProgress(): Promise<void> {
+  const userId = getCurrentUserId();
+  const generation = getAuthGeneration();
+  if (!userId) return;
   try {
     const res = await fetch("/api/lessons/progress");
     const json = await res.json();
-    if (json?.success && Array.isArray(json.data)) {
+    if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && Array.isArray(json.data)) {
       useLessonProgressStore.getState().replaceCloudUnits(json.data);
     }
   } catch (err) {

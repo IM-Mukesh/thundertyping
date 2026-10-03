@@ -203,7 +203,8 @@ export function TypingTest() {
       accuracy,
       {
         rawWpm: grossWpm,
-        durationSec: Math.max(1, Math.round(engine.state.elapsedMs / 1000)),
+        durationSec: Math.max(0.001, engine.state.elapsedMs / 1000),
+        scoringChars: engine.state.netWpmCharacters,
         correctChars: engine.state.correctKeystrokes,
         incorrectChars: engine.state.incorrectKeystrokes,
         extraChars: engine.state.charTally.extra,

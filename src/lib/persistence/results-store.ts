@@ -142,6 +142,7 @@ export interface RecordResultDetails {
   consistency?: number;
   durationSec: number;
   correctChars: number;
+  scoringChars?: number;
   incorrectChars: number;
   extraChars?: number;
   missedChars?: number;
@@ -181,6 +182,7 @@ export function recordResult(
           accuracy,
           consistency: details.consistency ?? null,
           correctChars: details.correctChars,
+          scoringChars: details.scoringChars ?? details.correctChars,
           incorrectChars: details.incorrectChars,
           extraChars: details.extraChars ?? 0,
           missedChars: details.missedChars ?? 0,
@@ -197,7 +199,7 @@ export function recordResult(
         })
         .catch((err) => console.warn("[results-store] failed to save cloud result:", err));
     }
-    return { isNewBest, best };
+    return { isNewBest, best: isNewBest ? best : existing };
   }
 
   if (!isNewBest) {

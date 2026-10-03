@@ -51,6 +51,7 @@ export function LessonDashboard() {
 
   const keys = useKeyPerformanceStore((s) => s.keys);
   const transitions = useKeyPerformanceStore((s) => s.transitions);
+  const keyStatsUpdatedAt = useKeyPerformanceStore((s) => s.lastUpdated);
 
   const [selectedTier, setSelectedTier] = useState<LessonTier | "all">("all");
   const [placementOpen, setPlacementOpen] = useState(false);
@@ -80,10 +81,10 @@ export function LessonDashboard() {
     const stats = getKeyStats(keys);
     const recs: Record<string, { attempts: number; errors: number; lastPracticedAt: number }> = {};
     for (const [k, s] of Object.entries(stats)) {
-      recs[k] = { attempts: s.attempts, errors: s.errors, lastPracticedAt: 0 };
+      recs[k] = { attempts: s.attempts, errors: s.errors, lastPracticedAt: keyStatsUpdatedAt };
     }
     return recs;
-  }, [keys]);
+  }, [keys, keyStatsUpdatedAt]);
 
   const transitionStats = useMemo(() => {
     const out: Record<string, { attempts: number; errors: number }> = {};

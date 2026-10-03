@@ -26,6 +26,23 @@ if (!process.env.SUPABASE_SECRET_KEY) {
   process.env.SUPABASE_SECRET_KEY = "sb_secret_test_placeholder_key";
 }
 
+// A tiny browser-storage shim keeps local-only persistence tests deterministic
+// under Node's test runner without changing production SSR behavior.
+if (!globalThis.window) {
+  const values = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, String(value)),
+      removeItem: (key) => values.delete(key),
+      clear: () => values.clear(),
+    },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
+  };
+}
+
 const root = pathToFileURL(`${process.cwd()}/src/`).href;
 
 const hook = `

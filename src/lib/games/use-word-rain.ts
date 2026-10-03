@@ -299,6 +299,8 @@ export function useWordRain(definition: GameDefinition, options: { laneCount?: n
 
   const wordPoolRef = useRef<string[]>([]);
   const nextSpawnTimeRef = useRef(0);
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   const start = useCallback(() => dispatch({ type: "START" }), []);
   const reset = useCallback(() => dispatch({ type: "RESET" }), []);
@@ -319,8 +321,10 @@ export function useWordRain(definition: GameDefinition, options: { laneCount?: n
   useEffect(() => {
     if (state.status !== "running") return;
 
+    nextSpawnTimeRef.current = stateRef.current.elapsedMs + getStormPhase(stateRef.current.elapsedMs).spawnMs;
     const spawnCheck = setInterval(() => {
-      const now = state.elapsedMs;
+      const current = stateRef.current;
+      const now = current.elapsedMs;
       if (now < nextSpawnTimeRef.current) return;
 
       const phase = getStormPhase(now);
@@ -331,7 +335,7 @@ export function useWordRain(definition: GameDefinition, options: { laneCount?: n
       }
 
       const occupiedLanes = new Set(
-        state.words.filter((w) => w.progress < 0.22).map((w) => w.lane),
+        current.words.filter((w) => w.progress < 0.22).map((w) => w.lane),
       );
       const freeLanes: number[] = [];
       for (let l = 0; l < laneCount; l++) {
@@ -346,7 +350,7 @@ export function useWordRain(definition: GameDefinition, options: { laneCount?: n
     }, 100);
 
     return () => clearInterval(spawnCheck);
-  }, [state.status, state.elapsedMs, state.words, laneCount]);
+  }, [state.status, laneCount]);
 
   return { state, start, reset, pause, resume, setTyped };
 }

@@ -82,8 +82,10 @@ export function LessonCompletionModal({
 
     let current = 0;
     // Begin star reveal after modal smoothly settles (220ms)
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let resolutionDelay: ReturnType<typeof setTimeout> | null = null;
     const initialDelay = setTimeout(() => {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         current++;
         if (current <= stars) {
           setAnimatedStars(current);
@@ -91,9 +93,9 @@ export function LessonCompletionModal({
         }
 
         if (current >= stars) {
-          clearInterval(interval);
+          if (interval) clearInterval(interval);
           // Play final emotional resolution sound
-          const resolutionDelay = setTimeout(() => {
+          resolutionDelay = setTimeout(() => {
             if (stars === 5) {
               playSound("lesson-perfect", soundEnabled);
             } else if (passed) {
@@ -102,15 +104,14 @@ export function LessonCompletionModal({
               playSound("lesson-retry", soundEnabled);
             }
           }, 140);
-          return () => clearTimeout(resolutionDelay);
         }
       }, 190);
-
-      return () => clearInterval(interval);
     }, 220);
 
     return () => {
       clearTimeout(initialDelay);
+      if (interval) clearInterval(interval);
+      if (resolutionDelay) clearTimeout(resolutionDelay);
     };
   }, [open, stars, passed, soundEnabled]);
 

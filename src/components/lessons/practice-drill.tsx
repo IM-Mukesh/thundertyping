@@ -33,7 +33,7 @@ import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils/cn";
 
-export type PracticeMode = "weak-keys" | "transitions" | "finger" | "accuracy" | "speed";
+export type PracticeMode = "weak-keys" | "transitions" | "finger" | "accuracy" | "speed" | "coding";
 
 const HIGH_FREQUENCY_TRANSITIONS = ["th", "he", "in", "er", "an", "re", "on", "at", "en", "nd", "st", "es", "ed", "te", "or"];
 
@@ -80,6 +80,10 @@ function buildPracticeText(
     case "speed": {
       const balancedLetters = ["t", "h", "e", "a", "n", "d", "i", "s", "o", "r", "c", "l", "u", "m", "p"];
       return generatePatternDrill(balancedLetters, wordCount, seed);
+    }
+    case "coding": {
+      const codingKeys = ["a", "s", "d", "f", "j", "k", "l", ";", "{", "}", "(", ")"];
+      return generatePatternDrill(codingKeys, wordCount, seed);
     }
   }
 }

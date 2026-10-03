@@ -1,8 +1,7 @@
 import "server-only";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeInternalRedirect, getTrustedOrigin } from "@/lib/server/security";
 
 export async function POST() {
   try {
@@ -35,36 +34,6 @@ export async function POST() {
   return response;
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-  } catch (err) {
-    console.error("[api/auth/signout] Supabase signOut error:", err);
-  }
-
-  const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
-  for (const cookie of allCookies) {
-    if (cookie.name.startsWith("sb-")) {
-      try {
-        cookieStore.delete(cookie.name);
-      } catch {
-        // Ignore deletion errors
-      }
-    }
-  }
-
-  const rawRedirect = request.nextUrl.searchParams.get("redirect");
-  const safeRedirectPath = sanitizeInternalRedirect(rawRedirect, "/auth/login");
-  const trustedOrigin = getTrustedOrigin(request);
-
-  const response = NextResponse.redirect(new URL(safeRedirectPath, trustedOrigin));
-  for (const cookie of allCookies) {
-    if (cookie.name.startsWith("sb-")) {
-      response.cookies.delete(cookie.name);
-    }
-  }
-
-  return response;
+export function GET() {
+  return NextResponse.json({ error: "Use POST to sign out" }, { status: 405, headers: { Allow: "POST" } });
 }

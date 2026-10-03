@@ -42,12 +42,16 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .eq("user_id", userId)
         .maybeSingle();
 
-      return {
-        progress: currentProgress,
-        earnedXp: 0,
-        totalXp: streak?.total_xp ?? 0,
-        idempotent: true,
-      };
+      // An attempt row alone is not a completed operation. Continue through
+      // the aggregate/reward stages so a retry can repair a partial write.
+      if (currentProgress) {
+        return {
+          progress: currentProgress,
+          earnedXp: 0,
+          totalXp: streak?.total_xp ?? 0,
+          idempotent: true,
+        };
+      }
     }
   }
 
@@ -74,7 +78,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .eq("user_id", userId)
         .eq("lesson_id", input.lessonId)
         .maybeSingle();
-      return { progress: currentProgress, earnedXp: 0, idempotent: true };
+      if (currentProgress) return { progress: currentProgress, earnedXp: 0, idempotent: true };
     }
     console.error("Non-fatal: failed to record lesson attempt:", attemptError);
   }
@@ -83,6 +87,9 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
   let isFirstTimeCompletion = false;
 
   const progressRecord = await withOptimisticRetry(async () => {
+    // Recompute this for every optimistic-lock attempt. A retry may observe
+    // another request's completion and must not retain the stale reward flag.
+    isFirstTimeCompletion = false;
     const { data: existing } = await supabase
       .from("lesson_progress")
       .select("*")
@@ -111,6 +118,16 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           best_wpm: bestWpm,
           best_accuracy: bestAccuracy,
           attempt_count: attemptCount,
+          current_step: Math.max(existing.current_step ?? 0, input.step),
+          pass_count: (existing.pass_count ?? 0) + (input.completed ? 1 : 0),
+          avg_wpm: input.completed ? (((existing.avg_wpm ?? 0) * (existing.pass_count ?? 0)) + input.wpm) / ((existing.pass_count ?? 0) + 1) : (existing.avg_wpm ?? 0),
+          avg_accuracy: input.completed ? (((existing.avg_accuracy ?? 0) * (existing.pass_count ?? 0)) + input.accuracy) / ((existing.pass_count ?? 0) + 1) : (existing.avg_accuracy ?? 0),
+          last_attempt_at: new Date().toISOString(),
+          typed_chars: (existing.typed_chars ?? 0) + input.typedChars,
+          correct_chars: (existing.correct_chars ?? 0) + input.correctChars,
+          incorrect_chars: (existing.incorrect_chars ?? 0) + input.incorrectChars,
+          total_time_ms: (existing.total_time_ms ?? 0) + input.elapsedMs,
+          ...(isCompleted ? { completed_at: existing.completed_at ?? new Date().toISOString() } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", userId)
@@ -140,7 +157,17 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           stars: input.stars,
           best_wpm: input.wpm,
           best_accuracy: input.accuracy,
-          attempt_count: 1,
+            attempt_count: 1,
+            current_step: input.step,
+            pass_count: input.completed ? 1 : 0,
+            avg_wpm: input.completed ? input.wpm : 0,
+            avg_accuracy: input.completed ? input.accuracy : 0,
+            last_attempt_at: new Date().toISOString(),
+            typed_chars: input.typedChars,
+            correct_chars: input.correctChars,
+            incorrect_chars: input.incorrectChars,
+            total_time_ms: input.elapsedMs,
+            ...(input.completed ? { completed_at: new Date().toISOString() } : {}),
         })
         .select()
         .single();

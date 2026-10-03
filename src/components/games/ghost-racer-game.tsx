@@ -211,7 +211,7 @@ export default function GhostRacerGame({ definition }: GameComponentProps) {
           score: Math.round(finalWpm),
           cleared: won ? 1 : 0,
           bestCombo: Math.round(finalAcc),
-          survivedMs: 0,
+          survivedMs: Math.max(1, Math.round(ms)),
         });
 
         // "runs" as well as "races": the profile totals runs across games, and

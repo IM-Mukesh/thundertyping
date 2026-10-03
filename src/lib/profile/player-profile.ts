@@ -46,14 +46,9 @@ export interface PlayerProfile {
   streak: { count: number; lastDate: string };
 }
 
-const EMPTY: PlayerProfile = {
-  xp: 0,
-  achievements: {},
-  unlocks: {},
-  stats: {},
-  dailies: {},
-  streak: { count: 0, lastDate: "" },
-};
+function emptyProfile(): PlayerProfile {
+  return { xp: 0, achievements: {}, unlocks: {}, stats: {}, dailies: {}, streak: { count: 0, lastDate: "" } };
+}
 
 /**
  * Levels get progressively more expensive, but never so steep that a player
@@ -108,10 +103,10 @@ export function readProfile(): PlayerProfile {
  * is not the value it depends on.
  */
 export function parseProfile(raw: string | null): PlayerProfile {
-  if (!raw) return { ...EMPTY };
+  if (!raw) return emptyProfile();
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) return { ...EMPTY };
+    if (!isRecord(parsed)) return emptyProfile();
     const streak = isRecord(parsed.streak) ? parsed.streak : {};
     return {
       xp: typeof parsed.xp === "number" && Number.isFinite(parsed.xp) && parsed.xp >= 0 ? parsed.xp : 0,
@@ -133,7 +128,7 @@ export function parseProfile(raw: string | null): PlayerProfile {
       },
     };
   } catch {
-    return { ...EMPTY };
+    return emptyProfile();
   }
 }
 
@@ -378,5 +373,5 @@ export function checkSiteAchievements(playableGameIds?: readonly string[]): stri
 
 /** Wipes the profile. Only ever called from an explicit settings action. */
 export function resetProfile(): void {
-  write({ ...EMPTY });
+  write(emptyProfile());
 }

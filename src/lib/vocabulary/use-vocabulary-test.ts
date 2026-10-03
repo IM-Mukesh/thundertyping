@@ -97,8 +97,12 @@ export function reducer(state: VocabTestState, action: VocabTestAction): VocabTe
       // Only newly appended characters are scored — matches every other
       // engine in this codebase: backspacing edits the buffer but never
       // un-counts a keystroke that already happened.
-      if (value.length > prevTyped.length) {
-        for (let i = prevTyped.length; i < value.length; i++) {
+      let prefix = 0;
+      while (prefix < prevTyped.length && prefix < value.length && prevTyped[prefix] === value[prefix]) prefix++;
+      let suffix = 0;
+      while (suffix < prevTyped.length - prefix && suffix < value.length - prefix && prevTyped[prevTyped.length - 1 - suffix] === value[value.length - 1 - suffix]) suffix++;
+      if (value.length > prevTyped.length || value.length === prevTyped.length) {
+        for (let i = prefix; i < value.length - suffix; i++) {
           const isTrailingSpaceCommit =
             i === target.length &&
             value[i] === " " &&
