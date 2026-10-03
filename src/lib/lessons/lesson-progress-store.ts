@@ -245,7 +245,11 @@ export const useLessonProgressStore = create<LessonProgressState>()(
               typedChars: input.typedChars,
               correctChars: input.correctChars,
               incorrectChars: input.incorrectChars,
-              elapsedMs: input.elapsedMs,
+              // Postgres stores total_time_ms as BIGINT; performance.now()
+              // produces fractional milliseconds, so normalize at the API
+              // boundary instead of letting a valid lesson save fail with a
+              // database cast error.
+              elapsedMs: Math.max(0, Math.round(input.elapsedMs)),
             }),
           }).then(async (res) => {
             if (!res.ok) throw new Error(`Cloud save failed (${res.status})`);
