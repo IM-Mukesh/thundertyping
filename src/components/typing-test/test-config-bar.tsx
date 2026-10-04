@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
-import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, Pencil, BookOpen, Gauge, Target } from "lucide-react";
+import { AtSign, Hash, Clock, Type, Quote as QuoteIcon, Wrench, BookOpen, Gauge, Target } from "lucide-react";
+import { CustomDurationControl } from "@/components/typing-test/custom-duration-control";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   TIME_DURATIONS,
   WORD_COUNTS,
   QUOTE_LENGTHS,
-  MIN_CUSTOM_TIME_DURATION,
-  MAX_CUSTOM_TIME_DURATION,
   type TestMode,
 } from "@/lib/typing-engine/engine-types";
 import { VOCAB_DIFFICULTIES, type VocabDifficulty } from "@/lib/vocabulary/vocabulary-words";
 import { MIN_PACE_CARET_WPM, MAX_PACE_CARET_WPM } from "@/lib/typing-engine/pace-caret";
+import { formatDuration } from "@/lib/typing-engine/custom-duration";
 import { cn } from "@/lib/utils/cn";
 
 const VOCAB_DIFFICULTY_LABEL: Record<VocabDifficulty, string> = {
@@ -106,285 +106,163 @@ export function TestConfigBar({ onOpenCustomText }: TestConfigBarProps) {
 
   const showTextToggles = mode === "time" || mode === "words";
 
-  // Divided into 3 distinct parts for larger screens (laptops, monitors, large devices):
-  // Part 1: Modifiers (punctuation, numbers)
-  // Divider: |
-  // Part 2: Modes (time, words, quote, custom, vocabulary)
-  // Divider: |
-  // Part 3: Options (15s, 30s, 1m, 2m, edit icon / word counts / etc.)
+  // Only modifiers and modes share the masked scroller. Duration controls
+  // remain pinned beside it, while wider option sets can scroll independently.
   return (
-    <div className="theme-transition w-full max-w-4xl mx-auto rounded-xl bg-sub-alt/40 border border-border/60 px-3 py-1.5 sm:px-4 sm:py-2 shadow-xs backdrop-blur-xs">
-      <div
-        ref={scrollRef}
-        style={maskStyle}
-        className="flex items-center justify-between text-sm overflow-x-auto scrollbar-none transition-all duration-150"
-      >
-        {/* Part 1: Modifiers (punctuation, numbers) + pace caret (every mode has a word stream) */}
-        <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 min-h-9">
-          {showTextToggles && (
-            <>
-              <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation" icon={<AtSign size={14} />}>
-                punctuation
-              </Pill>
-              <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers" icon={<Hash size={14} />}>
-                numbers
-              </Pill>
+    <div className="theme-transition min-w-0 w-full max-w-4xl mx-auto rounded-xl bg-sub-alt/40 border border-border/60 px-3 py-1.5 sm:px-4 sm:py-2 shadow-xs backdrop-blur-xs">
+      <div className="flex flex-nowrap items-center text-sm">
+        <div
+          ref={scrollRef}
+          style={maskStyle}
+          className="min-w-0 flex-1 overflow-x-auto scrollbar-none transition-all duration-150"
+        >
+          <div className="flex w-max min-w-full flex-nowrap items-center">
+            {/* Part 1: Modifiers + pace caret (every mode has a word stream) */}
+            <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 min-h-9">
+              {showTextToggles && (
+                <>
+                  <Pill active={punctuation} onClick={togglePunctuation} ariaLabel="Punctuation" icon={<AtSign size={14} />}>
+                    punctuation
+                  </Pill>
+                  <Pill active={numbers} onClick={toggleNumbers} ariaLabel="Numbers" icon={<Hash size={14} />}>
+                    numbers
+                  </Pill>
+                  <Pill
+                    active={wordDifficulty === "common"}
+                    onClick={() => setWordDifficulty(wordDifficulty === "common" ? "all" : "common")}
+                    ariaLabel="Common words only — the 200 most frequent words"
+                    icon={<Gauge size={14} />}
+                  >
+                    common
+                  </Pill>
+                </>
+              )}
               <Pill
-                active={wordDifficulty === "common"}
-                onClick={() => setWordDifficulty(wordDifficulty === "common" ? "all" : "common")}
-                ariaLabel="Common words only — the 200 most frequent words"
-                icon={<Gauge size={14} />}
+                active={paceCaretMode === "pb"}
+                onClick={() => setPaceCaretMode(paceCaretMode === "pb" ? "off" : "pb")}
+                ariaLabel="Pace caret: race your personal best"
+                icon={<Target size={14} />}
               >
-                common
+                pb
               </Pill>
-            </>
-          )}
-          <Pill
-            active={paceCaretMode === "pb"}
-            onClick={() => setPaceCaretMode(paceCaretMode === "pb" ? "off" : "pb")}
-            ariaLabel="Pace caret: race your personal best"
-            icon={<Target size={14} />}
-          >
-            pb
-          </Pill>
-          <PaceCaretCustomInput
-            active={paceCaretMode === "custom"}
-            value={paceCaretCustomWpm}
-            onActivate={(wpm) => {
-              setPaceCaretCustomWpm(wpm);
-              setPaceCaretMode("custom");
-            }}
-          />
-        </div>
-
-        {/* Divider 1 */}
-        <div className="h-4 w-px bg-border/80 shrink-0 mx-2 lg:mx-3 select-none" aria-hidden="true" />
-
-        {/* Part 2: Modes (time, words, quote, custom, vocabulary) */}
-        <div className="shrink-0 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2.5 min-h-9">
-          {MODES.map((m) => (
-            <Pill
-              key={m.id}
-              active={mode === m.id}
-              onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
-              ariaLabel={m.label}
-              icon={m.icon}
-            >
-              {m.label.toLowerCase()}
-            </Pill>
-          ))}
-        </div>
-
-        {/* Divider 2 */}
-        <div className="h-4 w-px bg-border/80 shrink-0 mx-2 lg:mx-3 select-none" aria-hidden="true" />
-
-        {/* Part 3: Mode Options (15s, 30s, 1m, 2m, edit icon / word counts / quote lengths / etc.) */}
-        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0 min-h-9">
-          {mode === "time" && (
-            <>
-              {TIME_DURATIONS.map((d) => (
-                <Pill
-                  key={d}
-                  active={timeDuration === d}
-                  onClick={() => setTimeDuration(d)}
-                  ariaLabel={formatDuration(d)}
-                >
-                  {formatDuration(d)}
-                </Pill>
-              ))}
-              <CustomDurationInput
-                value={timeDuration}
-                isCustom={!TIME_DURATIONS.includes(timeDuration)}
-                onApply={setTimeDuration}
+              <PaceCaretCustomInput
+                active={paceCaretMode === "custom"}
+                value={paceCaretCustomWpm}
+                onActivate={(wpm) => {
+                  setPaceCaretCustomWpm(wpm);
+                  setPaceCaretMode("custom");
+                }}
               />
-            </>
-          )}
+            </div>
 
-          {mode === "words" &&
-            WORD_COUNTS.map((w) => (
-              <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
-                {w}
-              </Pill>
-            ))}
+            {/* Divider 1 */}
+            <div className="h-4 w-px bg-border/80 shrink-0 mx-2 lg:mx-3 select-none" aria-hidden="true" />
 
-          {mode === "quote" &&
-            QUOTE_LENGTHS.map((l) => (
-              <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
-                {l}
-              </Pill>
-            ))}
-
-          {mode === "custom" && (
-            <button
-              type="button"
-              onClick={onOpenCustomText}
-              className="text-xs font-mono text-sub hover:text-accent transition-colors underline decoration-dotted"
-            >
-              edit custom text
-            </button>
-          )}
-
-          {mode === "vocabulary" && (
-            <>
-              {VOCAB_DIFFICULTIES.map((d) => (
+            {/* Part 2: Modes (time, words, quote, custom, vocabulary) */}
+            <div className="shrink-0 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2.5 min-h-9">
+              {MODES.map((m) => (
                 <Pill
-                  key={d}
-                  active={vocabDifficulty === d}
-                  onClick={() => setVocabDifficulty(d)}
-                  ariaLabel={VOCAB_DIFFICULTY_LABEL[d]}
+                  key={m.id}
+                  active={mode === m.id}
+                  onClick={() => (m.id === "custom" ? onOpenCustomText() : setMode(m.id))}
+                  ariaLabel={m.label}
+                  icon={m.icon}
                 >
-                  {VOCAB_DIFFICULTY_LABEL[d]}
+                  {m.label.toLowerCase()}
                 </Pill>
               ))}
-              <span className="h-4 w-px bg-border/80 shrink-0 mx-1" aria-hidden="true" />
-              {WORD_COUNTS.map((w) => (
+            </div>
+          </div>
+        </div>
+
+        {/* Part 3: Keep options outside the masked modifiers/modes scroller. */}
+        <div className="flex max-w-[50%] shrink-0 items-center">
+          <div className="h-4 w-px bg-border/80 shrink-0 mx-2 lg:mx-3 select-none" aria-hidden="true" />
+          <div
+            className={cn(
+              "flex min-h-9 items-center gap-1 whitespace-nowrap sm:gap-1.5 lg:gap-2",
+              mode !== "time" && "min-w-0 overflow-x-auto scrollbar-none",
+            )}
+          >
+            {mode === "time" && (
+              <>
+                {TIME_DURATIONS.map((d) => (
+                  <Pill
+                    key={d}
+                    active={timeDuration === d}
+                    onClick={() => setTimeDuration(d)}
+                    ariaLabel={formatDuration(d)}
+                  >
+                    {formatDuration(d)}
+                  </Pill>
+                ))}
+                <CustomDurationControl
+                  value={timeDuration}
+                  isCustom={!TIME_DURATIONS.includes(timeDuration)}
+                  onApply={setTimeDuration}
+                />
+              </>
+            )}
+
+            {mode === "words" &&
+              WORD_COUNTS.map((w) => (
                 <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
                   {w}
                 </Pill>
               ))}
-            </>
-          )}
+
+            {mode === "quote" &&
+              QUOTE_LENGTHS.map((l) => (
+                <Pill key={l} active={quoteLength === l} onClick={() => setQuoteLength(l)} ariaLabel={l}>
+                  {l}
+                </Pill>
+              ))}
+
+            {mode === "custom" && (
+              <button
+                type="button"
+                onClick={onOpenCustomText}
+                className="text-xs font-mono text-sub hover:text-accent transition-colors underline decoration-dotted"
+              >
+                edit custom text
+              </button>
+            )}
+
+            {mode === "vocabulary" && (
+              <>
+                {VOCAB_DIFFICULTIES.map((d) => (
+                  <Pill
+                    key={d}
+                    active={vocabDifficulty === d}
+                    onClick={() => setVocabDifficulty(d)}
+                    ariaLabel={VOCAB_DIFFICULTY_LABEL[d]}
+                  >
+                    {VOCAB_DIFFICULTY_LABEL[d]}
+                  </Pill>
+                ))}
+                <span className="h-4 w-px bg-border/80 shrink-0 mx-1" aria-hidden="true" />
+                {WORD_COUNTS.map((w) => (
+                  <Pill key={w} active={wordCount === w} onClick={() => setWordCount(w)} ariaLabel={String(w)}>
+                    {w}
+                  </Pill>
+                ))}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function clampDuration(n: number): number {
-  return Math.min(MAX_CUSTOM_TIME_DURATION, Math.max(MIN_CUSTOM_TIME_DURATION, Math.round(n)));
-}
-
-// Durations over a minute render as "1m 13s" / "2h 3m 14s" rather than a raw
-// second count — the range now runs up to 24h, where e.g. "72540" would
-// otherwise be unreadable. Trailing zero units are dropped ("2m" not
-// "2m 0s"), but a zero unit sandwiched between two nonzero ones is kept
-// ("1h 0m 5s") so the magnitude of the middle unit stays unambiguous.
-function formatDuration(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) {
-    if (s > 0) return `${h}h ${m}m ${s}s`;
-    if (m > 0) return `${h}h ${m}m`;
-    return `${h}h`;
-  }
-  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
-}
-
-// A custom time duration, tucked behind a pencil icon so it doesn't sit as a
-// permanently-visible bare input among the preset pills. Clicking it (or the
-// active-value pill, once a custom duration is set) reveals a real number
-// input; Enter/blur commits and clamps, Escape cancels back to the icon.
-function CustomDurationInput({
-  value,
-  isCustom,
-  onApply,
-}: {
-  value: number;
-  isCustom: boolean;
-  onApply: (seconds: number) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
-  const [invalid, setInvalid] = useState(false);
-
-  const commit = () => {
-    const parsed = Number(draft);
-    const isValid = draft.trim() !== "" && Number.isFinite(parsed);
-    if (isValid) {
-      onApply(clampDuration(parsed));
-      setDraft("");
-      setInvalid(false);
-      setEditing(false);
-      return;
-    }
-    // Invalid input (e.g. non-numeric text pasted in) used to silently
-    // discard and close with no feedback, so the user had no idea their
-    // input was rejected. Stay open with a visible error instead of
-    // pretending nothing happened.
-    setInvalid(true);
-  };
-
-  if (editing) {
-    return (
-      <div className="flex flex-col items-center gap-0.5">
-        <input
-          type="number"
-          inputMode="numeric"
-          min={MIN_CUSTOM_TIME_DURATION}
-          max={MAX_CUSTOM_TIME_DURATION}
-          value={draft}
-          autoFocus
-          onChange={(e) => {
-            setDraft(e.target.value);
-            if (invalid) setInvalid(false);
-          }}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              commit();
-            } else if (e.key === "Escape") {
-              e.preventDefault();
-              setDraft("");
-              setInvalid(false);
-              setEditing(false);
-            }
-          }}
-          placeholder="sec"
-          aria-label="Custom time duration in seconds"
-          aria-invalid={invalid}
-          className={cn(
-            "w-20 rounded bg-transparent px-1 py-1 text-center text-sub placeholder:text-sub/50 focus:text-foreground focus:outline-none",
-            invalid && "text-error",
-          )}
-        />
-        {invalid && (
-          <span className="text-[10px] text-error" role="alert">
-            Enter a number
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  if (isCustom) {
-    return (
-      <Pill
-        active
-        onClick={() => {
-          setDraft(String(value));
-          setEditing(true);
-        }}
-        ariaLabel={`Custom duration: ${formatDuration(value)}`}
-      >
-        {formatDuration(value)}
-      </Pill>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      aria-label="Set a custom duration"
-      title="Set a custom duration"
-      className="flex min-h-8 sm:min-h-9 items-center justify-center rounded px-2 py-1 text-sub transition-colors hover:text-foreground shrink-0"
-    >
-      <Pencil size={14} />
-    </button>
-  );
-}
-
-// Same editable-pill pattern as CustomDurationInput, for the pace caret's
-// custom-WPM target. "active" here means paceCaretMode === "custom" --
+// An editable pill for the pace caret's custom-WPM target, separate from
+// the custom test duration. "active" here means paceCaretMode === "custom" --
 // there's no preset list to compare against (unlike duration), so the
 // caller drives activation directly: committing a number both sets the WPM
 // and switches the mode to "custom" in one action. Turning pace caret off
 // entirely is done via the "pb" pill (click it twice from "custom": once to
 // switch to "pb", again to reach "off") -- same exclusive-choice shape as
-// duration presets already overriding CustomDurationInput, just one extra
+// duration presets already overriding a custom duration, just one extra
 // click since "off" is a third state here that duration doesn't have.
 function PaceCaretCustomInput({
   active,

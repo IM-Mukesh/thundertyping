@@ -19,12 +19,11 @@ import {
   X,
 } from "lucide-react";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
+import { CustomDurationControl } from "@/components/typing-test/custom-duration-control";
 import {
   TIME_DURATIONS,
   WORD_COUNTS,
   QUOTE_LENGTHS,
-  MIN_CUSTOM_TIME_DURATION,
-  MAX_CUSTOM_TIME_DURATION,
   type TestMode,
 } from "@/lib/typing-engine/engine-types";
 import {
@@ -32,6 +31,7 @@ import {
   type VocabDifficulty,
 } from "@/lib/vocabulary/vocabulary-words";
 import { MIN_PACE_CARET_WPM, MAX_PACE_CARET_WPM } from "@/lib/typing-engine/pace-caret";
+import { formatDuration } from "@/lib/typing-engine/custom-duration";
 import { cn } from "@/lib/utils/cn";
 
 const VOCAB_DIFFICULTY_LABEL: Record<VocabDifficulty, string> = {
@@ -47,19 +47,6 @@ const MODES: { id: TestMode; label: string; icon: typeof Clock }[] = [
   { id: "custom", label: "Custom", icon: Wrench },
   { id: "vocabulary", label: "Vocabulary", icon: BookOpen },
 ];
-
-function formatDuration(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) {
-    if (s > 0) return `${h}h ${m}m ${s}s`;
-    if (m > 0) return `${h}h ${m}m`;
-    return `${h}h`;
-  }
-  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
-}
 
 interface MobileTestSettingsModalProps {
   open: boolean;
@@ -96,10 +83,6 @@ export function MobileTestSettingsModal({
   const togglePunctuation = useSettingsStore((s) => s.togglePunctuation);
   const toggleNumbers = useSettingsStore((s) => s.toggleNumbers);
 
-  const [customEditing, setCustomEditing] = useState(false);
-  const [customDraft, setCustomDraft] = useState("");
-  const [customDraftInvalid, setCustomDraftInvalid] = useState(false);
-
   const [paceEditing, setPaceEditing] = useState(false);
   const [paceDraft, setPaceDraft] = useState("");
   const [paceDraftInvalid, setPaceDraftInvalid] = useState(false);
@@ -113,7 +96,8 @@ export function MobileTestSettingsModal({
     document.body.style.overflow = "hidden";
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      // A nested native dialog handles Escape before the settings modal.
+      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]")) onClose();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -122,25 +106,6 @@ export function MobileTestSettingsModal({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, onClose]);
-
-  const commitCustomDuration = () => {
-    const parsed = Number(customDraft);
-    const isValid = customDraft.trim() !== "" && Number.isFinite(parsed);
-    if (isValid) {
-      const clamped = Math.min(
-        MAX_CUSTOM_TIME_DURATION,
-        Math.max(MIN_CUSTOM_TIME_DURATION, Math.round(parsed)),
-      );
-      setTimeDuration(clamped);
-      setCustomDraft("");
-      setCustomDraftInvalid(false);
-      setCustomEditing(false);
-      return;
-    }
-    // Used to silently discard invalid input (e.g. non-numeric text) and
-    // close with no feedback. Stay open with a visible error instead.
-    setCustomDraftInvalid(true);
-  };
 
   const commitPaceDraft = () => {
     const parsed = Number(paceDraft);
@@ -261,79 +226,17 @@ export function MobileTestSettingsModal({
                         {formatDuration(d)}
                       </button>
                     ))}
-                  </div>
-
-                  {/* Custom duration row */}
-                  <div className="mt-2 flex items-center gap-2">
-                    {customEditing ? (
-                      <div className="flex w-full flex-col gap-1">
-                        <div className="flex w-full items-center gap-2">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={MIN_CUSTOM_TIME_DURATION}
-                            max={MAX_CUSTOM_TIME_DURATION}
-                            value={customDraft}
-                            autoFocus
-                            onChange={(e) => {
-                              setCustomDraft(e.target.value);
-                              if (customDraftInvalid) setCustomDraftInvalid(false);
-                            }}
-                            onBlur={commitCustomDuration}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                commitCustomDuration();
-                              } else if (e.key === "Escape") {
-                                e.preventDefault();
-                                setCustomDraftInvalid(false);
-                                setCustomEditing(false);
-                              }
-                            }}
-                            placeholder="Seconds"
-                            aria-label="Custom duration in seconds"
-                            aria-invalid={customDraftInvalid}
-                            className={cn(
-                              "flex-1 rounded-lg border bg-sub-alt/40 px-3 py-1.5 font-mono text-xs text-foreground outline-none",
-                              customDraftInvalid ? "border-error" : "border-accent",
-                            )}
-                          />
-                          <button
-                            type="button"
-                            onClick={commitCustomDuration}
-                            className="rounded-lg bg-accent px-3 py-1.5 font-display text-xs font-bold text-accent-foreground"
-                          >
-                            Set
-                          </button>
-                        </div>
-                        {customDraftInvalid && (
-                          <span className="px-1 text-[10px] text-error" role="alert">
-                            Enter a number
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomDraft(String(timeDuration));
-                          setCustomEditing(true);
-                        }}
-                        className={cn(
-                          "flex w-full items-center justify-center gap-1.5 rounded-lg border py-1.5 font-mono text-xs transition-colors",
-                          !TIME_DURATIONS.includes(timeDuration)
-                            ? "border-accent bg-accent/15 text-accent font-bold"
-                            : "border-border/70 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
-                        )}
-                      >
-                        <Pencil size={12} />
-                        <span>
-                          {!TIME_DURATIONS.includes(timeDuration)
-                            ? `Custom: ${formatDuration(timeDuration)}`
-                            : "Custom duration"}
-                        </span>
-                      </button>
-                    )}
+                    <CustomDurationControl
+                      value={timeDuration}
+                      isCustom={!TIME_DURATIONS.includes(timeDuration)}
+                      onApply={setTimeDuration}
+                      className={cn(
+                        "w-full rounded-lg border py-2 pointer-fine:w-full",
+                        !TIME_DURATIONS.includes(timeDuration)
+                          ? "border-accent bg-accent/15 text-accent"
+                          : "border-border/70 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
+                      )}
+                    />
                   </div>
                 </div>
               )}

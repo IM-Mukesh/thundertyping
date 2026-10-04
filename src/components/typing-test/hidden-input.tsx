@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { TestStatus } from "@/lib/typing-engine/engine-types";
 import { splitOnCommit } from "@/lib/typing-engine/input-commit";
+import { focusInputDuringGesture } from "@/lib/typing-engine/input-focus";
 
 interface HiddenInputProps {
   value: string;
@@ -53,7 +54,11 @@ export function HiddenInput({
     // On touch devices, only focus in response to an explicit token bump (a
     // real tap) -- never as a side effect of `disabled` turning false again.
     if (isTouch && !tokenChanged) return;
-    inputRef.current?.focus();
+    // A pointer/touch handler may already have focused the input during the
+    // gesture. Do not issue a second focus from this later effect.
+    if (inputRef.current && inputRef.current !== document.activeElement) {
+      inputRef.current.focus();
+    }
   }, [focusToken, isDisabled]);
 
   return (
@@ -65,6 +70,21 @@ export function HiddenInput({
         ref={inputRef}
         value={value}
         disabled={isDisabled}
+        onPointerDown={(e) => {
+          // Mobile browsers only permit the virtual keyboard to open when
+          // focus happens inside the pointer gesture. The focusToken effect
+          // below intentionally remains as a desktop/programmatic fallback,
+          // but is too late to be the only mobile path.
+          if (e.button === 0) {
+            focusInputDuringGesture(inputRef.current, isDisabled);
+          }
+        }}
+        // Older iOS versions may expose touch events without Pointer Events.
+        // Keep this fallback on the input itself so the call is still part of
+        // the user's direct gesture rather than a later React effect.
+        onTouchStart={() => {
+          focusInputDuringGesture(inputRef.current, isDisabled);
+        }}
         onChange={(e) => {
           // Mid-composition, the value is provisional candidate text, not
           // what the user will actually end up with -- let onCompositionEnd
