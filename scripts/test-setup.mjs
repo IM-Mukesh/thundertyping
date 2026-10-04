@@ -5,26 +5,15 @@
 import { register } from "node:module";
 import { pathToFileURL } from "node:url";
 
-try {
-  process.loadEnvFile?.(".env.local");
-} catch {
-  try {
-    process.loadEnvFile?.(".env");
-  } catch {
-    // env file optional in test environments
-  }
-}
-
-// In unit test runner, ensure environment variables exist if not loaded from file
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://humzucvcxyapcxkrmutj.supabase.co";
-}
-if (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4jYCbNHvfcUYhstD6_QZyA_iwV3hD-X";
-}
-if (!process.env.SUPABASE_SECRET_KEY) {
-  process.env.SUPABASE_SECRET_KEY = "sb_secret_test_placeholder_key";
-}
+// Unit tests never load private environment files or contact a real service.
+// Individual tests may replace fetch with their own in-memory fixtures.
+process.env.NEXT_PUBLIC_SUPABASE_URL = "https://supabase.invalid";
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test_placeholder";
+process.env.SUPABASE_SECRET_KEY = "sb_secret_test_placeholder";
+delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
+globalThis.fetch = async () => { throw new Error("Network is disabled in unit tests; provide an explicit fixture."); };
 
 // A tiny browser-storage shim keeps local-only persistence tests deterministic
 // under Node's test runner without changing production SSR behavior.

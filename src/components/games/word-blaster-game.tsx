@@ -23,7 +23,9 @@ import {
   TICK_MS,
   useWordBlaster,
 } from "@/lib/games/use-word-blaster";
-import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { useGameBest } from "@/lib/games/use-game-best";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
@@ -89,7 +91,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
 
   // `start` already rebuilds the initial state, so "Play again" needs it rather
   // than a separate reset.
-  const { state, start, resume, setTyped } = useWordBlaster(definition);
+  const { state, start, pause, resume, setTyped } = useWordBlaster(definition);
   const inputRef = useRef<HTMLInputElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +99,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
   // renders client-side (its wrapper is next/dynamic with ssr:false), so
   // localStorage is guaranteed available and there's no server pass to
   // reconcile.
-  const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
+  const best = useGameBest(definition.id);
   const [isNewBest, setIsNewBest] = useState(false);
 
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -291,7 +293,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
   useEffect(() => {
     if (state.status !== "over") return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         handleStart();
       }
@@ -309,14 +311,13 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
     if (recordedRef.current) return;
     recordedRef.current = true;
 
-    const { isNewBest: newBest, best: stored } = recordGameResult(definition.id, {
+    const { isNewBest: newBest } = recordGameResult(definition.id, {
       score: state.score,
       cleared: state.destroyed,
       bestCombo: state.bestCombo,
       survivedMs: state.elapsedMs,
     });
     setIsNewBest(newBest);
-    setBest(stored);
     playSound("over", soundEnabled);
     sound("wb-defeat", soundEnabled);
     // Every game must feed the cross-game profile, or "play every game"
@@ -336,6 +337,7 @@ export function WordBlasterGame({ definition, art }: WordBlasterGameProps) {
 
   return (
     <GameViewport
+      onPause={pause}
       onFocusGame={focusInput}
       isFocused={isFocused}
       isRunning={isPlaying}

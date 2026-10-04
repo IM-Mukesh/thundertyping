@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import {
   Flame,
@@ -21,10 +21,13 @@ import { useFruitFury } from "@/lib/games/fruit-fury/use-fruit-fury";
 import {
   DIFFICULTY_CONFIGS,
   GameDifficulty,
+  FruitInputMode,
+  FruitRunMode,
   TypingMode,
   TYPING_MODES,
 } from "@/lib/games/fruit-fury/fruit-fury-types";
-import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { FRUIT_MISSIONS, fruitMissionProgress, fruitRunSummary, fruitVariant } from "@/lib/games/fruit-fury/fruit-fury-engine";
+import { parseGameBest, readGameBestRaw, recordGameResult, recordGameStart, subscribeGameBests } from "@/lib/games/game-scores";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
   awardXp,
@@ -39,24 +42,25 @@ import { cn } from "@/lib/utils/cn";
 export default function FruitFuryGame({ definition }: GameComponentProps) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>("medium");
   const [selectedTypingMode, setSelectedTypingMode] = useState<TypingMode>("all");
-  const [sliceMode, setSliceMode] = useState<"touch" | "type">(() => {
-    if (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) {
-      return "touch";
-    }
-    return "type";
-  });
+  const [sliceMode, setSliceMode] = useState<FruitInputMode>("keyboard");
+  const [selectedRunMode, setSelectedRunMode] = useState<FruitRunMode>("classic");
+  const [reducedEffects, updateReducedEffects] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const selectedVariant = fruitVariant(sliceMode, selectedDifficulty, selectedTypingMode);
 
   const {
     state,
     canvasRef,
     startGame,
     togglePause,
+    pauseGame,
+    returnToMenu,
     handleKeyInput,
-    handleCanvasClick,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
     setSoundEnabled,
+    setReducedEffects,
   } = useFruitFury(selectedDifficulty, selectedTypingMode);
 
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -66,60 +70,44 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
     setSoundEnabled(soundEnabled);
   }, [soundEnabled, setSoundEnabled]);
 
-  const [bestScore, setBestScore] = useState<GameBest | null>(() => getGameBest(definition.id));
+  const bestRaw = useSyncExternalStore(subscribeGameBests, () => readGameBestRaw(definition.id, selectedVariant), () => null);
+  const bestScore = useMemo(() => parseGameBest(bestRaw), [bestRaw]);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const recordedGameOverRef = useRef(false);
 
-  // Focus hidden input when running in type mode
   useEffect(() => {
-    if (state.status === "running" && sliceMode === "type") {
-      inputRef.current?.focus();
-    }
-  }, [state.status, sliceMode]);
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => {
+      let override: string | null = null;
+      try { override = localStorage.getItem("fruit-fury:reduced-effects"); } catch { /* Optional preference storage. */ }
+      updateReducedEffects(override === null ? preference.matches : override === "true");
+    };
+    apply();
+    preference.addEventListener("change", apply);
+    return () => preference.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => setReducedEffects(reducedEffects), [reducedEffects, setReducedEffects]);
+
+  // Only the visible game input handles typing; navigation keys keep their native behavior.
+  useEffect(() => {
+    if (state.status === "running" && state.inputMode === "keyboard") inputRef.current?.focus({ preventScroll: true });
+    if (state.status === "over") resultRef.current?.focus({ preventScroll: true });
+  }, [state.status, state.inputMode]);
 
   const handleStartGame = useCallback(
     (diff: GameDifficulty, mode: TypingMode) => {
-      recordGameStart(definition.id);
-      startGame(diff, mode);
+      setIsNewRecord(false);
+      setUnlockedAchievements([]);
+      if (selectedRunMode === "classic") recordGameStart(definition.id, fruitVariant(sliceMode, diff, mode));
+      startGame(diff, mode, sliceMode, selectedRunMode);
     },
-    [definition.id, startGame],
+    [definition.id, startGame, sliceMode, selectedRunMode],
   );
-
-  // Global keydown handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-
-      if (state.status === "running") {
-        if (e.key === "Escape" || e.key === "Tab") {
-          e.preventDefault();
-          togglePause();
-          return;
-        }
-
-        if (e.key.length === 1 && /^[a-zA-Z0-9]$/.test(e.key)) {
-          e.preventDefault();
-          handleKeyInput(e.key);
-        }
-      } else if (state.status === "idle" || state.status === "over") {
-        if (e.key === " " || e.key === "Enter") {
-          e.preventDefault();
-          handleStartGame(selectedDifficulty, selectedTypingMode);
-        }
-      } else if (state.status === "paused") {
-        if (e.key === " " || e.key === "Escape") {
-          e.preventDefault();
-          togglePause();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [state.status, handleKeyInput, togglePause, handleStartGame, selectedDifficulty, selectedTypingMode]);
 
   // Handle Game Over persistence, stats, achievements
   useEffect(() => {
@@ -130,16 +118,18 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
 
     if (recordedGameOverRef.current) return;
     recordedGameOverRef.current = true;
+    const summary = fruitRunSummary(state);
+    if (!summary.eligible) return;
 
     // 1. Record best score
-    const { isNewBest, best } = recordGameResult(definition.id, {
+    const { isNewBest } = recordGameResult(definition.id, {
       score: state.score,
       cleared: state.fruitsCleared,
       bestCombo: state.maxCombo,
-      survivedMs: state.elapsedMs,
+      survivedMs: summary.survivedMs,
+      variant: summary.variant,
+      ...(summary.accuracy === null ? {} : { accuracy: summary.accuracy }),
     });
-    setBestScore(best);
-    setIsNewRecord(isNewBest);
 
     // 2. Award XP
     const earnedXp = Math.max(20, Math.round(state.score / 10) + state.fruitsCleared * 5);
@@ -160,9 +150,10 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
     if (state.maxCombo >= 10 && grantAchievement("fruit-fury:combo-10")) {
       newUnlocked.push("Blade Master");
     }
-    if (state.isFeverActive && grantAchievement("fruit-fury:fever")) {
+    if (state.feverEver && grantAchievement("fruit-fury:fever")) {
       newUnlocked.push("Fever Frenzy");
     }
+    if (state.goldenSliced > 0 && grantAchievement("fruit-fury:golden")) newUnlocked.push("Golden Harvest");
     if (state.bombsAvoided >= 10 && grantAchievement("fruit-fury:bomb-dodger")) {
       newUnlocked.push("Defusal Expert");
     }
@@ -175,47 +166,61 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
 
     // Check site-wide achievements
     checkSiteAchievements(GAME_LIST.map((g) => g.id));
-    setUnlockedAchievements(newUnlocked);
+    queueMicrotask(() => {
+      setIsNewRecord(isNewBest);
+      setUnlockedAchievements(newUnlocked);
+    });
   }, [state, definition.id]);
 
-  // Calculated Stats
-  const accuracy = useMemo(() => {
-    if (state.totalTyped === 0) return 100;
-    return Math.round((state.correctTyped / state.totalTyped) * 100);
-  }, [state.correctTyped, state.totalTyped]);
-
-  const wpm = useMemo(() => {
-    const minutes = Math.max(0.1, state.elapsedMs / 60000);
-    return Math.round(state.correctTyped / 5 / minutes);
-  }, [state.correctTyped, state.elapsedMs]);
+  const summary = useMemo(() => fruitRunSummary(state), [state]);
+  const mission = FRUIT_MISSIONS[state.runMode];
 
   return (
     <GameViewport
       onFocusGame={() => {
-        if (sliceMode === "type") inputRef.current?.focus();
+        // Do not steal focus from controls or native Tab navigation.
+        if (state.status === "running" && state.inputMode === "keyboard" && !inputFocused) inputRef.current?.focus();
       }}
-      isFocused={true}
+      isFocused={state.inputMode === "touch" || inputFocused}
       isRunning={state.status === "running"}
-      className="relative mx-auto flex w-full max-w-4xl flex-col items-center select-none font-sans"
+      className={cn("relative mx-auto flex w-full max-w-4xl flex-col items-center select-none font-sans", reducedEffects && "[&_*]:!animate-none [&_*]:!transition-none")}
     >
-      {/* Hidden input for virtual keyboard support on touch devices */}
-      <input
-        ref={inputRef}
-        type="text"
-        className="pointer-events-none absolute -top-96 h-0 w-0 opacity-0"
-        aria-hidden="true"
-        autoComplete="off"
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck="false"
-        onChange={(e) => {
-          const val = e.target.value;
-          if (val.length > 0) {
-            handleKeyInput(val[val.length - 1]!);
-            e.target.value = "";
-          }
-        }}
-      />
+      <div className="mb-2 flex w-full flex-wrap items-center justify-between gap-2 text-xs text-stone-400">
+        <span>{state.status === "idle" ? "Choose your controls and session" : `${mission.label} · ${state.inputMode} · ${(state.elapsedMs / 1000).toFixed(1)}s active`}</span>
+        <label className="flex cursor-pointer items-center gap-2">
+          <input type="checkbox" checked={reducedEffects} onChange={(e) => {
+            updateReducedEffects(e.target.checked);
+            try { localStorage.setItem("fruit-fury:reduced-effects", String(e.target.checked)); } catch { /* Optional preference storage. */ }
+          }} />
+          Reduced effects
+        </label>
+      </div>
+      {(state.status === "running" || state.status === "paused") && (
+        <div className="mb-2 w-full rounded-lg border border-stone-700 bg-stone-950 p-2 text-xs text-stone-200">
+          <p id="fruit-fury-instructions">{fruitMissionProgress(state)}{mission.limitMs !== null && ` · ${Math.max(0, Math.ceil((mission.limitMs - state.elapsedMs) / 1000))}s left`}</p>
+          {state.inputMode === "keyboard" && (
+            <input
+              ref={inputRef} type="text" aria-label="Fruit Fury key input" aria-describedby="fruit-fury-instructions"
+              className="mt-2 w-full rounded border border-stone-600 bg-stone-900 px-3 py-2 text-sm text-white focus:outline-2 focus:outline-rose-400"
+              placeholder={state.status === "paused" ? "Paused — use Resume below" : "Type fruit keys here · Tab pauses and moves focus"}
+              readOnly={state.status !== "running"} autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+              onFocus={() => setInputFocused(true)} onBlur={() => { setInputFocused(false); pauseGame(); }}
+              onPaste={(e) => e.preventDefault()}
+              onKeyDown={(e) => {
+                if (e.key === "Tab") { pauseGame(); return; }
+                if (e.key === "Escape") { e.preventDefault(); pauseGame(); return; }
+                if (e.ctrlKey || e.metaKey || e.altKey || e.nativeEvent.isComposing) return;
+                if (/^[a-z0-9]$/i.test(e.key)) { e.preventDefault(); if (!e.repeat) handleKeyInput(e.key); }
+              }}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^[a-z0-9]$/i.test(value)) handleKeyInput(value);
+                e.target.value = "";
+              }}
+            />
+          )}
+        </div>
+      )}
 
       {/* Main Arcade Frame */}
       <div
@@ -330,7 +335,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
             {state.status === "running" && (
               <button
                 type="button"
-                onClick={togglePause}
+                onClick={pauseGame}
                 className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-white/10 bg-stone-900 text-stone-300 transition-colors hover:bg-stone-800 hover:text-white"
                 title="Pause game"
                 aria-label="Pause game"
@@ -371,28 +376,23 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
         <div
           className="relative w-full cursor-crosshair overflow-hidden touch-none"
           style={{ height: "var(--safe-board-height, clamp(340px, 60dvh, 640px))" }}
-          onClick={(e) => {
-            handleCanvasClick(e.clientX, e.clientY);
-            if (sliceMode === "type") inputRef.current?.focus();
-          }}
-          onTouchStart={(e) => {
-            const touch = e.touches[0];
-            if (touch) {
-              handleTouchStart(touch.clientX, touch.clientY);
-              if (sliceMode === "type") inputRef.current?.focus();
-            }
-          }}
-          onTouchMove={(e) => {
-            const touch = e.touches[0];
-            if (touch) {
-              handleTouchMove(touch.clientX, touch.clientY);
-            }
-          }}
-          onTouchEnd={handleTouchEnd}
         >
           <canvas
             ref={canvasRef}
             className="h-full w-full block"
+            aria-label={state.inputMode === "keyboard" ? "Flying fruit and bomb key targets" : "Touch blade arena: tap or drag over fruit, avoid bombs"}
+            onPointerDown={(e) => {
+              if (state.status !== "running" || !e.isPrimary || e.button !== 0) return;
+              if (state.inputMode === "keyboard") { e.preventDefault(); inputRef.current?.focus(); return; }
+              e.currentTarget.setPointerCapture(e.pointerId);
+              handleTouchStart(e.clientX, e.clientY);
+            }}
+            onPointerMove={(e) => {
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) handleTouchMove(e.clientX, e.clientY);
+            }}
+            onPointerUp={handleTouchEnd}
+            onPointerCancel={handleTouchEnd}
+            onLostPointerCapture={handleTouchEnd}
           />
 
           {/* Pause Overlay */}
@@ -402,7 +402,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 <div className="mb-2 text-2xl font-black tracking-tight text-white uppercase">
                   Game Paused
                 </div>
-                <p className="mb-5 text-sm text-stone-400">Tap Resume or press Space to continue slicing</p>
+                <p className="mb-5 text-sm text-stone-400">Your timer is stopped. Resume when ready.</p>
                 <button
                   type="button"
                   onClick={togglePause}
@@ -411,6 +411,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                   <Play className="h-5 w-5 fill-current" />
                   Resume Slicing
                 </button>
+                <button type="button" onClick={returnToMenu} className="mt-4 block w-full rounded-lg border border-stone-600 px-3 py-2 text-sm text-stone-200">End run / change setup</button>
               </div>
             </div>
           )}
@@ -441,8 +442,16 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 </div>
 
                 <p className="mb-2 sm:mb-3 text-xs sm:text-sm font-medium text-stone-300 max-w-md">
-                  Type letters or swipe to slice flying fruits in mid-air. Defuse fatal bombs and unleash the Fever Mode frenzy!
+                  Choose keyboard keys or a touch blade to slice fruit. Leave bombs alone and unleash Fever Mode!
                 </p>
+
+                <div className="mb-3 w-full text-left">
+                  <label htmlFor="fruit-fury-session" className="text-[11px] font-bold tracking-widest text-stone-400 uppercase">Session</label>
+                  <select id="fruit-fury-session" value={selectedRunMode} onChange={(e) => setSelectedRunMode(e.target.value as FruitRunMode)} className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-900 p-2 text-sm text-white">
+                    {(Object.keys(FRUIT_MISSIONS) as FruitRunMode[]).map((mode) => <option key={mode} value={mode}>{FRUIT_MISSIONS[mode].label}</option>)}
+                  </select>
+                  <p className="mt-1 text-xs text-stone-400">{FRUIT_MISSIONS[selectedRunMode].description}</p>
+                </div>
 
                 {/* Control Style Toggle */}
                 <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">
@@ -452,10 +461,11 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setSliceMode("type")}
+                      onClick={() => setSliceMode("keyboard")}
+                      aria-pressed={sliceMode === "keyboard"}
                       className={cn(
                         "flex items-center justify-center gap-2 rounded-xl border p-2 transition-all",
-                        sliceMode === "type"
+                        sliceMode === "keyboard"
                           ? "border-rose-500 bg-rose-500/20 text-rose-200 shadow-md ring-2 ring-rose-500/30"
                           : "border-stone-800 bg-stone-900/60 text-stone-400 hover:text-stone-200",
                       )}
@@ -465,6 +475,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                     <button
                       type="button"
                       onClick={() => setSliceMode("touch")}
+                      aria-pressed={sliceMode === "touch"}
                       className={cn(
                         "flex items-center justify-center gap-2 rounded-xl border p-2 transition-all",
                         sliceMode === "touch"
@@ -478,7 +489,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 </div>
 
                 {/* Difficulty Selector */}
-                <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">
+                {selectedRunMode !== "tutorial" && <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">
                   <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-stone-400 uppercase">
                     Select Difficulty
                   </div>
@@ -491,6 +502,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                           key={diff}
                           type="button"
                           onClick={() => setSelectedDifficulty(diff)}
+                          aria-pressed={active}
                           className={cn(
                             "flex flex-col items-center justify-center rounded-xl border p-2 transition-all",
                             active
@@ -510,10 +522,10 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                       );
                     })}
                   </div>
-                </div>
+                </div>}
 
                 {/* Typing Practice Mode Selector */}
-                <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">
+                {sliceMode === "keyboard" && <div className="mb-2 sm:mb-3 flex w-full flex-col gap-1">
                   <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold tracking-widest text-stone-400 uppercase">
                     <span>Practice Keyboard Rows</span>
                     <span className="text-rose-400 font-semibold lowercase">
@@ -529,6 +541,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                           key={mode}
                           type="button"
                           onClick={() => setSelectedTypingMode(mode)}
+                          aria-pressed={active}
                           className={cn(
                             "flex flex-col items-center justify-center rounded-xl border p-1.5 sm:p-2 transition-all text-center",
                             active
@@ -554,7 +567,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                       );
                     })}
                   </div>
-                </div>
+                </div>}
 
                 {/* Quick Rules Pills */}
                 <div className="mb-2 sm:mb-3 grid w-full grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-2 text-left text-xs">
@@ -569,7 +582,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                     <span className="text-base sm:text-xl">💣</span>
                     <div>
                       <div className="font-bold text-rose-400 text-[11px] sm:text-xs">Fatal Bomb</div>
-                      <div className="text-[9px] sm:text-[10px] text-rose-300">Instant Game Over!</div>
+                      <div className="text-[9px] sm:text-[10px] text-rose-300">{selectedRunMode === "tutorial" ? "Safe retries in lesson" : "Instant Game Over!"}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-lg border border-stone-800 bg-stone-900/50 p-1.5 sm:p-2">
@@ -589,11 +602,11 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 </div>
 
                 {/* Personal Best Snapshot */}
-                {bestScore && (
+                {selectedRunMode === "classic" && bestScore && (
                   <div className="mb-2 sm:mb-3 flex items-center gap-3 rounded-xl border border-white/10 bg-stone-900/60 px-3 py-1 text-[11px] sm:text-xs text-stone-300">
                     <Trophy className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                     <span>
-                      High Score:{" "}
+                      This variant:{" "}
                       <strong className="text-white">{bestScore.score.toLocaleString()}</strong>
                     </span>
                     <span>•</span>
@@ -610,8 +623,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 px-7 py-2.5 sm:px-9 sm:py-3 text-sm sm:text-base font-black tracking-wide text-white shadow-xl shadow-rose-500/30 transition-all hover:scale-105 active:scale-95"
                 >
                   <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
-                  <span>START SLICING</span>
-                  <span className="hidden sm:inline font-bold text-xs text-rose-200 opacity-90">(SPACE)</span>
+                  <span>{selectedRunMode === "tutorial" ? "START SAFE LESSON" : selectedRunMode === "classic" ? "START SLICING" : "START MISSION"}</span>
                 </button>
               </div>
             </div>
@@ -624,7 +636,7 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
               <div className="pointer-events-none absolute inset-0 opacity-25">
                 <Image
                   src={
-                    isNewRecord
+                    isNewRecord || state.gameOverReason === "completed"
                       ? "/games/fruit-fury/victory.webp"
                       : "/games/fruit-fury/defeat.webp"
                   }
@@ -635,9 +647,14 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                 <div className="absolute inset-0 bg-stone-950/70" />
               </div>
 
-              <div className="relative z-10 my-auto flex max-w-md flex-col items-center text-center py-2 sm:py-4">
+              <div ref={resultRef} tabIndex={-1} aria-label="Fruit Fury results" className="relative z-10 my-auto flex max-w-md flex-col items-center text-center py-2 sm:py-4 outline-none">
                 {/* Reason Title */}
-                {state.gameOverReason === "bombed" ? (
+                {state.gameOverReason === "completed" || state.gameOverReason === "mission_failed" || state.gameOverReason === "time_up" ? (
+                  <div className="mb-2">
+                    <h2 className="text-2xl font-black text-white">{state.gameOverReason === "completed" ? `${mission.label} complete!` : state.gameOverReason === "time_up" ? "Time's up" : "Clean streak broken"}</h2>
+                    <p className="mt-1 text-xs text-stone-300">{state.gameOverReason === "completed" ? "Goal met. Choose your next challenge below." : "Try again or choose a gentler setup."}</p>
+                  </div>
+                ) : state.gameOverReason === "bombed" ? (
                   <div className="mb-2 flex flex-col items-center">
                     <div className="mb-1.5 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-rose-950/90 border border-rose-500 text-rose-500 shadow-xl shadow-rose-950/70 animate-bounce">
                       <AlertTriangle className="h-5 w-5 sm:h-7 sm:w-7" />
@@ -679,11 +696,12 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                   )}
 
                   <div className="mt-1.5 flex items-center justify-center gap-2 text-[10px] sm:text-[11px] font-bold text-stone-400 uppercase tracking-widest">
-                    <span className="text-stone-300">{TYPING_MODES[state.typingMode]?.label || "All Keys"} Mode</span>
+                    <span className="text-stone-300">{state.inputMode} · {TYPING_MODES[state.typingMode]?.label || "All Keys"}</span>
                     <span>•</span>
                     <span className="text-rose-400">{DIFFICULTY_CONFIGS[state.difficulty].label}</span>
                   </div>
                 </div>
+                {!summary.eligible && <p className="mb-3 text-xs text-amber-200">Practice session · excluded from Classic records, XP and achievements.</p>}
 
                 {/* Stat Cards Grid */}
                 <div className="mb-3 sm:mb-5 grid w-full grid-cols-3 gap-1.5 sm:gap-2 text-center text-xs">
@@ -704,12 +722,12 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                     <div className="mt-0.5 text-sm sm:text-base font-black text-purple-400">{state.level}</div>
                   </div>
                   <div className="rounded-xl border border-stone-800 bg-stone-900/70 p-2 sm:p-2.5 backdrop-blur-sm">
-                    <div className="text-[9px] sm:text-[10px] text-stone-400 uppercase font-semibold">Accuracy</div>
-                    <div className="mt-0.5 text-sm sm:text-base font-black text-white">{accuracy}%</div>
+                    <div className="text-[9px] sm:text-[10px] text-stone-400 uppercase font-semibold">{state.inputMode === "keyboard" ? "Key hit rate" : "Dropped fruit"}</div>
+                    <div className="mt-0.5 text-sm sm:text-base font-black text-white">{state.inputMode === "keyboard" ? (summary.accuracy === null ? "—" : `${summary.accuracy}%`) : state.missedFruits}</div>
                   </div>
                   <div className="rounded-xl border border-stone-800 bg-stone-900/70 p-2 sm:p-2.5 backdrop-blur-sm">
-                    <div className="text-[9px] sm:text-[10px] text-stone-400 uppercase font-semibold">Speed (WPM)</div>
-                    <div className="mt-0.5 text-sm sm:text-base font-black text-white">{wpm}</div>
+                    <div className="text-[9px] sm:text-[10px] text-stone-400 uppercase font-semibold">Average reaction</div>
+                    <div className="mt-0.5 text-sm sm:text-base font-black text-white">{summary.reactionMs === null ? "—" : `${summary.reactionMs}ms`}</div>
                   </div>
                   <div className="rounded-xl border border-stone-800 bg-stone-900/70 p-2 sm:p-2.5 backdrop-blur-sm">
                     <div className="text-[9px] sm:text-[10px] text-stone-400 uppercase font-semibold">Bombs Avoided</div>
@@ -717,6 +735,13 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                       {state.bombsAvoided}
                     </div>
                   </div>
+                </div>
+
+                <div className="mb-3 w-full rounded-lg border border-stone-700 bg-stone-950/80 p-3 text-left text-xs text-stone-300">
+                  <p className="font-semibold text-white">Next practice: {summary.recommendation}</p>
+                  <p className="mt-1">Active time: {(summary.survivedMs / 1000).toFixed(1)}s · Reaction is visible target → slice.</p>
+                  {state.inputMode === "keyboard" && <p className="mt-1">Wrong keys: {Object.entries(state.keyErrors).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([key, count]) => `${key} ×${count}`).join(", ") || "none"}. Dropped targets: {Object.entries(state.missedKeys).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([key, count]) => `${key} ×${count}`).join(", ") || "none"}.</p>}
+                  <p className="mt-1 text-stone-400">Arcade key reactions and touch slicing are not a typing-test WPM measurement.</p>
                 </div>
 
                 {/* Achievement Toast */}
@@ -736,8 +761,8 @@ export default function FruitFuryGame({ definition }: GameComponentProps) {
                   >
                     <RotateCcw className="h-4 w-4" />
                     <span>PLAY AGAIN</span>
-                    <span className="hidden sm:inline font-bold text-xs text-rose-200 opacity-90">(SPACE)</span>
                   </button>
+                  <button type="button" onClick={returnToMenu} className="rounded-xl border border-stone-600 px-3 py-3 text-sm font-bold text-white">Change setup</button>
                 </div>
               </div>
             </div>

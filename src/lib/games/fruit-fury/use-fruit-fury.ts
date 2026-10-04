@@ -3,15 +3,14 @@ import {
   ActiveFruit,
   AmbientMote,
   BladeSlash,
-  COMBO_WINDOW_MS,
   DIFFICULTY_CONFIGS,
-  FEVER_DURATION_MS,
   FloatingText,
-  FROZEN_DURATION_MS,
   FRUIT_CONFIGS,
   FruitFuryState,
   FruitHalf,
   FruitType,
+  FruitInputMode,
+  FruitRunMode,
   GameDifficulty,
   JuiceSplat,
   Particle,
@@ -34,6 +33,10 @@ import {
   playSliceSound,
 } from "./fruit-fury-audio";
 import { renderFruit, renderSlicedHalf } from "./fruit-renderers";
+import {
+  acceptsFruitInput, advanceFruitState, createFruitState, missFruitKey,
+  pickAvailableFruitKey, sliceFruitState, tutorialTarget,
+} from "./fruit-fury-engine";
 
 export const VIRTUAL_WIDTH = 800;
 export const VIRTUAL_HEIGHT = 560;
@@ -44,34 +47,7 @@ export function useFruitFury(
 ) {
   const [difficulty, setDifficulty] = useState<GameDifficulty>(initialDifficulty);
   const [typingMode, setTypingMode] = useState<TypingMode>(initialTypingMode);
-  const [gameState, setGameState] = useState<FruitFuryState>({
-    status: "idle",
-    gameOverReason: null,
-    difficulty: initialDifficulty,
-    typingMode: initialTypingMode,
-    score: 0,
-    level: 1,
-    fruitsCleared: 0,
-    lives: 3,
-    maxLives: 3,
-    combo: 0,
-    maxCombo: 0,
-    lastSliceTime: 0,
-    feverGauge: 0,
-    isFeverActive: false,
-    feverTimeRemaining: 0,
-    isFrozenActive: false,
-    frozenTimeRemaining: 0,
-    totalTyped: 0,
-    correctTyped: 0,
-    bombsAvoided: 0,
-    bombsHit: 0,
-    startTime: 0,
-    elapsedMs: 0,
-    screenShake: { intensity: 0, decay: 0.9, offsetX: 0, offsetY: 0 },
-    flashColor: null,
-    flashAlpha: 0,
-  });
+  const [gameState, setGameState] = useState<FruitFuryState>(() => createFruitState(initialDifficulty, initialTypingMode));
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
@@ -85,6 +61,7 @@ export function useFruitFury(
   const floatingTextsRef = useRef<FloatingText[]>([]);
   const animFrameIdRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
+  const activeClockRef = useRef<number>(0);
   const spawnTimerRef = useRef<number>(0);
 
   const dimensionsRef = useRef<{ width: number; height: number }>({
@@ -93,11 +70,25 @@ export function useFruitFury(
   });
 
   const stateRef = useRef<FruitFuryState>(gameState);
-  useEffect(() => {
-    stateRef.current = gameState;
-  }, [gameState]);
+  // Publish from the authoritative ref immediately, before React batches renders.
+  const publish = useCallback((next: FruitFuryState) => {
+    stateRef.current = next;
+    setGameState(next);
+    if (next.status === "over") musicPlayer.stop();
+  }, []);
+
+  const syncClock = useCallback(() => {
+    const now = performance.now();
+    const next = advanceFruitState(stateRef.current, now - activeClockRef.current);
+    if (stateRef.current.isFeverActive && !next.isFeverActive) musicPlayer.setFever(false);
+    activeClockRef.current = now;
+    publish(next);
+    return next;
+  }, [publish]);
 
   const soundEnabledRef = useRef<boolean>(true);
+  const reducedEffectsRef = useRef(false);
+  const lastTouchPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Responsive canvas resize observer to support any phone, tablet, and desktop aspect ratio
   useEffect(() => {
@@ -166,20 +157,6 @@ export function useFruitFury(
     );
   }, []);
 
-  // Pick unique letter based on selected typing practice mode
-  const pickLetter = useCallback(
-    (mode: TypingMode) => {
-      const active = getActiveLetters();
-      const pool = TYPING_MODES[mode]?.keys ?? TYPING_MODES.all.keys;
-      const candidates = pool.filter((char) => !active.has(char));
-      if (candidates.length === 0) {
-        return pool[Math.floor(Math.random() * pool.length)]!;
-      }
-      return candidates[Math.floor(Math.random() * candidates.length)]!;
-    },
-    [getActiveLetters],
-  );
-
   // Spawn a wave of objects
   const spawnFruitWave = useCallback(() => {
     const s = stateRef.current;
@@ -187,10 +164,12 @@ export function useFruitFury(
 
     const diffConfig = DIFFICULTY_CONFIGS[s.difficulty];
     const isFever = s.isFeverActive;
+    const tutorial = s.runMode === "tutorial";
+    if (tutorial && fruitsRef.current.some((fruit) => fruit.state === "flying")) return;
 
     // Calculate wave size based on level
     const baseWaveSize = 1 + Math.min(Math.floor((s.level - 1) / 3), diffConfig.simultaneousMax - 1);
-    const waveSize = isFever ? Math.min(baseWaveSize + 2, diffConfig.simultaneousMax) : baseWaveSize;
+    const waveSize = tutorial ? 1 : isFever ? Math.min(baseWaveSize + 2, diffConfig.simultaneousMax) : baseWaveSize;
 
     // Determine bomb probability
     const levelBombProgress = Math.min((s.level - 1) / 8, 1);
@@ -215,14 +194,17 @@ export function useFruitFury(
         break;
       }
 
-      const letter = pickLetter(s.typingMode);
+      const letter = pickAvailableFruitKey(TYPING_MODES[s.typingMode].keys, usedLetters);
+      if (!letter) break;
       usedLetters.add(letter);
 
       // Roll fruit type
-      const isBomb = Math.random() < bombProb && i === 0; // At most 1 bomb per wave
+      const isBomb = tutorial ? tutorialTarget(s) === "bomb" : Math.random() < bombProb && i === 0;
       let fruitType: FruitType;
 
-      if (isBomb) {
+      if (tutorial) {
+        fruitType = tutorialTarget(s);
+      } else if (isBomb) {
         fruitType = "bomb";
       } else {
         const specialRoll = Math.random();
@@ -252,14 +234,15 @@ export function useFruitFury(
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         type: fruitType,
         letter,
-        x,
-        y,
-        vx: launchVx,
-        vy: waveLaunchVy,
+        x: tutorial ? arenaWidth / 2 : x,
+        y: tutorial ? arenaHeight * 0.48 : y,
+        vx: tutorial ? 0 : launchVx,
+        vy: tutorial ? 0 : waveLaunchVy,
         radius: cfg.radius,
         rotation: (Math.random() - 0.5) * 0.5,
         rotationSpeed: (Math.random() - 0.5) * 0.045,
         state: "flying",
+        visibleAt: tutorial ? s.elapsedMs : undefined,
         fusePhase: 0,
       });
 
@@ -267,7 +250,7 @@ export function useFruitFury(
         playBombWarningSound(soundEnabledRef.current);
       }
     }
-  }, [getActiveLetters, pickLetter]);
+  }, [getActiveLetters]);
 
   // Trigger Slicing Action
   const sliceFruit = useCallback((fruit: ActiveFruit) => {
@@ -276,6 +259,8 @@ export function useFruitFury(
 
     const cfg = FRUIT_CONFIGS[fruit.type];
     const now = Date.now();
+    const next = sliceFruitState(s, fruit);
+    publish(next);
 
     // BOMB HIT = INSTANT GAME OVER
     if (cfg.isBomb) {
@@ -283,7 +268,7 @@ export function useFruitFury(
       playBombExplosionSound(soundEnabledRef.current);
 
       // Massive shockwave particles
-      for (let i = 0; i < 55; i++) {
+      for (let i = 0; i < (reducedEffectsRef.current ? 0 : 55); i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 4 + Math.random() * 11;
         particlesRef.current.push({
@@ -299,17 +284,6 @@ export function useFruitFury(
         });
       }
 
-      setGameState((prev) => ({
-        ...prev,
-        status: "over",
-        gameOverReason: "bombed",
-        bombsHit: prev.bombsHit + 1,
-        totalTyped: prev.totalTyped + 1,
-        screenShake: { intensity: 30, decay: 0.93, offsetX: 0, offsetY: 0 },
-        flashColor: "#ef4444",
-        flashAlpha: 0.9,
-      }));
-      musicPlayer.stop();
       return;
     }
 
@@ -348,6 +322,7 @@ export function useFruitFury(
 
     fruit.halves = [leftHalf, rightHalf];
 
+    if (!reducedEffectsRef.current) {
     // Stamp a rich juice splatter decal onto the background wall with gravity drips
     const splatDroplets = Array.from({ length: 9 }, () => {
       const a = Math.random() * Math.PI * 2;
@@ -512,37 +487,25 @@ export function useFruitFury(
       createdAt: now,
       durationMs: 260,
     });
+    }
 
     // Audio SFX
     playSliceSound(soundEnabledRef.current);
     playFruitBurstSound(soundEnabledRef.current);
 
     // Combo handling
-    const isCombo = now - s.lastSliceTime < COMBO_WINDOW_MS;
-    const newCombo = isCombo ? s.combo + 1 : 1;
-    const maxCombo = Math.max(s.maxCombo, newCombo);
+    const newCombo = next.combo;
 
     if (newCombo > 1) {
       playComboSound(newCombo, soundEnabledRef.current);
     }
 
-    const comboMultiplier =
-      newCombo >= 10 ? 3.0 : newCombo >= 5 ? 2.0 : newCombo >= 3 ? 1.5 : 1.0;
-    const feverMultiplier = s.isFeverActive ? 2.0 : 1.0;
-
-    let pointsAwarded = Math.round(cfg.baseScore * comboMultiplier * feverMultiplier);
-    let newFeverGauge = s.feverGauge;
-    let activatedFever = false;
-    let activatedFrozen = false;
-
     // Special fruit rewards
     if (fruit.type === "golden") {
       playGoldenFruitSound(soundEnabledRef.current);
-      newFeverGauge = Math.min(100, newFeverGauge + 25);
-      pointsAwarded += 400;
       floatingTextsRef.current.push({
         id: Math.random().toString(),
-        text: "🌟 GOLDEN DRAGON! +500",
+        text: `GOLDEN DRAGON! +${next.score - s.score}`,
         x: fruit.x,
         y: fruit.y - 25,
         color: "#fbbf24",
@@ -554,7 +517,6 @@ export function useFruitFury(
       });
     } else if (fruit.type === "frozen") {
       playFrozenFruitSound(soundEnabledRef.current);
-      activatedFrozen = true;
       floatingTextsRef.current.push({
         id: Math.random().toString(),
         text: "❄️ DEEP FREEZE!",
@@ -567,15 +529,10 @@ export function useFruitFury(
         durationMs: 1300,
         vy: -1.2,
       });
-    } else {
-      // Normal fruit adds 6.5% to fever gauge
-      newFeverGauge = Math.min(100, newFeverGauge + 6.5);
     }
 
     // Trigger Fever Mode if meter filled
-    if (newFeverGauge >= 100 && !s.isFeverActive) {
-      activatedFever = true;
-      newFeverGauge = 100;
+    if (next.isFeverActive && !s.isFeverActive) {
       playFeverStartSound(soundEnabledRef.current);
       musicPlayer.setFever(true);
       floatingTextsRef.current.push({
@@ -611,8 +568,7 @@ export function useFruitFury(
     }
 
     // Level progression: level up every 8 cleared fruits
-    const newCleared = s.fruitsCleared + 1;
-    const newLevel = 1 + Math.floor(newCleared / 8);
+    const newLevel = next.level;
     const isLevelUp = newLevel > s.level;
 
     if (isLevelUp) {
@@ -631,35 +587,14 @@ export function useFruitFury(
       });
     }
 
-    setGameState((prev) => ({
-      ...prev,
-      score: prev.score + pointsAwarded,
-      level: newLevel,
-      fruitsCleared: newCleared,
-      combo: newCombo,
-      maxCombo,
-      lastSliceTime: now,
-      feverGauge: activatedFever ? 100 : newFeverGauge,
-      isFeverActive: activatedFever ? true : prev.isFeverActive,
-      feverTimeRemaining: activatedFever ? FEVER_DURATION_MS : prev.feverTimeRemaining,
-      isFrozenActive: activatedFrozen ? true : prev.isFrozenActive,
-      frozenTimeRemaining: activatedFrozen ? FROZEN_DURATION_MS : prev.frozenTimeRemaining,
-      correctTyped: prev.correctTyped + 1,
-      totalTyped: prev.totalTyped + 1,
-      screenShake: {
-        intensity: Math.min(prev.screenShake.intensity + 4, 12),
-        decay: 0.9,
-        offsetX: 0,
-        offsetY: 0,
-      },
-    }));
-  }, []);
+  }, [publish]);
 
   // Keyboard handler: accepts letters A-Z and digits 0-9
   const handleKeyInput = useCallback(
     (char: string) => {
-      const s = stateRef.current;
-      if (s.status !== "running") return;
+      if (!acceptsFruitInput(stateRef.current, "keyboard")) return;
+      const s = syncClock();
+      if (!acceptsFruitInput(s, "keyboard")) return;
 
       const upper = char.toUpperCase();
       if (!/^[A-Z0-9]$/.test(upper)) return;
@@ -673,19 +608,15 @@ export function useFruitFury(
         sliceFruit(matchingFruits[0]!);
       } else {
         // Mistyped key: reset combo
-        setGameState((prev) => ({
-          ...prev,
-          combo: 0,
-          totalTyped: prev.totalTyped + 1,
-        }));
+        publish(missFruitKey(s, upper));
       }
     },
-    [sliceFruit],
+    [sliceFruit, syncClock, publish],
   );
 
   // Start / Restart game: spawn initial wave immediately!
   const startGame = useCallback(
-    (chosenDifficulty?: GameDifficulty, chosenTypingMode?: TypingMode) => {
+    (chosenDifficulty?: GameDifficulty, chosenTypingMode?: TypingMode, inputMode: FruitInputMode = "keyboard", runMode: FruitRunMode = "classic") => {
       const diff = chosenDifficulty ?? difficulty;
       const mode = chosenTypingMode ?? typingMode;
       setDifficulty(diff);
@@ -696,60 +627,56 @@ export function useFruitFury(
       splatsRef.current = [];
       slashesRef.current = [];
       floatingTextsRef.current = [];
+      lastTouchPosRef.current = null;
       lastFrameTimeRef.current = performance.now();
+      activeClockRef.current = lastFrameTimeRef.current;
       // Set spawn timer to trigger almost immediately (150ms)
       spawnTimerRef.current = DIFFICULTY_CONFIGS[diff].initialSpawnInterval - 150;
 
-      const initial: FruitFuryState = {
-        status: "running",
-        gameOverReason: null,
-        difficulty: diff,
-        typingMode: mode,
-        score: 0,
-        level: 1,
-        fruitsCleared: 0,
-        lives: 3,
-        maxLives: 3,
-        combo: 0,
-        maxCombo: 0,
-        lastSliceTime: 0,
-        feverGauge: 0,
-        isFeverActive: false,
-        feverTimeRemaining: 0,
-        isFrozenActive: false,
-        frozenTimeRemaining: 0,
-        totalTyped: 0,
-        correctTyped: 0,
-        bombsAvoided: 0,
-        bombsHit: 0,
-        startTime: Date.now(),
-        elapsedMs: 0,
-        screenShake: { intensity: 0, decay: 0.9, offsetX: 0, offsetY: 0 },
-        flashColor: null,
-        flashAlpha: 0,
-      };
-
-      setGameState(initial);
-      stateRef.current = initial;
+      const initial = { ...createFruitState(diff, mode, inputMode, runMode), status: "running" as const, startTime: Date.now() };
+      publish(initial);
+      if (runMode === "tutorial") spawnFruitWave();
+      musicPlayer.setFever(false);
       musicPlayer.start(soundEnabledRef.current);
     },
-    [difficulty, typingMode],
+    [difficulty, typingMode, publish, spawnFruitWave],
   );
 
   // Pause / Resume
+  const pauseGame = useCallback(() => {
+    if (stateRef.current.status !== "running") return;
+    const current = syncClock();
+    lastTouchPosRef.current = null;
+    musicPlayer.stop();
+    if (current.status === "running") publish({ ...current, status: "paused" });
+  }, [publish, syncClock]);
+
   const togglePause = useCallback(() => {
-    setGameState((prev) => {
-      if (prev.status === "running") {
-        musicPlayer.stop();
-        return { ...prev, status: "paused" };
-      }
-      if (prev.status === "paused") {
-        musicPlayer.start(soundEnabledRef.current);
-        lastFrameTimeRef.current = performance.now();
-        return { ...prev, status: "running" };
-      }
-      return prev;
-    });
+    if (stateRef.current.status === "running") pauseGame();
+    else if (stateRef.current.status === "paused" && !document.hidden) {
+      lastFrameTimeRef.current = performance.now();
+      activeClockRef.current = lastFrameTimeRef.current;
+      publish({ ...stateRef.current, status: "running" });
+      musicPlayer.start(soundEnabledRef.current);
+      musicPlayer.setFever(stateRef.current.isFeverActive);
+    }
+  }, [pauseGame, publish]);
+
+  const returnToMenu = useCallback(() => {
+    musicPlayer.stop();
+    fruitsRef.current = [];
+    lastTouchPosRef.current = null;
+    publish(createFruitState(difficulty, typingMode));
+  }, [difficulty, typingMode, publish]);
+
+  const setReducedEffects = useCallback((enabled: boolean) => {
+    reducedEffectsRef.current = enabled;
+    if (enabled) {
+      particlesRef.current = [];
+      splatsRef.current = [];
+      slashesRef.current = [];
+      floatingTextsRef.current = [];
+    }
   }, []);
 
   const setSoundEnabled = useCallback((enabled: boolean) => {
@@ -769,11 +696,15 @@ export function useFruitFury(
     const gameLoop = (timestamp: number) => {
       if (!isSubscribed) return;
 
-      const deltaMs = Math.min(timestamp - (lastFrameTimeRef.current || timestamp), 64);
+      const deltaMs = Math.max(0, timestamp - lastFrameTimeRef.current);
       lastFrameTimeRef.current = timestamp;
       const dt = Math.min(deltaMs / 16.667, 2.0);
 
-      const s = stateRef.current;
+      const previous = stateRef.current;
+      const s = advanceFruitState(previous, Math.max(0, timestamp - activeClockRef.current));
+      activeClockRef.current = Math.max(activeClockRef.current, timestamp);
+      if (previous.isFeverActive && !s.isFeverActive) musicPlayer.setFever(false);
+      if (previous.status === "running") publish(s);
       const { width: arenaWidth, height: arenaHeight } = dimensionsRef.current;
 
       if (s.status === "running") {
@@ -791,35 +722,9 @@ export function useFruitFury(
           spawnFruitWave();
         }
 
-        // 2. Timers (Fever & Frozen)
-        let feverRemaining = s.feverTimeRemaining;
-        let isFever = s.isFeverActive;
-        let feverGauge = s.feverGauge;
-
-        if (isFever) {
-          feverRemaining -= deltaMs;
-          feverGauge = Math.max(0, (feverRemaining / FEVER_DURATION_MS) * 100);
-          if (feverRemaining <= 0) {
-            isFever = false;
-            feverRemaining = 0;
-            feverGauge = 0;
-            musicPlayer.setFever(false);
-          }
-        }
-
-        let frozenRemaining = s.frozenTimeRemaining;
-        let isFrozen = s.isFrozenActive;
-        if (isFrozen) {
-          frozenRemaining -= deltaMs;
-          if (frozenRemaining <= 0) {
-            isFrozen = false;
-            frozenRemaining = 0;
-          }
-        }
-
         // 3. Harmonious Fruit Physics Update
         const baseGravity = diffConfig.gravity * (s.isFrozenActive ? 0.45 : 1.0);
-        let livesLostThisFrame = 0;
+        const missedKeysThisFrame: string[] = [];
         let bombsAvoidedThisFrame = 0;
 
         const nominalDeltaY = (560 + 35) - 560 * 0.24;
@@ -829,6 +734,7 @@ export function useFruitFury(
 
         fruitsRef.current.forEach((fruit) => {
           if (fruit.state === "flying") {
+            if (s.runMode === "tutorial" && fruit.type !== "bomb") return;
             const timeScale = (s.isFrozenActive ? 0.45 : 1.0) * dt;
 
             // Continuous apex float: float gracefully near apex without sudden stepwise speed jumps
@@ -838,16 +744,17 @@ export function useFruitFury(
             fruit.x += fruit.vx * timeScale;
             fruit.y += fruit.vy * timeScale;
             fruit.vy += effectiveGravity * dt;
+            if (fruit.visibleAt === undefined && fruit.y - fruit.radius <= arenaHeight) fruit.visibleAt = s.elapsedMs;
 
             // Cap terminal downward velocity so fruits fall predictably and harmoniously
             if (fruit.vy > maxFallSpeed) {
               fruit.vy = maxFallSpeed;
             }
 
-            fruit.rotation += fruit.rotationSpeed * timeScale;
+            if (!reducedEffectsRef.current) fruit.rotation += fruit.rotationSpeed * timeScale;
 
             // Bomb fuse spark pulse
-            if (fruit.type === "bomb") {
+            if (fruit.type === "bomb" && !reducedEffectsRef.current) {
               fruit.fusePhase = ((fruit.fusePhase ?? 0) + 0.16 * dt) % 1;
             }
 
@@ -857,7 +764,7 @@ export function useFruitFury(
               if (fruit.type === "bomb") {
                 bombsAvoidedThisFrame++;
               } else {
-                livesLostThisFrame++;
+                missedKeysThisFrame.push(fruit.letter);
                 playMissSound(soundEnabledRef.current);
               }
             }
@@ -951,29 +858,11 @@ export function useFruitFury(
         }
 
         // 11. Check Lives & Game Over
-        const newLives = Math.max(0, s.lives - livesLostThisFrame);
-        const isGameOver = newLives <= 0;
-
-        if (isGameOver) {
-          musicPlayer.stop();
-        }
-
-        setGameState((prev) => ({
-          ...prev,
-          lives: newLives,
-          status: isGameOver ? "over" : prev.status,
-          gameOverReason: isGameOver ? "lives_depleted" : prev.gameOverReason,
-          bombsAvoided: prev.bombsAvoided + bombsAvoidedThisFrame,
-          isFeverActive: isFever,
-          feverTimeRemaining: feverRemaining,
-          feverGauge: isFever ? feverGauge : prev.feverGauge,
-          isFrozenActive: isFrozen,
-          frozenTimeRemaining: frozenRemaining,
-          elapsedMs: prev.elapsedMs + deltaMs,
+        publish({
+          ...advanceFruitState(stateRef.current, 0, missedKeysThisFrame, bombsAvoidedThisFrame),
           screenShake: shake,
           flashAlpha,
-          combo: livesLostThisFrame > 0 ? 0 : prev.combo,
-        }));
+        });
       }
 
       // ==========================================
@@ -985,7 +874,7 @@ export function useFruitFury(
       ctx.scale(dpr, dpr);
 
       // Screen shake translation (disabled if prefers-reduced-motion)
-      const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const prefersReducedMotion = reducedEffectsRef.current;
       if (!prefersReducedMotion && s.screenShake.intensity > 0) {
         ctx.translate(s.screenShake.offsetX, s.screenShake.offsetY);
       }
@@ -1023,7 +912,7 @@ export function useFruitFury(
       }
 
       // Render Ambient Drifting Motes (sakura / embers)
-      motesRef.current.forEach((mote) => {
+      if (!prefersReducedMotion) motesRef.current.forEach((mote) => {
         ctx.save();
         ctx.globalAlpha = mote.alpha;
         ctx.translate(mote.x, mote.y);
@@ -1037,7 +926,7 @@ export function useFruitFury(
 
       // Render Juice Splat Decals on Dojo Wall
       const renderNow = Date.now();
-      splatsRef.current.forEach((splat) => {
+      if (!prefersReducedMotion) splatsRef.current.forEach((splat) => {
         const age = renderNow - splat.createdAt;
         ctx.save();
         ctx.globalAlpha = splat.alpha;
@@ -1082,7 +971,7 @@ export function useFruitFury(
       });
 
       // Render Katana Blade Slash Trails
-      slashesRef.current.forEach((slash) => {
+      if (!prefersReducedMotion) slashesRef.current.forEach((slash) => {
         const progress = (Date.now() - slash.createdAt) / slash.durationMs;
         const alpha = Math.max(0, 1 - progress);
         ctx.save();
@@ -1113,7 +1002,7 @@ export function useFruitFury(
       });
 
       // Render Particles (drops, seeds, pulp, shards, sparks)
-      particlesRef.current.forEach((p) => {
+      if (!prefersReducedMotion) particlesRef.current.forEach((p) => {
         ctx.save();
         ctx.globalAlpha = p.alpha;
 
@@ -1178,11 +1067,11 @@ export function useFruitFury(
       });
 
       // Render Active Fruits & Sliced Halves using Master Renderers
-      const nowTime = performance.now();
+      const nowTime = prefersReducedMotion ? 0 : performance.now();
       fruitsRef.current.forEach((fruit) => {
         if (fruit.state === "flying") {
           renderFruit(ctx, fruit, nowTime);
-        } else if (fruit.state === "sliced" && fruit.halves) {
+        } else if (!prefersReducedMotion && fruit.state === "sliced" && fruit.halves) {
           fruit.halves.forEach((half) => {
             renderSlicedHalf(ctx, fruit, half);
           });
@@ -1190,7 +1079,7 @@ export function useFruitFury(
       });
 
       // Render Floating Texts with glow
-      floatingTextsRef.current.forEach((txt) => {
+      if (!prefersReducedMotion) floatingTextsRef.current.forEach((txt) => {
         ctx.save();
         ctx.globalAlpha = txt.alpha;
         ctx.fillStyle = txt.color;
@@ -1204,7 +1093,7 @@ export function useFruitFury(
       });
 
       // Render Screen Flash (Bombs / Damage)
-      if (s.flashAlpha > 0 && s.flashColor) {
+      if (!prefersReducedMotion && s.flashAlpha > 0 && s.flashColor) {
         ctx.save();
         ctx.globalAlpha = s.flashAlpha;
         ctx.fillStyle = s.flashColor;
@@ -1214,13 +1103,12 @@ export function useFruitFury(
 
       ctx.restore();
 
-      if (s.status === "running" && typeof document !== "undefined" && !document.hidden) {
+      if (stateRef.current.status === "running" && typeof document !== "undefined" && !document.hidden) {
         animFrameIdRef.current = requestAnimationFrame(gameLoop);
       }
     };
 
     if (gameState.status === "running") {
-      lastFrameTimeRef.current = performance.now();
       animFrameIdRef.current = requestAnimationFrame(gameLoop);
     } else {
       // Paint single frame when idle, paused, or over without burning a permanent 60fps loop
@@ -1231,14 +1119,13 @@ export function useFruitFury(
       if (typeof document === "undefined") return;
       if (document.hidden) {
         if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
-      } else if (stateRef.current.status === "running") {
-        lastFrameTimeRef.current = performance.now();
-        animFrameIdRef.current = requestAnimationFrame(gameLoop);
+        pauseGame();
       }
     };
 
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", handleVisibility);
+      window.addEventListener("blur", pauseGame);
     }
 
     return () => {
@@ -1246,9 +1133,10 @@ export function useFruitFury(
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", handleVisibility);
+        window.removeEventListener("blur", pauseGame);
       }
     };
-  }, [gameState.status, sliceFruit, spawnFruitWave]);
+  }, [gameState.status, sliceFruit, spawnFruitWave, publish, pauseGame]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1257,13 +1145,12 @@ export function useFruitFury(
     };
   }, []);
 
-  const lastTouchPosRef = useRef<{ x: number; y: number } | null>(null);
-
   // Handle canvas click / tap for slice (1:1 direct pixel coordinate mapping)
   const handleCanvasClick = useCallback(
     (clientX: number, clientY: number) => {
       const canvas = canvasRef.current;
-      if (!canvas || stateRef.current.status !== "running") return;
+      if (!canvas || !acceptsFruitInput(stateRef.current, "touch")) return;
+      if (!acceptsFruitInput(syncClock(), "touch")) return;
 
       const rect = canvas.getBoundingClientRect();
       const clickX = clientX - rect.left;
@@ -1281,14 +1168,14 @@ export function useFruitFury(
         sliceFruit(clicked);
       }
     },
-    [sliceFruit],
+    [sliceFruit, syncClock],
   );
 
   // Mobile Touch Gestures (Swipe / Drag Slicing)
   const handleTouchStart = useCallback(
     (clientX: number, clientY: number) => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas || !acceptsFruitInput(stateRef.current, "touch")) return;
       const rect = canvas.getBoundingClientRect();
       lastTouchPosRef.current = { x: clientX - rect.left, y: clientY - rect.top };
       handleCanvasClick(clientX, clientY);
@@ -1299,7 +1186,8 @@ export function useFruitFury(
   const handleTouchMove = useCallback(
     (clientX: number, clientY: number) => {
       const canvas = canvasRef.current;
-      if (!canvas || stateRef.current.status !== "running") return;
+      if (!canvas || !acceptsFruitInput(stateRef.current, "touch")) return;
+      if (!acceptsFruitInput(syncClock(), "touch")) return;
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
       const y = clientY - rect.top;
@@ -1308,7 +1196,7 @@ export function useFruitFury(
 
       if (prev) {
         // Finger swipe blade slash trail
-        slashesRef.current.push({
+        if (!reducedEffectsRef.current) slashesRef.current.push({
           id: Math.random().toString(),
           x1: prev.x,
           y1: prev.y,
@@ -1331,7 +1219,7 @@ export function useFruitFury(
         handleCanvasClick(clientX, clientY);
       }
     },
-    [handleCanvasClick, sliceFruit],
+    [handleCanvasClick, sliceFruit, syncClock],
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -1346,12 +1234,15 @@ export function useFruitFury(
     setTypingMode,
     startGame,
     togglePause,
+    pauseGame,
+    returnToMenu,
     handleKeyInput,
     handleCanvasClick,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
     setSoundEnabled,
+    setReducedEffects,
   };
 }
 

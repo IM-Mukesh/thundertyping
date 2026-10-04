@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, forwardRef } from "react";
+import { type ReactNode, forwardRef, useEffect } from "react";
 import { useGameViewport, type GameViewportMetrics } from "@/lib/games/use-game-viewport";
 import { cn } from "@/lib/utils/cn";
 
@@ -9,6 +9,7 @@ export interface GameViewportProps {
   className?: string;
   style?: React.CSSProperties;
   onFocusGame?: () => void;
+  onPause?: () => void;
   isFocused?: boolean;
   isRunning?: boolean;
   onMetricsChange?: (metrics: GameViewportMetrics) => void;
@@ -27,10 +28,21 @@ export interface GameViewportProps {
  */
 export const GameViewport = forwardRef<HTMLDivElement, GameViewportProps>(
   function GameViewport(
-    { children, className, style, onFocusGame, isFocused = true, isRunning = false },
+    { children, className, style, onFocusGame, onPause, isFocused = true, isRunning = false },
     forwardedRef,
   ) {
     const { containerRef } = useGameViewport<HTMLDivElement>();
+
+    useEffect(() => {
+      if (!isRunning || !onPause) return;
+      const onVisibility = () => { if (document.hidden) onPause(); };
+      window.addEventListener("blur", onPause);
+      document.addEventListener("visibilitychange", onVisibility);
+      return () => {
+        window.removeEventListener("blur", onPause);
+        document.removeEventListener("visibilitychange", onVisibility);
+      };
+    }, [isRunning, onPause]);
 
     // Merge internal containerRef with forwardedRef if present
     const setRef = (node: HTMLDivElement | null) => {
@@ -45,7 +57,17 @@ export const GameViewport = forwardRef<HTMLDivElement, GameViewportProps>(
     return (
       <div
         ref={setRef}
-        onClick={onFocusGame}
+        onClick={(event) => {
+          // Buttons, links and settings keep their native keyboard focus.
+          if ((event.target as Element).closest("button, a, input, select, textarea, [role=tab]")) return;
+          onFocusGame?.();
+        }}
+        onKeyDown={(event) => {
+          if (isRunning && onPause && event.key === "Escape") {
+            event.preventDefault();
+            onPause();
+          }
+        }}
         className={cn(
           "relative flex w-full flex-col items-center select-none",
           "touch-manipulation",
@@ -56,6 +78,11 @@ export const GameViewport = forwardRef<HTMLDivElement, GameViewportProps>(
           ...style,
         }}
       >
+        {onPause && isRunning && (
+          <button type="button" onClick={onPause} className="min-h-11 self-end rounded-lg border border-border px-3 text-xs text-sub hover:text-foreground">
+            Pause · Esc
+          </button>
+        )}
         {children}
 
         {/* Focus warning banner for mobile & desktop when run is active but keyboard dropped */}

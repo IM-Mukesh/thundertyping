@@ -12,6 +12,7 @@ import {
 } from "motion/react";
 import { BarChart3, Clock, Play, Trophy } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
+import { formatGameScore } from "@/lib/games/score-format";
 import { readGameBestRaw, subscribeGameBests, parseGameBest } from "@/lib/games/game-scores";
 import { cn } from "@/lib/utils/cn";
 
@@ -61,11 +62,7 @@ export function GameHubCard({
     () => null,
   );
   const best = useMemo(() => parseGameBest(raw), [raw]);
-  const bestLabel = best
-    ? game.scoreBy === "time"
-      ? `${best.score}s`
-      : best.score.toLocaleString()
-    : "—";
+  const bestLabel = best ? formatGameScore(game, best.score) : "—";
 
   // Pointer position as -0.5..0.5 of the card, springed so the parallax
   // trails the cursor slightly instead of snapping to it.

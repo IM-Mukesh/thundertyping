@@ -8,14 +8,14 @@
  * combat is a wager — commit to eleven letters and eat the hit that lands
  * halfway through, or chip safely with four and stay ahead of the wind-up.
  *
- * Driven by setInterval rather than requestAnimationFrame. rAF stops firing
- * when the tab or pane is hidden, which silently freezes a run mid-fight; this
- * project has already shipped that bug once. A fixed 50ms tick keeps running,
- * makes pausing a one-line guard, and is far more than precise enough for
- * wind-up timers measured in hundreds of milliseconds.
+ * Fixed simulation steps while visible and unpaused. Hiding the tab pauses
+ * input and simulation until an explicit resume. Active time is measured
+ * separately using the monotonic clock, not inferred from interval counts.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGameSession } from "@/lib/games/cards/use-game-session";
+import { acquireSpellboundRelic, availableSpellboundRelics, settleSpellboundCombat, settleSpellboundDeath } from "@/lib/games/spellbound/transitions";
 import { createRng, type Rng } from "@/lib/rng/seeded-rng";
 import {
   BOSSES,
@@ -119,6 +119,8 @@ export interface SpellboundState {
   bestCombo: number;
   castCount: number;
   elapsedMs: number;
+  /** Fixed-step combat clock for periodic mechanics; excludes render/timer jitter. */
+  combatMs: number;
 
   /** Reward/shop/event payloads, whichever the current phase needs. */
   offer: { spells: string[]; relics: string[] };
@@ -270,19 +272,18 @@ export interface SpellboundCallbacks {
 }
 
 export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
-  const seedRef = useRef(seed ?? `${Date.now()}`);
+  const [runSeed, setRunSeed] = useState(seed ?? "");
   const internal = useRef<Internal>({
-    rng: createRng(seedRef.current),
+    rng: createRng(seed ?? ""),
     uid: 1,
     eventId: 1,
     mirrorLast: null,
   });
 
   const cbRef = useRef(cb);
-  cbRef.current = cb;
+  useEffect(() => { cbRef.current = cb; }, [cb]);
 
-  const [state, setState] = useState<SpellboundState>(() => initial());
-  const [paused, setPaused] = useState(false);
+  const { state, current, update, replace, paused, setPaused } = useGameSession(initial, "combat");
 
   function initial(): SpellboundState {
     return {
@@ -309,6 +310,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
       bestCombo: 0,
       castCount: 0,
       elapsedMs: 0,
+      combatMs: 0,
       offer: { spells: [], relics: [] },
       event: null,
       voidRule: null,
@@ -340,7 +342,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
   const start = useCallback(
     (characterId: string, runSeed?: string) => {
       const s = runSeed ?? `${Date.now()}`;
-      seedRef.current = s;
+      setRunSeed(s);
       internal.current = {
         rng: createRng(s),
         uid: 1,
@@ -352,7 +354,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
       const spells = [char.startSpell, "spark"];
       const map = buildMap(rng, 1);
 
-      setState({
+      replace({
         ...initial(),
         phase: "combat",
         characterId,
@@ -378,13 +380,14 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         enemies: spawnFor(rng, map[0].kind, 1, internal.current.uid),
       });
       internal.current.uid += 8;
-      queueMicrotask(() => cbRef.current.onPhase?.("combat"));
+      cbRef.current.onPhase?.("combat");
     },
-    [],
+    [replace],
   );
 
   /** Advance one room; decides the next phase from the room kind. */
   const enterRoom = useCallback((s: SpellboundState): SpellboundState => {
+    if (s.hp <= 0) return settleSpellboundDeath(s);
     const rng = internal.current.rng;
     const next = s.room + 1;
 
@@ -422,18 +425,22 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         phase: "shop",
         offer: {
           spells: rng.sample(Object.keys(SPELLS), 3),
-          relics: rng.sample(RELICS.map((r) => r.id), 2),
+          relics: rng.sample(availableSpellboundRelics(s.relics), 2),
         },
       };
     }
     if (kind === "event") {
-      return { ...base, phase: "event", event: rng.pick(EVENTS) };
+      const event = rng.pick(EVENTS);
+      const canGainRelic = availableSpellboundRelics(s.relics).length > 0;
+      return { ...base, phase: "event", event: { ...event,
+        options: event.options.filter((option) => option.effect.kind !== "relic" || canGainRelic),
+      } };
     }
     if (kind === "treasure") {
       return {
         ...base,
         phase: "reward",
-        offer: { spells: [], relics: rng.sample(RELICS.map((r) => r.id), 3) },
+        offer: { spells: [], relics: rng.sample(availableSpellboundRelics(s.relics), 3) },
       };
     }
     return {
@@ -449,14 +456,14 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
     if (state.phase !== "combat") return;
 
     const id = window.setInterval(() => {
-      setState((prev) => {
+      update((prev) => {
         if (prev.phase !== "combat") return prev;
         const s: SpellboundState = { ...prev };
         const char = characterById(s.characterId);
-        s.elapsedMs += TICK_MS;
+        s.combatMs += TICK_MS;
         // Banners are transient: hold one for ~2.5s, then clear, so a stale
         // rule change cannot sit over the board for the rest of the fight.
-        if (s.telegraph && s.elapsedMs % 2500 < TICK_MS) s.telegraph = null;
+        if (s.telegraph && s.combatMs % 2500 < TICK_MS) s.telegraph = null;
 
         // Quicken/Hex durations count down like any other timed effect.
         if (s.quickenMs > 0) s.quickenMs = Math.max(0, s.quickenMs - TICK_MS);
@@ -511,10 +518,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           s.shield -= absorbed;
           const afterShield = incoming - absorbed;
           // Sleight's cost: the Rogue Mage trades durability for burst.
-          // Iron Will's cost: "never interrupted" costs +15% damage taken --
-          // there's no interrupt mechanic in the game to make that upside
-          // meaningful, but the downside is real and was previously never
-          // applied at all, making the relic strictly beneficial.
+          // Iron Will trades +20 maximum/current health for +15% damage taken.
           let takeMult = s.characterId === "rogue-mage" ? 1.25 : 1;
           if (s.relics.includes("iron-will")) takeMult *= 1.15;
           const through = Math.round(afterShield * takeMult);
@@ -523,7 +527,7 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
             s.combo = 0;
             s.cleanFloor = false;
             pushEvent(s, "damage", `-${through}`, 0.5);
-            queueMicrotask(() => cbRef.current.onPlayerHit?.(through));
+            cbRef.current.onPlayerHit?.(through);
           } else {
             pushEvent(s, "block", "blocked", 0.5);
           }
@@ -531,14 +535,14 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
 
         if (s.hp <= 0) {
           s.phase = "defeat";
-          queueMicrotask(() => cbRef.current.onPhase?.("defeat"));
+          cbRef.current.onPhase?.("defeat");
           return s;
         }
 
         // --- boss mechanics -------------------------------------------
         const rngTick = internal.current.rng;
         const living = s.enemies.filter((e) => e.hp > 0);
-        const fired = (period: number) => s.elapsedMs % period < TICK_MS;
+        const fired = (period: number) => s.combatMs % period < TICK_MS;
 
         // Word Eater scrambles a slot's word until it is cast.
         if (living.some((e) => e.def.mechanic === "word-eater") && fired(3000)) {
@@ -576,6 +580,11 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
             const absorbed = Math.min(s.shield, bite);
             s.shield -= absorbed;
             s.hp = Math.max(0, s.hp - (bite - absorbed));
+            if (bite > absorbed) {
+              s.cleanFloor = false;
+              s.combo = 0;
+              cbRef.current.onPlayerHit?.(bite - absorbed);
+            }
             pushEvent(s, "damage", `mirrored ${bite}`, 0.65);
             s.telegraph = `Mirrored: ${copied.name}`;
           }
@@ -598,18 +607,21 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           s.telegraph = "The room is mended";
         }
 
-        return s;
+        const settled = settleSpellboundDeath(s);
+        if (settled.phase !== s.phase) cbRef.current.onPhase?.(settled.phase);
+        return settled;
       });
     }, TICK_MS);
 
     return () => window.clearInterval(id);
-  }, [paused, state.phase, pushEvent]);
+  }, [paused, state.phase, pushEvent, update]);
 
   /** Resolve a completed word into an actual cast. */
   const cast = useCallback(
     (slotIndex: number) => {
-      setState((prev) => {
+      update((prev) => {
         if (prev.phase !== "combat") return prev;
+        if (prev.hp <= 0) return settleSpellboundDeath(prev);
         const s: SpellboundState = { ...prev };
         const slot = s.slots[slotIndex];
         if (!slot || slot.cooldown > 0 || slot.sealed > 0) return prev;
@@ -633,6 +645,10 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         // actually applied anywhere until now.
         if (s.voidRule === "drain") s.hp = Math.max(0, s.hp - 3);
         s.castCount += 1;
+        if (s.hp <= 0) {
+          cbRef.current.onPhase?.("defeat");
+          return settleSpellboundDeath(s);
+        }
 
         // Relics and passives that change the maths rather than nudging a stat.
         let power = spell.base + spell.perLetter * len;
@@ -738,7 +754,16 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
             const absorbed = Math.min(s.shield, back);
             s.shield -= absorbed;
             s.hp = Math.max(0, s.hp - (back - absorbed));
+            if (back > absorbed) {
+              s.cleanFloor = false;
+              s.combo = 0;
+              cbRef.current.onPlayerHit?.(back - absorbed);
+            }
             pushEvent(s, "damage", `reflect ${back}`, 0.7);
+            if (s.hp <= 0) {
+              cbRef.current.onPhase?.("defeat");
+              return settleSpellboundDeath(s);
+            }
           }
           pushEvent(s, crit ? "crit" : "damage", `${damage}`, 0.35);
 
@@ -815,53 +840,29 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         internal.current.mirrorLast = spell;
         const castResult = { spell, damage, crit, killed };
         const enemiesKilled = s.enemies.filter((e) => e.hp === 0 && killed.includes(e.def.name));
-        const roomCleared = s.enemies.every((e) => e.hp <= 0);
-
-        queueMicrotask(() => {
-          cbRef.current.onCast?.(castResult);
-          for (const e of enemiesKilled) {
-            cbRef.current.onEnemyKilled?.(e);
-          }
-          if (roomCleared) {
-            cbRef.current.onPhase?.("reward");
-          }
-        });
-
-        // room cleared?
-        if (roomCleared) {
-          s.gold += 18 + s.floor * 6;
-          const wasBoss = s.roomKind === "boss";
-          s.phase = "reward";
-          s.offer = {
-            spells: rng.sample(Object.keys(SPELLS), 3),
-            relics: wasBoss ? rng.sample(RELICS.map((r) => r.id), 3) : [],
-          };
-        }
-
-        return s;
+        cbRef.current.onCast?.(castResult);
+        for (const e of enemiesKilled) cbRef.current.onEnemyKilled?.(e);
+        const settled = settleSpellboundCombat(s, rng);
+        if (settled.phase !== s.phase) cbRef.current.onPhase?.(settled.phase);
+        return settled;
       });
     },
-    [pushEvent],
+    [pushEvent, update],
   );
 
   /** Feed the typing buffer. Matches against every unlocked slot at once. */
   const setTyped = useCallback(
     (value: string) => {
-      setState((prev) => {
+      const raw = value.toLowerCase();
+      const trimmed = raw.trim();
+      const match = current.current.slots.findIndex((sl) => sl.cooldown <= 0 && sl.sealed <= 0 &&
+        (sl.word === raw || (trimmed.length > 0 && sl.word === trimmed)));
+      if (match >= 0) {
+        cast(match);
+        return;
+      }
+      update((prev) => {
         if (prev.phase !== "combat") return prev;
-        const raw = value.toLowerCase();
-        const trimmed = raw.trim();
-        const match = prev.slots.findIndex(
-          (sl) =>
-            sl.cooldown <= 0 &&
-            sl.sealed <= 0 &&
-            (sl.word === raw || (trimmed.length > 0 && sl.word === trimmed)),
-        );
-        if (match >= 0) {
-          // defer the cast so this setState stays pure
-          queueMicrotask(() => cast(match));
-          return { ...prev, typed: "" };
-        }
         const viable = prev.slots.some(
           (sl) =>
             sl.cooldown <= 0 &&
@@ -881,54 +882,41 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           };
         }
         if (!viable && raw.length > 0) {
-          queueMicrotask(() => cbRef.current.onMiss?.());
+          cbRef.current.onMiss?.();
           return { ...prev, typed: "", combo: 0 };
         }
         return { ...prev, typed: raw };
       });
     },
-    [cast],
+    [cast, current, update],
   );
 
   const takeReward = useCallback(
     (kind: "spell" | "relic" | "skip", id?: string) => {
-      setState((prev) => {
+      update((prev) => {
+        if (prev.phase !== "reward") return prev;
+        if (kind !== "skip" && (!id || !(kind === "spell" ? prev.offer.spells : prev.offer.relics).includes(id))) return prev;
         let s: SpellboundState = { ...prev };
         const rng = internal.current.rng;
         if (kind === "spell" && id) {
           s.spells = [...new Set([...s.spells, id])];
           s.slots = assignSpellToSlot(rng, s.slots, s.spells, id);
         } else if (kind === "relic" && id) {
-          s.relics = [...s.relics, id];
-          const relic = relicById(id);
-          if (relic?.id === "iron-will") {
-            s.maxHp += 20;
-            s.hp += 20;
-          }
-          if (relic?.id === "cursed-quill") {
-            s.maxHp = Math.max(20, s.maxHp - 15);
-            s.hp = Math.min(s.hp, s.maxHp);
-          }
-          // "Mana regen +60%. Max health -10." -- the regen upside was
-          // already applied every tick; the downside was never applied
-          // anywhere, making a "cursed" relic pure upside.
-          if (relic?.id === "mana-engine") {
-            s.maxHp = Math.max(20, s.maxHp - 10);
-            s.hp = Math.min(s.hp, s.maxHp);
-          }
+          s = acquireSpellboundRelic(s, id);
         }
         s = enterRoom(s);
         const nextPhase = s.phase;
-        queueMicrotask(() => cbRef.current.onPhase?.(nextPhase));
+        cbRef.current.onPhase?.(nextPhase);
         return s;
       });
     },
-    [enterRoom],
+    [enterRoom, update],
   );
 
   const chooseEvent = useCallback(
     (optionIndex: number) => {
-      setState((prev) => {
+      update((prev) => {
+        if (prev.phase !== "event" || !prev.event?.options[optionIndex]) return prev;
         let s: SpellboundState = { ...prev };
         const rng = internal.current.rng;
         const opt = s.event?.options[optionIndex];
@@ -939,8 +927,10 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
           else if (e.kind === "gold") s.gold = Math.max(0, s.gold + e.amount);
           else if (e.kind === "shield") s.shield += e.amount;
           else if (e.kind === "maxMana") s.maxMana += e.amount;
-          else if (e.kind === "relic") s.relics = [...s.relics, rng.pick(RELICS).id];
-          else if (e.kind === "spell") {
+          else if (e.kind === "relic") {
+            const pool = availableSpellboundRelics(s.relics);
+            if (pool.length) s = acquireSpellboundRelic(s, rng.pick(pool));
+          } else if (e.kind === "spell") {
             const pick = rng.pick(Object.keys(SPELLS));
             s.spells = [...new Set([...s.spells, pick])];
             s.slots = assignSpellToSlot(rng, s.slots, s.spells, pick);
@@ -952,22 +942,24 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         s.event = null;
         s = enterRoom(s);
         const nextPhase = s.phase;
-        queueMicrotask(() => cbRef.current.onPhase?.(nextPhase));
+        cbRef.current.onPhase?.(nextPhase);
         return s;
       });
     },
-    [enterRoom],
+    [enterRoom, update],
   );
 
   const buy = useCallback((kind: "spell" | "relic", id: string, price: number) => {
-    setState((prev) => {
-      if (prev.gold < price) return prev;
-      const s: SpellboundState = { ...prev, gold: prev.gold - price };
+    update((prev) => {
+      if (prev.phase !== "shop" || prev.gold < price || !Number.isFinite(price) || price < 0) return prev;
+      if (!(kind === "spell" ? prev.offer.spells : prev.offer.relics).includes(id)) return prev;
+      if (kind === "relic" && (prev.relics.includes(id) || relicById(id)?.price !== price)) return prev;
+      let s: SpellboundState = { ...prev, gold: prev.gold - price };
       if (kind === "spell") {
         s.spells = [...new Set([...s.spells, id])];
         s.slots = assignSpellToSlot(internal.current.rng, s.slots, s.spells, id);
       } else {
-        s.relics = [...s.relics, id];
+        s = acquireSpellboundRelic(s, id);
       }
       s.offer = {
         spells: s.offer.spells.filter((x) => x !== id),
@@ -975,18 +967,19 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
       };
       return s;
     });
-  }, []);
+  }, [update]);
 
   const leaveShop = useCallback(() => {
-    setState((prev) => {
+    update((prev) => {
+      if (prev.phase !== "shop") return prev;
       const s = enterRoom(prev);
       const nextPhase = s.phase;
-      queueMicrotask(() => cbRef.current.onPhase?.(nextPhase));
+      cbRef.current.onPhase?.(nextPhase);
       return s;
     });
-  }, [enterRoom]);
+  }, [enterRoom, update]);
 
-  const reset = useCallback(() => setState(initial()), []);
+  const reset = useCallback(() => replace(initial()), [replace]);
 
   const derived = useMemo(() => {
     const char = state.phase === "select" ? null : characterById(state.characterId);
@@ -997,9 +990,9 @@ export function useSpellbound(seed?: string, cb: SpellboundCallbacks = {}) {
         .map((id) => relicById(id))
         .filter((r): r is RelicDef => Boolean(r)),
       isBossRoom: state.roomKind === "boss",
-      seed: seedRef.current,
+      seed: runSeed,
     };
-  }, [state]);
+  }, [state, runSeed]);
 
   return {
     state,

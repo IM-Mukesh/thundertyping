@@ -85,12 +85,13 @@ export async function getCloudAchievements(userId: string): Promise<string[]> {
 }
 
 /**
- * Authoritatively evaluates and grants eligible achievements based on
- * verified server records in PostgreSQL (player_streaks, game_scores,
+ * Evaluates and grants eligible achievements based on persisted records in
+ * PostgreSQL (player_streaks, game_scores,
  * lesson_progress, daily_stats).
  *
  * The browser can never claim an achievement arbitrarily; it is only
- * unlocked when database records prove eligibility.
+ * unlocked when database records meet the rules. Game measurements are
+ * client-reported; storing them does not verify that gameplay occurred.
  */
 export async function evaluateAndSyncAchievements(
   userId: string
@@ -104,9 +105,8 @@ export async function evaluateAndSyncAchievements(
     supabase.from("game_scores").select("game_id, score, cleared, best_combo, survived_ms, wpm, accuracy").eq("user_id", userId),
   ]);
 
-  if (achievementsRes.error) {
-    throw new Error(`Failed to check achievements: ${achievementsRes.error.message}`);
-  }
+  const readError = achievementsRes.error ?? streakRes.error ?? gamesRes.error;
+  if (readError) throw new Error(`Failed to check achievements: ${readError.message}`);
 
   const existingUnlocked = new Set<string>((achievementsRes.data || []).map((r) => r.achievement_id));
   const newlyUnlocked: string[] = [];
@@ -184,7 +184,7 @@ export async function evaluateAndSyncAchievements(
   }
 
   // Persist newly unlocked achievements idempotently
-  const toInsert = newlyUnlocked.filter((id) => !existingUnlocked.has(id));
+  const toInsert = [...new Set(newlyUnlocked)].filter((id) => !existingUnlocked.has(id));
   if (toInsert.length > 0) {
     const rows = toInsert.map((achievement_id) => ({
       user_id: userId,
@@ -204,8 +204,8 @@ export async function evaluateAndSyncAchievements(
 }
 
 /**
- * Grants an achievement ONLY if it passes authoritative validation
- * or is an authoritatively verified gameplay event.
+ * Grants an achievement only when persisted records meet the server's rules.
+ * Client-reported game metrics are not independent gameplay verification.
  */
 export async function grantVerifiedCloudAchievement(
   userId: string,

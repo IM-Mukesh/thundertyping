@@ -651,7 +651,7 @@ export function MobileGamesHub({
                       <span className="flex items-center gap-1 text-accent truncate">
                         <Trophy size={10} />
                         <span className="text-foreground font-bold">
-                          {game.scoreBy === "time" ? "Survive" : "Points"}
+                          {game.scoreBy === "time" ? "Survive" : game.scoreBy === "wpm" ? "WPM" : "Points"}
                         </span>
                       </span>
                       <GameBestBadge definition={game} />

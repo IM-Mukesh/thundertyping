@@ -133,7 +133,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
     pattern: [0, 1, 0, 2],
     intents: [
       { key: "appraise", label: "Appraise", kind: "attack", damage: 12, description: "Attacks for 12." },
-      { key: "confiscate", label: "Confiscate", kind: "special", damage: 6, status: { key: "hush", amount: 2 }, special: "discard", description: "Attacks for 6, applies 2 Hush and takes a card." },
+      { key: "confiscate", label: "Confiscate", kind: "special", damage: 6, status: { key: "hush", amount: 2 }, special: "discard", description: "Attacks for 6, applies 2 Hush and discards one random card from your next hand." },
       { key: "hoard", label: "Hoard", kind: "block", block: 18, description: "Gains 18 block." },
     ],
   },

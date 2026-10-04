@@ -43,6 +43,8 @@ export interface BossBattleState {
   combo: number;
   bestCombo: number;
   correctKeystrokes: number;
+  /** Unique completed output; repeated prefixes must not inflate finish bonuses. */
+  completedChars: number;
   incorrectKeystrokes: number;
   elapsedMs: number;
   /** How far the boss is into charging its current attack. */
@@ -229,6 +231,7 @@ export function createInitialState(definition: GameDefinition): BossBattleState 
     combo: 0,
     bestCombo: 0,
     correctKeystrokes: 0,
+    completedChars: 0,
     incorrectKeystrokes: 0,
     elapsedMs: 0,
     chargeMs: 0,
@@ -252,8 +255,8 @@ function decay(ms: number): number {
  * of rather than presenting an opaque total.
  */
 function settle(state: BossBattleState, outcome: BossOutcome): BossBattleState {
-  const accuracy = calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes);
-  const speedBonus = round(calculateNetWpm(state.correctKeystrokes, state.elapsedMs) * SPEED_BONUS_PER_WPM);
+  const accuracy = calculateAccuracy(state.completedChars + state.typed.length, state.incorrectKeystrokes);
+  const speedBonus = round(calculateNetWpm(state.completedChars, state.elapsedMs) * SPEED_BONUS_PER_WPM);
   const accuracyBonus = round(Math.max(0, accuracy - ACCURACY_BONUS_FLOOR) * ACCURACY_BONUS_PER_POINT);
   const victoryBonus = outcome === "victory" ? VICTORY_BONUS + state.lives * VICTORY_LIFE_BONUS : 0;
 
@@ -398,6 +401,7 @@ export function reducer(state: BossBattleState, action: BossAction): BossBattleS
         bestCombo: Math.max(state.bestCombo, combo),
         correctKeystrokes,
         clearsThisCharge: state.clearsThisCharge + 1,
+        completedChars: state.completedChars + state.word.length,
         typed: "",
         bossHitMs: BOSS_HIT_FLASH_MS,
       };

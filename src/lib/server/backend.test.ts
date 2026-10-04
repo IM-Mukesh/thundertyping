@@ -214,6 +214,8 @@ describe("Backend Validation Engine", () => {
   describe("validateGameScoreInput", () => {
     it("accepts valid score for a registered game", () => {
       const input = {
+        runId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        ownerId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
         gameId: "falling-words",
         score: 1250,
         cleared: 15,
@@ -234,14 +236,14 @@ describe("Backend Validation Engine", () => {
       assert.equal(validateGameScoreInput({ gameId: "falling-words", score: -5 }).valid, false);
     });
 
-    it("rejects runaway scores exceeding game-specific limits", () => {
+    it("rejects submissions without a start-time owner and run ID", () => {
       assert.equal(
         validateGameScoreInput({ gameId: "typing-survivor", score: 500_000, survivedMs: 1000 }).valid,
         false
       );
     });
 
-    it("rejects mathematically impossible scores with 0ms survival", () => {
+    it("rejects incomplete result contracts even when numeric fields are present", () => {
       assert.equal(
         validateGameScoreInput({ gameId: "falling-words", score: 10000, survivedMs: 0, cleared: 0 }).valid,
         false
@@ -550,4 +552,3 @@ describe("Content-Security-Policy Environment Boundaries", () => {
     }
   });
 });
-

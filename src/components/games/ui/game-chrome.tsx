@@ -36,6 +36,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
+import { formatGameScore, gameScoreUnit } from "@/lib/games/score-format";
 import type { GameBest } from "@/lib/games/game-scores";
 import { cn } from "@/lib/utils/cn";
 
@@ -500,7 +501,7 @@ export function UniversalStartCard({
           <span>
             Personal Best:{" "}
             <strong>
-              {definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString()}
+              {formatGameScore(definition, best.score)}
             </strong>
           </span>
           {best.bestCombo > 1 && (
@@ -593,7 +594,7 @@ export function UniversalResultCard({
   onRestart: () => void;
   children?: ReactNode;
 }) {
-  const isTimeScored = definition.scoreBy === "time";
+  const unit = gameScoreUnit(definition);
   const numHeadline = typeof headline === "number" ? headline : parseInt(`${headline}`.replace(/,/g, ""), 10) || 0;
   const pbDelta =
     isNewBest && previousBestScore && previousBestScore > 0
@@ -623,19 +624,19 @@ export function UniversalResultCard({
 
         <h3 className="font-mono text-3xl sm:text-4xl font-black tabular-nums tracking-tight text-foreground arcade-glow mt-1">
           {headline}
-          {isTimeScored && <span className="text-xl text-sub font-normal">s</span>}
+          {unit && <span className="text-xl text-sub font-normal">{unit}</span>}
         </h3>
 
         {reason && <p className="font-mono text-xs text-sub">{reason}</p>}
 
         {pbDelta !== null && pbDelta > 0 && (
           <p className="font-mono text-[11px] text-accent font-semibold">
-            +{isTimeScored ? `${pbDelta}s` : pbDelta.toLocaleString()} vs previous best
+            +{formatGameScore(definition, pbDelta)} vs previous best
           </p>
         )}
         {!isNewBest && best && best.score > 0 && (
           <p className="font-mono text-[11px] text-sub">
-            Best: {isTimeScored ? `${best.score}s` : best.score.toLocaleString()}
+            Best: {formatGameScore(definition, best.score)}
           </p>
         )}
       </div>

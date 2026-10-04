@@ -287,6 +287,9 @@ export type Database = {
           id: string;
           user_id: string;
           game_id: string;
+          variant: string;
+          settlement_version: number;
+          earned_xp: number | null;
           score: number;
           cleared: number;
           best_combo: number;
@@ -299,6 +302,9 @@ export type Database = {
           id?: string;
           user_id: string;
           game_id: string;
+          variant?: string;
+          settlement_version?: number;
+          earned_xp?: number | null;
           score: number;
           cleared?: number;
           best_combo?: number;
@@ -311,6 +317,9 @@ export type Database = {
           id?: string;
           user_id?: string;
           game_id?: string;
+          variant?: string;
+          settlement_version?: number;
+          earned_xp?: number | null;
           score?: number;
           cleared?: number;
           best_combo?: number;
@@ -408,6 +417,25 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      settle_game_run: {
+        Args: {
+          p_user_id: string;
+          p_run_id: string;
+          p_game_id: string;
+          p_variant: string;
+          p_score: number;
+          p_cleared: number;
+          p_best_combo: number;
+          p_survived_ms: number;
+          p_wpm: number | null;
+          p_accuracy: number | null;
+        };
+        Returns: Json;
+      };
+      get_game_bests: {
+        Args: { p_user_id: string };
+        Returns: Database["public"]["Tables"]["game_scores"]["Row"][];
+      };
       rate_limit_increment: {
         Args: {
           p_key: string;

@@ -162,6 +162,9 @@ export type GameDifficulty = "easy" | "medium" | "hard";
 
 export type TypingMode = "all" | "home" | "top" | "bottom" | "numbers";
 
+export type FruitInputMode = "keyboard" | "touch";
+export type FruitRunMode = "classic" | "tutorial" | "combo" | "clean";
+
 export interface TypingModeConfig {
   id: TypingMode;
   label: string;
@@ -292,6 +295,7 @@ export interface ActiveFruit {
   rotation: number;
   rotationSpeed: number;
   state: "flying" | "sliced" | "exploded" | "missed";
+  visibleAt?: number; // active play time when the target first became visible
   slicedAt?: number;
   halves?: [FruitHalf, FruitHalf];
   fusePhase?: number; // For bombs: 0 to 1 spark pulse
@@ -362,9 +366,11 @@ export interface FloatingText {
 
 export interface FruitFuryState {
   status: "idle" | "running" | "paused" | "over";
-  gameOverReason: "bombed" | "lives_depleted" | null;
+  gameOverReason: "bombed" | "lives_depleted" | "completed" | "mission_failed" | "time_up" | null;
   difficulty: GameDifficulty;
   typingMode: TypingMode;
+  inputMode: FruitInputMode;
+  runMode: FruitRunMode;
   score: number;
   level: number;
   fruitsCleared: number;
@@ -375,6 +381,8 @@ export interface FruitFuryState {
   lastSliceTime: number;
   feverGauge: number; // 0 to 100
   isFeverActive: boolean;
+  feverEver: boolean;
+  goldenSliced: number;
   feverTimeRemaining: number;
   isFrozenActive: boolean;
   frozenTimeRemaining: number;
@@ -382,6 +390,11 @@ export interface FruitFuryState {
   correctTyped: number;
   bombsAvoided: number;
   bombsHit: number;
+  missedFruits: number;
+  keyErrors: Record<string, number>;
+  missedKeys: Record<string, number>;
+  reactionTotalMs: number;
+  reactionSamples: number;
   startTime: number;
   elapsedMs: number;
   screenShake: { intensity: number; decay: number; offsetX: number; offsetY: number };

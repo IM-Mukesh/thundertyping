@@ -25,9 +25,11 @@ import {
   type StatusKey,
   type Statuses,
 } from "@/lib/games/cards/model";
-import { CARDS_BY_ID, REWARD_POOL, STARTER_DECKS } from "@/lib/games/cards/cards";
+import { CARDS_BY_ID, STARTER_DECKS } from "@/lib/games/cards/cards";
 import { ENCOUNTERS, type EnemyDef } from "@/lib/games/cards/encounters";
 import { grantAchievement } from "@/lib/profile/player-profile";
+import { useGameSession } from "@/lib/games/cards/use-game-session";
+import { drawCardHand, pickEnemyIntent, resolveCardEnemyTurn, settleCardCombat } from "@/lib/games/cards/transitions";
 
 const HAND_SIZE = 5;
 const BASE_ENERGY = 3;
@@ -55,6 +57,7 @@ export interface EnemyState {
 
 export interface CardBattleState {
   phase: Phase;
+  elapsedMs: number;
   deckId: string;
   floor: number;
   node: number;
@@ -97,9 +100,8 @@ export interface CardBattleCallbacks {
   onMiss?: () => void;
 }
 
-let uidCounter = 1;
-function instance(id: string, upgraded = false): CardInstance {
-  return { uid: `c${uidCounter++}`, id: id, upgraded };
+function instance(id: string, uid: number, upgraded = false): CardInstance {
+  return { uid: `c${uid}`, id, upgraded };
 }
 
 function clampStatuses(s: Statuses): Statuses {
@@ -111,16 +113,18 @@ function clampStatuses(s: Statuses): Statuses {
 }
 
 export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
-  const seedRef = useRef(seed ?? `${Date.now()}`);
-  const rngRef = useRef<Rng>(createRng(seedRef.current));
+  const [runSeed, setRunSeed] = useState(seed ?? "");
+  const rngRef = useRef<Rng>(createRng(seed ?? ""));
+  const uidRef = useRef(1);
   const cbRef = useRef(cb);
-  cbRef.current = cb;
+  useEffect(() => { cbRef.current = cb; }, [cb]);
 
-  const [state, setState] = useState<CardBattleState>(() => initial());
+  const { state, current, update, replace, paused, setPaused } = useGameSession(initial, "combat");
 
   function initial(): CardBattleState {
     return {
       phase: "select",
+      elapsedMs: 0,
       deckId: STARTER_DECKS[0].id,
       floor: 1,
       node: 0,
@@ -153,33 +157,12 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
   }
 
   // ---------------------------------------------------------------- helpers
-  const shuffleInto = useCallback((s: CardBattleState) => {
-    const rng = rngRef.current;
-    s.draw = rng.shuffle([...s.draw, ...s.discard]);
-    s.discard = [];
-  }, []);
-
   const drawCards = useCallback(
     (s: CardBattleState, n: number) => {
-      for (let i = 0; i < n; i++) {
-        if (s.draw.length === 0) shuffleInto(s);
-        if (s.draw.length === 0) return; // genuinely out of cards
-        const [card, ...rest] = s.draw;
-        s.draw = rest;
-        s.hand = [...s.hand, card];
-      }
+      drawCardHand(s, n, rngRef.current);
     },
-    [shuffleInto],
+    [],
   );
-
-  const pickIntent = useCallback((def: EnemyDef, turn: number, rng: Rng): Intent => {
-    // Fixed pattern first if the enemy has one, so a boss reads as deliberate
-    // rather than random; otherwise weighted choice.
-    if (def.pattern && def.pattern.length > 0) {
-      return def.intents[def.pattern[turn % def.pattern.length]] ?? def.intents[0];
-    }
-    return rng.pick(def.intents);
-  }, []);
 
   const startCombat = useCallback(
     (s: CardBattleState, enemies: EnemyDef[]) => {
@@ -191,13 +174,16 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
         maxHp: def.hp,
         block: 0,
         statuses: emptyStatuses(),
-        intent: pickIntent(def, 0, rng),
+        intent: pickEnemyIntent(def, 0, rng),
         hitFlash: 0,
       }));
       s.focus = s.enemies[0]?.uid ?? null;
       s.minions = [];
       s.turn = 1;
       s.block = 0;
+      s.retainBlock = false;
+      s.nextFree = false;
+      s.typed = "";
       s.statuses = emptyStatuses();
       s.energy = s.maxEnergy;
       s.cardsPlayedThisTurn = 0;
@@ -209,12 +195,12 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
       drawCards(s, HAND_SIZE);
       s.phase = "combat";
     },
-    [drawCards, pickIntent],
+    [drawCards],
   );
 
   // ------------------------------------------------------------- op resolver
   const applyOp = useCallback(
-    (s: CardBattleState, op: Op, targetUid: string | null): void => {
+    function resolveOp(s: CardBattleState, op: Op, targetUid: string | null): void {
       const target = () => s.enemies.find((e) => e.uid === targetUid && e.hp > 0);
 
       const dealTo = (e: EnemyState, raw: number, pierce?: boolean) => {
@@ -315,7 +301,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
           if (t) {
             const b = t.statuses.blight;
             if (b > 0) {
-              if (b >= 20) queueMicrotask(() => grantAchievement("card-battle:combo"));
+              if (b >= 20) grantAchievement("card-battle:combo");
               dealTo(t, b, true);
               t.statuses = { ...t.statuses, blight: 0 };
             }
@@ -335,7 +321,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
             s.minions = [
               ...s.minions,
               {
-                uid: `m${uidCounter++}`,
+                uid: `m${uidRef.current++}`,
                 sprite: spec.sprite,
                 name: spec.name,
                 atk: spec.atk,
@@ -368,7 +354,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
               // Guard against a Reprise replaying a Reprise forever.
               const face = faceOf(def, false);
               if (def.id !== "reprise") {
-                for (const inner of face.ops) applyOp(s, inner, targetUid);
+                for (const inner of face.ops) resolveOp(s, inner, targetUid);
               }
             }
           }
@@ -391,7 +377,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
         }
         case "ifCardsPlayed":
           if (s.cardsPlayedThisTurn >= op.atLeast) {
-            for (const inner of op.then) applyOp(s, inner, targetUid);
+            for (const inner of op.then) resolveOp(s, inner, targetUid);
           }
           break;
         case "reprise":
@@ -409,7 +395,7 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
   // ------------------------------------------------------------- play a card
   const playCard = useCallback(
     (uid: string) => {
-      setState((prev) => {
+      update((prev) => {
         if (prev.phase !== "combat") return prev;
         const s: CardBattleState = {
           ...prev,
@@ -467,29 +453,23 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
           s.focus = s.enemies.find((e) => e.hp > 0)?.uid ?? null;
         }
 
-        if (s.enemies.every((e) => e.hp <= 0)) {
-          s.gold += 25 + s.floor * 10;
-          s.score += 60;
-          s.phase = "reward";
-          s.offer = rngRef.current.sample(REWARD_POOL.map((c) => c.id), 3);
-          cbRef.current.onPhase?.("reward");
-        }
-        return s;
+        const settled = settleCardCombat(s, rngRef.current);
+        if (settled.phase !== s.phase) cbRef.current.onPhase?.(settled.phase);
+        return settled;
       });
     },
-    [applyOp],
+    [applyOp, update],
   );
 
   // ------------------------------------------------------------- end of turn
   const endTurn = useCallback(() => {
-    setState((prev) => {
+    update((prev) => {
       if (prev.phase !== "combat") return prev;
       const s: CardBattleState = {
         ...prev,
         statuses: { ...prev.statuses },
         enemies: prev.enemies.map((e) => ({ ...e, statuses: { ...e.statuses } })),
       };
-      const rng = rngRef.current;
 
       // discard the hand
       s.discard = [...s.discard, ...s.hand];
@@ -506,99 +486,27 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
       }
       s.minions = s.minions.map((m) => ({ ...m, turns: m.turns - 1 })).filter((m) => m.turns > 0);
 
-      // enemies act
-      for (const e of s.enemies) {
-        if (e.hp <= 0) continue;
-        const it = e.intent;
-        if (it.damage) {
-          const hits = it.hits ?? 1;
-          for (let h = 0; h < hits; h++) {
-            let dmg = it.damage;
-            if (e.statuses.hush > 0) dmg = Math.round(dmg * 0.75);
-            const absorbed = Math.min(s.block, dmg);
-            s.block -= absorbed;
-            const through = dmg - absorbed;
-            if (through > 0) {
-              s.hp = Math.max(0, s.hp - through);
-              cbRef.current.onDamage?.(through, false);
-            }
-            // Ward punishes the attacker on every hit that lands.
-            if (s.statuses.ward > 0) {
-              e.hp = Math.max(0, e.hp - s.statuses.ward);
-              e.hitFlash = 200;
-            }
-          }
-        }
-        if (it.block) e.block += it.block;
-        if (it.status) {
-          s.statuses = clampStatuses({
-            ...s.statuses,
-            [it.status.key]: s.statuses[it.status.key] + it.status.amount,
-          });
-        }
-        if (it.selfStatus) {
-          e.statuses = clampStatuses({
-            ...e.statuses,
-            [it.selfStatus.key]: e.statuses[it.selfStatus.key] + it.selfStatus.amount,
-          });
-        }
+      const result = resolveCardEnemyTurn(s, rngRef.current);
+      for (const event of result.events) {
+        if (event.kind === "kill") cbRef.current.onKill?.();
+        else cbRef.current.onDamage?.(event.amount, false);
       }
-
-      // blight ticks on enemies, then decays
-      for (const e of s.enemies) {
-        if (e.hp <= 0) continue;
-        if (e.statuses.blight > 0) {
-          e.hp = Math.max(0, e.hp - e.statuses.blight);
-          e.statuses = { ...e.statuses, blight: e.statuses.blight - 1 };
-          if (e.hp === 0) cbRef.current.onKill?.();
-        }
-        // exposure and hush wear off
-        e.statuses = clampStatuses({
-          ...e.statuses,
-          exposure: Math.max(0, e.statuses.exposure - 1),
-          hush: Math.max(0, e.statuses.hush - 1),
-        });
-      }
-      s.statuses = clampStatuses({
-        ...s.statuses,
-        exposure: Math.max(0, s.statuses.exposure - 1),
-        hush: Math.max(0, s.statuses.hush - 1),
-      });
-
-      if (s.hp <= 0) {
-        s.phase = "defeat";
-        cbRef.current.onPhase?.("defeat");
-        return s;
-      }
-      if (s.enemies.every((e) => e.hp <= 0)) {
-        s.gold += 25 + s.floor * 10;
-        s.phase = "reward";
-        s.offer = rng.sample(REWARD_POOL.map((c) => c.id), 3);
-        cbRef.current.onPhase?.("reward");
-        return s;
-      }
-
-      // next turn
-      s.turn += 1;
-      if (!s.retainBlock) s.block = 0;
-      s.retainBlock = false;
-      s.energy = s.maxEnergy;
-      s.cardsPlayedThisTurn = 0;
-      s.lastPlayedId = null;
-      s.enemies = s.enemies.map((e) =>
-        e.hp > 0 ? { ...e, block: 0, intent: pickIntent(e.def, s.turn, rng), hitFlash: 0 } : e,
-      );
-      drawCards(s, HAND_SIZE);
-      return s;
+      if (result.state.phase !== s.phase) cbRef.current.onPhase?.(result.state.phase);
+      return result.state;
     });
-  }, [applyOp, drawCards, pickIntent]);
+  }, [applyOp, drawCards, update]);
 
   // -------------------------------------------------------------- typing in
   const setTyped = useCallback(
     (value: string) => {
-      setState((prev) => {
+      const lower = value.toLowerCase().replace(/[^a-z]/g, "");
+      const exact = current.current.hand.find((c) => CARDS_BY_ID[c.id]?.word === lower);
+      if (exact) {
+        playCard(exact.uid);
+        return;
+      }
+      update((prev) => {
         if (prev.phase !== "combat") return prev;
-        const lower = value.toLowerCase().replace(/[^a-z]/g, "");
         if (lower === "") return { ...prev, typed: "" };
 
         const playable = prev.hand.filter((c) =>
@@ -608,42 +516,37 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
           cbRef.current.onMiss?.();
           return { ...prev, typed: "" };
         }
-        const exact = playable.find((c) => CARDS_BY_ID[c.id].word === lower);
-        if (exact) {
-          queueMicrotask(() => playCard(exact.uid));
-          return { ...prev, typed: "" };
-        }
         return { ...prev, typed: lower };
       });
     },
-    [playCard],
+    [current, playCard, update],
   );
 
   // ----------------------------------------------------------------- run flow
   const start = useCallback(
     (deckId: string, runSeed?: string) => {
       const sd = runSeed ?? `${Date.now()}`;
-      seedRef.current = sd;
+      setRunSeed(sd);
       rngRef.current = createRng(sd);
+      uidRef.current = 1;
       const archetype = STARTER_DECKS.find((d) => d.id === deckId) ?? STARTER_DECKS[0];
-      setState(() => {
-        const s = initial();
-        s.deckId = deckId;
-        s.deck = archetype.cards.map((id) => instance(id));
-        s.gold = 50;
-        startCombat(s, ENCOUNTERS[0].enemies);
-        return s;
-      });
+      const s = initial();
+      s.deckId = deckId;
+      s.deck = archetype.cards.map((id) => instance(id, uidRef.current++));
+      s.gold = 50;
+      startCombat(s, ENCOUNTERS[0].enemies);
+      replace(s);
       cbRef.current.onPhase?.("combat");
     },
-    [startCombat],
+    [startCombat, replace],
   );
 
   const takeReward = useCallback(
     (cardId: string | null) => {
-      setState((prev) => {
+      update((prev) => {
+        if (prev.phase !== "reward" || (cardId && !prev.offer.includes(cardId))) return prev;
         const s: CardBattleState = { ...prev };
-        if (cardId) s.deck = [...s.deck, instance(cardId)];
+        if (cardId) s.deck = [...s.deck, instance(cardId, uidRef.current++)];
         s.node += 1;
         if (s.node >= ENCOUNTERS.length) {
           s.phase = "victory";
@@ -657,24 +560,25 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
         return s;
       });
     },
-    [startCombat],
+    [startCombat, update],
   );
 
   const setFocus = useCallback((uid: string) => {
-    setState((prev) => ({ ...prev, focus: uid }));
-  }, []);
+    update((prev) => prev.phase === "combat" && prev.enemies.some((e) => e.uid === uid && e.hp > 0)
+      ? { ...prev, focus: uid } : prev);
+  }, [update]);
 
-  const reset = useCallback(() => setState(initial()), []);
+  const reset = useCallback(() => replace(initial()), [replace]);
 
   // clear the banner shortly after it appears
   useEffect(() => {
     if (!state.banner) return;
     const id = window.setTimeout(
-      () => setState((s) => ({ ...s, banner: null })),
+      () => update((s) => ({ ...s, banner: null })),
       1800,
     );
     return () => window.clearTimeout(id);
-  }, [state.banner]);
+  }, [state.banner, update]);
 
   const derived = useMemo(() => {
     const handDefs = state.hand.map((c) => ({
@@ -687,12 +591,14 @@ export function useCardBattle(seed?: string, cb: CardBattleCallbacks = {}) {
       offerDefs: state.offer.map((id) => CARDS_BY_ID[id]).filter(Boolean),
       aliveEnemies: state.enemies.filter((e) => e.hp > 0),
       encounter: ENCOUNTERS[state.node],
-      seed: seedRef.current,
+      seed: runSeed,
     };
-  }, [state]);
+  }, [state, runSeed]);
 
   return {
     state,
+    paused,
+    setPaused,
     ...derived,
     start,
     setTyped,

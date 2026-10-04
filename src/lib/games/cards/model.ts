@@ -1,13 +1,11 @@
 /**
  * Card Battle — the shared vocabulary.
  *
- * Everything in this folder is pure data and pure functions. Nothing here
- * holds mutable module-level state, because these modules are imported from a
- * component that lives behind `next/dynamic` and the bundler duplicates such a
- * module across chunks (see the architecture note in PROGRESS.md). Run state
- * lives in a `useReducer` inside the component; randomness is derived from a
- * seed plus a counter that is itself part of that state, so the reducer stays
- * pure and a run is reproducible from its seed alone.
+ * This model is pure data and pure functions. No module in this folder
+ * holds mutable module-level run state. The engine serializes commands outside
+ * React state updaters; each run owns its seeded generator and instance IDs.
+ * Extracted combat transitions receive their generator explicitly, making
+ * snapshots and seeded decisions directly testable.
  */
 
 import { createRng, hashSeed, type Rng } from "@/lib/rng/seeded-rng";

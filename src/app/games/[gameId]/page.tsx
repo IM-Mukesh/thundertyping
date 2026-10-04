@@ -49,6 +49,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
   const characterArt = getGameArt(game.id, "character");
   const others = GAME_LIST.filter((g) => g.id !== game.id);
+  const immersiveRacer = game.id === "ghost-racer";
 
   // A small, generic set of extra roles a game's own board can reach for
   // beyond the five fixed GameArtRole slots above — resolved here (server
@@ -141,7 +142,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
         />
       )}
 
-      <div className="flex w-full max-w-4xl items-center justify-between gap-4 pb-4">
+      <div className={`flex w-full ${immersiveRacer ? "max-w-6xl" : "max-w-4xl"} items-center justify-between gap-4 pb-4`}>
         <Breadcrumbs items={[{ name: "Games", path: "/games" }, { name: game.name, path: `/games/${game.id}` }]} />
         <div className="flex shrink-0 items-center gap-3">
           <GameBestBadge definition={game} />
@@ -152,7 +153,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
       {/* MARQUEE — the artwork at full strength, with the character standing
           in it. This is where the game gets its personality; the board below
           stays clean so falling words are never fighting a background. */}
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
+      {immersiveRacer ? <h1 className="sr-only">Ghost Racer — Neon Night Time Trial</h1> : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
         <div className="absolute inset-0">
           {heroArt ? (
             <Image
@@ -201,7 +202,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
               </span>
               <span className="flex items-center gap-1.5">
                 <Gamepad2 size={12} />
-                {game.scoreBy === "time" ? "survival" : "score attack"}
+                {game.scoreBy === "time" ? "survival" : game.scoreBy === "wpm" ? "speed race" : "score attack"}
               </span>
               {game.upcoming && (
                 <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 px-2.5 py-0.5 text-amber-300 font-bold">
@@ -214,9 +215,11 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
         </div>
       </div>
 
+      }
+
       {/* CABINET — the board sits flush under the marquee so the two read as
           one unit rather than a banner with a stray panel beneath it. */}
-      <div className="theme-transition flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-12 pt-10 sm:px-8">
+      <div className={immersiveRacer ? "flex w-full max-w-6xl justify-center" : "theme-transition flex w-full max-w-4xl justify-center rounded-b-2xl border border-t-0 border-border bg-sub-alt/20 px-4 pb-12 pt-10 sm:px-8"}>
         {game.upcoming ? (
           <div className="flex flex-col items-center justify-center py-10 px-6 text-center max-w-lg">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-400 mb-5 shadow-lg shadow-amber-500/10 animate-pulse">

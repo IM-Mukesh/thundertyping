@@ -228,7 +228,7 @@ export const SPELLS: Record<string, SpellDef> = {
     cooldownMs: 3800,
     base: 6,
     perLetter: 2.4,
-    desc: "Shield absorbs damage and prevents interruption.",
+    desc: "Shield absorbs incoming damage before health is lost.",
   },
   bastion: {
     id: "bastion",
@@ -483,7 +483,7 @@ export const RELICS: readonly RelicDef[] = [
   {
     id: "iron-will",
     name: "Iron Will",
-    effect: "You can never be interrupted. You take +15% damage.",
+    effect: "Gain 20 maximum and current health. You take +15% damage.",
     sigil: "IW",
     cursed: true,
     price: 55,

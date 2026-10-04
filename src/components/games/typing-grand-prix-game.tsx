@@ -9,6 +9,7 @@ import {
   Flag,
   Flame,
   Gauge,
+  Pause,
   Play,
   RotateCcw,
   Timer,
@@ -27,15 +28,19 @@ import {
   RACE_WORD_COUNT,
   TICK_MS,
   livePosition,
+  raceAccuracy,
+  raceStandings,
+  scoredChars,
   useTypingGrandPrix,
   type GrandPrixState,
 } from "@/lib/games/use-typing-grand-prix";
-import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { useGameBest } from "@/lib/games/use-game-best";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
 import { duck, playMusic, preload, stopMusic } from "@/lib/audio/audio-bus";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
-import { calculateAccuracy, calculateLiveWpm, calculateNetWpm, round } from "@/lib/typing-engine/stats";
+import { calculateLiveWpm, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 import { GameViewport } from "@/components/games/ui/game-viewport";
 import { PauseOverlay } from "@/components/games/ui/game-chrome";
@@ -89,10 +94,10 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   const playerCarArt = art?.["car-player"] ?? null;
   const rivalArt = [art?.["car-shadow"] ?? null, art?.["car-blaze"] ?? null, art?.["car-nova"] ?? null];
 
-  const { state, start, resume, setTyped, commitWord } = useTypingGrandPrix(definition);
+  const { state, start, pause, resume, setTyped, commitWord } = useTypingGrandPrix(definition);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
+  const best = useGameBest(definition.id);
   const [isNewBest, setIsNewBest] = useState(false);
 
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -123,7 +128,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   }, [state.status, isFinalLap]);
 
   useEffect(() => {
-    if (state.status === "over") {
+    if (state.status === "over" || state.status === "paused") {
       musicKeyRef.current = null;
       stopMusic();
     }
@@ -195,14 +200,15 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     if (recordedRef.current) return;
     recordedRef.current = true;
 
-    const { isNewBest: newBest, best: stored } = recordGameResult(definition.id, {
+    const { isNewBest: newBest } = recordGameResult(definition.id, {
       score: state.score,
       cleared: state.wordIndex,
       bestCombo: state.bestCombo,
-      survivedMs: state.elapsedMs,
-    });
+      survivedMs: Math.round(state.elapsedMs),
+      wpm: round(calculateNetWpm(scoredChars(state), state.elapsedMs)),
+      accuracy: round(raceAccuracy(state)),
+    }, state.dnf ? "dnf" : state.place === 1 ? "won" : "finished");
     setIsNewBest(newBest);
-    setBest(stored);
     playSound("over", soundEnabled);
     sound(state.place === 1 ? "race-victory" : "race-defeat", soundEnabled);
     if (newBest) sound("new-record", soundEnabled);
@@ -222,11 +228,9 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     start();
   }, [start, soundEnabled, definition.id]);
 
-  const accuracy = round(
-    calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes, state.missedChars),
-  );
-  const liveWpm = round(calculateLiveWpm(state.correctKeystrokes, state.elapsedMs));
-  const finalWpm = round(calculateNetWpm(state.correctKeystrokes, state.elapsedMs));
+  const accuracy = round(raceAccuracy(state));
+  const liveWpm = round(calculateLiveWpm(scoredChars(state), state.elapsedMs));
+  const finalWpm = round(calculateNetWpm(scoredChars(state), state.elapsedMs));
   const isPlaying = state.status === "running";
   const inLeadIn = isPlaying && state.leadInMs > 0;
   const countdown = Math.max(1, Math.ceil(state.leadInMs / LEAD_IN_BEAT_MS));
@@ -237,11 +241,29 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     if (inLeadIn && countdown !== prevCountdownRef.current) {
       prevCountdownRef.current = countdown;
       playSound("countdown", soundEnabled);
-    } else if (!inLeadIn && prevCountdownRef.current !== null) {
+    } else if (state.status === "running" && state.leadInMs === 0 && prevCountdownRef.current !== null) {
       prevCountdownRef.current = null;
       playSound("countdown-go", soundEnabled);
     }
-  }, [inLeadIn, countdown, soundEnabled]);
+  }, [inLeadIn, countdown, soundEnabled, state.status, state.leadInMs]);
+
+  useEffect(() => {
+    if (state.status !== "running" && state.status !== "paused") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (state.status === "running") pause();
+        else resume();
+      } else if (state.status === "paused" && (event.key === " " || event.key === "Enter")) {
+        if (event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea")) return;
+        event.preventDefault();
+        resume();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, pause, resume]);
 
   useEffect(() => {
     if (state.status === "running" && !inLeadIn) {
@@ -252,6 +274,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
   useEffect(() => {
     if (state.status !== "over") return;
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat || (e.target instanceof HTMLElement && e.target.closest("button, a, input, select, textarea"))) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         handleStart();
@@ -261,10 +284,10 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [state.status, handleStart]);
 
-  const standings = [
-    { id: -1, name: "You", isPlayer: true, progress: state.playerProgress },
-    ...state.opponents.map((o, i) => ({ id: o.id, name: OPPONENT_IDENTITY[i]?.name ?? `Rival ${i + 1}`, isPlayer: false, progress: o.progress })),
-  ].sort((a, b) => b.progress - a.progress);
+  const standings = raceStandings(state).map((racer) => ({
+    ...racer,
+    name: racer.isPlayer ? "You" : OPPONENT_IDENTITY[racer.id]?.name ?? `Rival ${racer.id + 1}`,
+  }));
 
   return (
     <GameViewport
@@ -315,10 +338,10 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
               </div>
               <span
                 className="flex items-center gap-1.5 font-mono text-lg font-bold tabular-nums text-accent arcade-glow sm:text-xl"
-                aria-label={`Position ${position} of ${LANE_COUNT}`}
+                aria-label={state.dnf ? "Did not finish" : `Position ${position} of ${LANE_COUNT}`}
               >
                 <Trophy size={15} className="text-accent/70" aria-hidden="true" />
-                {ORDINALS[position - 1] ?? `${position}th`}
+                {state.dnf ? "DNF" : ORDINALS[position - 1] ?? `${position}th`}
               </span>
             </div>
 
@@ -355,6 +378,11 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
                   {state.score.toLocaleString()}
                 </span>
               </div>
+              {isPlaying && (
+                <button type="button" onClick={pause} className="flex min-h-11 items-center gap-1 px-2" aria-label="Pause race">
+                  <Pause size={13} /> Pause
+                </button>
+              )}
               <button
                 type="button"
                 onClick={toggleSound}
@@ -514,6 +542,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
 
             {/* Boost + combo, bottom-left of the track area. */}
             <div className="pointer-events-none absolute bottom-0 left-0 flex flex-col gap-1.5 rounded-xl border border-border/60 bg-background/75 px-3 py-2.5 backdrop-blur-sm">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-sub">Score Boost · 1.6× points</span>
               <div className="flex items-center gap-1.5">
                 <Zap size={11} className={cn(boostActive ? "text-accent" : "text-sub/60")} aria-hidden="true" />
                 <div className="h-1.5 w-20 overflow-hidden rounded-full bg-sub-alt/70">
@@ -581,6 +610,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
             {state.status === "over" && (
               <ResultCard
                 place={state.place ?? LANE_COUNT}
+                dnf={state.dnf}
                 score={state.score}
                 wpm={finalWpm}
                 accuracy={accuracy}
@@ -609,7 +639,10 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           }}
           onPaste={(e) => e.preventDefault()}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onBlur={() => {
+            setIsFocused(false);
+            pause();
+          }}
           onKeyDown={(e) => {
             if (e.key === " ") {
               e.preventDefault();
@@ -629,7 +662,7 @@ export function TypingGrandPrixGame({ definition, art }: TypingGrandPrixGameProp
           enterKeyHint="go"
           data-gramm="false"
           aria-label={`${definition.name} typing input`}
-          className="absolute inset-0 h-full w-full cursor-text opacity-0"
+          className="pointer-events-none absolute bottom-0 left-1/2 h-px w-px opacity-0"
           style={{ fontSize: 16 }}
         />
       </div>
@@ -818,7 +851,7 @@ function StartCard({
       </ArcadeButton>
 
       <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
-        Space commits each word — clean streaks build Boost
+        Space commits each word. Skips mean DNF. Clean streaks build Score Boost; Escape pauses.
       </p>
     </div>
   );
@@ -826,6 +859,7 @@ function StartCard({
 
 function ResultCard({
   place,
+  dnf,
   score,
   wpm,
   accuracy,
@@ -837,6 +871,7 @@ function ResultCard({
   onRestart,
 }: {
   place: number;
+  dnf: boolean;
   score: number;
   wpm: number;
   accuracy: number;
@@ -848,7 +883,7 @@ function ResultCard({
   onRestart: () => void;
 }) {
   const seconds = (elapsedMs / 1000).toFixed(1);
-  const won = place === 1;
+  const won = !dnf && place === 1;
 
   return (
     <div
@@ -871,7 +906,7 @@ function ResultCard({
           </span>
         ) : (
           <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-sub">
-            {won ? "Race won" : "Race over"}
+            {dnf ? "Course incomplete" : won ? "Race won" : "Race over"}
           </span>
         )}
 
@@ -880,9 +915,9 @@ function ResultCard({
             "font-mono text-6xl font-semibold tabular-nums",
             won ? "text-accent arcade-glow" : "text-foreground arcade-glow-soft",
           )}
-          aria-label={`Finished ${ORDINALS[place - 1] ?? `${place}th`}`}
+          aria-label={dnf ? "Did not finish" : `Finished ${ORDINALS[place - 1] ?? `${place}th`}`}
         >
-          {ORDINALS[place - 1] ?? `${place}th`}
+          {dnf ? "DNF" : ORDINALS[place - 1] ?? `${place}th`}
         </span>
 
         <span className="flex items-center gap-1.5 font-mono text-2xl font-semibold tabular-nums text-accent">
@@ -900,7 +935,8 @@ function ResultCard({
           )}
         </div>
 
-        {!won && <p className="max-w-xs text-xs italic text-sub">Can you take the lead?</p>}
+        {dnf && <p className="max-w-xs text-xs text-sub">Skipped or incorrect characters left the course incomplete. Word points kept; no finish bonus.</p>}
+        {!dnf && <p className="max-w-xs text-xs text-sub">Equal finish times go to the rival.</p>}
 
         <ArcadeButton onClick={onRestart}>
           <RotateCcw size={15} />

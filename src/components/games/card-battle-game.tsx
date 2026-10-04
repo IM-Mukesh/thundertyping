@@ -18,6 +18,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Coins,
   Heart,
+  Pause,
+  Play,
   Shield,
   Sparkles,
   Swords,
@@ -36,9 +38,10 @@ import { STARTER_DECKS } from "@/lib/games/cards/cards";
 import { STATUS_META, STATUS_ORDER, faceOf, type CardDef, type Statuses } from "@/lib/games/cards/model";
 import { useCardBattle, type EnemyState } from "@/lib/games/cards/use-card-battle";
 import { CardSigil } from "@/components/games/ui/card-sigil";
-import { GameStage, RuleCard, StartButton, StatTile } from "@/components/games/ui/game-chrome";
+import { GameStage, PauseOverlay, RuleCard, StartButton, StatTile } from "@/components/games/ui/game-chrome";
 import { GameViewport } from "@/components/games/ui/game-viewport";
 import { GAME_LIST } from "@/lib/games/game-types";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#dc2626";
@@ -84,8 +87,8 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
   }, [isBoss, state.phase]);
 
   useEffect(() => {
-    if (state.phase === "combat") inputRef.current?.focus();
-  }, [state.phase, state.turn]);
+    if (state.phase === "combat" && !game.paused) inputRef.current?.focus();
+  }, [state.phase, state.turn, game.paused]);
 
   const banked = useRef(false);
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
       score: state.score,
       cleared: state.node,
       bestCombo: 0,
-      survivedMs: 0,
+      survivedMs: Math.round(state.elapsedMs),
     });
     bumpStat("card-battle", "runs");
     grantAchievement("card-battle:first-run");
@@ -111,7 +114,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
     }
     awardXp(Math.round(state.score / 5) + state.node * 30);
     checkSiteAchievements(GAME_LIST.map((g) => g.id));
-  }, [state.phase, state.node, state.score, state.deck.length]);
+  }, [state.phase, state.node, state.score, state.deck.length, state.elapsedMs]);
 
   const handleStart = useCallback(
     (deckId: string) => {
@@ -130,7 +133,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
   useEffect(() => {
     if (state.phase !== "victory" && state.phase !== "defeat") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         game.reset();
       }
@@ -143,7 +146,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
     <GameViewport
       onFocusGame={() => inputRef.current?.focus()}
       isFocused={isFocused}
-      isRunning={state.phase === "combat"}
+      isRunning={state.phase === "combat" && !game.paused}
       className="w-full max-w-3xl gap-3"
       style={{ ["--accent" as string]: ACCENT }}
     >
@@ -154,6 +157,16 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
           <StatTile icon={<Zap size={13} />} label="Energy" value={`${state.energy}/${state.maxEnergy}`} tone="accent" />
           <StatTile icon={<Coins size={13} />} label="Gold" value={state.gold} />
           <StatTile icon={<Swords size={13} />} label="Fight" value={`${state.node + 1}/9`} />
+          {(state.phase === "combat" || state.phase === "reward") && (
+            <button
+              type="button"
+              onClick={() => game.setPaused(!game.paused)}
+              aria-label={game.paused ? "Resume" : "Pause"}
+              className="flex min-h-11 min-w-11 items-center justify-center text-sub hover:text-foreground"
+            >
+              {game.paused ? <Play size={15} /> : <Pause size={15} />}
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleSound}
@@ -271,7 +284,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
               </div>
 
               {/* Lost focus alert */}
-              {!isFocused && (
+              {!isFocused && !game.paused && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -341,6 +354,11 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
               </p>
             </div>
           )}
+          {game.paused && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <PauseOverlay onResume={() => game.setPaused(false)} />
+            </div>
+          )}
         </div>
       </GameStage>
 
@@ -348,6 +366,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
         <input
           ref={inputRef}
           value={state.typed}
+          disabled={game.paused}
           onChange={(e) => game.setTyped(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}

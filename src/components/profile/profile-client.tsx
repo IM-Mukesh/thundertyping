@@ -29,6 +29,7 @@ import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
 import { LESSON_ACHIEVEMENT_LIST, computeLessonAchievements } from "@/lib/lessons/lesson-achievements";
 import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
 import { GAME_LIST } from "@/lib/games/game-types";
+import { formatGameScore } from "@/lib/games/score-format";
 import { getGameBest, primeCloudGameBests } from "@/lib/games/game-scores";
 import { AudioSettings } from "@/components/games/ui/audio-settings";
 import { cn } from "@/lib/utils/cn";
@@ -357,11 +358,7 @@ export function ProfileClient() {
                   </p>
                 </div>
                 <span className="shrink-0 font-mono text-xs tabular-nums text-accent">
-                  {best
-                    ? game.scoreBy === "time"
-                      ? `${best.score}s`
-                      : best.score.toLocaleString()
-                    : "—"}
+                  {best ? formatGameScore(game, best.score) : "—"}
                 </span>
               </Link>
             );

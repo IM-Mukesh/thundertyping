@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { safeGameBoardHeight } from "@/lib/games/arcade-layout";
 
 export interface GameViewportMetrics {
   /** The visible height in px, accounting for on-screen virtual keyboard (OSK). */
@@ -86,11 +87,7 @@ export function useGameViewport<T extends HTMLElement = HTMLDivElement>() {
       el.style.setProperty("--visible-height", `${vH}px`);
       el.style.setProperty("--keyboard-inset", `${newMetrics.keyboardInset}px`);
       // Compute safe game board height: when keyboard is open, board must not exceed available space
-      const maxBoardH = isKeyboard
-        ? Math.max(260, Math.min(vH - 30, 420))
-        : isMobile
-          ? Math.min(Math.max(vH * 0.65, 340), 560)
-          : 540;
+      const maxBoardH = safeGameBoardHeight(vH, isKeyboard, isMobile);
       el.style.setProperty("--safe-board-height", `${Math.round(maxBoardH)}px`);
     }
   }, []);

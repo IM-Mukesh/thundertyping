@@ -42,6 +42,8 @@ import {
   type EnemyState,
 } from "@/lib/games/spellbound/use-spellbound";
 import { GAME_LIST } from "@/lib/games/game-types";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
+import { PauseOverlay } from "@/components/games/ui/game-chrome";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#a855f7";
@@ -143,9 +145,7 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
     return () => stopMusic();
   }, []);
 
-  // Particle canvas. rAF is correct *here* -- it only draws, and a hidden pane
-  // has nothing to draw. The game clock is a setInterval in the engine and
-  // keeps running regardless.
+  // Particle canvas only draws. Hiding the tab pauses the engine separately.
   useEffect(() => {
     const canvas = canvasRef.current;
     const board = boardRef.current;
@@ -205,8 +205,8 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
     recordGameResult("spellbound", {
       score: state.score,
       cleared: state.floor,
-      bestCombo: 0,
-      survivedMs: 0,
+      bestCombo: state.bestCombo,
+      survivedMs: Math.round(state.elapsedMs),
     });
 
     bumpStat("spellbound", "runs");
@@ -226,7 +226,7 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
     if (state.floor >= 2) grantUnlock(UNLOCKS.rogueMage);
     if (state.floor >= 3) grantUnlock(UNLOCKS.chronomancer);
     if (state.phase === "victory") grantUnlock(UNLOCKS.voidMage);
-  }, [state.phase, state.floor, state.score, state.relics.length, state.cleanFloor]);
+  }, [state.phase, state.floor, state.score, state.relics.length, state.cleanFloor, state.bestCombo, state.elapsedMs]);
 
   const handleStart = (characterId: string) => {
     recordGameStart("spellbound");
@@ -242,7 +242,7 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
   useEffect(() => {
     if (state.phase !== "victory" && state.phase !== "defeat") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         game.reset();
       }
@@ -310,6 +310,12 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
           <RunEnd game={game} onAgain={() => game.reset()} />
         )}
 
+        {game.paused && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <PauseOverlay onResume={() => game.setPaused(false)} />
+          </div>
+        )}
+
         {/* Lost focus prompt */}
         {state.phase === "combat" && !isFocused && !game.paused && (
           <button
@@ -337,6 +343,7 @@ export default function SpellboundGame({ definition }: GameComponentProps) {
           <input
             ref={inputRef}
             value={state.typed}
+            disabled={game.paused}
             onChange={(e) => game.setTyped(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
@@ -405,7 +412,7 @@ function Hud({
               <span className="tabular-nums">{state.relics.length}</span>
             </span>
           )}
-          {state.phase === "combat" && (
+          {["combat", "reward", "shop", "event", "map"].includes(state.phase) && (
             <button
               type="button"
               onClick={() => game.setPaused(!game.paused)}
@@ -520,12 +527,6 @@ function Combat({ game, onSlotClick }: { game: Game; onSlotClick?: (word: string
         </div>
       )}
 
-      {game.paused && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 font-mono text-sm text-sub">
-          paused
-        </div>
-      )}
-
       {/* spell slots */}
       <div className="grid grid-cols-2 gap-2">
         {state.slots.map((slot, i) => {
@@ -537,7 +538,7 @@ function Combat({ game, onSlotClick }: { game: Game; onSlotClick?: (word: string
             <button
               key={`${slot.spellId}-${i}`}
               type="button"
-              disabled={locked}
+              disabled={locked || game.paused}
               onClick={() => onSlotClick?.(slot.word)}
               className={cn(
                 "relative overflow-hidden rounded-lg border px-2 py-1.5 text-left transition-colors",

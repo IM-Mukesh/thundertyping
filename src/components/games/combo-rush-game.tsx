@@ -24,7 +24,9 @@ import {
   getRushTier,
   useComboRush,
 } from "@/lib/games/use-combo-rush";
-import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { useGameBest } from "@/lib/games/use-game-best";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
 import { playSound } from "@/lib/games/game-audio";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { calculateAccuracy, round } from "@/lib/typing-engine/stats";
@@ -68,14 +70,14 @@ interface ComboRushGameProps {
 export function ComboRushGame({ definition }: ComboRushGameProps) {
   // `start` rebuilds the initial state itself, so "Play again" reuses it
   // rather than needing a separate reset.
-  const { state, start, resume, setTyped, skip } = useComboRush(definition);
+  const { state, start, pause, resume, setTyped, skip } = useComboRush(definition);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Lazy initialiser rather than a mount effect: this component only ever
   // renders client-side (its wrapper is next/dynamic with ssr:false), so
   // localStorage is guaranteed available and there is no server pass to
   // reconcile.
-  const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
+  const best = useGameBest(definition.id);
   const [isNewBest, setIsNewBest] = useState(false);
 
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -121,14 +123,13 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
     if (recordedRef.current) return;
     recordedRef.current = true;
 
-    const { isNewBest: newBest, best: stored } = recordGameResult(definition.id, {
+    const { isNewBest: newBest } = recordGameResult(definition.id, {
       score: state.score,
       cleared: state.cleared,
       bestCombo: state.bestCombo,
       survivedMs: state.elapsedMs,
     });
     setIsNewBest(newBest);
-    setBest(stored);
     playSound("over", soundEnabled);
     // Every game must feed the cross-game profile, or "play every game"
     // (site:all-games) can never be earned no matter how much is played.
@@ -154,7 +155,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
   useEffect(() => {
     if (state.status !== "over") return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         handleStart();
       }
@@ -188,6 +189,7 @@ export function ComboRushGame({ definition }: ComboRushGameProps) {
 
   return (
     <GameViewport
+      onPause={pause}
       onFocusGame={focusInput}
       isFocused={isFocused}
       isRunning={isPlaying}

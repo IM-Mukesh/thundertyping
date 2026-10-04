@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GameDefinition, GameId } from "@/lib/games/game-types";
+import { GameSaveStatus } from "@/components/games/ui/game-save-status";
 
 // Every game is loaded with ssr:false for the same reason the typing test is:
 // word spawning is randomised, so server-rendering a board would guarantee a
@@ -82,5 +83,10 @@ export function GameClient({
 }) {
   const Game = GAME_COMPONENTS[definition.id];
   if (!Game) return null;
-  return <Game definition={definition} art={art} />;
+  return (
+    <div className="flex w-full flex-col items-center gap-3">
+      <Game definition={definition} art={art} />
+      <GameSaveStatus gameId={definition.id} />
+    </div>
+  );
 }

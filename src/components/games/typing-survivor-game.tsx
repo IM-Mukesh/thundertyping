@@ -45,6 +45,7 @@ import {
 } from "@/components/games/ui/game-chrome";
 import { GameViewport } from "@/components/games/ui/game-viewport";
 import { GAME_LIST } from "@/lib/games/game-types";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#f97316";
@@ -206,9 +207,9 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     banked.current = true;
     recordGameResult("typing-survivor", {
       score: state.score,
-      cleared: state.wave,
+      cleared: Math.max(0, state.wave - 1),
       bestCombo: state.bestCombo,
-      survivedMs: 0,
+      survivedMs: Math.round(state.elapsedMs),
     });
     bumpStat("typing-survivor", "runs");
     grantAchievement("typing-survivor:first-run");
@@ -221,7 +222,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     }
     awardXp(Math.round(state.score / 10) + state.wave * 15);
     checkSiteAchievements(GAME_LIST.map((g) => g.id));
-  }, [state.phase, state.wave, state.score, state.bestCombo]);
+  }, [state.phase, state.wave, state.score, state.bestCombo, state.elapsedMs]);
 
   const [isFocused, setIsFocused] = useState(true);
 
@@ -229,7 +230,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
   useEffect(() => {
     if (state.phase !== "over" && state.phase !== "won") return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         game.reset();
       }
@@ -253,7 +254,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
     <GameViewport
       onFocusGame={() => inputRef.current?.focus()}
       isFocused={isFocused}
-      isRunning={state.phase === "playing"}
+      isRunning={state.phase === "playing" && !game.paused}
       className="w-full max-w-3xl gap-3"
       style={{ ["--accent" as string]: ACCENT }}
     >
@@ -265,7 +266,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
           <StatTile icon={<Flame size={13} />} label="Combo" value={`x${state.combo}`} tone={state.combo > 4 ? "accent" : "default"} />
           <StatTile icon={<Zap size={13} />} label="Level" value={state.level} />
           <div className="ml-auto flex items-center gap-1">
-            {state.phase === "playing" && (
+            {(state.phase === "playing" || state.phase === "draft") && (
               <button
                 type="button"
                 onClick={() => game.setPaused(!game.paused)}
@@ -397,11 +398,6 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
                 className="absolute left-1/2 top-1/2 z-10 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-accent bg-background"
                 style={{ boxShadow: "0 0 18px -2px color-mix(in srgb, var(--accent) 80%, transparent)" }}
               />
-              {game.paused && (
-                <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 font-mono text-sm text-sub">
-                  paused
-                </div>
-              )}
 
               {/* Lost focus prompt */}
               {!isFocused && !game.paused && (
@@ -484,6 +480,7 @@ export default function TypingSurvivorGame({ definition }: GameComponentProps) {
         <input
           ref={inputRef}
           value={state.typed}
+          disabled={game.paused}
           onChange={(e) => game.setTyped(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}

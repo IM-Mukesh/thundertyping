@@ -148,11 +148,12 @@ export interface ComboRushState {
 export type RushTier = "normal" | "bronze" | "silver" | "gold" | "hyper";
 
 export function getRushTier(combo: number): { tier: RushTier; name: string; multiplier: number; color: string } {
-  if (combo >= 25) return { tier: "hyper", name: "HYPER", multiplier: 2.5, color: "text-purple-400 border-purple-500/80 bg-purple-950/40" };
-  if (combo >= 15) return { tier: "gold", name: "GOLD", multiplier: 2.0, color: "text-amber-400 border-amber-500/80 bg-amber-950/40" };
-  if (combo >= 10) return { tier: "silver", name: "SILVER", multiplier: 1.6, color: "text-cyan-400 border-cyan-500/80 bg-cyan-950/40" };
-  if (combo >= 5) return { tier: "bronze", name: "BRONZE", multiplier: 1.3, color: "text-emerald-400 border-emerald-500/80 bg-emerald-950/40" };
-  return { tier: "normal", name: "WARMUP", multiplier: 1.0, color: "text-sub border-border/50 bg-sub-alt/40" };
+  const multiplier = comboMultiplier(combo);
+  if (combo >= 25) return { tier: "hyper", name: "HYPER", multiplier, color: "text-purple-400 border-purple-500/80 bg-purple-950/40" };
+  if (combo >= 15) return { tier: "gold", name: "GOLD", multiplier, color: "text-amber-400 border-amber-500/80 bg-amber-950/40" };
+  if (combo >= 10) return { tier: "silver", name: "SILVER", multiplier, color: "text-cyan-400 border-cyan-500/80 bg-cyan-950/40" };
+  if (combo >= 5) return { tier: "bronze", name: "BRONZE", multiplier, color: "text-emerald-400 border-emerald-500/80 bg-emerald-950/40" };
+  return { tier: "normal", name: "WARMUP", multiplier, color: "text-sub border-border/50 bg-sub-alt/40" };
 }
 
 /** Rises to 1.6x over twelve clean words; applies to time *and* score. */
@@ -365,9 +366,10 @@ export function useComboRush(definition: GameDefinition) {
       }),
     [],
   );
+  const pause = useCallback(() => dispatch({ type: "PAUSE" }), []);
   const resume = useCallback(() => dispatch({ type: "RESUME" }), []);
   const setTyped = useCallback((value: string) => dispatch({ type: "SET_TYPED", value }), []);
   const skip = useCallback(() => dispatch({ type: "SKIP" }), []);
 
-  return { state, start, resume, setTyped, skip };
+  return { state, start, pause, resume, setTyped, skip };
 }

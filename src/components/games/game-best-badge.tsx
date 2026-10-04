@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { Trophy } from "lucide-react";
 import { readGameBestRaw, subscribeGameBests, parseGameBest } from "@/lib/games/game-scores";
 import type { GameDefinition } from "@/lib/games/game-types";
+import { formatGameScore } from "@/lib/games/score-format";
 
 
 /**
@@ -27,7 +28,7 @@ export function GameBestBadge({ definition }: { definition: GameDefinition }) {
 
   if (!best) return null;
 
-  const value = definition.scoreBy === "time" ? `${best.score}s` : best.score.toLocaleString();
+  const value = formatGameScore(definition, best.score);
 
   return (
     <span

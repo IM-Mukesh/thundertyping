@@ -24,7 +24,9 @@ import {
   useFallingWords,
   type WordKind,
 } from "@/lib/games/use-falling-words";
-import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { useGameBest } from "@/lib/games/use-game-best";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
 import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
@@ -105,11 +107,12 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
 
   // `start` already rebuilds the initial state, so "Play again" needs it
   // rather than a separate reset.
-  const { state, start, resume, setTyped } = useFallingWords(definition, { laneCount });
+  const { state, start, pause, resume, setTyped } = useFallingWords(definition, { laneCount });
+  const boardLaneCount = Math.max(laneCount, ...state.words.map((word) => word.lane + 1), ...state.destroyed.map((hit) => hit.lane + 1));
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(true);
 
-  const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
+  const best = useGameBest(definition.id);
   const [isNewBest, setIsNewBest] = useState(false);
 
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -223,14 +226,13 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
     recordedRef.current = true;
 
     const headline = definition.scoreBy === "time" ? Math.round(state.elapsedMs / 1000) : state.score;
-    const { isNewBest: newBest, best: stored } = recordGameResult(definition.id, {
+    const { isNewBest: newBest } = recordGameResult(definition.id, {
       score: headline,
       cleared: state.cleared,
       bestCombo: state.bestCombo,
       survivedMs: state.elapsedMs,
     });
     setIsNewBest(newBest);
-    setBest(stored);
     playSound("over", soundEnabled);
     if (newBest) sound("new-record", soundEnabled);
     // Every game must feed the cross-game profile, or "play every game"
@@ -258,7 +260,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
   useEffect(() => {
     if (state.status !== "over") return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         handleStart();
       }
@@ -273,6 +275,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
 
   return (
     <GameViewport
+      onPause={pause}
       onFocusGame={focusInput}
       isFocused={isFocused}
       isRunning={isPlaying}
@@ -451,7 +454,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
                   style={{
                     transitionDuration: "50ms",
                     top: `${TOP_INSET_PCT + word.progress * PLAYABLE_HEIGHT_PCT}%`,
-                    left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / laneCount)}%`,
+                    left: `${LANE_INSET_PCT + (word.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / boardLaneCount)}%`,
                     transform: "translateX(-50%)",
                   }}
                 >
@@ -470,7 +473,7 @@ export function FallingWordsGame({ definition, art }: FallingWordsGameProps) {
             {state.destroyed.map((hit) => {
               const t = (now - hit.bornMs) / DESTROY_EFFECT_MS;
               const y = TOP_INSET_PCT + hit.progress * PLAYABLE_HEIGHT_PCT;
-              const x = LANE_INSET_PCT + (hit.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / laneCount);
+              const x = LANE_INSET_PCT + (hit.lane + 0.5) * ((100 - 2 * LANE_INSET_PCT) / boardLaneCount);
               const color =
                 hit.kind === "golden"
                   ? "var(--accent)"

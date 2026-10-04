@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import { calculateAccuracy, calculateNetWpm } from "@/lib/typing-engine/stats";
 import type { GameDefinition, GameStatus } from "@/lib/games/game-types";
@@ -22,12 +22,9 @@ export const MUSIC = {
 export const RACE_WORD_COUNT = 40;
 
 /**
- * State advances in fixed steps, exactly like use-falling-words.ts, and for
- * the same reasons: pausing is just "stop ticking" (no timestamps to rebase),
- * and requestAnimationFrame is throttled to nothing in a hidden tab, which
- * would freeze the opponents and silently break the race. The visual smoothing
- * is a CSS transition on the cars' `left` matched to exactly this interval, so
- * 20 updates a second still read as continuous motion.
+ * The UI updates around 20Hz. The hook supplies actual active integer elapsed
+ * time, including the fraction of a tick before typing/pausing; reducer tests
+ * can omit deltaMs to advance a single fixed step. Hidden tabs pause explicitly.
  */
 export const TICK_MS = 50;
 
@@ -159,6 +156,8 @@ export interface GrandPrixState {
   leadInMs: number;
   /** 1–4, set the moment the player crosses the line. */
   place: number | null;
+  /** Exhausting the word list without covering the course is not a finish. */
+  dnf: boolean;
   /**
    * Live, not just a final total: increments per word so the HUD has a real
    * number to show mid-race, then gains the speed/accuracy/placement bonus
@@ -189,7 +188,7 @@ type GrandPrixAction =
   | { type: "RESET" }
   | { type: "PAUSE" }
   | { type: "RESUME" }
-  | { type: "TICK" }
+  | { type: "TICK"; deltaMs?: number }
   | { type: "SET_TYPED"; value: string }
   | { type: "COMMIT_WORD" };
 
@@ -222,6 +221,7 @@ export function createInitialState(definition: GameDefinition): GrandPrixState {
     elapsedMs: 0,
     leadInMs: LEAD_IN_MS,
     place: null,
+    dnf: false,
     score: 0,
     combo: 0,
     bestCombo: 0,
@@ -238,21 +238,23 @@ export function createInitialState(definition: GameDefinition): GrandPrixState {
  * base WPM rather than a constant, so cars trade places mid-race and the field
  * reads as alive instead of as three metronomes.
  */
-function advanceOpponent(racer: Racer, totalChars: number, elapsedMs: number): Racer {
+function advanceOpponent(racer: Racer, totalChars: number, elapsedMs: number, deltaMs: number): Racer {
   if (racer.progress >= 1) return racer;
 
   const drifted = racer.speedFactor + (Math.random() - 0.5) * JITTER_STEP;
   const pulled = drifted + (1 - drifted) * JITTER_PULL;
   const speedFactor = Math.min(1 + JITTER_RANGE, Math.max(1 - JITTER_RANGE, pulled));
 
-  const charsThisTick = (racer.targetWpm * speedFactor * CHARS_PER_WORD * TICK_MS) / 60000;
+  const charsThisTick = (racer.targetWpm * speedFactor * CHARS_PER_WORD * deltaMs) / 60000;
   const progress = Math.min(1, racer.progress + charsThisTick / totalChars);
 
   return {
     ...racer,
     speedFactor,
     progress,
-    finishedAtMs: progress >= 1 ? elapsedMs : null,
+    finishedAtMs: progress >= 1
+      ? Math.round(elapsedMs - deltaMs + ((1 - racer.progress) * totalChars / charsThisTick) * deltaMs)
+      : null,
   };
 }
 
@@ -336,22 +338,27 @@ function withOvertakeSignals<S extends GrandPrixState>(
   };
 }
 
+/** Unique distance reproduced, never the number of repeated correct keypresses. */
+export function scoredChars(state: GrandPrixState): number {
+  return state.bankedChars + correctCharsIn(state.typed, state.words[state.wordIndex] ?? "");
+}
+
+export function raceAccuracy(state: GrandPrixState): number {
+  return calculateAccuracy(scoredChars(state), state.incorrectKeystrokes, state.missedChars);
+}
+
 function finishRace(state: GrandPrixState): GrandPrixState {
-  // Where the car actually ended up. Running out of words ends the race, but
-  // it does not mean the player drove the distance: spacing through all forty
-  // words used to pin the car to the finish line and hand it first place,
-  // because progress was forced to 1 here and placing only counted opponents
-  // who had already finished. Finishing position is now read off the real
-  // distance travelled, so a player who typed nothing places last.
   const progress =
     state.totalChars > 0 ? Math.min(1, state.bankedChars / state.totalChars) : 0;
-  const place =
-    1 +
-    state.opponents.filter((o) => o.finishedAtMs !== null || o.progress > progress)
-      .length;
-  const wpm = calculateNetWpm(state.correctKeystrokes, state.elapsedMs);
+  const dnf = progress < 1;
+  // Ties go to the rivals (stable id order); a DNF is always unclassified/last,
+  // even if the opponents have not yet reached its partial distance.
+  const place = dnf ? state.opponents.length + 1 : 1 + state.opponents.filter(
+    (o) => o.finishedAtMs !== null && o.finishedAtMs <= state.elapsedMs,
+  ).length;
+  const wpm = calculateNetWpm(state.bankedChars, state.elapsedMs);
   const accuracy = calculateAccuracy(
-    state.correctKeystrokes,
+    state.bankedChars,
     state.incorrectKeystrokes,
     state.missedChars,
   );
@@ -359,7 +366,7 @@ function finishRace(state: GrandPrixState): GrandPrixState {
   // Added on top of the score already earned live, word by word, during the
   // race — not a replacement for it. A player who raced well the whole way
   // and only stumbled on the last word still keeps every point they banked.
-  const finishBonus = Math.max(0, Math.round(wpm * FINISH_WPM_POINT_RATE * (accuracy / 100))) + bonus;
+  const finishBonus = dnf ? 0 : Math.max(0, Math.round(wpm * FINISH_WPM_POINT_RATE * (accuracy / 100))) + bonus;
 
   return {
     ...state,
@@ -368,6 +375,7 @@ function finishRace(state: GrandPrixState): GrandPrixState {
     wordIndex: state.words.length,
     playerProgress: progress,
     place,
+    dnf,
     score: state.score + finishBonus,
   };
 }
@@ -389,18 +397,22 @@ export function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPr
 
     case "TICK": {
       if (state.status !== "running") return state;
+      const deltaMs = Math.max(0, Math.round(action.deltaMs ?? TICK_MS));
+      if (!Number.isFinite(deltaMs) || deltaMs === 0) return state;
 
       // Nothing moves and no time is recorded until the flag drops, so the
       // player's WPM is measured from the green light, not from the click.
-      if (state.leadInMs > 0) {
-        return { ...state, leadInMs: Math.max(0, state.leadInMs - TICK_MS) };
+      if (state.leadInMs >= deltaMs) {
+        return { ...state, leadInMs: state.leadInMs - deltaMs };
       }
 
-      const elapsedMs = state.elapsedMs + TICK_MS;
-      const opponents = state.opponents.map((o) => advanceOpponent(o, state.totalChars, elapsedMs));
-      const boostMs = Math.max(0, state.boostMs - TICK_MS);
+      const activeMs = deltaMs - state.leadInMs;
+      const elapsedMs = state.elapsedMs + activeMs;
+      const opponents = state.opponents.map((o) => advanceOpponent(o, state.totalChars, elapsedMs, activeMs));
+      const boostMs = Math.max(0, state.boostMs - activeMs);
       return withOvertakeSignals(state.playerProgress, state.opponents, {
         ...state,
+        leadInMs: 0,
         elapsedMs,
         opponents,
         boostMs,
@@ -416,18 +428,14 @@ export function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPr
       if (value === state.typed) return state;
       if (value.length > target.length + MAX_EXTRA_CHARS) return state;
 
-      if (value.length < state.typed.length) {
-        // Backspace: allowed, never counted as a mistake, and deliberately
-        // does not pull the car back — it costs time, which is enough.
-        return { ...state, typed: value };
-      }
-
       // Loops rather than assuming one new character, so an IME commit or a
-      // multi-character insertion credits/blames each character individually.
+      // replacement credits/blames every changed character, even at equal length.
+      let changedFrom = 0;
+      while (changedFrom < state.typed.length && changedFrom < value.length && state.typed[changedFrom] === value[changedFrom]) changedFrom++;
       let correctKeystrokes = state.correctKeystrokes;
       let incorrectKeystrokes = state.incorrectKeystrokes;
       let mistakeThisCall = false;
-      for (let i = state.typed.length; i < value.length; i++) {
+      for (let i = changedFrom; i < value.length; i++) {
         if (i < target.length && value[i] === target[i]) correctKeystrokes += 1;
         else {
           incorrectKeystrokes += 1;
@@ -500,29 +508,69 @@ export function reducer(state: GrandPrixState, action: GrandPrixAction): GrandPr
 
 export function useTypingGrandPrix(definition: GameDefinition) {
   const [state, dispatch] = useReducer(reducer, definition, createInitialState);
+  const clock = useRef(0);
+  const clockActive = useRef(false);
+
+  const advanceClock = useCallback(() => {
+    if (!clockActive.current) return;
+    const deltaMs = Math.max(0, Math.round(performance.now() - clock.current));
+    // Preserve fractional milliseconds instead of discarding them every tick.
+    clock.current += deltaMs;
+    if (deltaMs > 0) dispatch({ type: "TICK", deltaMs });
+  }, []);
+
+  const start = useCallback(() => {
+    clock.current = performance.now();
+    clockActive.current = true;
+    dispatch({ type: "START" });
+  }, []);
+  const reset = useCallback(() => {
+    clockActive.current = false;
+    dispatch({ type: "RESET" });
+  }, []);
+  const pause = useCallback(() => {
+    advanceClock();
+    clockActive.current = false;
+    dispatch({ type: "PAUSE" });
+  }, [advanceClock]);
+  const resume = useCallback(() => {
+    if (document.visibilityState === "hidden") return;
+    clock.current = performance.now();
+    clockActive.current = true;
+    dispatch({ type: "RESUME" });
+  }, []);
+  const setTyped = useCallback((value: string) => {
+    advanceClock();
+    dispatch({ type: "SET_TYPED", value });
+  }, [advanceClock]);
+  const commitWord = useCallback(() => {
+    advanceClock();
+    dispatch({ type: "COMMIT_WORD" });
+  }, [advanceClock]);
 
   useEffect(() => {
-    if (state.status !== "running") return;
-    const id = setInterval(() => dispatch({ type: "TICK" }), TICK_MS);
+    if (state.status !== "running") {
+      clockActive.current = false;
+      return;
+    }
+    const id = setInterval(advanceClock, TICK_MS);
     return () => clearInterval(id);
-  }, [state.status]);
+  }, [state.status, advanceClock]);
 
   // Pausing on tab-hide keeps the opponents from driving the whole race while
   // the player is looking at another tab.
   useEffect(() => {
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") dispatch({ type: "PAUSE" });
+      if (document.visibilityState === "hidden") pause();
     };
+    const onBlur = pause;
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
-
-  const start = useCallback(() => dispatch({ type: "START" }), []);
-  const reset = useCallback(() => dispatch({ type: "RESET" }), []);
-  const pause = useCallback(() => dispatch({ type: "PAUSE" }), []);
-  const resume = useCallback(() => dispatch({ type: "RESUME" }), []);
-  const setTyped = useCallback((value: string) => dispatch({ type: "SET_TYPED", value }), []);
-  const commitWord = useCallback(() => dispatch({ type: "COMMIT_WORD" }), []);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [pause]);
 
   return { state, start, reset, pause, resume, setTyped, commitWord };
 }
@@ -535,4 +583,20 @@ export function useTypingGrandPrix(definition: GameDefinition) {
 export function livePosition(state: GrandPrixState): number {
   if (state.place !== null) return state.place;
   return 1 + state.opponents.filter((o) => o.progress > state.playerProgress).length;
+}
+
+/** Same finish ordering as the result card, including equal-time tie breaks. */
+export function raceStandings(state: GrandPrixState) {
+  return [
+    { id: -1, isPlayer: true, progress: state.playerProgress, finishedAtMs: state.status === "over" && !state.dnf ? state.elapsedMs : null },
+    ...state.opponents.map((o) => ({ ...o, isPlayer: false })),
+  ].sort((a, b) => {
+    if (state.dnf && (a.isPlayer || b.isPlayer)) return a.isPlayer ? 1 : -1;
+    if (a.finishedAtMs !== null && b.finishedAtMs !== null) {
+      return a.finishedAtMs - b.finishedAtMs || Number(a.isPlayer) - Number(b.isPlayer) || a.id - b.id;
+    }
+    if (a.finishedAtMs !== null) return -1;
+    if (b.finishedAtMs !== null) return 1;
+    return b.progress - a.progress || a.id - b.id;
+  });
 }

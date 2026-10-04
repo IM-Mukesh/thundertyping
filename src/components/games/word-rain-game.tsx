@@ -19,7 +19,9 @@ import {
   STORM_PHASES,
   NEAR_MISS_THRESHOLD,
 } from "@/lib/games/use-word-rain";
-import { getGameBest, recordGameResult, recordGameStart, type GameBest } from "@/lib/games/game-scores";
+import { recordGameResult, recordGameStart } from "@/lib/games/game-scores";
+import { useGameBest } from "@/lib/games/use-game-best";
+import { isGameRestartShortcut } from "@/lib/games/input-controls";
 import { awardXp, bumpStat, checkSiteAchievements } from "@/lib/profile/player-profile";
 import { playSound } from "@/lib/games/game-audio";
 import { sound } from "@/lib/audio/game-sounds";
@@ -46,11 +48,12 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
     return () => window.removeEventListener("resize", updateLanes);
   }, []);
 
-  const { state, start, resume, setTyped } = useWordRain(definition, { laneCount });
+  const { state, start, pause, resume, setTyped } = useWordRain(definition, { laneCount });
+  const boardLaneCount = Math.max(laneCount, ...state.words.map((word) => word.lane + 1), ...state.destroyed.map((hit) => hit.lane + 1));
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(true);
 
-  const [best, setBest] = useState<GameBest | null>(() => getGameBest(definition.id));
+  const best = useGameBest(definition.id);
   const [isNewBest, setIsNewBest] = useState(false);
 
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
@@ -116,14 +119,13 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
     recordedRef.current = true;
 
     const headline = secondsSurvived;
-    const { isNewBest: newBest, best: stored } = recordGameResult(definition.id, {
+    const { isNewBest: newBest } = recordGameResult(definition.id, {
       score: headline,
       cleared: state.cleared,
       bestCombo: state.bestCombo,
       survivedMs: state.elapsedMs,
     });
     setIsNewBest(newBest);
-    setBest(stored);
     playSound("over", soundEnabled);
     if (newBest) sound("new-record", soundEnabled);
 
@@ -143,7 +145,7 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
   useEffect(() => {
     if (state.status !== "over") return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      if (isGameRestartShortcut(e)) {
         e.preventDefault();
         handleStart();
       }
@@ -154,6 +156,7 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
 
   return (
     <GameViewport
+      onPause={pause}
       onFocusGame={focusInput}
       isFocused={isFocused}
       isRunning={isPlaying}
@@ -273,14 +276,14 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
             {state.words.map((word) => {
               const isDanger = word.progress >= NEAR_MISS_THRESHOLD;
               const isLocked = word.id === state.lockedId;
-              const lanePct = ((word.lane + 0.5) / laneCount) * 100;
+              const lanePct = ((word.lane + 0.5) / boardLaneCount) * 100;
               const topPct = Math.min(88, Math.max(4, word.progress * 86));
 
               return (
                 <div
                   key={word.id}
                   className={cn(
-                    "absolute -translate-x-1/2 rounded-lg border px-2.5 py-1 font-mono transition-transform duration-75 select-none",
+                    "absolute -translate-x-1/2 rounded-lg border px-2.5 py-1 font-mono transition-[top,transform] duration-50 ease-linear select-none",
                     isLocked
                       ? "border-violet-400 bg-background/95 ring-2 ring-violet-400/50 shadow-lg scale-105 z-20"
                       : isDanger
@@ -324,7 +327,7 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
                   d.isNearMiss ? "text-amber-400 font-black text-sm drop-shadow" : "text-violet-300",
                 )}
                 style={{
-                  left: `${((d.lane + 0.5) / laneCount) * 100}%`,
+                  left: `${((d.lane + 0.5) / boardLaneCount) * 100}%`,
                   top: `${d.progress * 86}%`,
                 }}
               >

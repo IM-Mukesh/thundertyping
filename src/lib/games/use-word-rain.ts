@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import type { GameDefinition, GameStatus } from "@/lib/games/game-types";
+import { advanceLaneTargets } from "@/lib/games/arcade-layout";
 
 export type StormPhase = "MIST" | "DRIZZLE" | "DOWNPOUR" | "GALE FORCE" | "HURRICANE";
 
@@ -171,6 +172,7 @@ export function wordRainReducer(state: WordRainState, action: WordRainAction): W
     case "SPAWN": {
       if (state.status !== "running") return state;
       if (state.words.length >= MAX_ACTIVE_WORDS) return state;
+      if (state.words.some((word) => word.text === action.text)) return state;
 
       const phase = getStormPhase(state.elapsedMs);
       const word: RainWord = {
@@ -190,8 +192,8 @@ export function wordRainReducer(state: WordRainState, action: WordRainAction): W
       let reachedFloor = false;
       let highestProgress = 0;
 
-      for (const word of state.words) {
-        const progress = word.progress + TICK_MS / word.fallMs;
+      for (const word of advanceLaneTargets(state.words, (word) => word.progress + TICK_MS / word.fallMs, 0.15)) {
+        const progress = word.progress;
         if (progress >= 1) {
           reachedFloor = true;
         } else {

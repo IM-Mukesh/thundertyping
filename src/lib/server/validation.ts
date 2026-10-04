@@ -1,11 +1,10 @@
 import "server-only";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
-import { GAME_LIST } from "@/lib/games/game-types";
+import { parseGameScorePayload, type GameScorePayload } from "@/lib/games/game-result-contract";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
 import { calculateLessonStars, calculateLessonPass } from "@/lib/lessons/star-system";
 
 const VALID_LESSON_IDS = new Set<string>(LESSON_LIST.map((l) => l.id));
-const VALID_GAME_IDS = new Set<string>(GAME_LIST.map((g) => g.id));
 const VALID_ACHIEVEMENT_IDS = new Set<string>(ACHIEVEMENT_LIST.map((a) => a.id));
 const VALID_TEST_MODES = new Set<string>(["time", "words", "quote", "custom", "vocabulary"]);
 
@@ -271,101 +270,13 @@ export function validateLessonProgressInput(
   };
 }
 
-export interface ValidatedGameScoreInput {
-  gameId: string;
-  score: number;
-  cleared: number;
-  bestCombo: number;
-  survivedMs: number;
-  wpm: number | null;
-  accuracy: number | null;
-  runId?: string;
-}
-
-// Game-specific maximum realistic score limits
-const MAX_GAME_SCORES: Record<string, { maxScore: number; maxCombo: number; maxCleared: number }> = {
-  "falling-words": { maxScore: 100_000, maxCombo: 200, maxCleared: 1_000 },
-  "word-rain": { maxScore: 100_000, maxCombo: 200, maxCleared: 1_000 },
-  "word-blaster": { maxScore: 100_000, maxCombo: 200, maxCleared: 500 },
-  "typing-grand-prix": { maxScore: 50_000, maxCombo: 100, maxCleared: 200 },
-  "boss-battle": { maxScore: 100_000, maxCombo: 100, maxCleared: 100 },
-  "combo-rush": { maxScore: 100_000, maxCombo: 150, maxCleared: 150 },
-  spellbound: { maxScore: 100_000, maxCombo: 100, maxCleared: 100 },
-  "typing-survivor": { maxScore: 100_000, maxCombo: 150, maxCleared: 250 },
-  "ghost-racer": { maxScore: 50_000, maxCombo: 100, maxCleared: 150 },
-  "card-battle": { maxScore: 50_000, maxCombo: 50, maxCleared: 50 },
-  "fruit-fury": { maxScore: 200_000, maxCombo: 150, maxCleared: 1_500 },
-};
+export type ValidatedGameScoreInput = GameScorePayload;
 
 export function validateGameScoreInput(
   data: unknown
 ): { valid: true; data: ValidatedGameScoreInput } | { valid: false; message: string } {
-  if (typeof data !== "object" || data === null) {
-    return { valid: false, message: "Payload must be a non-null object" };
-  }
-
-  const p = data as Record<string, unknown>;
-
-  if (typeof p.gameId !== "string" || !VALID_GAME_IDS.has(p.gameId)) {
-    return { valid: false, message: "Invalid or unknown gameId" };
-  }
-
-  const limits = MAX_GAME_SCORES[p.gameId] || { maxScore: 100_000, maxCombo: 200, maxCleared: 1000 };
-
-  if (!isNonNegativeNumber(p.score) || !Number.isInteger(p.score) || p.score > limits.maxScore) {
-    return { valid: false, message: `score must be a non-negative integer up to ${limits.maxScore.toLocaleString()}` };
-  }
-
-  if (!isNonNegativeInteger(p.cleared)) return { valid: false, message: "cleared must be a non-negative integer" };
-  const cleared = p.cleared;
-  if (cleared > limits.maxCleared) {
-    return { valid: false, message: `cleared exceeds maximum possible limit (${limits.maxCleared})` };
-  }
-
-  if (!isNonNegativeInteger(p.bestCombo)) return { valid: false, message: "bestCombo must be a non-negative integer" };
-  const bestCombo = p.bestCombo;
-  if (bestCombo > limits.maxCombo) {
-    return { valid: false, message: `bestCombo exceeds maximum possible limit (${limits.maxCombo})` };
-  }
-
-  if (!isNonNegativeInteger(p.survivedMs)) return { valid: false, message: "survivedMs must be a non-negative integer" };
-  const survivedMs = p.survivedMs;
-  // Maximum survival time: 2 hours (7,200,000 ms)
-  if (survivedMs > 7_200_000) {
-    return { valid: false, message: "survivedMs exceeds maximum session limit (2 hours)" };
-  }
-
-  // Plausibility check: Cannot score > 0 with 0ms survival time and 0 cleared
-  if (p.score > 0 && survivedMs < 500 && cleared === 0) {
-    return { valid: false, message: "Mathematically impossible score for game duration" };
-  }
-
-  if (p.wpm !== null && p.wpm !== undefined && (!isNonNegativeNumber(p.wpm) || p.wpm > 350)) return { valid: false, message: "wpm must be between 0 and 350 or null" };
-  if (p.accuracy !== null && p.accuracy !== undefined && (!isNonNegativeNumber(p.accuracy) || p.accuracy > 100)) return { valid: false, message: "accuracy must be between 0 and 100 or null" };
-  const wpm = p.wpm == null ? null : p.wpm;
-  const accuracy = p.accuracy == null ? null : p.accuracy;
-
-  let runId: string | undefined;
-  if (p.runId !== undefined) {
-    if (!isValidUuid(p.runId)) {
-      return { valid: false, message: "runId must be a valid UUID v4" };
-    }
-    runId = p.runId;
-  }
-
-  return {
-    valid: true,
-    data: {
-      gameId: p.gameId,
-      score: p.score,
-      cleared,
-      bestCombo,
-      survivedMs,
-      wpm,
-      accuracy,
-      runId,
-    },
-  };
+  try { return { valid: true, data: parseGameScorePayload(data) }; }
+  catch (error) { return { valid: false, message: error instanceof Error ? error.message : "Invalid game score" }; }
 }
 
 export interface ValidatedProfileUpdateInput {

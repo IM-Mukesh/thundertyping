@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { generateWords } from "@/lib/typing-engine/word-generator";
 import type { GameDefinition, GameStatus } from "@/lib/games/game-types";
+import { ENGLISH_WORDS } from "@/data/words/english-1k";
+import { advanceLaneTargets, availableWord } from "@/lib/games/arcade-layout";
 
 // Word Blaster gets its own engine rather than another entry in
 // `use-falling-words.ts`'s tuning table, because the mechanic really is
@@ -224,9 +226,11 @@ function pickEnemyType(destroyed: number): EnemyType {
   return "standard";
 }
 
-function pickTankCoreWord(): string {
+function pickTankCoreWord(enemies: Enemy[]): string {
   const candidates = generateWords(4, { punctuation: false, numbers: false });
-  return candidates.reduce((a, b) => (b.length > a.length ? b : a));
+  const used = new Set(enemies.map((enemy) => enemy.text));
+  return availableWord(candidates.sort((a, b) => b.length - a.length), used)
+    ?? availableWord(ENGLISH_WORDS, used)!;
 }
 
 // ---------------------------------------------------------------------------
@@ -394,8 +398,8 @@ export function reducer(state: WordBlasterState, action: GameAction): WordBlaste
 
       const survivors: Enemy[] = [];
       let breaches = 0;
-      for (const enemy of state.enemies) {
-        const progress = enemy.progress + TICK_MS / enemy.travelMs;
+      for (const enemy of advanceLaneTargets(state.enemies, (enemy) => enemy.progress + TICK_MS / enemy.travelMs, LANE_CLEARANCE)) {
+        const progress = enemy.progress;
         if (progress >= 1) breaches += 1;
         else survivors.push({ ...enemy, progress });
       }
@@ -514,7 +518,7 @@ export function reducer(state: WordBlasterState, action: GameAction): WordBlaste
         if (target.type === "tank" && target.shieldHp && target.shieldHp > 1) {
           const combo = state.combo + 1;
           const shieldPoints = 60;
-          const secondWord = pickTankCoreWord();
+          const secondWord = pickTankCoreWord(state.enemies);
           const updatedEnemies = state.enemies.map((e) =>
             e.id === target.id
               ? { ...e, text: secondWord, shieldHp: 1 }

@@ -61,7 +61,7 @@ export interface GameDefinition {
    * "points" as a plain score. Games are free to display whatever they like
    * inside their own HUD.
    */
-  scoreBy: "points" | "time";
+  scoreBy: "points" | "time" | "wpm";
   /**
    * Signature colour, taken from the game's own artwork. The game page
    * overrides `--accent` with this, so the board glow, grid, score and
@@ -108,14 +108,14 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tagline: "Clear the words before they hit the floor.",
     rules: [
       "Words fall from the top — type one to clear it.",
-      "Freeze words slow time; Golden words grant bonus points; avoid Hazard words.",
+      "Freeze words slow time; Golden words grant bonus points; Danger words fall faster and reward a clean clear.",
       "Every word that reaches the floor costs a life. Three lives.",
-      "Consecutive clears advance through 5 escalation phases and multiply your score.",
+      "Words cleared advance through 5 difficulty milestones; clean streaks multiply your score.",
     ],
     about: [
       "Falling Words trains the skill a plain typing test never really tests: choosing what to type next. On a normal test the next word is always the one directly after the cursor. Here several words are on screen at once, each at a different height, and part of playing well is reading the board and clearing the most urgent one first.",
-      "The practical tactic is to prioritize the lowest word, while tactically capturing Freeze words to slow the board down or Golden words to surge your score. Beware of red Hazard words that penalize mistakes.",
-      "Difficulty ramps dynamically through five distinct escalation phases (Scout Warmup, Accelerating Stream, Multi-Lane Torrent, Overdrive Frenzy, and Matrix Meltdown) rather than linear clocks, rewarding clean reading over panicked mashing.",
+      "Prioritize the lowest word, capture Freeze words to slow the board, and clear Golden words for bonus points. Red Danger words fall faster: clear them for a larger reward. Ignoring any word costs a life.",
+      "Difficulty increases with words cleared through five milestones: Scout Warmup, Pressure Surge, Mixed Threats, Elite Swarm, and Overdrive Frenzy. These mark a continuous pace ramp rather than separate rule sets.",
     ],
     lives: 3,
     scoreBy: "points",
@@ -127,7 +127,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     replayability: "High",
     pitch:
       "Words fall, you clear them. Target prioritization under time pressure with freeze matrix powerups.",
-    highlights: ["5 Escalation phases", "Freeze & Golden words", "Tactical hazard words", "Combo multipliers"],
+    highlights: ["5 Difficulty milestones", "Freeze & Golden words", "Fast danger words", "Combo multipliers"],
   },
   "word-rain": {
     id: "word-rain",
@@ -135,13 +135,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tagline: "One life. How long can you survive the storm?",
     rules: [
       "Storm intensity accelerates through 5 weather phases from Mist to Gale Force and Hurricane.",
-      "A real-time storm pressure gauge tracks impending downpour surges.",
+      "The threat gauge shows how close the nearest word is to the floor.",
       "You have a single life — one word reaching the floor ends the run.",
       "Your score is how long you survived the tempest.",
     ],
     about: [
-      "Word Rain is the dedicated survival counterpart to Falling Words: one life, a torrential weather system, and atmospheric rain audio that deepens as the storm intensifies.",
-      "Survive through Mist, Drizzle, Downpour, Gale Force, and the final Hurricane phase where words pour at peak velocity. The storm pressure gauge alerts you to impending surges so you can prepare your hands.",
+      "Word Rain is the one-life survival counterpart to Falling Words. Five timed weather phases increase the pace, with thunder cues announcing each transition.",
+      "Survive through Mist, Drizzle, Downpour, Gale Force, and Hurricane. The threat gauge follows the word closest to the floor; it measures immediate danger, not a forecast of future spawns.",
       "Because a single drop ends the run, the mode tests unbroken rhythm and mental stamina under sustained acoustic and visual pressure.",
     ],
     lives: 1,
@@ -154,7 +154,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     replayability: "High",
     pitch:
       "One life. 5 weather phases from Mist to Hurricane. Survive the tempest.",
-    highlights: ["5 Weather phases", "Storm threat gauge", "One life survival", "Ambient rain audio"],
+    highlights: ["5 Weather phases", "Nearest-threat gauge", "One life survival", "Thunder transition cues"],
   },
   "word-blaster": {
     id: "word-blaster",
@@ -164,7 +164,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
       "Enemies fly in from the right: fast Swarmers, armored Tanks, and EMP drones.",
       "Tanks have 2-word armored shields; EMP drones trigger lane-clearing shockwaves.",
       "Any enemy that breaches your base costs a life. Three lives.",
-      "Consecutive kills build combo multipliers up to 2.5x.",
+      "Consecutive clears build combo multipliers up to 2x.",
     ],
     about: [
       "Word Blaster is a tactical lane defense shooter. Your typing input aims and fires your defense turret at incoming hostiles.",
@@ -189,14 +189,14 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tagline: "Race three rivals over forty words.",
     rules: [
       "Type the stream one word at a time — space commits each word.",
-      "Your car moves the moment you type; mistyped letters are marked but never block you.",
+      "Only correct characters move your car. Skipped characters leave the course incomplete (DNF).",
       "Three rivals hold roughly 35, 50 and 70 WPM. Beat the one you can.",
-      "Forty words to the flag. Your score is your speed, your accuracy and where you finish.",
+      "Complete the full distance to finish. Score Boost multiplies points, not car speed.",
     ],
     about: [
       "Typing Grand Prix turns your words per minute into something you can see moving. Every car on the track, yours included, covers the same fixed distance of forty words, and the rivals hold pace at roughly 35, 50 and 70 WPM — not arbitrary numbers, but the speeds that matter: 35 is a fluent hunt-and-peck pace, 50 is where a competent touch typist sits, and 70 is the threshold most people are actually trying to reach. Finishing ahead of a particular car is therefore a concrete, repeatable claim about your speed, in a way a bare number on a results screen never quite is.",
-      "The decision the race keeps asking you is whether to fix a mistake. Wrong characters are marked in red but do not stop you — space commits the word however it looks, and your car keeps moving. Backspacing does not drag the car backwards either; it simply costs you the time you spend doing it, which is the whole point. Accuracy multiplies your final score, but the placement bonus is worth far more than a few percentage points of accuracy, so the honest rule is positional: when a rival is within a car length, take the error and drive on; when your place is safely yours, go back and clean it up. Players who reflexively fix everything lose podium positions they had already earned.",
-      "Because the distance is fixed and there is no difficulty ramp, this is a sprint rather than a survival test, and that makes it the most directly comparable of the three games — the same forty words, the same three rivals, run after run. Use it as a ladder: find the fastest car you can reliably beat, race that one until winning feels routine, then go after the next. It pairs naturally with the timed test, where you can confirm that the pace you just held for forty words is a pace you can hold for a full minute.",
+      "Correct each word before committing it with Space. Wrong letters are marked but do not block editing; committing them leaves missing distance that ends in DNF rather than a normal finish. Repeatedly erasing and retyping the same letters never increases scored output. Clean words build Score Boost, which increases points without moving the car for you.",
+      "Each sprint draws forty words and three AI rivals around the same pace bands, so it is useful practice but not a standardized course comparison. Find a rival you can reliably beat while completing the entire text. Results separate earned word points from finish bonuses; a DNF keeps word points but earns no finish bonus.",
     ],
     // No life mechanic — a race ends at the flag, not at a failure, so this is
     // the "games with no lives use 1" case the field documents.
@@ -245,12 +245,12 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
       "A short clock drains continuously. At zero the run ends.",
       "Every cleared word refunds time; longer words refund more.",
       "Build streaks to ascend 5 Rush Tiers (Warmup, Bronze, Silver, Gold, Hyper).",
-      "One wrong letter resets your multiplier and drops your Rush Tier.",
+      "One wrong letter resets your multiplier and Rush Tier. Space skips a word for 0.75 seconds.",
     ],
     about: [
       "Combo Rush is an adrenaline-fueled trading game: you trade typing accuracy for survival clock, and the drain accelerates as you progress.",
-      "Climb through 5 dynamic Rush Tiers from Warmup through Gold to Hyper Rush. Each tier unlocks exponential score multipliers and richer time refunds, rewarding sustained flawless typing rhythm.",
-      "A single mistake breaks your combo chain, penalizing your clock and forcing you to rebuild your multiplier from base tier.",
+      "Climb through five streak milestones from Warmup to Hyper. Each clean word builds the same multiplier for points and time refunds, rising from 1x to a 1.6x cap. Later tier badges celebrate longer streaks rather than adding a hidden bonus.",
+      "A wrong letter resets your combo and tier without directly subtracting time. The clock continues draining while you recover. Skipping with Space resets the combo and costs 0.75 seconds.",
     ],
     lives: 1,
     scoreBy: "points",
@@ -271,7 +271,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     rules: [
       "Several spells are on screen at once — type one to cast it.",
       "Word length is cast time: short words are fast and weak, long words slow and devastating.",
-      "Enemies act in real time. A long cast can be interrupted.",
+      "Enemies act while you type. Longer words expose you to more incoming attacks.",
       "Between floors, pick relics that change how your spells behave.",
     ],
     about: [
@@ -289,11 +289,11 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     upcoming: true,
     pitch:
       "Cast spells, defeat enemies, collect relics and build your ultimate typing mage. Every run is unique.",
-    highlights: ["5 unique characters", "16 spells", "15 relics", "Procedural floors", "4 boss fights", "Endless replayability"],  },
+    highlights: ["5 unique characters", "16 spells", "16 relics", "Procedural floors", "4 boss fights", "Build variety"],  },
   "typing-survivor": {
     id: "typing-survivor",
     name: "Typing Survivor",
-    tagline: "Endless horde. Every enemy carries a word. Survive the waves.",
+    tagline: "Fifteen waves. Build your typing weapon and defeat the final boss.",
     rules: [
       "Enemies stream in from all sides, each labelled with a word.",
       "Type an enemy's word to strike it. Longer words hit harder.",
@@ -303,42 +303,42 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     about: [
       "Typing Survivor is the most immediately playable game here: there is no cast time to weigh and no deck to build, only a rising tide of enemies and your hands. What gives it depth is the upgrade draft. Every level up offers three choices, and the ones you take gradually turn your typing into a particular kind of weapon.",
       "Take the short-word upgrades and you become a machine gun, shredding the swarm but struggling against anything with real health. Take the long-word upgrades and each strike is an execution, which feels magnificent until six fast enemies arrive at once. Accuracy builds reward never making a mistake; combo builds reward never stopping. None of these is the correct answer, and the enemies you happen to face push you toward different ones.",
-      "Because the pressure is continuous rather than turn-based, this is the mode that most directly trains sustained typing under stress. There is no moment to reset your hands and no natural pause, which is exactly the condition a typing test never reproduces and real work often does.",
+      "Combat trains sustained typing under pressure, with a pause for each upgrade draft and a manual pause whenever you need a break. Bosses arrive every fifth wave; defeating wave fifteen completes the campaign.",
     ],
     lives: 3,
-    scoreBy: "time",
+    scoreBy: "points",
     accent: "#f97316",
     category: "Action",
     tags: ["Action", "Horde", "Single Player"],
-    duration: "10-30 min",
+    duration: "8-15 min",
     replayability: "Very High",
     pitch:
-      "Endless enemies. Powerful upgrades. How long can you survive?",
+      "Survive fifteen waves, draft powerful upgrades, and defeat three bosses.",
     highlights: ["4 characters", "Upgrade drafts", "Six enemy types", "Elites and bosses", "Build variety", "Wave escalation"],  },
   "ghost-racer": {
     id: "ghost-racer",
     name: "Ghost Racer",
-    tagline: "Race the ghost of your own best run.",
+    tagline: "Race four neon rivals across a typing-powered night circuit.",
     rules: [
-      "You and a ghost type the same text, side by side.",
-      "The ghost is your own real previous run on this text, replayed keystroke by keystroke.",
-      "Beat it and that run becomes your new ghost to beat next time.",
-      "A daily race gives you the same text every day, so yesterday's ghost is today's target.",
+      "Choose Easy, Medium, Hard or Legend before the starting lights.",
+      "Four deterministic rivals type the same course at fixed difficulty-based paces.",
+      "Correct characters move your bike; mistakes must be corrected before the course advances.",
+      "Keep typing after a rival finishes. Your final position is ranked across all five riders.",
     ],
     about: [
-      "Ghost Racer replays a real run rather than simulating an opponent -- specifically, your own. The ghost beside you is your actual keystrokes from a previous attempt at this exact text, with their actual timing: the half-second you hesitated on a hard word, the burst where you found your rhythm. Racing that feels nothing like racing a number, because it's uneven in the specific way a real run is uneven.",
-      "The tactical layer is pacing. A ghost that starts fast isn't necessarily beating you -- it may be the run where you stumbled at the end. Learning to hold your own rhythm while a ghost pulls ahead, rather than panicking into a mistake, is the skill the mode trains, and it transfers directly to any timed test.",
-      "Every run you finish against a text is saved, and beating your ghost replaces it -- so the bar keeps rising, one real run at a time, at your own pace. Everything stays on this device: there's no shared pool of other players' runs and no ranking, just your own history to race against.",
+      "Ghost Racer turns a typing test into a five-bike night race. Four named rivals ride the same course with distinct colors, lanes and fixed replay pacing, so every overtake is readable in the world rather than hidden in a number.",
+      "Easy, Medium, Hard and Legend are deliberately different fields, not manual speed sliders. The player’s distance remains honest strict-prefix typing, while a short typing lull makes the bike coast and lowers the live pace without granting free characters.",
+      "Your fastest completed runs are retained in a bounded, account-scoped library for personal-best tracking. Signed-in summary results save to your account; replay samples remain local. You can finish even after every rival crosses first, and pause without counting that break in the final time.",
     ],
     lives: 1,
-    scoreBy: "time",
+    scoreBy: "wpm",
     accent: "#22d3ee",
     category: "Racing",
     tags: ["Racing", "Competitive", "Single Player"],
     duration: "2-5 min",
     replayability: "High",
-    pitch: "Race the ghost of your own best run. Beat it, and that becomes the new ghost to chase next.",
-    highlights: ["Real recorded runs", "Daily race", "Personal bests", "Progressive ghosts"],
+    pitch: "Choose your level, chase four rivals, and climb the night circuit one correct character at a time.",
+    highlights: ["4 AI rivals", "Easy to Legend", "Chase-camera road", "Personal bests"],
   },
   "card-battle": {
     id: "card-battle",
@@ -346,13 +346,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tagline: "A deck of cards you play by typing their names.",
     rules: [
       "Each card has a word. Type it to play the card.",
-      "Cards cost energy; your turn ends when energy runs out.",
-      "Defeat an enemy to add, upgrade or remove a card.",
+      "Cards cost energy. Choose End turn when you are ready for enemy actions.",
+      "Defeat an encounter to add a card, or skip to keep your deck focused.",
       "Cards combine — poison, then a multiplier, then an execute.",
     ],
     about: [
       "Card Battle is the most deliberate game in the set. Combat is turn-based, so there is no clock forcing your hand, and the interesting decision is which cards to play and in what order rather than how fast you can move. Typing is how you commit to a choice, which makes a misfire feel like a genuine mistake rather than lost milliseconds.",
-      "The depth comes from cards that are weak alone and strong together. A poison card does very little on its own. A multiplier card does nothing at all on its own. Played in sequence against an enemy that is about to take a turn, they win the fight. Building a deck means noticing those pairs and then deliberately removing the cards that dilute them — a deck that does one thing well beats a deck of individually strong cards.",
+      "Cards are strongest in combinations: build Blight, multiply it, then burst it; or prepare block before a heavy enemy turn. Add rewards that support your strategy and skip cards that dilute it. The current campaign supports adding or skipping rewards; card removal, upgrades and spending gold are not yet available.",
       "Because it is turn-based, this is the mode that rewards accuracy over speed more than any other. There is time to type each card name correctly, and no reward at all for typing it fast, so it is the gentlest entry point for a slower typist who wants the strategy without the pressure.",
     ],
     lives: 1,
@@ -364,7 +364,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     replayability: "High",
     pitch:
       "Build your deck, type to play cards, defeat mighty foes and discover powerful combos.",
-    highlights: ["3 characters", "40+ cards", "Deck archetypes", "Card combos", "3 bosses", "Turn-based"],  },
+    highlights: ["3 starter decks", "39 cards", "Deck archetypes", "Card combos", "3 bosses", "Turn-based"],  },
   "fruit-fury": {
     id: "fruit-fury",
     name: "Fruit Fury",

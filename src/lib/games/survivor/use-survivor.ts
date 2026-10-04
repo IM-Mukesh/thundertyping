@@ -14,12 +14,14 @@
  * arrive at once. No draft is correct, and the wave you happen to face pushes
  * you toward different ones.
  *
- * Driven by setInterval, not requestAnimationFrame: rAF stops firing in a
- * hidden tab, which would freeze a wave mid-run. Enemy positions are stored as
- * fractions of the arena so nothing has to know pixels.
+ * Fixed simulation steps while visible and unpaused. Active run time uses a
+ * monotonic clock independently of those steps; hiding the tab pauses input
+ * and simulation until the player explicitly resumes.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGameSession } from "@/lib/games/cards/use-game-session";
+import { decaySurvivorEnemies, strikeSurvivor, typeSurvivorWord, xpForLevel } from "@/lib/games/survivor/transitions";
 import { createRng, type Rng } from "@/lib/rng/seeded-rng";
 import { createWordPicker } from "@/lib/games/survivor/words";
 import {
@@ -74,6 +76,7 @@ export interface SurvivorState {
   combo: number;
   bestCombo: number;
   perfectWords: number;
+  wordFlawless: boolean;
   banner: string | null;
 }
 
@@ -86,19 +89,14 @@ export interface SurvivorCallbacks {
   onStrike?: (enemy: Enemy, damage: number, crit: boolean) => void;
 }
 
-function xpForLevel(level: number): number {
-  return Math.round(12 + level * 8 + level * level * 1.5);
-}
-
 export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
-  const seedRef = useRef(seed ?? `${Date.now()}`);
-  const rngRef = useRef<Rng>(createRng(seedRef.current));
+  const [runSeed, setRunSeed] = useState(seed ?? "");
+  const rngRef = useRef<Rng>(createRng(seed ?? ""));
   const uidRef = useRef(1);
   const cbRef = useRef(cb);
-  cbRef.current = cb;
+  useEffect(() => { cbRef.current = cb; }, [cb]);
 
-  const [paused, setPaused] = useState(false);
-  const [state, setState] = useState<SurvivorState>(() => initial());
+  const { state, update, replace, paused, setPaused } = useGameSession(initial, "playing");
 
   function initial(): SurvivorState {
     return {
@@ -123,6 +121,7 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       combo: 0,
       bestCombo: 0,
       perfectWords: 0,
+      wordFlawless: true,
       banner: null,
     };
   }
@@ -157,11 +156,11 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
 
   const start = useCallback((characterId: string, runSeed?: string) => {
     const sd = runSeed ?? `${Date.now()}`;
-    seedRef.current = sd;
+    setRunSeed(sd);
     rngRef.current = createRng(sd);
     uidRef.current = 1;
     const char = CHARACTERS.find((c) => c.id === characterId) ?? CHARACTERS[0];
-    setState({
+    replace({
       ...initial(),
       phase: "playing",
       characterId,
@@ -170,18 +169,17 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       upgrades: char.startUpgrade ? [char.startUpgrade] : [],
     });
     cbRef.current.onPhase?.("playing");
-  }, []);
+  }, [replace]);
 
   /** Main tick: spawning, movement, contact damage, wave rollover. */
   useEffect(() => {
     if (paused || state.phase !== "playing") return;
 
     const id = window.setInterval(() => {
-      setState((prev) => {
+      update((prev) => {
         if (prev.phase !== "playing") return prev;
         const s: SurvivorState = { ...prev };
         const rng = rngRef.current;
-        s.elapsedMs += TICK_MS;
         s.waveMs += TICK_MS;
         if (s.banner && s.waveMs % 3000 < TICK_MS) s.banner = null;
 
@@ -213,9 +211,9 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
 
         // --- movement + contact ---------------------------------------
         let incoming = 0;
-        s.enemies = s.enemies.map((e) => {
+        s.enemies = decaySurvivorEnemies(s.enemies, TICK_MS).map((e) => {
           if (e.hp <= 0) return e;
-          const next = { ...e, hitFlash: Math.max(0, e.hitFlash - TICK_MS) };
+          const next = { ...e };
           const speed = (e.type.speed / 1000) * TICK_MS;
           next.progress += speed;
           if (next.progress >= 1) {
@@ -263,133 +261,7 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
     }, TICK_MS);
 
     return () => window.clearInterval(id);
-  }, [paused, state.phase, spawn]);
-
-  /** Resolve a completed word into a strike. */
-  const strike = useCallback((uid: number) => {
-    setState((prev) => {
-      if (prev.phase !== "playing") return prev;
-      const s: SurvivorState = { ...prev };
-      const rng = rngRef.current;
-      const idx = s.enemies.findIndex((e) => e.uid === uid);
-      if (idx < 0) return prev;
-      const target = s.enemies[idx];
-      const len = target.word.length;
-
-      // Build damage from the draft. This is where a run's identity lives:
-      // the same word is worth wildly different amounts under different picks.
-      let damage = 6 + len * 2;
-      if (s.upgrades.includes("short-fuse") && len <= 4) damage *= 2.1;
-      if (s.upgrades.includes("heavy-hand") && len >= 8) damage *= 1.9;
-      if (s.upgrades.includes("momentum")) damage *= 1 + Math.min(1, s.combo * 0.04);
-      // Scholar is marked `stacking: true` (re-offered after being taken),
-      // but this only checked whether it was owned at all -- a second or
-      // third pick gave no additional benefit, silently wasting the draft.
-      // Count how many copies are actually owned.
-      const scholarCount = s.upgrades.filter((u) => u === "scholar").length;
-      if (scholarCount > 0) damage += scholarCount * s.level * 1.5;
-
-      let critChance = 0.05;
-      if (s.upgrades.includes("keen-edge")) critChance += 0.2;
-      if (s.upgrades.includes("perfectionist") && target.typed === len) critChance += 0.25;
-      const crit = rng.chance(critChance);
-      if (crit) damage *= 2.2;
-
-      damage = Math.round(damage);
-
-      // Guarded enemies eat the first strikes outright, so a shielder cannot
-      // be deleted by one lucky long word.
-      let applied = damage;
-      let guard = target.guard;
-      if (guard > 0) {
-        guard -= 1;
-        applied = Math.round(damage * 0.25);
-      }
-
-      const killedNow = target.hp - applied <= 0;
-      const updated: Enemy = {
-        ...target,
-        hp: Math.max(0, target.hp - applied),
-        guard,
-        typed: 0,
-        hitFlash: 220,
-      };
-      s.enemies = s.enemies.map((e, i) => (i === idx ? updated : e));
-
-      // Word Explosion: a long word kills splash the swarm around them.
-      if (killedNow && s.upgrades.includes("detonate") && len >= 7) {
-        const blast = Math.round(applied * 0.4);
-        s.enemies = s.enemies.map((e) =>
-          e.uid !== uid && e.hp > 0
-            ? { ...e, hp: Math.max(0, e.hp - blast), hitFlash: 180 }
-            : e,
-        );
-      }
-
-      if (killedNow) {
-        s.kills += 1;
-        s.combo += 1;
-        s.bestCombo = Math.max(s.bestCombo, s.combo);
-        s.score += 10 + len * 3 + s.combo;
-        s.xp += target.type.xp;
-        if (s.upgrades.includes("bloodletting")) {
-          s.hp = Math.min(s.maxHp, s.hp + 2);
-        }
-        // Chain Lightning: "every third kill arcs" -- previously checked on
-        // every strike (not gated on a kill at all) and against the
-        // pre-increment kill count, so once the counter landed on 2-mod-3 it
-        // stayed there and every non-lethal hit on a multi-hit target
-        // splashed, not just one hit per three kills.
-        if (s.upgrades.includes("chain") && s.kills % 3 === 0) {
-          const other = s.enemies.find((e) => e.uid !== uid && e.hp > 0);
-          if (other) {
-            const arc = Math.round(applied * 0.5);
-            s.enemies = s.enemies.map((e) =>
-              e.uid === other.uid ? { ...e, hp: Math.max(0, e.hp - arc), hitFlash: 200 } : e,
-            );
-          }
-        }
-        cbRef.current.onKill?.(updated, damage, crit);
-      } else {
-        s.combo += 1;
-        s.score += 2;
-        cbRef.current.onStrike?.(updated, damage, crit);
-      }
-
-      s.typed = "";
-      s.lockedUid = null;
-
-      // level up -> draft. A single large XP gain (an early elite/boss kill
-      // while already close to xpToNext) can cross more than one threshold
-      // at once -- previously only one level-up was ever applied per strike
-      // (an `if`, not a loop), so the extra level(s) earned were simply
-      // never granted at all: xp only ever carried over toward the *next*
-      // single level, and the surplus level(s) needed another kill's worth
-      // of XP to re-trigger, one at a time, rather than being owed
-      // immediately. Cascade properly, but still only show one draft at a
-      // time -- takeUpgrade below pops the next one off pendingLevelUps
-      // once the current pick is made, so multiple levels earned in one
-      // strike each get their own pick instead of being collapsed into one.
-      let levelsGained = 0;
-      while (s.xp >= s.xpToNext) {
-        s.xp -= s.xpToNext;
-        s.level += 1;
-        s.xpToNext = xpForLevel(s.level);
-        levelsGained += 1;
-      }
-      if (levelsGained > 0) {
-        const owned = new Set(s.upgrades);
-        const pool = UPGRADES.filter((u) => !owned.has(u.id) || u.stacking);
-        s.offer = rng.sample(pool.map((u) => u.id), 3);
-        s.phase = "draft";
-        s.pendingLevelUps = levelsGained - 1;
-        cbRef.current.onLevel?.(s.level);
-        cbRef.current.onPhase?.("draft");
-      }
-
-      return s;
-    });
-  }, []);
+  }, [paused, state.phase, spawn, update]);
 
   /**
    * Typing targets by prefix across every enemy at once, then locks on.
@@ -400,55 +272,28 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
    */
   const setTyped = useCallback(
     (value: string) => {
-      setState((prev) => {
-        if (prev.phase !== "playing") return prev;
-        const raw = value.toLowerCase();
-        const trimmed = raw.trim();
-        if (raw === "") return { ...prev, typed: "", lockedUid: null };
-
-        const candidates = prev.enemies.filter(
-          (e) =>
-            e.hp > 0 &&
-            (e.word.startsWith(raw) || (trimmed.length > 0 && e.word.startsWith(trimmed))),
-        );
-        if (candidates.length === 0) {
-          cbRef.current.onMiss?.();
-          return { ...prev, typed: "", lockedUid: null, combo: 0 };
+      update((prev) => {
+        const typed = typeSurvivorWord(prev, value);
+        if (typed.miss) cbRef.current.onMiss?.();
+        if (typed.strikeUid === null) return typed.state;
+        const result = strikeSurvivor(typed.state, typed.strikeUid, rngRef.current);
+        for (const event of result.events) {
+          if (event.kind === "kill") cbRef.current.onKill?.(event.enemy, event.damage, event.crit);
+          else cbRef.current.onStrike?.(event.enemy, event.damage, event.crit);
         }
-
-        // Prefer the enemy already locked, then the closest to the player.
-        const locked =
-          candidates.find((e) => e.uid === prev.lockedUid) ??
-          candidates.reduce((a, b) => (b.progress > a.progress ? b : a));
-
-        if (locked.word === raw || (trimmed.length > 0 && locked.word === trimmed)) {
-          queueMicrotask(() => strike(locked.uid));
-          return {
-            ...prev,
-            typed: "",
-            lockedUid: null,
-            enemies: prev.enemies.map((e) =>
-              e.uid === locked.uid ? { ...e, typed: locked.word.length } : e,
-            ),
-          };
+        if (result.levelsGained > 0) {
+          cbRef.current.onLevel?.(result.state.level);
+          cbRef.current.onPhase?.("draft");
         }
-
-        const matchLen = locked.word.startsWith(raw) ? raw.length : trimmed.length;
-        return {
-          ...prev,
-          typed: raw,
-          lockedUid: locked.uid,
-          enemies: prev.enemies.map((e) =>
-            e.uid === locked.uid ? { ...e, typed: matchLen } : { ...e, typed: 0 },
-          ),
-        };
+        return result.state;
       });
     },
-    [strike],
+    [update],
   );
 
   const takeUpgrade = useCallback((id: string) => {
-    setState((prev) => {
+    update((prev) => {
+      if (prev.phase !== "draft" || !prev.offer.includes(id)) return prev;
       const s: SurvivorState = { ...prev, offer: [] };
       s.upgrades = [...s.upgrades, id];
       const def = UPGRADES.find((u) => u.id === id);
@@ -475,9 +320,9 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       }
       return s;
     });
-  }, []);
+  }, [update]);
 
-  const reset = useCallback(() => setState(initial()), []);
+  const reset = useCallback(() => replace(initial()), [replace]);
 
   const derived = useMemo(
     () => ({
@@ -488,9 +333,9 @@ export function useSurvivor(seed?: string, cb: SurvivorCallbacks = {}) {
       offerDefs: state.offer
         .map((id) => UPGRADES.find((u) => u.id === id))
         .filter((u): u is UpgradeDef => Boolean(u)),
-      seed: seedRef.current,
+      seed: runSeed,
     }),
-    [state],
+    [state, runSeed],
   );
 
   return {
