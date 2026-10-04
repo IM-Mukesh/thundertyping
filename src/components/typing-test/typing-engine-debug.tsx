@@ -125,11 +125,13 @@ export function TypingEngineDebug() {
           className="relative cursor-pointer"
           onClick={() => setFocusToken((t) => t + 1)}
         >
-          <WordStream wordStates={s.wordStates} activeWordIndex={s.activeWordIndex} />
+          <WordStream wordStates={engine.displayWordStates} activeWordIndex={s.activeWordIndex} />
           <HiddenInput
             value={active?.typed ?? ""}
             status={s.status}
             onChange={engine.setTyped}
+            onCompositionPreview={engine.previewComposition}
+            resetKey={s.inputRevision}
             onCommitWord={engine.commitWord}
             onRestart={start}
             onEscape={() => {}}

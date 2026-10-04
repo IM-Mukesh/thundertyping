@@ -375,11 +375,13 @@ export function PracticeDrill() {
           className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 p-4 transition-colors hover:border-accent/40"
           onClick={() => setFocusToken((t) => t + 1)}
         >
-          <WordStream wordStates={engine.state.wordStates} activeWordIndex={engine.state.activeWordIndex} />
+          <WordStream wordStates={engine.displayWordStates} activeWordIndex={engine.state.activeWordIndex} />
           <HiddenInput
             value={activeWord?.typed ?? ""}
             status={engine.state.status}
             onChange={engine.setTyped}
+            onCompositionPreview={engine.previewComposition}
+            resetKey={engine.state.inputRevision}
             onCommitWord={engine.commitWord}
             onRestart={handleRetry}
             onEscape={() => {}}

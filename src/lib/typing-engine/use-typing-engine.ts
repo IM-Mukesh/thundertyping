@@ -18,6 +18,7 @@ const TICK_INTERVAL_MS = 100;
 
 type EngineAction =
   | { type: "SET_TYPED"; value: string; now: number }
+  | { type: "COMPOSITION_PREVIEW"; value: string | null; now: number }
   | { type: "COMMIT_WORD"; now: number }
   | { type: "TICK"; now: number }
   | { type: "RESTART" }
@@ -65,6 +66,22 @@ function computeCharStates(target: string, typed: string): CharState[] {
   return chars;
 }
 
+/** Only the word stream consumes this view; scoring always uses wordStates. */
+export function selectDisplayWordStates(state: TestState): WordState[] {
+  const { wordStates, activeWordIndex, compositionPreview } = state;
+  const activeWord = wordStates[activeWordIndex];
+  if (compositionPreview === null || !activeWord || compositionPreview === activeWord.typed) {
+    return wordStates;
+  }
+  const display = [...wordStates];
+  display[activeWordIndex] = {
+    ...activeWord,
+    typed: compositionPreview,
+    chars: computeCharStates(activeWord.target, compositionPreview),
+  };
+  return display;
+}
+
 function buildWords(config: TestConfig): { words: string[]; quoteSource: string | null } {
   const options = {
     punctuation: config.punctuation,
@@ -99,6 +116,8 @@ export function createInitialState(config: TestConfig): TestState {
     config,
     words,
     wordStates: words.map((w) => ({ target: w, typed: "", chars: [] })),
+    compositionPreview: null,
+    inputRevision: 0,
     activeWordIndex: 0,
     startedAt: null,
     elapsedMs: 0,
@@ -175,7 +194,7 @@ function markMissedChars(word: WordState): WordState {
 function finalize(state: TestState, tally: CharTally, now: number, elapsedMsOverride?: number): TestState {
   const elapsedMs =
     elapsedMsOverride ?? (state.startedAt !== null ? now - state.startedAt : state.elapsedMs);
-  return { ...state, status: "finished", charTally: tally, elapsedMs };
+  return { ...state, status: "finished", compositionPreview: null, charTally: tally, elapsedMs };
 }
 
 /**
@@ -190,10 +209,30 @@ function finalize(state: TestState, tally: CharTally, now: number, elapsedMsOver
 export function reducer(state: TestState, action: EngineAction): TestState {
   switch (action.type) {
     case "APPLY_CONFIG":
-      return createInitialState(action.config);
+      return { ...createInitialState(action.config), inputRevision: state.inputRevision + 1 };
 
     case "RESTART":
-      return createInitialState(state.config);
+      return { ...createInitialState(state.config), inputRevision: state.inputRevision + 1 };
+
+    case "COMPOSITION_PREVIEW": {
+      if (state.status === "finished") return state;
+      if (state.status === "running" && state.config.mode === "time" && state.startedAt !== null &&
+          action.now - state.startedAt >= state.config.timeDuration * 1000) {
+        const activeWord = state.wordStates[state.activeWordIndex];
+        return finalize(state, activeWord ? tallyWord(state.charTally, activeWord, { countMissedChars: false }) : state.charTally,
+          action.now, state.config.timeDuration * 1000);
+      }
+      if (!state.wordStates[state.activeWordIndex] || state.compositionPreview === action.value) return state;
+      // Starting composition/focusing is not typing, but the first real draft
+      // character is. Candidate selection must not buy untimed thinking time.
+      const startsClock = state.status === "idle" && action.value !== null && action.value.length > 0;
+      return {
+        ...state,
+        compositionPreview: action.value,
+        status: startsClock ? "running" : state.status,
+        startedAt: startsClock ? action.now : state.startedAt,
+      };
+    }
 
     case "SET_TYPED": {
       if (state.status === "finished") return state;
@@ -210,6 +249,11 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       const prevWordState = state.wordStates[activeIndex];
       const prevTyped = prevWordState.typed;
       const newTyped = action.value;
+      // compositionend can be followed by the same input value. Clearing a
+      // preview is meaningful, but a duplicate value is not another keypress.
+      if (newTyped === prevTyped) {
+        return state.compositionPreview === null ? state : { ...state, compositionPreview: null };
+      }
       const chars = computeCharStates(target, newTyped);
 
       // Loops rather than assuming a single new character so a multi-character
@@ -272,6 +316,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       const nextState: TestState = {
         ...state,
         wordStates: nextWordStates,
+        compositionPreview: null,
         correctKeystrokes,
         incorrectKeystrokes,
         netWpmCharacters: nextNetWpmCharacters,
@@ -313,7 +358,14 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       }
       const activeIndex = state.activeWordIndex;
       const wordState = state.wordStates[activeIndex];
-      if (!wordState || wordState.typed.length === 0) return state;
+      if (!wordState) return state;
+      // A command during candidate selection must not submit a provisional
+      // word (or skip the older committed prefix behind it). SET_TYPED first
+      // finalizes changed candidates; identical previews are already safe.
+      if (state.compositionPreview !== null && state.compositionPreview !== wordState.typed) return state;
+      if (wordState.typed.length === 0) {
+        return state.compositionPreview === null ? state : { ...state, compositionPreview: null };
+      }
 
       const tally = tallyWord(state.charTally, wordState);
       const isLastWord = activeIndex === state.words.length - 1;
@@ -394,6 +446,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         ...state,
         words,
         wordStates,
+        compositionPreview: null,
         activeWordIndex: nextIndex,
         charTally: tally,
         correctKeystrokes,
@@ -466,9 +519,10 @@ export function useTypingEngine(initialConfig: TestConfig) {
   }, [state.status]);
 
   const setTyped = useCallback((value: string) => dispatch({ type: "SET_TYPED", value, now: now() }), []);
+  const previewComposition = useCallback((value: string | null) => dispatch({ type: "COMPOSITION_PREVIEW", value, now: now() }), []);
   const commitWord = useCallback(() => dispatch({ type: "COMMIT_WORD", now: now() }), []);
   const restart = useCallback(() => dispatch({ type: "RESTART" }), []);
   const applyConfig = useCallback((config: TestConfig) => dispatch({ type: "APPLY_CONFIG", config }), []);
 
-  return { state, setTyped, commitWord, restart, applyConfig };
+  return { state, displayWordStates: selectDisplayWordStates(state), setTyped, previewComposition, commitWord, restart, applyConfig };
 }

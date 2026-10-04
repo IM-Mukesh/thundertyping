@@ -75,6 +75,10 @@ export interface TestState {
   config: TestConfig;
   words: string[];
   wordStates: WordState[];
+  /** Display-only active-word draft; null means no unfinished composition. */
+  compositionPreview: string | null;
+  /** Changes on every reset so the input can discard its local native draft. */
+  inputRevision: number;
   activeWordIndex: number;
   startedAt: number | null;
   elapsedMs: number;

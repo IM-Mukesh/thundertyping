@@ -370,7 +370,7 @@ export function TypingTest() {
             onClick={() => setFocusToken((t) => t + 1)}
           >
             <WordStream
-              wordStates={engine.state.wordStates}
+              wordStates={engine.displayWordStates}
               activeWordIndex={engine.state.activeWordIndex}
               paceCaretPosition={paceCaretPosition}
             />
@@ -388,6 +388,8 @@ export function TypingTest() {
               status={engine.state.status}
               disabled={isMobileSettingsOpen || isCustomModalOpen}
               onChange={engine.setTyped}
+              onCompositionPreview={engine.previewComposition}
+              resetKey={engine.state.inputRevision}
               onCommitWord={engine.commitWord}
               onRestart={handleRestart}
               onEscape={() => {}}
