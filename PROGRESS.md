@@ -1,3 +1,56 @@
+## Local game reliability and Fruit Fury upgrade — 2026-10-04
+
+This entry supersedes older game-readiness and localStorage-only claims below. Work is local and uncommitted; no push, deployment or remote migration was performed.
+
+### Ghost Racer presentation pass — 2026-10-04
+
+- Replaced the old lane/progress-bar presentation with a full-width race cabinet: pseudo-3D chase-camera road, curved perspective, moving lane marks, guardrails, neon district / skyline bridge / midnight tunnel sectors, finish gantry, speed streaks, error sparks and two distinct rear-view bikes. All world motion is driven by the real player and replay progress; it does not alter scoring or distance.
+- Added a garage briefing with the existing bike artwork, Practice/Daily circuit choice, honest fallback-pacer controls, personal best/accuracy/rank summary and clear driving instructions.
+- Added a cockpit HUD with position/gap, sector, race clock, speed gauge, accuracy, course tracker, upcoming words, correction state and a diegetic rider-input console.
+- Added starting-grid lights, pit-stop pause overlay, finish podium/result overlay, replay-saving status, sound and reduced-motion controls, mobile-safe sizing and focus restoration for pause/finish states.
+- The existing deterministic course, strict typing, replay ownership, pause-excluded timing, personal-best rematch and result persistence remain the source of truth. Canvas is decorative and accessible race information remains in DOM text.
+
+### Ghost Racer five-rider difficulty pass — 2026-10-04
+
+- Replaced the public Practice/Daily and manual pacer controls with Easy, Medium, Hard and Legend. Each level has a deterministic course key and four fixed rival pace profiles; no user-selected WPM remains in the UI.
+- Added four named AI riders, live five-rider standings, ordinal placement, tie-aware finish results and difficulty-specific personal-best variants. Existing practice/daily course overloads remain only as deprecated compatibility for old tests/storage.
+- Live WPM now has an 8 WPM coasting floor during active racing. The road continues to scroll at the displayed live pace during typing pauses, but strict-prefix progress, replay samples, final net WPM and score remain unchanged.
+
+### Homepage typing input and custom time repair — 2026-10-04
+
+- Mobile homepage typing now focuses the hidden input synchronously inside the pointer/touch gesture, which lets iOS/Android open the virtual keyboard. IME composition, space commit, selection pinning and desktop keyboard behavior remain intact.
+- Latest custom-time correction: the quick choices are exactly **15s / 30s / 1m / pencil icon**, in desktop's single row and mobile settings' four slots. The 2m quick button is removed, not the ability to enter 120 seconds. The right-side time controls are outside the masked horizontal scroller, so narrower screens scroll only modifiers/modes, not the icon.
+- Shared `src/components/typing-test/custom-duration-control.tsx` uses native `dialog.showModal()` to escape toolbar overflow/masks. It opens/focuses within the click gesture, accepts whole seconds from **1 to 7200**, saves with Set/Enter, and cancels with Escape/Cancel/backdrop. Blur does not save, avoiding accidental writes while cancelling. Existing selected non-preset durations remain intact.
+- `npm test`: **463 passed** after the final icon fix. Typecheck, lint, build and `git diff --check` passed. New regressions reproduced the unwanted 120 preset before removal, check desktop/mobile layout structure and actual popup handlers with hook/ref doubles, and exercise a real 73-second engine deadline. These are not browser pixel/native-modal tests. Localhost browser access still requires panel approval; real iOS Safari/Android Chrome keyboard, visual popup and reload-persistence smoke remain unverified.
+- Next visual check: at 640/768/1024/1440px desktop widths, confirm the pencil stays beside 1m without horizontal scrolling or a second row. On a 375px phone, open Test Settings → Time and tap the fourth icon. Set 73, reopen to confirm it, cancel a draft of 120, reload, and confirm the selected timer remains 73. Test min/max errors and keyboard dismissal without closing parent settings.
+
+### Implemented
+
+- Account-owned game result outbox with stable run IDs, explicit saving/saved/failed UI and manual retries after refresh/relogin. Cloud bests update only after a matching server acknowledgement; in-game best displays subscribe to account changes. Guests retain device-only records. Real durations are rounded rather than padded.
+- Variant-separated Fruit records and Ghost course results; explicit points/seconds/WPM formatting. New server RPC contract atomically settles a run, daily count and XP, rejecting conflicting ID reuse. Achievement synchronization remains a separate repairable projection, not part of that transaction.
+- Grand Prix: full-distance finishes or explicit DNF; scored output cannot be inflated by deleting/retyping; finish ordering and active-time pause corrected. Ghost: canonical seeded courses, bounded validated account-scoped replay storage, immediate PB rematches, configurable pacer, finishing after a loss and pause-rebased recording.
+- Card Battle: status damage, enemy block lifetime, boss pattern order, Collector discard and consistent encounter rewards. Survivor: corpse cleanup, complete splash/chain rewards, true flawless-word history and best-combo tracking. Spellbound: consistent relic acquisition, duplicate filtering and death-before-reward settlement; still unreleased.
+- Fruit Fury: exclusive keyboard/touch controls; separate difficulty/key-pool records; collision-free active keys; batch-safe multi-slice accounting; five-step safe tutorial; Combo Eight and Clean Dozen missions; reduced effects; key-error/reaction feedback and practice suggestions. Practice modes do not award Classic records, XP or achievements. Mission progress is session-only.
+- Remaining arcade integration: reachable pause/Escape controls and hidden-window pause, native control activation, honest rules, consistent Combo tier metadata, duplicate Rain-word prevention, same-lane clearance, unique tank core words and small-keyboard viewport sizing. Boss finish bonuses use completed output, not retyped prefixes.
+- Unit test setup no longer reads private environment files; uses explicit test placeholders and disables network by default.
+
+### Checks and limits
+
+- `npm test`: 442 passed (85 more than the 357-test baseline). `npm run typecheck`, `npm run lint`, `npm run build` and `git diff --check` passed.
+- All eleven local `/games/<id>` routes returned HTTP 200, including the Spellbound upcoming page. This only checks route delivery, not mounted gameplay.
+- Built-in browser opening/state reads timed out. No visual/mobile, complete campaign, authenticated refresh/logout/login or screen-reader verification is claimed.
+- No local PostgreSQL/container tools were available. RPC transaction/concurrency and migration behavior remain unverified against a real database.
+
+### Required migration and next verification
+
+`supabase/migrations/20261004010000_atomic_game_settlement.sql` is **prepared, not applied**. It adds variants and atomic settlement RPCs, widens metrics and replaces the previous artificial one-second minimum. Keep the already-applied `20261003020000` file unchanged. Without the new RPCs, account game saves return an explicit unavailable response and remain pending for retry; there is no unsafe legacy-write fallback.
+
+After schema review and explicit approval, apply the forward migration before deploying this application version. On a test account verify one save, refresh, logout/login, two variants, offline recovery and replaying the same run ID; XP and daily counts must increase only once. Test two simultaneous submissions and a cross-account retry. Recheck all existing progress tables; migration history alone is not schema verification.
+
+Local gameplay smoke: start at `/games/fruit-fury`, complete Guided lesson, test mission success/failure and Classic keyboard versus touch; then pause/resume and revisit each repaired game. Desktop/laptop, mobile keyboard, reduced effects, mute and navigation focus need hands-on checks. Checkpoints for long RPG runs, complete cloud achievement coverage, stronger anti-cheat, competitive rankings and the rest of the premium content roadmap remain future work.
+
+Baseline findings and broader design goals remain in `docs/games-deep-review-2026-10-04.md` (reviewed revision `948c054`, before these changes).
+
 ## Current CI Typecheck Fix — 2026-09-27
 
 - Root cause: CI ran `tsc --noEmit` before Next.js 16 route type generation, so generated global `PageProps` / `LayoutProps` types were unavailable to TypeScript.
