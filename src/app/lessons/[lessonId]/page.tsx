@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/lessons/[lessonId
     title,
     description,
     alternates: { canonical: `/lessons/${lesson.id}` },
-    openGraph: { title, description },
+    openGraph: { title, description, url: `/lessons/${lesson.id}` },
     twitter: { title, description },
   };
 }

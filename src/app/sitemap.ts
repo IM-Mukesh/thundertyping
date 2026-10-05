@@ -38,7 +38,13 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/average-typing-speed",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-05",
+    },
+    {
+      path: "/guides/typing-speed-by-age",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-05",
     },
     {
       path: "/guides/how-to-touch-type",
@@ -69,6 +75,12 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       priority: 0.6,
       changeFrequency: "monthly",
       lastModified: "2026-09-24",
+    },
+    {
+      path: "/guides/typing-accuracy",
+      priority: 0.7,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-05",
     },
     {
       path: "/guides/english-typing-test-and-practice",
@@ -230,7 +242,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/why-wpm-is-high-accuracy-is-low",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-27",
+      lastModified: "2026-10-05",
     },
     {
       path: "/guides/how-to-improve-typing-consistency",

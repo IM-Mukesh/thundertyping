@@ -184,9 +184,9 @@ export function LessonDashboard() {
                 <Sparkles size={12} aria-hidden="true" />
                 Step-by-step touch typing
               </span>
-              <h1 className="font-display text-2xl font-black uppercase tracking-tight text-foreground sm:text-4xl">
+              <h2 className="font-display text-2xl font-black uppercase tracking-tight text-foreground sm:text-4xl">
                 Start your typing journey
-              </h1>
+              </h2>
               <p className="text-sm leading-relaxed text-sub">
                 Build finger discipline step-by-step from the home row to full-speed typing.
                 Interactive hands and on-screen keyboard guide every reach—no experience needed.

@@ -217,8 +217,9 @@ export default function HowToImproveTypingSpeedPage() {
           for a session where you make close to zero mistakes, even if it feels slow. Speed
           reliably follows accuracy within a few sessions; it rarely works the other way around.
           {SITE_NAME} tracks accuracy and consistency separately from WPM on every results screen
-          specifically so you can watch this trade-off instead of guessing at it. See{" "}
-          <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>{" "}
+           specifically so you can watch this trade-off instead of guessing at it. See{" "}
+           <Link href="/guides/typing-accuracy">what your accuracy percentage means</Link> and{" "}
+           <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>{" "}
           for the full accuracy-specific system.
         </p>
 
@@ -331,7 +332,7 @@ export default function HowToImproveTypingSpeedPage() {
           before your WPM. <Link href="/">Open the typing test</Link> and try a words-mode test
           at a pace where you can stay near 100% accuracy — that&apos;s the pace worth building
           speed from. Curious where your result actually stands? See{" "}
-          <Link href="/guides/average-typing-speed">what is a good typing speed</Link> for
+           <Link href="/guides/average-typing-speed">average typing speed context</Link> for
           honest benchmarks instead of a single made-up number. Once accuracy feels automatic,{" "}
           <Link href="/games">typing games</Link> are a low-friction way to keep logging practice
           time without it feeling like a drill.

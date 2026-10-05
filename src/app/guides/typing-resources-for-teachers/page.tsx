@@ -430,9 +430,11 @@ export default function TypingResourcesForTeachersPage() {
           </table>
         </div>
         <p className="text-xs text-sub">
-          Always evaluate speed alongside accuracy. A student typing at 22 WPM with 97% accuracy has a far stronger
-          foundation than one typing at 35 WPM with 82% accuracy. For district requirements specified in strokes per hour,
-          use our <Link href="/guides/wpm-cpm-kph-calculator">WPM/CPM/KPH Calculator</Link> to convert values instantly.
+           Always evaluate speed alongside accuracy. A student typing at 22 WPM with 97% accuracy has a far stronger
+           foundation than one typing at 35 WPM with 82% accuracy. For district requirements specified in strokes per hour,
+           use our <Link href="/guides/wpm-cpm-kph-calculator">WPM/CPM/KPH Calculator</Link> to convert values instantly.
+           For the source context and a fuller explanation of age and grade-level benchmarks, see{" "}
+           <Link href="/guides/typing-speed-by-age">typing speed by age and learning stage</Link>.
         </p>
 
         <h2 id="accommodations">Accommodations &amp; Diverse Learners</h2>

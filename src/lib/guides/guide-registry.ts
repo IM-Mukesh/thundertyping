@@ -278,6 +278,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     relatedGuides: [
       "touch-typing-for-dyslexia-and-dysgraphia",
       "touch-typing-lesson-order",
+      "typing-speed-by-age",
       "how-many-minutes-a-day-to-practice-typing",
     ],
     relatedProductRoute: "/lessons",
@@ -301,6 +302,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     recommendedSequenceOrder: 1,
     relatedGuides: [
       "how-to-improve-typing-accuracy",
+      "typing-accuracy",
       "how-to-break-a-typing-speed-plateau",
       "how-to-improve-typing-consistency",
     ],
@@ -327,6 +329,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     recommendedSequenceOrder: 2,
     relatedGuides: [
       "how-to-improve-typing-speed",
+      "typing-accuracy",
       "why-wpm-is-high-accuracy-is-low",
       "typing-practice-for-weak-keys",
     ],
@@ -340,6 +343,29 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     updatedAt: "2026-09-24",
   },
   {
+    slug: "typing-accuracy",
+    href: "/guides/typing-accuracy",
+    title: "Typing Accuracy: What the Percentage Means",
+    description:
+      "Understand the accuracy percentage, HeroTyping's correct/incorrect/missed formula, practical benchmark bands, and how to read speed beside quality.",
+    category: "improve-your-typing",
+    primaryTopic: "Accuracy Measurement & Benchmarks",
+    intent: "benchmark",
+    readingTimeMinutes: 8,
+    featured: false,
+    recommendedSequenceOrder: 3,
+    relatedGuides: [
+      "how-to-improve-typing-accuracy",
+      "net-wpm-vs-gross-wpm",
+      "how-to-find-your-weakest-typing-keys",
+      "average-typing-speed",
+    ],
+    relatedProductRoute: "/",
+    relatedProductLabel: "Test WPM & Accuracy",
+    publishedAt: "2026-10-05",
+    updatedAt: "2026-10-05",
+  },
+  {
     slug: "how-to-break-a-typing-speed-plateau",
     href: "/guides/how-to-break-a-typing-speed-plateau",
     title: "How to Break a Typing Speed Plateau",
@@ -350,7 +376,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     intent: "practical",
     readingTimeMinutes: 11,
     featured: false,
-    recommendedSequenceOrder: 3,
+    recommendedSequenceOrder: 4,
     relatedGuides: [
       "how-to-improve-typing-speed",
       "how-to-find-your-weakest-typing-keys",
@@ -369,25 +395,50 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "average-typing-speed",
     href: "/guides/average-typing-speed",
-    title: "What Is a Good Typing Speed?",
+    title: "Average Typing Speed: What Is a Good WPM?",
     description:
-      "WPM benchmarks by skill level, age group, and job context — casual typist, standard office work, programmers, and high-speed data entry.",
+      "Honest WPM benchmarks by skill level and context, with age and job context, accuracy caveats, and a real typing test.",
     category: "improve-your-typing",
     primaryTopic: "Typing Benchmarks & Standards",
     intent: "benchmark",
-    readingTimeMinutes: 6,
+    readingTimeMinutes: 8,
     featured: false,
-    recommendedSequenceOrder: 4,
+    recommendedSequenceOrder: 5,
     relatedGuides: [
       "net-wpm-vs-gross-wpm",
       "wpm-cpm-kph-calculator",
       "911-dispatcher-typing-test",
+      "typing-speed-by-age",
+      "typing-accuracy",
       "how-to-set-a-typing-speed-goal",
     ],
     relatedProductRoute: "/",
     relatedProductLabel: "Benchmark Your Speed Now",
     publishedAt: "2026-09-14",
-    updatedAt: "2026-09-24",
+    updatedAt: "2026-10-05",
+  },
+  {
+    slug: "typing-speed-by-age",
+    href: "/guides/typing-speed-by-age",
+    title: "Typing Speed by Age: Grade-Level Benchmarks With Context",
+    description:
+      "Transparent grade-level typing guidance, accuracy expectations, and fair ways to measure progress without treating age as destiny.",
+    category: "improve-your-typing",
+    primaryTopic: "Age & Grade-Level Benchmarks",
+    intent: "benchmark",
+    readingTimeMinutes: 8,
+    featured: false,
+    recommendedSequenceOrder: 6,
+    relatedGuides: [
+      "average-typing-speed",
+      "typing-accuracy",
+      "typing-resources-for-teachers",
+      "typing-practice-for-beginners",
+    ],
+    relatedProductRoute: "/",
+    relatedProductLabel: "Take a Baseline Test",
+    publishedAt: "2026-10-05",
+    updatedAt: "2026-10-05",
   },
 
   // 4. Typing Tests & Tools
@@ -406,6 +457,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     relatedGuides: [
       "wpm-cpm-kph-calculator",
       "average-typing-speed",
+      "typing-accuracy",
       "why-wpm-is-high-accuracy-is-low",
       "beat-your-personal-best-typing-speed",
     ],
@@ -943,7 +995,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "practice-typing-numbers-and-symbols-without-looking",
       "custom-text-typing-test",
     ],
-    relatedProductRoute: "/lessons/shift-capitalization",
+    relatedProductRoute: "/lessons/everyday-sentences",
     relatedProductLabel: "Practice Shift & Punctuation",
     heroImage: "/guides/keyboard-skills/punctuation-typing-practice/punctuation-shift-coordination.webp",
 
@@ -993,7 +1045,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     href: "/guides/why-wpm-is-high-accuracy-is-low",
     title: "Why Your WPM Is High but Your Accuracy Is Low",
     description:
-      "Why typing fast with low accuracy destroys net productivity: the mathematical cost of backspacing, motor rushing, and how to reset your visual-motor buffer.",
+      "Why raw speed and accuracy can diverge, how corrections affect a test, and practical ways to adjust your pace without a universal accuracy cutoff.",
     category: "improve-your-typing",
     primaryTopic: "Accuracy-Speed Decoupling",
     intent: "practical",
@@ -1006,7 +1058,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "net-wpm-vs-gross-wpm",
     ],
     relatedProductRoute: "/lessons",
-    relatedProductLabel: "Train with 90% Accuracy Requirement",
+    relatedProductLabel: "Practice Accuracy in Lessons",
     heroImage: "/guides/improve-your-typing/why-wpm-is-high-accuracy-is-low/error-backspace-penalty-chart.webp",
 
     articleImages: [
@@ -1017,7 +1069,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
 
     expectedHeroImage: "/guides/improve-your-typing/why-wpm-is-high-accuracy-is-low/error-backspace-penalty-chart.webp",
     publishedAt: "2026-09-27",
-    updatedAt: "2026-09-27",
+    updatedAt: "2026-10-05",
   },
   {
     slug: "how-to-improve-typing-consistency",

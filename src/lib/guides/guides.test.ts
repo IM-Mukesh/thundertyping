@@ -12,6 +12,7 @@ import {
   getRelatedGuides,
 } from "@/lib/guides/guide-registry";
 import type { GuideCategory } from "@/lib/guides/guide-types";
+import { getSitemapRoutes } from "@/app/sitemap";
 
 describe("Guide Content Architecture & Registry", () => {
   const categories: GuideCategory[] = [
@@ -35,9 +36,9 @@ describe("Guide Content Architecture & Registry", () => {
     }
   });
 
-  it("registers exactly 48 unique, valid guides", () => {
+  it("registers exactly 50 unique, valid guides", () => {
     const guides = getAllGuides();
-    assert.equal(guides.length, 48);
+    assert.equal(guides.length, 50);
 
     const slugSet = new Set<string>();
     for (const guide of guides) {
@@ -78,6 +79,16 @@ describe("Guide Content Architecture & Registry", () => {
     const related = getRelatedGuides("how-to-touch-type");
     assert.ok(related.length > 0);
     assert.ok(related.some((g) => g.slug === "touch-typing-finger-map"));
+  });
+
+  it("every guide and category CTA targets a real public route", () => {
+    const paths = new Set(getSitemapRoutes().map((route) => route.path || "/"));
+    for (const guide of GUIDE_REGISTRY) {
+      assert.ok(paths.has(guide.relatedProductRoute), `${guide.slug}: invalid CTA ${guide.relatedProductRoute}`);
+    }
+    for (const category of Object.values(GUIDE_CATEGORIES)) {
+      assert.ok(paths.has(category.productRoute), `${category.id}: invalid CTA ${category.productRoute}`);
+    }
   });
 
   it("getCategoryMeta retrieves correct category metadata", () => {

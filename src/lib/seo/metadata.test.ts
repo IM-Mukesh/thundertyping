@@ -1,6 +1,38 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { truncateAtWord } from "@/lib/seo/metadata";
+import { pageMetadata, truncateAtWord } from "@/lib/seo/metadata";
+
+describe("pageMetadata", () => {
+  for (const path of ["/", "/guides", "/guides/typing-accuracy"]) {
+    it(`uses the canonical path for Open Graph at ${path}`, () => {
+      const title = "Page-specific title";
+      const description = "Page-specific description.";
+
+      assert.deepEqual(pageMetadata({ title, description, path }), {
+        title,
+        description,
+        alternates: { canonical: path },
+        openGraph: { title, description, url: path },
+        twitter: { title, description },
+      });
+    });
+  }
+
+  it("keeps noindex rules while setting the page-specific Open Graph URL", () => {
+    const title = "Profile";
+    const description = "Your typing profile.";
+    const robots = { index: false, follow: true };
+
+    assert.deepEqual(pageMetadata({ title, description, path: "/profile", robots }), {
+      title,
+      description,
+      alternates: { canonical: "/profile" },
+      openGraph: { title, description, url: "/profile" },
+      twitter: { title, description },
+      robots,
+    });
+  });
+});
 
 describe("truncateAtWord", () => {
   it("returns the text unchanged when it's already short enough", () => {
@@ -89,4 +121,3 @@ describe("sitemap integrity", () => {
     }
   });
 });
-

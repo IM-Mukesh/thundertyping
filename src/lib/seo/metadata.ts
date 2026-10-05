@@ -38,7 +38,7 @@ export function pageMetadata({
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description },
+    openGraph: { title, description, url: path },
     twitter: { title, description },
     ...(robots ? { robots } : {}),
   };

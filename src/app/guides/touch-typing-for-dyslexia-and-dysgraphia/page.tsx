@@ -105,7 +105,6 @@ export default function TouchTypingDyslexiaPage() {
           { id: "hero-image", label: "Multi-sensory learning" },
           { id: "the-neurological-shift", label: "Visual decoding vs muscle memory" },
           { id: "dyslexia-vs-dysgraphia", label: "Dyslexia vs dysgraphia comparison" },
-          { id: "adaptive-strategies", label: "Key adaptive solutions" },
           { id: "environmental-tweaks", label: "Hardware, fonts & settings" },
           { id: "progressive-curriculum", label: "A gentle learning progression" },
         ]}

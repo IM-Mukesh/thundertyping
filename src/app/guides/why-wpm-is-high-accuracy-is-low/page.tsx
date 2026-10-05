@@ -16,37 +16,38 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const PUBLISHED = "2026-09-27";
+const REVIEWED = "2026-10-05";
 
 const BACKSPACE_PENALTY_BREAKDOWN = [
   {
     step: "1. Error Generation",
-    timeCost: "0 ms (instant)",
+    timeCost: "Time to press the wrong key",
     keystrokeCost: "1 wrong keystroke registered",
     effect: "The incorrect letter is committed to the buffer.",
   },
   {
     step: "2. Visual Error Recognition",
-    timeCost: "150–250 ms",
-    keystrokeCost: "1–2 overrun keystrokes typed before stopping",
-    effect: "Because your fingers are rushing ahead, you type 2 extra letters before your brain perceives the error.",
+    timeCost: "Varies with when the error is noticed",
+    keystrokeCost: "Possible overrun keystrokes before stopping",
+    effect: "You may continue typing before noticing the error on screen.",
   },
   {
     step: "3. Backspace Activation",
-    timeCost: "200–350 ms",
-    keystrokeCost: "2–4 rapid Backspace key strikes",
-    effect: "Right pinky must leave home row, mash Backspace multiple times, and reverse the buffer.",
+    timeCost: "Varies with the correction method",
+    keystrokeCost: "One or more deletion actions",
+    effect: "You remove the error and, if necessary, characters typed after it.",
   },
   {
     step: "4. Corrective Retyping",
-    timeCost: "250–400 ms",
-    keystrokeCost: "2–3 retyped characters",
+    timeCost: "Varies with how much needs retyping",
+    keystrokeCost: "Replacement characters",
     effect: "Re-reading the target word and re-striking the correct keys from a broken rhythm.",
   },
   {
     step: "TOTAL CUMULATIVE PENALTY",
-    timeCost: "600–1,000 ms (Up to 1 full second)",
-    keystrokeCost: "5–9 wasted keystrokes per error",
-    effect: "A typist making 5 errors in a 1-minute test loses up to 5 full seconds of active typing time.",
+    timeCost: "No fixed per-error duration",
+    keystrokeCost: "Depends on the error and correction",
+    effect: "Correction uses test time that could otherwise produce new text.",
   },
 ];
 
@@ -54,16 +55,16 @@ const FAQ_ITEMS = [
   {
     question: "Why does typing fast feel easier than typing accurately?",
     answer:
-      "Typing fast without accuracy relies on unchecked ballistic momentum: you throw your hands at the keyboard without verifying finger trajectories. Typing with 98%+ accuracy requires continuous sensorimotor monitoring and inhibitory motor control—actively suppressing finger twitches until the correct key coordinate is ready. Inhibitory control requires more mental effort, which is why sloppy speed feels 'easier.'",
+      "A familiar pace can feel easier than deliberately slowing down to notice mistakes. If you focus only on the speedometer, errors and correction time are easy to overlook. Compare accuracy and completed correct text across several runs rather than judging a run by how fast it feels.",
     plainAnswer:
-      "Sloppy speed relies on uninhibited hand momentum. Accurate typing requires active mental control to suppress mistakes before they happen, which demands more focus.",
+      "A familiar pace can feel easier than slowing down to notice mistakes. Compare accuracy and correct output, not just the sensation of speed.",
   },
   {
     question: "What is the minimum acceptable accuracy for real-world typing?",
     answer:
-      "In professional office, medical, and programming environments, 97% to 98% is the baseline threshold. Anything below 95% indicates serious productivity loss due to constant editing. In competitive typing, scores below 95% are heavily penalized under Net WPM formulas.",
+      "There is no universal professional accuracy cutoff. Employers and tests set their own requirements, and the consequences of errors depend on the task. A practice target such as 97% to 98% can help you track progress, but a typing-test percentage does not replace checking a finished document.",
     plainAnswer:
-      "Aim for at least 97% to 98%. Below 95% accuracy, the time spent backspacing and fixing typos cancels out any benefit of fast fingers.",
+      "Requirements vary by employer, test, and task. Treat 97% to 98% as an optional practice target, not a universal professional standard.",
   },
   {
     question: "Should I disable the Backspace key during practice?",
@@ -75,27 +76,27 @@ const FAQ_ITEMS = [
   {
     question: "How long does it take to fix a low-accuracy habit?",
     answer:
-      "If you commit to typing 15 to 20 WPM below your peak speed for 7 to 10 days, your accuracy will climb from 88% to 98%. Once accuracy stabilizes at 98%, your speed will naturally climb back to its previous peak—this time with zero errors.",
+      "There is no guaranteed recovery timeline or percentage gain. Try a slower pace, note recurring errors, and compare several sessions using similar text difficulty and test settings. Increase speed gradually when accuracy becomes more consistent.",
     plainAnswer:
-      "Expect 7 to 10 days of disciplined, slower typing to rewire your motor pacing. Speed will rapidly rebound once errors are eliminated.",
+      "Progress varies. Track accuracy across comparable sessions and increase speed gradually as it becomes more consistent.",
   },
 ];
 
 const SOURCES = [
   {
-    title: "The Cost of Error Correction in High-Speed Transcription Typing",
-    author: "Rabbitt, P. (Ergonomics, 1980)",
-    url: "https://doi.org/10.1080/00140138008924734",
+    title: "What makes a faster typist?",
+    author: "University of Cambridge (2018), summary of Dhakal et al.’s typing study",
+    url: "https://www.cam.ac.uk/research/news/what-makes-a-faster-typist",
   },
   {
-    title: "Speed-Accuracy Tradeoff and Inhibitory Motor Control in Skill Acquisition",
+    title: "Speed-accuracy tradeoff and information processing dynamics",
     author: "Wickelgren, W. A. (Acta Psychologica, 1977)",
     url: "https://doi.org/10.1016/0001-6918(77)90012-9",
   },
   {
-    title: "Cognitive Load and Motor Overflow in Skilled Typists",
-    author: "Crump, M. J., & Logan, G. D. (Journal of Experimental Psychology: Learning, Memory, and Cognition, 2010)",
-    url: "https://doi.org/10.1037/a0019251",
+    title: "Speed–accuracy trade-off in skilled typewriting: Decomposing the contributions of hierarchical control loops",
+    author: "Yamaguchi, M., Crump, M. J. C., & Logan, G. D. (2013)",
+    url: "https://doi.org/10.1037/a0030512",
   },
 ];
 
@@ -113,7 +114,7 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
         title="Why Your WPM Is High but Your Accuracy Is Low"
-        subtitle="The clinical diagnosis for fast typists stuck in the speed-first trap—and how to rewire motor pacing."
+        subtitle="Why fast typists get stuck in the speed-first trap—and how to adjust motor pacing."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           { name: "Improve Your Typing", path: "/guides/improve-your-typing" },
@@ -122,28 +123,36 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
         toc={[
           { id: "the-speed-first-trap", label: "The speed-first trap explained" },
           { id: "the-backspace-penalty", label: "The hidden backspace math" },
-          { id: "the-96-percent-rule", label: "The 96% accuracy law" },
-          { id: "motor-pacing-reset", label: "The 7-day pacing reset protocol" },
+          { id: "the-96-percent-rule", label: "Choose an accuracy target" },
+          { id: "motor-pacing-reset", label: "A motor pacing reset" },
           { id: "practice-in-herotyping", label: "How HeroTyping enforces accuracy" },
         ]}
         hasFaq
         hasSources
       >
+        <p className="text-sm text-sub">Reviewed <time dateTime={REVIEWED}>October 5, 2026</time>.</p>
         <Callout label="Core reality">
           <p>
-            Typing at 85 WPM with 89% accuracy is not 85 WPM. In the real world—where backspacing, rewriting, and typo
-            correction exist—your net productive throughput is under 55 WPM. Speed without accuracy is pure illusion.
+            An 85 raw WPM score with 89% accuracy does not tell you your net productive speed. The result depends on
+            the test&apos;s scoring rules, which errors remain, and time spent correcting them. Compare{" "}
+            <Link href="/guides/net-wpm-vs-gross-wpm">net WPM and gross WPM</Link> before judging your progress.
           </p>
         </Callout>
 
-        <Image
-          src="/guides/improve-your-typing/why-wpm-is-high-accuracy-is-low/error-backspace-penalty-chart.webp"
-          alt="Error and backspace cumulative penalty breakdown showing how single mistakes cost up to one full second of typing time"
-          width={1200}
-          height={675}
-          priority
-          className="my-6 w-full rounded-xl border border-border shadow-sm"
-        />
+        <figure>
+          <Image
+            src="/guides/improve-your-typing/why-wpm-is-high-accuracy-is-low/error-backspace-penalty-chart.webp"
+            alt="Illustration contrasting a steady 65 WPM pace with an 85 WPM raw pace interrupted by pauses, backspaces, and retyping"
+            width={1200}
+            height={675}
+            priority
+            className="my-6 w-full rounded-xl border border-border shadow-sm"
+          />
+          <figcaption className="text-sm text-sub">
+            Illustration only: 65 and 85 WPM are hypothetical starting paces. The interrupted run assumes extra
+            correction pauses; bar lengths are not measured time or a calculated net WPM result.
+          </figcaption>
+        </figure>
 
         <h2 id="the-speed-first-trap">The Speed-First Trap Explained</h2>
         <p>
@@ -155,15 +164,13 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
           You have fallen into the <strong>Speed-First Trap</strong>.
         </p>
         <p>
-          In motor skill learning, speed and accuracy are governed by separate neurological processes. Speed is a function
-          of motor firing rate—how rapidly your nervous system discharges electrical pulses to forearm tendons. Accuracy,
-          by contrast, is a function of <em>spatial precision and inhibitory control</em>—the brain&apos;s ability to hold back
-          a finger until it is directly over the center of the keycap.
+          Typing speed and accuracy interact: pushing your pace can change how many mistakes you make and how you
+          correct them. Research on skilled typewriting examines this speed–accuracy trade-off through hierarchical
+          control processes, rather than a simple split between fast fingers and a separate accuracy system.
         </p>
         <p>
-          When you push speed before spatial precision is 100% automated, you train your brain to execute sloppy,
-          approximate reaches. Worse, you habituate your fingers to make mistakes, creating permanent neural scar tissue
-          that locks in low accuracy.
+          When you repeatedly rush the same difficult reaches, recurring mistakes can become a practice habit.
+          That is not permanent neural damage: use those errors as feedback about which movements need more deliberate practice.
         </p>
 
         <h2 id="the-backspace-penalty">The Hidden Backspace Math: Why Errors Destroy Speed</h2>
@@ -172,8 +179,8 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
           second: &quot;I just hit backspace real quick and keep going.&quot;
         </p>
         <p>
-          Cognitive research proves this assumption completely wrong. Here is what actually happens every time your
-          finger misses a key:
+          Cambridge&apos;s summary of a large 2018 typing study highlights that errors are costly to correct.
+          The phases below illustrate how a backspace correction can interrupt typing; their timing and sequence vary.
         </p>
 
         <div className="overflow-x-auto">
@@ -183,7 +190,7 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
                 <th className="p-3 font-semibold text-foreground">Phase of an Error</th>
                 <th className="p-3 font-semibold text-foreground">Cognitive &amp; Motor Time Cost</th>
                 <th className="p-3 font-semibold text-foreground">Physical Keystroke Penalty</th>
-                <th className="p-3 font-semibold text-foreground">What Actually Happens</th>
+                <th className="p-3 font-semibold text-foreground">What Can Happen</th>
               </tr>
             </thead>
             <tbody className="divide-y border-border">
@@ -200,69 +207,76 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
         </div>
 
         <p className="mt-2">
-          Every single error costs between <strong>600 and 1,000 milliseconds</strong>. If you make 6 mistakes during a
-          60-second test, you throw away up to 6 full seconds of typing time—erasing 10 to 15 Net WPM from your score!
+          There is no universal millisecond penalty per error. A quickly noticed typo and a mistake found several words
+          later can require very different corrections. Test scores also handle corrected and uncorrected errors differently.
         </p>
 
-        <h2 id="the-96-percent-rule">The 96% Accuracy Law</h2>
+        <h2 id="the-96-percent-rule">Choose an accuracy target, not a universal cutoff</h2>
         <p>
-          In typing education, the <strong>96% Accuracy Law</strong> states:
+          The research cited here does not establish a universal <strong>96% accuracy law</strong>. Use an accuracy target
+          as a practice aid, not a boundary between learning and harm:
         </p>
         <p className="italic bg-sub-alt/30 p-3 rounded border border-border">
-          &quot;Any practice session conducted below 96% accuracy reinforces errors faster than it builds skill.&quot;
+          &quot;Choose a pace at which you can notice recurring errors, correct them deliberately, and track improvement.&quot;
         </p>
         <p>
-          When you practice with 90% accuracy, one out of every ten keystrokes is wrong. You are literally spending 10%
-          of your training time wiring the wrong motor trajectories into your cerebral cortex.
+          On a keystroke-only measure, 90% accuracy means one out of every ten recorded keystrokes was wrong; it does not
+          mean 10% of practice time was wasted. HeroTyping also includes skipped characters in accuracy. See{" "}
+          <Link href="/guides/typing-accuracy">how typing accuracy is measured</Link> before comparing scores.
         </p>
         <p>
-          If your accuracy is consistently below 95%, you must stop attempting speed runs immediately. Speed will never
-          fix accuracy; only deliberate, rhythmic pacing can fix accuracy.
+          If your accuracy repeatedly falls below your chosen target, try a slower run and check whether the same errors
+          become less frequent. Compare runs with similar text difficulty and test settings.
         </p>
 
-        <h2 id="motor-pacing-reset">The 7-Day Motor Pacing Reset Protocol</h2>
+        <h2 id="motor-pacing-reset">A Motor Pacing Reset</h2>
         <p>
-          To permanently break out of the speed-first trap and achieve high accuracy at speed, follow this 7-day protocol:
+          To work on the speed-first habit, try these pacing adjustments. They are practice suggestions, not a validated
+          seven-day protocol or a promise of a particular accuracy gain. For a broader routine, see{" "}
+          <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>.
         </p>
 
         <ol>
           <li>
-            <strong>Apply a 20 WPM Speed Cap:</strong> If your chaotic peak speed is 80 WPM, set an absolute personal
-            ceiling of 60 WPM. Treat exceeding 65 WPM as a failure of discipline.
+            <strong>Try a Lower Speed Cap:</strong> If your rushed peak speed is 80 WPM, you could try a 60 WPM run
+            and compare the errors. Adjust that example target to a pace you can control.
           </li>
           <li>
-            <strong>Adopt Metronomic Cadence:</strong> Type to a steady, rhythmic beat (about 120–130 BPM). Every letter,
-            space, and punctuation mark must land on a uniform tick. Zero rushing on easy words; zero stalling on hard words.
+            <strong>Adopt a Comfortable Cadence:</strong> Try a steady, self-paced rhythm rather than rushing easy words.
+            An optional metronome can help you experiment with pacing, but there is no fixed BPM requirement and you can
+            slow down for unfamiliar words.
           </li>
           <li>
             <strong>Zero Panic Backspacing:</strong> When an error occurs, pause for one full breath. Do not mash the
-            Backspace key repeatedly. Strike Backspace once, cleanly, and re-type the character deliberately.
+            Backspace key repeatedly. Remove the characters that need correction, then re-type deliberately.
           </li>
           <li>
-            <strong>Enforce 98% Session Ceilings:</strong> If any test or drill finishes below 97% accuracy, drop your
-            speed cap by another 5 WPM for the next run.
+            <strong>Set a Session Accuracy Target:</strong> You might aim for 98% on familiar text. If several comparable
+            runs fall below your target, try a lower speed cap and review the keys causing errors.
           </li>
         </ol>
 
         <h2 id="practice-in-herotyping">How HeroTyping Enforces Accuracy</h2>
         <p>
-          Unlike casual typing sites that allow you to mash keys and still claim 80 WPM, HeroTyping is built around
-          rigorous accuracy standards:
+          HeroTyping gives you several ways to compare speed with accuracy and practice recurring errors:
         </p>
         <ul>
           <li>
-            <strong>Net WPM Parity:</strong> On the <Link href="/">HeroTyping Speed Test</Link>, uncorrected errors and
-            missed characters directly subtract from your score, showing you the true cost of typos.
+            <strong>Net WPM Scoring:</strong> On the <Link href="/">HeroTyping Speed Test</Link>, net WPM counts fully
+            correct committed words and their following separators, plus an error-free prefix of the active word.
+            Those characters are divided by five and by elapsed minutes. A committed word with an uncorrected error
+            contributes nothing; there is no fixed WPM deduction per typo. Correcting a word can restore its net WPM
+            contribution, but the original mistake stays in your accuracy history and correction takes time.
           </li>
           <li>
             <strong>Formative Star Ratings:</strong> In <Link href="/lessons">HeroTyping Lessons</Link>, every unit
             evaluates your run with a 1–5 star rating system. You must achieve at least 3 stars (a minimum 60% accuracy threshold)
-            to unlock the next unit, while higher tiers demand 90% to 98%+ precision to achieve 4 or 5 stars.
+            to unlock the next unit, while 4- and 5-star ratings depend on accuracy, pace, and the beginner setting.
           </li>
           <li>
-            <strong>Targeted Practice Lab:</strong> When errors cluster on specific letters, the Bayesian Wilson-score engine
+            <strong>Targeted Practice Lab:</strong> When errors cluster on specific letters, key-level performance tracking
             identifies struggling keys and routes them into the <Link href="/lessons/practice">HeroTyping Practice Lab</Link> across
-            five targeted modes until confidence and accuracy stabilize above 95%.
+            five targeted modes to help you work on recurring mistakes.
           </li>
         </ul>
 

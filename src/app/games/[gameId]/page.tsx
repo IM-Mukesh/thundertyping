@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
     title,
     description,
     alternates: { canonical: `/games/${game.id}` },
-    openGraph: { title, description },
+    openGraph: { title, description, url: `/games/${game.id}` },
     twitter: { title, description },
     robots: game.upcoming ? { index: false, follow: true } : undefined,
   };
