@@ -24,7 +24,8 @@ export type GameId =
   | "typing-survivor"
   | "ghost-racer"
   | "card-battle"
-  | "fruit-fury";
+  | "fruit-fury"
+  | "rakshasa-war";
 
 export type GameStatus = "idle" | "running" | "paused" | "over";
 
@@ -102,6 +103,32 @@ export interface GameDefinition {
 }
 
 export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
+  "rakshasa-war": {
+    id: "rakshasa-war",
+    name: "TYPEBOUND: THE LAST DAWN",
+    tagline: "TYPE. FIGHT. SURVIVE.",
+    rules: [
+      "Type an enemy's first letter to lock the most urgent matching target. Each correct character strikes; finish its word to defeat it or break its armor.",
+      "Wrong keys break your combo. Backspace retreats through the target; Escape pauses, and Tab pauses before moving focus.",
+      "Clear three waves and an elite, then type each boss sentence and its final execution. Defeat a commander to unlock the next battlefield.",
+      "Unlock Shockwave, Frost and Ember by defeating enemies. Press 1, 2 or 3 to spend combat energy on an unlocked special.",
+    ],
+    about: [
+      "TYPEBOUND: THE LAST DAWN is HeroTyping's dark-fantasy typing combat campaign. Defend eight battlefields against fallen soldiers, spectral humans and armored revenants. Correct letters animate your warrior's attacks; completed words and boss sentences decide the fight. Its lightweight 3D world uses original procedural humanoids, with a labelled tactical fallback when WebGL is unavailable.",
+      "Choose a physical keyboard and begin with the safe tutorial. First-character targeting follows immediate danger, then stable spawn order, without mouse selection. Watch armor, ranged necromancers, flying wraiths and the boss charge telegraph. Clean word completions build score multipliers and replenish special-attack energy.",
+      "Each battlefield has three waves, an elite and a three-phase sentence commander with a typed finisher. Progress and special unlocks are device-local and separated by account; completed scores use HeroTyping's existing save system. WPM counts unique correctly typed output over active combat time, excluding cinematics and pauses—not automatic special kills or repeated prefixes.",
+    ],
+    lives: 5,
+    scoreBy: "points",
+    accent: "#f0b86a",
+    category: "Action",
+    tags: ["3D Combat", "Campaign", "Keyboard"],
+    duration: "3-6 min / stage",
+    replayability: "Very High",
+    featured: true,
+    pitch: "Eight fallen kingdoms. Ten undead legions. Your keyboard is the weapon.",
+    highlights: ["8 battlefields", "10 humanoid enemy classes", "Sentence bosses", "3 earned specials", "Procedural 3D", "Adaptive enemy pacing"],
+  },
   "falling-words": {
     id: "falling-words",
     name: "Falling Words",
@@ -387,7 +414,6 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tags: ["Arcade", "Reflex", "Action"],
     duration: "2-5 min",
     replayability: "Very High",
-    featured: true,
     pitch:
       "Slice launching fruit with lightning-fast typing reflexes. Chain combos, unleash Fever Mode, and steer clear of fatal bombs!",
     highlights: ["Parabolic physics arcs", "Fatal bomb defusal", "Fever Frenzy 2X Mode", "Golden & Frost Specials", "Combo multipliers", "Procedural dynamic audio"],
@@ -395,6 +421,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
 };
 
 export const GAME_LIST: GameDefinition[] = [
+  GAME_DEFINITIONS["rakshasa-war"],
   GAME_DEFINITIONS["fruit-fury"],
   GAME_DEFINITIONS["falling-words"],
   GAME_DEFINITIONS["word-rain"],

@@ -1,0 +1,134 @@
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #10131e;
+  contain: layout paint;
+}
+
+.scene::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 47%, transparent 38%, #04060b38 100%),
+    linear-gradient(180deg, #03071125, transparent 23%, transparent 75%, #04060b54);
+}
+
+.canvas,
+.labels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas {
+  display: block;
+  z-index: 0;
+}
+
+.labels {
+  z-index: 2;
+}
+
+.label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  max-width: min(260px, calc(100% - 16px));
+  padding: 6px 11px;
+  border: 1px solid #aab9cb5c;
+  border-radius: 4px;
+  background: #101723ed;
+  box-shadow: 0 3px 9px #03061196;
+  color: #edf2fa;
+  line-height: 1.15;
+  white-space: nowrap;
+  user-select: none;
+  will-change: transform;
+}
+
+.word {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+}
+
+.remaining {
+  color: #f0f4f9;
+}
+
+.typed {
+  color: #86f6c4;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.badge {
+  color: #d7c9b2;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+}
+
+.elite {
+  border-color: #a58bcc;
+}
+
+.active {
+  border-color: #ffde93;
+  background: #271f19f5;
+  box-shadow: 0 0 0 2px #efc26e38, 0 3px 10px #000a;
+}
+
+.active::after {
+  position: absolute;
+  top: 100%;
+  left: calc(50% - 5px);
+  width: 0;
+  height: 0;
+  border-top: 6px solid #ffde93;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  content: "";
+}
+
+.mode {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  z-index: 3;
+  padding: 4px 7px;
+  border: 1px solid #b7c8e04a;
+  border-radius: 3px;
+  background: #0b1225d9;
+  color: #ced9e8;
+  font: 600 10px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.025em;
+  pointer-events: none;
+}
+
+.canvas[hidden],
+.label[hidden],
+.badge[hidden],
+.mode[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label { will-change: auto; }
+}

@@ -58,13 +58,20 @@ function state(): AudioState | null {
       .webkitAudioContext;
   if (!Ctor) return null;
 
-  const ctx = new Ctor();
-  const master = ctx.createGain();
-  const music = ctx.createGain();
-  const sfx = ctx.createGain();
-  music.connect(master);
-  sfx.connect(master);
-  master.connect(ctx.destination);
+  let ctx: AudioContext;
+  try { ctx = new Ctor(); } catch { return null; }
+  let master: GainNode, music: GainNode, sfx: GainNode;
+  try {
+    master = ctx.createGain();
+    music = ctx.createGain();
+    sfx = ctx.createGain();
+    music.connect(master);
+    sfx.connect(master);
+    master.connect(ctx.destination);
+  } catch {
+    void ctx.close().catch(() => {});
+    return null;
+  }
 
   w[STATE_KEY] = {
     ctx,
@@ -142,13 +149,16 @@ export interface PlayOptions {
   /** Semitone-ish detune in cents; randomise slightly to avoid machine-gunning. */
   detune?: number;
   loop?: boolean;
+  /** Optional owner lifetime. Existing callers retain their one-shot behavior. */
+  signal?: AbortSignal;
 }
 
 export async function play(url: string, opts: PlayOptions = {}): Promise<void> {
+  if (opts.signal?.aborted) return;
   const s = state();
   if (!s) return;
   const buf = await load(url);
-  if (!buf) return;
+  if (!buf || opts.signal?.aborted) return;
 
   const src = s.ctx.createBufferSource();
   src.buffer = buf;
@@ -159,11 +169,18 @@ export async function play(url: string, opts: PlayOptions = {}): Promise<void> {
   gain.gain.value = opts.volume ?? 1;
   src.connect(gain);
   gain.connect(s[opts.bus ?? "sfx"]);
-  src.start();
-  src.onended = () => {
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    opts.signal?.removeEventListener("abort", cancel);
     src.disconnect();
     gain.disconnect();
   };
+  const cancel = () => { try { src.stop(); } catch { /* already ended */ } release(); };
+  src.onended = release;
+  opts.signal?.addEventListener("abort", cancel, { once: true });
+  try { src.start(); } catch (error) { release(); throw error; }
 }
 
 const MUSIC_FADE = 1.2;
@@ -204,6 +221,7 @@ export async function playMusic(url: string | null): Promise<void> {
   gain.gain.setTargetAtTime(1, s.ctx.currentTime, MUSIC_FADE / 3);
   src.connect(gain);
   gain.connect(s.music);
+  src.onended = () => { src.disconnect(); gain.disconnect(); };
   src.start();
   s.nowPlaying = { src, gain, url };
 }

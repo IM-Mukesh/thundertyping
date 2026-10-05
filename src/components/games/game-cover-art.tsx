@@ -22,6 +22,8 @@ const HORIZON_Y = 92;
 
 export function GameCoverArt({ gameId, className }: GameCoverArtProps) {
   switch (gameId) {
+    case "rakshasa-war":
+      return <TypeboundLastDawnArt className={className} />;
     case "falling-words":
       return <FallingWordsArt className={className} />;
     case "word-rain":
@@ -39,6 +41,38 @@ export function GameCoverArt({ gameId, className }: GameCoverArtProps) {
     default:
       return null;
   }
+}
+
+/** Original lightweight cover. Never imports the battlefield renderer on hubs. */
+function TypeboundLastDawnArt({ className }: { className?: string }) {
+  return <svg viewBox="0 0 400 220" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="war-cover-sky" x2="0" y2="1"><stop stopColor="#171c30" /><stop offset="1" stopColor="#5c3038" /></linearGradient>
+      <radialGradient id="war-cover-glow"><stop stopColor="#edb66a" stopOpacity=".7" /><stop offset="1" stopColor="#edb66a" stopOpacity="0" /></radialGradient>
+    </defs>
+    <path fill="url(#war-cover-sky)" d="M0 0h400v220H0z" />
+    <ellipse cx="270" cy="110" rx="150" ry="100" fill="url(#war-cover-glow)" />
+    <circle cx="285" cy="40" r="22" fill="#e7b892" opacity=".5" />
+    <g fill="#222333"><path d="M0 110V48h30v15h10V33h20v84h28V64h35v56h150V50h32v17h10V34h28v86h28V74h29v63Z" /><path d="M274 76h72v11h-72z" /></g>
+    <path d="M0 137 168 121l90 8 142 13v78H0z" fill="#282930" />
+    <path d="m190 122-30 98h110l-62-98z" fill="#5b4638" opacity=".5" />
+    <g stroke="#725441" strokeWidth="1" opacity=".65"><path d="m0 195 196-70 204 70M65 220l131-95 131 95M0 166h400M0 194h400" /></g>
+    <g fill="#383b48" stroke="#7f7880" strokeWidth="1">
+      {[0, 1, 2, 3].map((n) => <g key={n} transform={`translate(${230 + n * 42} ${142 + n % 2 * 11}) scale(${.55 + n % 2 * .12})`}>
+        <path d="M-8-29h16l4 17-4 7h-16l-4-7zM-13-1l26-1 5 34-14 5-18-5zM-14 1l-8 32h8l8-23M14 1l11 32h-8l-9-22M-10 35l-4 29h9l7-28M4 35l7 29h9l-6-33" />
+        <path d="M-4-16h3m5 0h3" stroke="#dab5a6" strokeWidth="2" /><path d="m24 15 2-41" stroke="#bda787" strokeWidth="3" />
+      </g>)}
+    </g>
+    <g transform="translate(130 140)">
+      <path d="m-23-3-24 76 18 7 34-31 25 33 15-10-33-72" fill="#85333a" />
+      <path d="M-9-45h23l6 17-5 12H-9l-5-12z" fill="#9b968a" stroke="#c7b494" strokeWidth="2" />
+      <path d="m-13-12 31-1 9 38-21 11-28-10z" fill="#738089" stroke="#aab0b3" strokeWidth="2" />
+      <path d="m-16-6-13 31 10 8 15-27M22-5l19 18 28-27 6 7-32 37-22-19M-11 30l-6 40h15l9-35M10 32l13 37h16L26 27" fill="#74818b" stroke="#b0b1aa" strokeWidth="2" />
+      <path d="m67-14 42-61-26 70z" fill="#f4dfad" /><path d="m65-8 16 9m-13-12-7 10" stroke="#e6b56d" strokeWidth="4" />
+    </g>
+    <g fill="#efb867" opacity=".75"><circle cx="182" cy="114" r="2" /><circle cx="161" cy="89" r="1" /><circle cx="267" cy="149" r="1.5" /><circle cx="332" cy="95" r="1.5" /><circle cx="205" cy="176" r="1" /></g>
+    <path d="M0 217h400" stroke="#e6b56d" opacity=".7" />
+  </svg>;
 }
 
 /** Shared synthwave floor: lines converging to a vanishing point. */

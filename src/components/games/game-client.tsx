@@ -47,6 +47,7 @@ function lazyGame(load: () => Promise<{ default: ComponentType<GameComponentProp
  * a game with its own mechanic points at its own.
  */
 const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
+  "rakshasa-war": lazyGame(() => import("@/components/games/rakshasa-war-game")),
   "falling-words": lazyGame(() =>
     import("@/components/games/falling-words-game").then((m) => ({ default: m.FallingWordsGame })),
   ),

@@ -49,7 +49,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
   const characterArt = getGameArt(game.id, "character");
   const others = GAME_LIST.filter((g) => g.id !== game.id);
-  const immersiveRacer = game.id === "ghost-racer";
+  const immersiveRacer = game.id === "ghost-racer" || game.id === "rakshasa-war";
 
   // A small, generic set of extra roles a game's own board can reach for
   // beyond the five fixed GameArtRole slots above — resolved here (server
@@ -153,7 +153,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
       {/* MARQUEE — the artwork at full strength, with the character standing
           in it. This is where the game gets its personality; the board below
           stays clean so falling words are never fighting a background. */}
-      {immersiveRacer ? <h1 className="sr-only">Ghost Racer — Neon Night Time Trial</h1> : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
+      {immersiveRacer ? <h1 className="sr-only">{game.id === "ghost-racer" ? "Ghost Racer — Neon Night Time Trial" : `${game.name} — ${game.tagline}`}</h1> : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
         <div className="absolute inset-0">
           {heroArt ? (
             <Image
