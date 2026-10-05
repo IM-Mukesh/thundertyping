@@ -1,3 +1,22 @@
+## SEO Batch 2 — evidence-led corrections, 2026-10-05
+
+- User chose to continue without GSC; no ranking, CTR, traffic or strike-zone claims. Research and pre-edit protection briefs were recorded during the session; generated audit reports/tooling were subsequently removed at the user's request.
+- Preserved Batch 1 changes and all URLs. Corrected verified citation/claim defects only in the high-WPM/low-accuracy diagnostic guide; removed one broken TOC entry in dyslexia guide; fixed punctuation guide's registry CTA to real Unit 18; changed subordinate lessons-dashboard H1 to H2. Added page-specific OG URLs through existing metadata paths without changing titles/descriptions/indexing.
+- No new articles or images in Batch 2. Corrected guide's existing artwork is explicitly labelled hypothetical; no numerical result is inferred from it. Actual review date synchronized for that guide only.
+- Rendered inventory covered 107 local indexable routes (50 guides, six hubs, products/utilities). Crossref confirmed that two diagnostic-guide DOI citations resolved to unrelated papers; these were corrected rather than used to justify unsupported claims.
+- Checks: **501 Node tests passed**; `npm run typecheck`, `npm run lint`, `npm run images:validate`, `NEXT_PUBLIC_SITE_URL=https://herotyping.com npm run build` and `git diff --check` passed. Temporary inventory tooling and its six parser fixtures also passed before removal. Final rendered audit found no checked technical defects; seven local HTTP route probes passed. Browser opening timed out with no tab, so visual/device/accessibility-performance QA remains incomplete.
+- Site changes for both SEO batches committed as `9b3864b`; no push or deployment performed in this task. At the last live check, the public sitemap still lacked the two local Batch 1 guides. After deployment, recheck production metadata, sitemap and links, then perform desktop/mobile visual QA. Further legacy factual audits and GSC-based prioritization remain outstanding.
+
+## SEO content batch 1 — 2026-10-05
+
+- Audited the attached keyword map against the actual App Router, 48 existing guide entries, 6 category hubs, registry-driven related links, per-page metadata, Article JSON-LD, sitemap, and local WebP validation pipeline. The map's consolidation-first WPM strategy is sound; its age, jobs, certificate, and 10-key recommendations require careful evidence or product support rather than automatic page creation.
+- Researched the WPM cluster using the Aalto/Cambridge 136-million-keystroke study, Typing.com grade-level guidance, current competitor SERPs, and existing HeroTyping content. The research supports transparent ranges and test methodology, not false-precision age or profession averages.
+- Strengthened `/guides/average-typing-speed` into the WPM benchmark hub: added 20–120 WPM answers, an age/learning-stage bridge, improved study caveats, accuracy interpretation, Cambridge source attribution, and links to the new benchmark pages.
+- Added `/guides/typing-accuracy` for measurement/benchmark intent, deliberately separate from `/guides/how-to-improve-typing-accuracy`'s training intent. It documents HeroTyping's real correct/(correct + incorrect + missed) formula, includes an accessible semantic visual, worked example, benchmark bands, FAQs, and product-led next steps.
+- Added `/guides/typing-speed-by-age` as a grade-level guidance page with explicit limitations, accuracy context, fair-comparison methodology, FAQs, and classroom/product links. It does not present unsupported population averages as facts.
+- Added both guides to `GUIDE_REGISTRY`, category related links, sitemap, and registry integrity tests. The first batch intentionally did **not** create certificate, jobs, student/kids, or 10-key pages because the current product and available evidence do not yet support differentiated, high-trust pages for those intents.
+- Checks: **496 tests passed**, typecheck, lint, build, `git diff --check`, image validation, rendered localhost HTML metadata/JSON-LD checks, and 19 internal-link HTTP probes all passed. Built-in browser tabs were unavailable in this session, so visual browser/device QA is not claimed.
+
 ## Local game reliability and Fruit Fury upgrade — 2026-10-04
 
 This entry supersedes older game-readiness and localStorage-only claims below. Work is local and uncommitted; no push, deployment or remote migration was performed.
