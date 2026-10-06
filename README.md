@@ -9,7 +9,7 @@ Live: [https://herotyping.com](https://herotyping.com)
 ## Features
 
 - **Typing Engine**: Zero-lag, client-side scoring engine with Monkeytype-parity mechanics (Net WPM, Raw WPM, Accuracy, Consistency, and full character audit breakdown).
-- **11 Arcade Typing Games**: Retro arcade typing games including *Falling Words*, *Word Rain*, *Word Blaster*, *Typing Grand Prix*, *Boss Battle*, *Combo Rush*, *Typing Survivor*, *Ghost Racer*, *Card Battle*, *Fruit Fury*, and *Spellbound* (in preview).
+- **8 Arcade Typing Games**: Retro arcade typing games including *Typebound*, *Ghost Racer*, *Fruit Fury*, *Falling Words*, *Word Rain*, *Word Blaster*, *Boss Battle*, and *Combo Rush*.
 - **Structured Curriculum**: 28 interactive touch-typing lessons with visual keyboard and real-time finger mapping.
 - **Adaptive Vocabulary Practice**: 1,300 curated words across Easy, Medium, and Hard tiers with built-in speech synthesis pronunciation.
 - **Comprehensive Guides**: 23 research-backed guides covering ergonomics, layouts, typing tests, benchmarks, and accessibility.

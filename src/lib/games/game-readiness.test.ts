@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { GAME_DEFINITIONS, GAME_LIST, PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
+import {
+  GAME_DEFINITIONS,
+  GAME_LIST,
+  getPublicGameDefinition,
+  PLAYABLE_GAME_LIST,
+} from "@/lib/games/game-types";
 import { getSitemapRoutes } from "@/app/sitemap";
 import { bumpStat, checkSiteAchievements, resetProfile } from "@/lib/profile/player-profile";
 import { parseGameBest } from "@/lib/games/game-scores";
@@ -15,6 +20,17 @@ describe("game definitions and upcoming games indexing", () => {
     assert.ok(!GAME_LIST.some((g) => g.id === "spellbound"));
     assert.ok(!GAME_LIST.some((g) => g.id === "card-battle"));
     assert.ok(!PLAYABLE_GAME_LIST.some((g) => g.id === "spellbound"));
+  });
+
+  it("retires Grand Prix and Survivor from public discovery without deleting compatibility definitions", () => {
+    for (const id of ["typing-grand-prix", "typing-survivor"] as const) {
+      assert.equal(GAME_DEFINITIONS[id].retired, true);
+      assert.equal(getPublicGameDefinition(id), null);
+      assert.ok(!GAME_LIST.some((game) => game.id === id));
+      assert.ok(!PLAYABLE_GAME_LIST.some((game) => game.id === id));
+    }
+    assert.equal(getPublicGameDefinition("ghost-racer")?.id, "ghost-racer");
+    assert.equal(getPublicGameDefinition("constructor"), null);
   });
 
   it("sitemap excludes upcoming games generically", () => {
@@ -32,6 +48,8 @@ describe("game definitions and upcoming games indexing", () => {
     // Upcoming games must NOT be in sitemap
     assert.ok(!paths.includes("/games/spellbound"));
     assert.ok(!paths.includes("/games/card-battle"));
+    assert.ok(!paths.includes("/games/typing-grand-prix"));
+    assert.ok(!paths.includes("/games/typing-survivor"));
   });
 
   it("site:all-games achievement unlocks when all playable games are played, ignoring upcoming games", () => {

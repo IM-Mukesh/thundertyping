@@ -30,8 +30,6 @@ export function GameCoverArt({ gameId, className }: GameCoverArtProps) {
       return <WordRainArt className={className} />;
     case "word-blaster":
       return <WordBlasterArt className={className} />;
-    case "typing-grand-prix":
-      return <GrandPrixArt className={className} />;
     case "boss-battle":
       return <BossBattleArt className={className} />;
     case "combo-rush":
@@ -289,69 +287,6 @@ function WordBlasterArt({ className }: { className?: string }) {
       {/* the turret holding the left edge */}
       <rect x={62} y={78} width={30} height={46} rx={5} fill="var(--accent)" opacity={0.9} />
       <rect x={88} y={94} width={22} height={9} rx={4} fill="var(--accent)" />
-    </svg>
-  );
-}
-
-/** Four lanes streaking toward a finish line — the racing read. */
-function GrandPrixArt({ className }: { className?: string }) {
-  const p = "gp";
-  const lanes = [64, 100, 136, 172];
-  const cars = [
-    { lane: 0, x: 286, lead: true },
-    { lane: 1, x: 232 },
-    { lane: 2, x: 258 },
-    { lane: 3, x: 196 },
-  ];
-
-  return (
-    <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className={className} aria-hidden="true" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id={`${p}-sky`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--background)" />
-          <stop offset="45%" stopColor="var(--sub-alt)" />
-          <stop offset="100%" stopColor="var(--background)" />
-        </linearGradient>
-        <linearGradient id={`${p}-streak`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.75" />
-        </linearGradient>
-        <linearGradient id={`${p}-floorfade`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0" />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.22" />
-        </linearGradient>
-        <filter id={`${p}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
-      </defs>
-
-      <rect width={VIEW_W} height={VIEW_H} fill={`url(#${p}-sky)`} />
-
-      {/* lane dividers */}
-      {lanes.map((y, i) => (
-        <line key={`l${i}`} x1={0} x2={VIEW_W} y1={y + 18} y2={y + 18} stroke="var(--border)" strokeOpacity={0.6} strokeWidth={1} strokeDasharray="14 12" />
-      ))}
-
-      {/* speed streaks behind each car */}
-      {cars.map((c, i) => (
-        <rect key={`s${i}`} x={c.x - 150} y={lanes[c.lane] - 3} width={150} height={7} rx={3.5} fill={`url(#${p}-streak)`} opacity={c.lead ? 0.9 : 0.45} />
-      ))}
-
-      <g filter={`url(#${p}-bloom)`} opacity={0.7}>
-        {cars.map((c, i) => (
-          <rect key={`g${i}`} x={c.x} y={lanes[c.lane] - 6} width={30} height={13} rx={6} fill={c.lead ? "var(--accent)" : "var(--sub)"} />
-        ))}
-      </g>
-      {cars.map((c, i) => (
-        <rect key={i} x={c.x} y={lanes[c.lane] - 6} width={30} height={13} rx={6} fill={c.lead ? "var(--accent)" : "var(--sub)"} opacity={c.lead ? 1 : 0.85} />
-      ))}
-
-      {/* chequered finish line */}
-      {Array.from({ length: 11 }, (_, r) =>
-        Array.from({ length: 2 }, (_, c) => (
-          <rect key={`${r}-${c}`} x={356 + c * 11} y={r * 20} width={11} height={20} fill={(r + c) % 2 === 0 ? "var(--foreground)" : "var(--background)"} opacity={0.85} />
-        )),
-      )}
     </svg>
   );
 }

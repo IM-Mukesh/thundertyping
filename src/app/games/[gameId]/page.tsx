@@ -4,7 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, Gamepad2, Heart } from "lucide-react";
-import { GAME_DEFINITIONS, GAME_LIST, type GameId } from "@/lib/games/game-types";
+import {
+  GAME_DEFINITIONS,
+  GAME_LIST,
+  getPublicGameDefinition,
+  type GameId,
+} from "@/lib/games/game-types";
 import { getArt, getGameArt } from "@/lib/games/game-art-assets";
 import { GameClient } from "@/components/games/game-client";
 import { GameCoverArt } from "@/components/games/game-cover-art";
@@ -19,16 +24,18 @@ export function generateStaticParams() {
   return GAME_LIST.map((game) => ({ gameId: game.id }));
 }
 
-function getGame(gameId: string) {
+function isRetiredGameId(gameId: string): boolean {
   return Object.prototype.hasOwnProperty.call(GAME_DEFINITIONS, gameId)
-    ? GAME_DEFINITIONS[gameId as GameId]
-    : null;
+    && GAME_DEFINITIONS[gameId as GameId].retired === true;
 }
 
 export async function generateMetadata({ params }: PageProps<"/games/[gameId]">): Promise<Metadata> {
   const { gameId } = await params;
-  const game = getGame(gameId);
-  if (!game) return {};
+  const game = getPublicGameDefinition(gameId);
+  if (!game) {
+    if (isRetiredGameId(gameId)) notFound();
+    return {};
+  }
   const title = `${game.name} — Typing Game`;
   const description = `${game.tagline} ${truncateAtWord(game.about[0], 120)}`;
   return {
@@ -43,7 +50,7 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
 
 export default async function GamePage({ params }: PageProps<"/games/[gameId]">) {
   const { gameId } = await params;
-  const game = getGame(gameId);
+  const game = getPublicGameDefinition(gameId);
   if (!game) notFound();
 
   const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
@@ -71,10 +78,6 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
     "boss-phase3": getArt(game.id, "boss-phase3"),
     "player-attack": getArt(game.id, "player-attack"),
     "victory-v2": getArt(game.id, "victory-v2"),
-    "car-player": getArt(game.id, "car-player"),
-    "car-shadow": getArt(game.id, "car-shadow"),
-    "car-blaze": getArt(game.id, "car-blaze"),
-    "car-nova": getArt(game.id, "car-nova"),
   };
 
   return (

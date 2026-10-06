@@ -46,7 +46,7 @@ function lazyGame(load: () => Promise<{ default: ComponentType<GameComponentProp
  * Word Rain both render the falling-words board and differ only by tuning);
  * a game with its own mechanic points at its own.
  */
-const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
+const GAME_COMPONENTS: Partial<Record<GameId, ComponentType<GameComponentProps>>> = {
   "rakshasa-war": lazyGame(() => import("@/components/games/rakshasa-war-game")),
   "falling-words": lazyGame(() =>
     import("@/components/games/falling-words-game").then((m) => ({ default: m.FallingWordsGame })),
@@ -57,11 +57,6 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
   "word-blaster": lazyGame(() =>
     import("@/components/games/word-blaster-game").then((m) => ({ default: m.WordBlasterGame })),
   ),
-  "typing-grand-prix": lazyGame(() =>
-    import("@/components/games/typing-grand-prix-game").then((m) => ({
-      default: m.TypingGrandPrixGame,
-    })),
-  ),
   "boss-battle": lazyGame(() =>
     import("@/components/games/boss-battle-game").then((m) => ({ default: m.BossBattleGame })),
   ),
@@ -69,7 +64,6 @@ const GAME_COMPONENTS: Record<GameId, ComponentType<GameComponentProps>> = {
     import("@/components/games/combo-rush-game").then((m) => ({ default: m.ComboRushGame })),
   ),
   spellbound: lazyGame(() => import("@/components/games/spellbound-game")),
-  "typing-survivor": lazyGame(() => import("@/components/games/typing-survivor-game")),
   "ghost-racer": lazyGame(() => import("@/components/games/ghost-racer-game")),
   "card-battle": lazyGame(() => import("@/components/games/card-battle-game")),
   "fruit-fury": lazyGame(() => import("@/components/games/fruit-fury-game")),

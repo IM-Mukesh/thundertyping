@@ -27,6 +27,7 @@ import {
   subscribeProfile,
 } from "@/lib/profile/player-profile";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
+import { GAME_LIST } from "@/lib/games/game-types";
 import { cn } from "@/lib/utils/cn";
 
 interface MobileNavProps {
@@ -52,7 +53,7 @@ const PRIMARY_LINKS = [
   {
     href: "/games",
     label: "Arcade Games",
-    badge: "11 Games",
+    badge: `${GAME_LIST.length} Games`,
     icon: Gamepad2,
   },
   {

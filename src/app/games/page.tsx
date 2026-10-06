@@ -12,7 +12,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "Typing Games — Free Online Typing Games",
   description:
-    "Free typing games that build real speed and accuracy -- cast spells as a mage, survive an endless horde, or race your own ghost. No sign-up required.",
+    "Free typing games that build real speed and accuracy -- save the skyline in Falling Words, fight in Typebound, or race Ghost Racer's rivals. No sign-up required.",
   path: "/games",
 });
 
@@ -35,8 +35,8 @@ export default function GamesHubPage() {
   const art: Record<string, string | null> = Object.fromEntries(
     GAME_LIST.map((g) => [g.id, getGameArt(g.id, "cover") ?? getGameArt(g.id, "hero")]),
   );
-  // Only the four new games have a cut-out sprite; the older six render
-  // without the character layer rather than with a placeholder.
+  // Cut-out sprites are optional; games without one render without the
+  // character layer rather than with a placeholder.
   const characters: Record<string, string | null> = Object.fromEntries(
     GAME_LIST.map((g) => [g.id, getArt(g.id, "char-fg")]),
   );
@@ -234,12 +234,12 @@ export default function GamesHubPage() {
           <div className="relative grid gap-5 text-sm leading-relaxed text-sub sm:grid-cols-2">
             <p>
               A typing test measures you. A game asks you to decide. In
-              Spellbound the length of a word is how long the spell takes to
-              cast, so every moment is a wager between a safe jab and a
-              devastating one you might not finish in time. In Typing Survivor
-              the upgrades you draft turn your typing into a particular kind of
-              weapon, and the build you end up with changes what good typing
-              even means.
+              Falling Words you read the storm and clear urgent threats before
+              they reach the defense line. Typebound turns clean word
+              completions into combat progress, with armor, special attacks and
+              sentence bosses to track. Ghost Racer puts your pace on a night
+              circuit against four rivals, where every mistake must be corrected
+              before you can advance.
             </p>
             <p>
               That difference is why they hold up to repeat play. Speed still

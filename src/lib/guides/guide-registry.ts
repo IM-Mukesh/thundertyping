@@ -1,4 +1,5 @@
 import type { GuideCategory, GuideCategoryMeta, GuideEntry } from "./guide-types";
+import { GAME_LIST } from "@/lib/games/game-types";
 
 export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
   "typing-basics": {
@@ -1371,7 +1372,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "typing-test-vs-typing-race",
     ],
     relatedProductRoute: "/games",
-    relatedProductLabel: "Explore 11 Arcade Typing Games",
+    relatedProductLabel: `Explore ${GAME_LIST.length} Arcade Typing Games`,
     heroImage: "/guides/typing-practice/typing-games-vs-typing-tests/arcade-games-vs-timed-tests.webp",
 
     articleImages: [

@@ -15,10 +15,8 @@ describe("Typebound: The Last Dawn phase-one registration and input boundary", (
       "falling-words",
       "word-rain",
       "word-blaster",
-      "typing-grand-prix",
       "boss-battle",
       "combo-rush",
-      "typing-survivor",
     ]);
     assert.equal(new Set(ids).size, ids.length);
     assert.deepEqual(PLAYABLE_GAME_LIST.map((g) => g.id), ids);
@@ -26,10 +24,14 @@ describe("Typebound: The Last Dawn phase-one registration and input boundary", (
     assert.equal(GAME_DEFINITIONS["rakshasa-war"].tagline, "TYPE. FIGHT. SURVIVE.");
     assert.ok(!ids.includes("spellbound"));
     assert.ok(!ids.includes("card-battle"));
+    assert.ok(!ids.includes("typing-grand-prix"));
+    assert.ok(!ids.includes("typing-survivor"));
     // Keep definitions/components available for old saved results and direct
     // compatibility lookups even though both games leave the visible catalog.
     assert.equal(GAME_DEFINITIONS.spellbound.upcoming, true);
     assert.equal(GAME_DEFINITIONS["card-battle"].name, "Card Battle");
+    assert.equal(GAME_DEFINITIONS["typing-grand-prix"].retired, true);
+    assert.equal(GAME_DEFINITIONS["typing-survivor"].retired, true);
     assert.ok(getSitemapRoutes().some((r) => r.path === "/games/rakshasa-war"));
   });
   it("accepts physical characters, sentences, specials and lifecycle keys", () => {

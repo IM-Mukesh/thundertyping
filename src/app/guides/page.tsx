@@ -17,6 +17,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { GUIDE_CATEGORIES, getGuidesByCategory } from "@/lib/guides/guide-registry";
 import type { GuideCategory } from "@/lib/guides/guide-types";
+import { GAME_LIST } from "@/lib/games/game-types";
 
 export const metadata: Metadata = pageMetadata({
   title: "Typing Guides & Mastery Curriculum — Speed, Accuracy & Ergonomics",
@@ -252,7 +253,7 @@ export default function GuidesIndexPage() {
             className="flex flex-col justify-between rounded-xl border border-border/80 bg-background/70 p-3.5 transition-colors hover:border-accent hover:bg-sub-alt/40"
           >
             <div>
-              <span className="text-xs font-bold text-foreground">11 Arcade Games</span>
+              <span className="text-xs font-bold text-foreground">{GAME_LIST.length} Arcade Games</span>
               <p className="mt-1 text-[11px] text-sub">Build velocity under pressure</p>
             </div>
             <span className="mt-3 text-[11px] font-medium text-accent">Play games &rarr;</span>

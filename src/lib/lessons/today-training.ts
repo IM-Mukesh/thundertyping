@@ -68,7 +68,7 @@ export function getTodaysTraining(input: TodaysTrainingInput): TrainingAction[] 
       label: "Speed challenge",
       detail: "Every lesson and vocabulary tier is mastered — go for speed",
       estimatedMinutes: 3,
-      href: "/games/typing-grand-prix",
+      href: "/games/ghost-racer",
     });
   }
 

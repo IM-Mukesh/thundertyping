@@ -120,6 +120,7 @@ describe("getTodaysTraining", () => {
     const actions = getTodaysTraining(baseInput({ units, vocabProgress: fullyMasteredVocabProgress() }));
     assert.equal(actions.length, 1);
     assert.equal(actions[0].type, "speed-challenge");
+    assert.equal(actions[0].href, "/games/ghost-racer");
   });
 
   it("every returned action has a positive, finite estimatedMinutes", () => {

@@ -96,6 +96,8 @@ export interface GameDefinition {
   featured?: boolean;
   /** Mark game as upcoming/in-development (cannot be played yet). */
   upcoming?: boolean;
+  /** Keep the definition for saved records, but hide the game from public routes and lists. */
+  retired?: boolean;
   /** Longer pitch for the expanded hover card. */
   pitch?: string;
   /** Bullet features shown when the hub card expands. */
@@ -235,6 +237,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tags: ["Racing", "Arcade", "Single Player"],
     duration: "1-2 min",
     replayability: "Medium",
+    retired: true,
     pitch:
       "A flat-out sprint. The active word is pinned and the track never stops moving.",
     highlights: ["Pinned reading position", "Speed feedback", "Lap pacing", "Personal bests"],  },
@@ -339,6 +342,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     tags: ["Action", "Horde", "Single Player"],
     duration: "8-15 min",
     replayability: "Very High",
+    retired: true,
     pitch:
       "Survive fifteen waves, draft powerful upgrades, and defeat three bosses.",
     highlights: ["4 characters", "Upgrade drafts", "Six enemy types", "Elites and bosses", "Build variety", "Wave escalation"],  },
@@ -427,16 +431,28 @@ export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["falling-words"],
   GAME_DEFINITIONS["word-rain"],
   GAME_DEFINITIONS["word-blaster"],
-  GAME_DEFINITIONS["typing-grand-prix"],
   GAME_DEFINITIONS["boss-battle"],
   GAME_DEFINITIONS["combo-rush"],
-  GAME_DEFINITIONS["typing-survivor"],
 ];
+
+/**
+ * Resolve a game that is still public. Definitions remain authoritative for
+ * saved scores and legacy compatibility, while retired definitions are hidden
+ * from public routes and listings.
+ *
+ * The own-property check is intentional: route parameters are untrusted and
+ * must not resolve inherited Object.prototype properties such as "constructor".
+ */
+export function getPublicGameDefinition(gameId: string): GameDefinition | null {
+  if (!Object.prototype.hasOwnProperty.call(GAME_DEFINITIONS, gameId)) return null;
+  const game = GAME_DEFINITIONS[gameId as GameId];
+  return game.retired ? null : game;
+}
 
 /**
  * Filtered list of games that are currently playable (non-upcoming).
  * Used for sitemap inclusion, featured fallback, and all-games achievement tracking.
  */
 export const PLAYABLE_GAME_LIST: GameDefinition[] = GAME_LIST.filter(
-  (game) => !game.upcoming,
+  (game) => !game.upcoming && !game.retired,
 );
