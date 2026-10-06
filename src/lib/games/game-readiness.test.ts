@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { GAME_LIST, PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
+import { GAME_DEFINITIONS, GAME_LIST, PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
 import { getSitemapRoutes } from "@/app/sitemap";
 import { bumpStat, checkSiteAchievements, resetProfile } from "@/lib/profile/player-profile";
 import { parseGameBest } from "@/lib/games/game-scores";
@@ -11,8 +11,9 @@ describe("game definitions and upcoming games indexing", () => {
     for (const game of PLAYABLE_GAME_LIST) {
       assert.equal(game.upcoming, undefined, `Game ${game.id} should not be upcoming`);
     }
-    const spellbound = GAME_LIST.find((g) => g.id === "spellbound");
-    assert.ok(spellbound?.upcoming === true);
+    assert.equal(GAME_DEFINITIONS.spellbound.upcoming, true);
+    assert.ok(!GAME_LIST.some((g) => g.id === "spellbound"));
+    assert.ok(!GAME_LIST.some((g) => g.id === "card-battle"));
     assert.ok(!PLAYABLE_GAME_LIST.some((g) => g.id === "spellbound"));
   });
 
@@ -29,14 +30,8 @@ describe("game definitions and upcoming games indexing", () => {
     }
 
     // Upcoming games must NOT be in sitemap
-    const upcomingGames = GAME_LIST.filter((g) => g.upcoming);
-    assert.ok(upcomingGames.length > 0, "Expected at least one upcoming game (spellbound)");
-    for (const upcoming of upcomingGames) {
-      assert.ok(
-        !paths.includes(`/games/${upcoming.id}`),
-        `Upcoming game ${upcoming.id} must NOT be in sitemap`,
-      );
-    }
+    assert.ok(!paths.includes("/games/spellbound"));
+    assert.ok(!paths.includes("/games/card-battle"));
   });
 
   it("site:all-games achievement unlocks when all playable games are played, ignoring upcoming games", () => {
@@ -45,7 +40,7 @@ describe("game definitions and upcoming games indexing", () => {
     for (const game of PLAYABLE_GAME_LIST) {
       bumpStat(game.id, "runs", 1);
     }
-    // Spellbound is upcoming and has 0 runs
+    // Retired/hidden games are not part of the visible playable catalog.
 
     const granted = checkSiteAchievements();
     assert.ok(

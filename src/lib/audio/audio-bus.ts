@@ -91,7 +91,7 @@ function state(): AudioState | null {
 /** Call from any user gesture. Safe to call repeatedly. */
 export function resumeAudio(): void {
   const s = state();
-  if (s && s.ctx.state === "suspended") void s.ctx.resume();
+  if (s && s.ctx.state === "suspended") void s.ctx.resume().catch(() => {});
 }
 
 export function setVolume(bus: Bus | "master", value: number): void {

@@ -61,16 +61,10 @@ export function MobileGamesHub({
 }: MobileGamesHubProps) {
   // Top showcase features marquee games with cut-out character art & signature mechanics
   const featuredGames = useMemo(() => {
-    const marqueeIds = [
-      "fruit-fury",
-      "typing-survivor",
-      "ghost-racer",
-      "card-battle",
-      "boss-battle",
-      "combo-rush",
-    ];
-    const marquee = games.filter((g) => marqueeIds.includes(g.id) && !g.upcoming);
-    return marquee.length > 0 ? marquee : games.filter((g) => !g.upcoming).slice(0, 6);
+    // Keep the mobile showcase aligned with the catalog order. The catalog is
+    // the single source of truth for the requested game positions and also
+    // ensures removed games cannot reappear in this separate deck.
+    return games.filter((g) => !g.upcoming).slice(0, 6);
   }, [games]);
 
   const [activeIndex, setActiveIndex] = useState(0);

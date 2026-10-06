@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { play, playMusic, stopMusic } from "@/lib/audio/audio-bus";
+import { play, playMusic, resumeAudio, stopMusic } from "@/lib/audio/audio-bus";
 
 /** Explicit Web Audio/fetch doubles; no private env or network input. */
 function audioHarness() {
@@ -27,6 +27,20 @@ function audioHarness() {
 }
 
 describe("shared audio bus owner cancellation (opt-in)", () => {
+  it("treats asynchronous gesture-resume rejection as silent mode", async () => {
+    const h = audioHarness();
+    try {
+      window.AudioContext = class {
+        state = "suspended";
+        destination = {};
+        createGain() { return { gain: { value: 0 }, connect() {} }; }
+        resume() { return Promise.reject(new Error("gesture denied")); }
+      } as unknown as typeof AudioContext;
+      resumeAudio();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      assert.equal(h.counts().starts, 0);
+    } finally { h.restore(); }
+  });
   it("continues silently when the browser rejects AudioContext creation", async () => {
     const h = audioHarness();
     try {

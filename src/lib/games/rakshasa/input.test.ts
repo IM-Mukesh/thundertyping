@@ -6,13 +6,30 @@ import { getSitemapRoutes } from "@/app/sitemap";
 
 const event = (key: string, overrides = {}) => ({ key, repeat: false, ctrlKey: false, metaKey: false, altKey: false, isComposing: false, ...overrides });
 describe("Typebound: The Last Dawn phase-one registration and input boundary", () => {
-  it("registers one game while preserving all eleven previous entries", () => {
-    assert.equal(GAME_LIST.length, 12);
-    assert.equal(new Set(GAME_LIST.map((g) => g.id)).size, 12);
-    assert.equal(PLAYABLE_GAME_LIST.length, 11);
+  it("keeps the requested catalog order and hides retired games", () => {
+    const ids = GAME_LIST.map((g) => g.id);
+    assert.deepEqual(ids, [
+      "rakshasa-war",
+      "ghost-racer",
+      "fruit-fury",
+      "falling-words",
+      "word-rain",
+      "word-blaster",
+      "typing-grand-prix",
+      "boss-battle",
+      "combo-rush",
+      "typing-survivor",
+    ]);
+    assert.equal(new Set(ids).size, ids.length);
+    assert.deepEqual(PLAYABLE_GAME_LIST.map((g) => g.id), ids);
     assert.equal(GAME_DEFINITIONS["rakshasa-war"].name, "TYPEBOUND: THE LAST DAWN");
     assert.equal(GAME_DEFINITIONS["rakshasa-war"].tagline, "TYPE. FIGHT. SURVIVE.");
+    assert.ok(!ids.includes("spellbound"));
+    assert.ok(!ids.includes("card-battle"));
+    // Keep definitions/components available for old saved results and direct
+    // compatibility lookups even though both games leave the visible catalog.
     assert.equal(GAME_DEFINITIONS.spellbound.upcoming, true);
+    assert.equal(GAME_DEFINITIONS["card-battle"].name, "Card Battle");
     assert.ok(getSitemapRoutes().some((r) => r.path === "/games/rakshasa-war"));
   });
   it("accepts physical characters, sentences, specials and lifecycle keys", () => {

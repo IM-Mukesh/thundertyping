@@ -132,17 +132,17 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
   "falling-words": {
     id: "falling-words",
     name: "Falling Words",
-    tagline: "Clear the words before they hit the floor.",
+    tagline: "The sky is breaking. Hold the line one word at a time.",
     rules: [
-      "Words fall from the top — type one to clear it.",
-      "Freeze words slow time; Golden words grant bonus points; Danger words fall faster and reward a clean clear.",
-      "Every word that reaches the floor costs a life. Three lives.",
-      "Words cleared advance through 5 difficulty milestones; clean streaks multiply your score.",
+      "Read the storm and type a falling word before it reaches the defense line. The lowest threat is selected first.",
+      "Gold comets pay more, frost words slow the storm, and elite words demand focus. Danger words (hazards) fall faster but reward a clean rescue.",
+      "Every breach costs a life. Clean clears build the Overdrive meter; fill it to awaken the skyline, boost points and soften new arrivals.",
+      "Five living threat phases grow from Scout Warmup to Overdrive Frenzy. Your score rewards accuracy, prioritization and rhythm.",
     ],
     about: [
-      "Falling Words trains the skill a plain typing test never really tests: choosing what to type next. On a normal test the next word is always the one directly after the cursor. Here several words are on screen at once, each at a different height, and part of playing well is reading the board and clearing the most urgent one first.",
-      "Prioritize the lowest word, capture Freeze words to slow the board, and clear Golden words for bonus points. Red Danger words fall faster: clear them for a larger reward. Ignoring any word costs a life.",
-      "Difficulty increases with words cleared through five milestones: Scout Warmup, Pressure Surge, Mixed Threats, Elite Swarm, and Overdrive Frenzy. These mark a continuous pace ramp rather than separate rule sets.",
+      "Falling Words is HeroTyping's stormwatch: a cinematic typing survival run where the night itself becomes the reading surface. Words descend through a living 3D sky toward a luminous defense line, and the player must choose what matters before the horizon breaks.",
+      "The skill is prioritization under pressure. The lowest word is usually the most urgent, but a gold comet can turn a safe clear into a score surge, a frost word can buy breathing room, and a fast hazard can be worth the risk. Every correct character is immediate progress; every careless breach changes the sound and light around the player.",
+      "Five phases make the run feel like a journey rather than a static board: Scout Warmup, Pressure Surge, Mixed Threats, Elite Swarm and Overdrive Frenzy. Procedural WebGL atmosphere, a Canvas safety renderer, dynamic music and impact cues scale down automatically for phones, reduced-motion preferences and constrained devices without changing the rules or scoring.",
     ],
     lives: 3,
     scoreBy: "points",
@@ -153,8 +153,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     duration: "1-3 min",
     replayability: "High",
     pitch:
-      "Words fall, you clear them. Target prioritization under time pressure with freeze matrix powerups.",
-    highlights: ["5 Difficulty milestones", "Freeze & Golden words", "Fast danger words", "Combo multipliers"],
+      "A living 3D storm turns typing into a rescue mission. Read the sky, save the skyline, and earn your way into Overdrive.",
+    highlights: ["Procedural 3D storm", "Dynamic combat audio", "5 living threat phases", "Overdrive skyline", "Frost & gold comets", "Adaptive device quality"],
   },
   "word-rain": {
     id: "word-rain",
@@ -422,6 +422,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
 
 export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["rakshasa-war"],
+  GAME_DEFINITIONS["ghost-racer"],
   GAME_DEFINITIONS["fruit-fury"],
   GAME_DEFINITIONS["falling-words"],
   GAME_DEFINITIONS["word-rain"],
@@ -430,9 +431,6 @@ export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["boss-battle"],
   GAME_DEFINITIONS["combo-rush"],
   GAME_DEFINITIONS["typing-survivor"],
-  GAME_DEFINITIONS["ghost-racer"],
-  GAME_DEFINITIONS["card-battle"],
-  GAME_DEFINITIONS["spellbound"],
 ];
 
 /**

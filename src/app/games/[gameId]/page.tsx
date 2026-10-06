@@ -49,7 +49,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
   const characterArt = getGameArt(game.id, "character");
   const others = GAME_LIST.filter((g) => g.id !== game.id);
-  const immersiveRacer = game.id === "ghost-racer" || game.id === "rakshasa-war";
+  const immersiveRacer = game.id === "ghost-racer" || game.id === "rakshasa-war" || game.id === "falling-words";
 
   // A small, generic set of extra roles a game's own board can reach for
   // beyond the five fixed GameArtRole slots above — resolved here (server
