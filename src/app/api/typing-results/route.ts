@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest } from "next/server";
 import { requireAuthUser } from "@/lib/server/auth";
 import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
-import { saveTypingResult, getTypingResultsHistory } from "@/lib/server/typing-results";
+import { saveTypingResult, getTypingResultsHistory, getTypingPersonalBests } from "@/lib/server/typing-results";
 import { validateTypingResultInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
 import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
@@ -12,6 +12,12 @@ export async function GET(request: NextRequest) {
   try {
     if (!hasTrustedMutationOrigin(request)) return apiError("FORBIDDEN", "Invalid request origin", 403, undefined, undefined, requestId);
     const { user } = await requireAuthUser();
+
+    if (request.nextUrl.searchParams.get("bests") === "true") {
+      const bests = await getTypingPersonalBests(user.id);
+      return apiSuccess(bests);
+    }
+
     const limitParam = request.nextUrl.searchParams.get("limit");
     const parsedLimit = limitParam ? parseInt(limitParam, 10) : 50;
     const safeLimit = Math.max(1, Math.min(100, Number.isFinite(parsedLimit) ? parsedLimit : 50));

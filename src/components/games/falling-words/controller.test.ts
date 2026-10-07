@@ -66,8 +66,8 @@ function harness(width = 1180, initialSound = true, targets: readonly string[] =
     react, "react-dom": { flushSync: (fn: () => void) => fn() }, "next/dynamic": { __esModule: true, default: () => Scene },
     "@/components/games/falling-words/skyfall-interface": { SkyfallInterface: Interface }, "@/components/games/falling-words/scene-boundary": { SkyfallSceneBoundary: Boundary },
     "@/components/games/falling-words/native-input": nativeInput,
-    "@/lib/games/falling-words/engine": { ...engine, startSkyfall: (...args: Parameters<typeof engine.startSkyfall>) => {
-      const state = engine.startSkyfall(...args);
+    "@/lib/games/falling-words/engine": { ...engine, startSkyfall: (definition: Parameters<typeof engine.startSkyfall>[0], options: Parameters<typeof engine.startSkyfall>[1]) => {
+      const state = engine.startSkyfall(definition, { ...options, seed: "skyfall-seed-0" });
       // Explicit targets isolate repeated-word input sequences; scoring and
       // clock integration always use the actual production engine.
       return targets.length ? { ...state, nextId: targets.length + 1, words: targets.map((text, i) => ({ id: i + 1, text, lane: i, kind: "normal", progress: 0, fallMs: 9000, highWater: 0 })) } : state;

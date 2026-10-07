@@ -2,7 +2,6 @@ import "server-only";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import { parseGameScorePayload, type GameScorePayload } from "@/lib/games/game-result-contract";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
-import { calculateLessonStars, calculateLessonPass } from "@/lib/lessons/star-system";
 
 const VALID_LESSON_IDS = new Set<string>(LESSON_LIST.map((l) => l.id));
 const VALID_ACHIEVEMENT_IDS = new Set<string>(ACHIEVEMENT_LIST.map((a) => a.id));
@@ -26,6 +25,11 @@ function isNonNegativeInteger(val: unknown): val is number {
   return typeof val === "number" && Number.isInteger(val) && val >= 0;
 }
 
+import {
+  deriveAuthoritativeNetWpm,
+  evaluateLessonStepCompletion,
+} from "@/lib/contracts/data-integrity";
+
 export interface ValidatedTypingResultInput {
   mode: string;
   duration: number;
@@ -41,7 +45,7 @@ export interface ValidatedTypingResultInput {
   param: string | null;
   punctuation: boolean;
   numbers: boolean;
-  runId?: string;
+  runId: string;
 }
 
 export function validateTypingResultInput(
@@ -98,15 +102,11 @@ export function validateTypingResultInput(
   const punctuation = Boolean(p.punctuation);
   const numbers = Boolean(p.numbers);
 
-  // Every persisted run must have an idempotency key. Without it a captured
-  // request can be replayed indefinitely and mint aggregate rewards.
-  let runId: string | undefined;
-  if (p.runId !== undefined) {
-    if (!isValidUuid(p.runId)) {
-      return { valid: false, message: "runId must be a valid UUID v4" };
-    }
-    runId = p.runId;
+  // Every persisted run must have a durable idempotency key (F06)
+  if (!p.runId || typeof p.runId !== "string" || !isValidUuid(p.runId)) {
+    return { valid: false, message: "runId must be a valid UUID v4" };
   }
+  const runId = p.runId;
 
   // --- Mathematical and Physical Integrity Checks ---
   // 1. Human typing speed limit check:
@@ -115,7 +115,7 @@ export function validateTypingResultInput(
   if (!isNonNegativeInteger(scoringChars)) return { valid: false, message: "scoringChars must be a non-negative integer" };
   if (scoringChars > p.correctChars) return { valid: false, message: "scoringChars cannot exceed correctChars" };
   const totalTyped = p.correctChars + p.incorrectChars;
-  if (totalTyped < 1 || scoringChars < 1) {
+  if (totalTyped < 1) {
     return { valid: false, message: "A typing result must contain at least one typed character" };
   }
   const cps = totalTyped / p.duration;
@@ -123,14 +123,14 @@ export function validateTypingResultInput(
     return { valid: false, message: "Typing speed exceeds maximum possible human keystroke rate" };
   }
 
-  // 2. Net WPM consistency check:
-  // Expected net WPM = (correctChars / 5) / (duration / 60)
+  // 2. Net WPM consistency check (F01 canonical scoring characters):
+  // Expected net WPM = (scoringChars / 5) / (duration / 60)
   // We allow a reasonable tolerance of +/- 2.5 WPM for fractional timing / word separator nuances
-  const expectedWpm = (scoringChars / 5) / (p.duration / 60);
+  const expectedWpm = deriveAuthoritativeNetWpm(scoringChars, p.duration);
   if (p.correctChars > 0 && Math.abs(p.wpm - expectedWpm) > 2.5) {
     return {
       valid: false,
-      message: `Claimed WPM (${p.wpm}) does not match characters typed (${p.correctChars}) over duration (${p.duration}s)`,
+      message: `Claimed WPM (${p.wpm}) does not match scoring characters (${scoringChars}) over duration (${p.duration}s)`,
     };
   }
 
@@ -178,7 +178,7 @@ export interface ValidatedLessonProgressInput {
   wpm: number;
   accuracy: number;
   attemptCount: number;
-  runId?: string;
+  runId: string;
   step: number;
   totalSteps: number;
   typedChars: number;
@@ -217,51 +217,59 @@ export function validateLessonProgressInput(
     return { valid: false, message: "accuracy must be between 0 and 100" };
   }
 
-  const step = p.step === undefined ? 1 : p.step;
-  const totalSteps = p.totalSteps === undefined ? 1 : p.totalSteps;
-  if (!Number.isInteger(step) || !Number.isInteger(totalSteps) ||
-      (step as number) < 0 || (totalSteps as number) < 1 ||
-      (step as number) > (totalSteps as number)) {
-    return { valid: false, message: "step must be an integer within totalSteps" };
+  // Every persisted lesson attempt must have a durable idempotency key (F06)
+  if (!p.runId || typeof p.runId !== "string" || !isValidUuid(p.runId)) {
+    return { valid: false, message: "runId must be a valid UUID v4" };
   }
+  const runId = p.runId;
+
+  // Authoritative curriculum derivation (F02)
+  const evalResult = evaluateLessonStepCompletion(
+    p.lessonId,
+    p.step === undefined ? 1 : (p.step as number),
+    p.accuracy,
+    p.wpm
+  );
+
+  const step = p.step === undefined ? 1 : p.step;
+  if (
+    !Number.isInteger(step) ||
+    (step as number) < 1 ||
+    (step as number) > evalResult.authoritativeTotalSteps
+  ) {
+    return {
+      valid: false,
+      message: `step must be an integer between 1 and ${evalResult.authoritativeTotalSteps}`,
+    };
+  }
+
   for (const field of ["typedChars", "correctChars", "incorrectChars", "elapsedMs"] as const) {
-    if (p[field] !== undefined && !isNonNegativeInteger(p[field])) return { valid: false, message: `${field} must be a non-negative integer` };
+    if (p[field] !== undefined && !isNonNegativeInteger(p[field])) {
+      return { valid: false, message: `${field} must be a non-negative integer` };
+    }
   }
   const typedChars = (p.typedChars as number | undefined) ?? 0;
   const correctChars = (p.correctChars as number | undefined) ?? 0;
   const incorrectChars = (p.incorrectChars as number | undefined) ?? 0;
-  if (p.typedChars !== undefined && typedChars < correctChars + incorrectChars) return { valid: false, message: "typedChars must include correctChars and incorrectChars" };
-
-  let runId: string | undefined;
-  if (p.runId !== undefined) {
-    if (!isValidUuid(p.runId)) {
-      return { valid: false, message: "runId must be a valid UUID v4" };
-    }
-    runId = p.runId;
+  if (p.typedChars !== undefined && typedChars < correctChars + incorrectChars) {
+    return { valid: false, message: "typedChars must include correctChars and incorrectChars" };
   }
 
-  // --- Authoritative Server-Side Derivation ---
-  // The server independently calculates pass and star rating using the lesson curriculum rules
-  const lessonMeta = LESSON_LIST.find((l) => l.id === p.lessonId);
-  const isBeginner = lessonMeta?.tier === "beginner";
-  const authoritativeStars = calculateLessonStars(p.accuracy, p.wpm, { isBeginner });
-  const authoritativePassed = calculateLessonPass(p.accuracy);
-
-  // If client claims completion but accuracy does not satisfy pass requirement, reject false completion
-  const completed = authoritativePassed;
+  // Authoritative completion rule: only true if unitCompleted (reached final step AND passed)
+  const completed = evalResult.unitCompleted;
 
   return {
     valid: true,
     data: {
       lessonId: p.lessonId,
       completed,
-      stars: authoritativeStars,
+      stars: evalResult.authoritativeStars,
       wpm: p.wpm,
       accuracy: p.accuracy,
       attemptCount: 1, // Server always enforces 1 attempt per valid submission
       runId,
       step: step as number,
-      totalSteps: totalSteps as number,
+      totalSteps: evalResult.authoritativeTotalSteps,
       typedChars,
       correctChars,
       incorrectChars,

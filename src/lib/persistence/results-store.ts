@@ -78,6 +78,21 @@ function isValidPersonalBest(value: unknown): value is PersonalBest {
 const cloudBestCache = new Map<string, PersonalBest>();
 let cloudBestsPrimedForUserId: string | null = null;
 
+function getValidRunId(preferred?: string): string {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (preferred && uuidRegex.test(preferred)) {
+    return preferred;
+  }
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 /** Called by AuthProvider right after sign-in. Fire-and-forget. */
 export function primeCloudPersonalBests(userId: string): Promise<void> {
   const generation = getAuthGeneration();
@@ -85,7 +100,7 @@ export function primeCloudPersonalBests(userId: string): Promise<void> {
   if (cloudBestsPrimedForUserId === userId) return Promise.resolve();
   cloudBestCache.clear();
   cloudBestsPrimedForUserId = userId;
-  return fetch("/api/typing-results?limit=200")
+  return fetch("/api/typing-results?bests=true")
     .then((res) => res.json())
     .then((json) => {
       if (generation !== getAuthGeneration() || userId !== getCurrentUserId() || !json?.success || !Array.isArray(json.data)) return;
@@ -150,6 +165,7 @@ export interface RecordResultDetails {
   incorrectChars: number;
   extraChars?: number;
   missedChars?: number;
+  runId?: string;
 }
 
 export function recordResult(
@@ -174,7 +190,7 @@ export function recordResult(
   if (userId) {
     if (isNewBest) cloudBestCache.set(pbKey(mode, param, punctuation, numbers), best);
     if (details) {
-      const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+      const runId = getValidRunId(details.runId);
       fetch("/api/typing-results", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

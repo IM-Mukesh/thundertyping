@@ -20,6 +20,7 @@ describe("Backend Validation Engine", () => {
   describe("validateTypingResultInput", () => {
     it("accepts valid typing result payload", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         mode: "time",
         duration: 60,
         wpm: 84,
@@ -38,6 +39,7 @@ describe("Backend Validation Engine", () => {
       const result = validateTypingResultInput(input);
       assert.equal(result.valid, true);
       if (result.valid) {
+        assert.equal(result.data.runId, "123e4567-e89b-12d3-a456-426614174000");
         assert.equal(result.data.mode, "time");
         assert.equal(result.data.duration, 60);
         assert.equal(result.data.wpm, 84);
@@ -47,8 +49,23 @@ describe("Backend Validation Engine", () => {
       }
     });
 
+    it("rejects missing, empty, or non-UUID runId (F06)", () => {
+      const base = {
+        mode: "time",
+        duration: 60,
+        wpm: 60,
+        accuracy: 100,
+        correctChars: 300,
+        incorrectChars: 0,
+      };
+      assert.equal(validateTypingResultInput(base).valid, false);
+      assert.equal(validateTypingResultInput({ ...base, runId: "" }).valid, false);
+      assert.equal(validateTypingResultInput({ ...base, runId: "not-a-uuid" }).valid, false);
+    });
+
     it("rejects invalid modes", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         mode: "cheating_mode",
         duration: 30,
         wpm: 60,
@@ -137,27 +154,76 @@ describe("Backend Validation Engine", () => {
   });
 
   describe("validateLessonProgressInput", () => {
-    it("accepts valid lesson progress with known lesson ID", () => {
+    it("accepts valid lesson progress with known lesson ID on final step completing unit", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         lessonId: "home-row-left",
         completed: true,
         stars: 3,
         wpm: 45,
         accuracy: 98,
+        step: 7, // home-row-left authoritative subLessonCount is 7
         attemptCount: 1,
       };
 
       const result = validateLessonProgressInput(input);
       assert.equal(result.valid, true);
       if (result.valid) {
+        assert.equal(result.data.runId, "123e4567-e89b-12d3-a456-426614174000");
         assert.equal(result.data.lessonId, "home-row-left");
         assert.equal(result.data.completed, true);
+        assert.equal(result.data.step, 7);
+        assert.equal(result.data.totalSteps, 7);
         assert.equal(result.data.attemptCount, 1);
       }
     });
 
+    it("ensures substep pass does NOT mark unit completed before final step (F02)", () => {
+      const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
+        lessonId: "home-row-left",
+        completed: true, // client falsely claiming completion on substep
+        stars: 5,
+        wpm: 60,
+        accuracy: 99,
+        step: 1, // Only step 1 of 7
+      };
+
+      const result = validateLessonProgressInput(input);
+      assert.equal(result.valid, true);
+      if (result.valid) {
+        assert.equal(result.data.completed, false); // Authoritatively NOT completed
+        assert.equal(result.data.step, 1);
+        assert.equal(result.data.totalSteps, 7);
+      }
+    });
+
+    it("rejects step exceeding authoritative totalSteps (F02)", () => {
+      const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
+        lessonId: "home-row-left",
+        step: 8, // home-row-left only has 7 steps
+        wpm: 40,
+        accuracy: 95,
+      };
+      assert.equal(validateLessonProgressInput(input).valid, false);
+    });
+
+    it("rejects missing, empty, or non-UUID runId (F06)", () => {
+      const base = {
+        lessonId: "home-row-left",
+        step: 1,
+        wpm: 40,
+        accuracy: 95,
+      };
+      assert.equal(validateLessonProgressInput(base).valid, false);
+      assert.equal(validateLessonProgressInput({ ...base, runId: "" }).valid, false);
+      assert.equal(validateLessonProgressInput({ ...base, runId: "not-a-uuid" }).valid, false);
+    });
+
     it("rejects non-existent lesson IDs", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         lessonId: "fake-lesson-999",
         completed: true,
         stars: 3,
@@ -169,6 +235,7 @@ describe("Backend Validation Engine", () => {
 
     it("rejects string booleans for completed", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         lessonId: "home-row-left",
         completed: "false",
         stars: 3,
@@ -180,6 +247,7 @@ describe("Backend Validation Engine", () => {
 
     it("authoritatively overrides false claimed 5 stars when accuracy is poor", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         lessonId: "home-row-left",
         completed: true,
         stars: 5, // Client falsely claiming 5 stars
@@ -196,6 +264,7 @@ describe("Backend Validation Engine", () => {
 
     it("forces attemptCount to 1, rejecting client inflated counters", () => {
       const input = {
+        runId: "123e4567-e89b-12d3-a456-426614174000",
         lessonId: "home-row-left",
         completed: true,
         stars: 3,

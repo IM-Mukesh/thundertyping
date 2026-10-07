@@ -161,4 +161,33 @@ describe("lesson-progress-store: schema v2 persistence, migrations, and progress
     assert.equal(state.units["home-row-left"]?.totalTimeMs, 12_500);
     assert.deepEqual(state.totals, { typedChars: 120, correctChars: 116, incorrectChars: 4, timeMs: 12_500 });
   });
+
+  it("F04: restores cloud lesson metrics with strict semantic 1:1 mappings (no best/average substitution)", () => {
+    // The exact audit reproduction fixture:
+    // passes = 1, attempts = 9, avgWpm = 30, bestWpm = 60, avgAccuracy = 80, bestAccuracy = 100
+    useLessonProgressStore.getState().replaceCloudUnits([{
+      lesson_id: "home-row-left",
+      completed: true,
+      current_step: 7,
+      stars: 4,
+      pass_count: 1,
+      attempt_count: 9,
+      avg_wpm: 30,
+      best_wpm: 60,
+      avg_accuracy: 80,
+      best_accuracy: 100,
+      total_time_ms: 50_000,
+      completed_at: "2026-10-01T12:00:00Z",
+    }]);
+
+    const unit = useLessonProgressStore.getState().units["home-row-left"]!;
+    assert.equal(unit.passCount, 1); // NOT 9
+    assert.equal(unit.attemptsCount, 9);
+    assert.equal(unit.avgWpm, 30); // NOT 60
+    assert.equal(unit.bestWpm, 60);
+    assert.equal(unit.avgAccuracy, 80); // NOT 100
+    assert.equal(unit.bestAccuracy, 100);
+    assert.equal(unit.completed, true);
+    assert.equal(unit.currentStep, 7);
+  });
 });

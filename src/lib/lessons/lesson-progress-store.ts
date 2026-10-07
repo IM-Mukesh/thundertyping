@@ -3,6 +3,7 @@ import { persist, createJSONStorage, type StateStorage } from "zustand/middlewar
 import { LESSON_LIST, type LessonId } from "@/lib/lessons/lesson-types";
 import { getAuthGeneration, getCurrentUserId } from "@/lib/auth/current-user";
 import { primeCloudXp } from "@/lib/profile/player-profile";
+import { mapCloudLessonRowToUnitProgress, type CloudLessonRowInput } from "@/lib/contracts/data-integrity";
 
 export type LearnerGoal =
   | "touch-typing"
@@ -73,7 +74,7 @@ export interface LessonProgressState {
   /** Replaces (not merges) local state with the signed-in player's cloud
    * progress — cloud is authoritative while signed in, so this never blends
    * with whatever was last in this browser's local storage. */
-  replaceCloudUnits: (rows: Array<{ lesson_id: string; completed: boolean; stars: number; best_wpm: number; best_accuracy: number; attempt_count: number; current_step?: number; total_time_ms?: number; completed_at?: string | null; typed_chars?: number; correct_chars?: number; incorrect_chars?: number }>) => void;
+  replaceCloudUnits: (rows: Array<CloudLessonRowInput & { typed_chars?: number; correct_chars?: number; incorrect_chars?: number }>) => void;
 }
 
 // Signed-in players are cloud-only for lesson progress: this storage adapter
@@ -228,7 +229,13 @@ export const useLessonProgressStore = create<LessonProgressState>()(
         const userId = getCurrentUserId();
         if (userId) {
           const generation = getAuthGeneration();
-          const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+          const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                const v = c === "x" ? r : (r & 0x3) | 0x8;
+                return v.toString(16);
+              });
           fetch("/api/lessons/progress", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -325,21 +332,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
         for (const row of rows) {
           const lesson = LESSON_LIST.find((item) => item.id === row.lesson_id);
           if (!lesson) continue;
-          const completed = Boolean(row.completed);
-          units[lesson.id] = {
-            completed,
-            currentStep: Math.min(lesson.subLessonCount, Math.max(0, Number(row.current_step ?? (completed ? lesson.subLessonCount : 0)))),
-            passCount: row.attempt_count || 0,
-            avgAccuracy: row.best_accuracy || 0,
-            avgWpm: row.best_wpm || 0,
-            totalTimeMs: Number(row.total_time_ms ?? 0),
-            completedAt: completed ? (row.completed_at ? Date.parse(row.completed_at) : 0) : 0,
-            bestWpm: row.best_wpm || 0,
-            bestAccuracy: row.best_accuracy || 0,
-            attemptsCount: row.attempt_count || 0,
-            bestStars: row.stars || 0,
-            latestStars: row.stars || 0,
-          };
+          units[lesson.id] = mapCloudLessonRowToUnitProgress(row, lesson.subLessonCount);
         }
         set({ units, totals: rows.reduce((totals, row) => ({
           typedChars: totals.typedChars + Number(row.typed_chars ?? 0),

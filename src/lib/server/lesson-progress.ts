@@ -16,19 +16,33 @@ async function getSupabaseForRead() {
   }
 }
 
+import {
+  getSettlementReceipt,
+  updateSettlementReceipt,
+  assertLessonPayloadMatch,
+} from "@/lib/server/settlement";
+
 export async function saveLessonProgress(userId: string, input: ValidatedLessonProgressInput) {
   const supabase = createAdminClient();
 
-  // 1. Idempotency Check: if runId is supplied, check if already recorded
-  if (input.runId) {
-    const { data: existingAttempt } = await supabase
-      .from("lesson_attempts")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("id", input.runId)
-      .maybeSingle();
+  // 1. Idempotency & Conflict Check (F03 & F06)
+  const { data: existingAttempt } = await supabase
+    .from("lesson_attempts")
+    .select("*")
+    .eq("id", input.runId)
+    .maybeSingle();
 
-    if (existingAttempt) {
+  let receipt = await getSettlementReceipt(userId, input.runId, "lesson_progress");
+
+  if (existingAttempt) {
+    assertLessonPayloadMatch(existingAttempt, {
+      userId,
+      lessonId: input.lessonId,
+      wpm: input.wpm,
+      accuracy: input.accuracy,
+    });
+
+    if (receipt?.stage === "complete") {
       const { data: currentProgress } = await supabase
         .from("lesson_progress")
         .select("*")
@@ -42,8 +56,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .eq("user_id", userId)
         .maybeSingle();
 
-      // An attempt row alone is not a completed operation. Continue through
-      // the aggregate/reward stages so a retry can repair a partial write.
       if (currentProgress) {
         return {
           progress: currentProgress,
@@ -55,108 +67,134 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
     }
   }
 
-  // 2. Record individual attempt
-  const attemptPayload: LessonAttemptInsert = {
-    user_id: userId,
-    lesson_id: input.lessonId,
-    wpm: input.wpm,
-    accuracy: input.accuracy,
-    stars: input.stars,
-    ...(input.runId ? { id: input.runId } : {}),
-  };
+  if (!receipt) {
+    receipt = {
+      runId: input.runId,
+      userId,
+      eventType: "lesson_progress",
+      stage: existingAttempt ? "primary_saved" : "received",
+      earnedXp: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+  }
 
-  const { error: attemptError } = await supabase
-    .from("lesson_attempts")
-    .insert(attemptPayload);
+  // 2. Primary Save: Record individual attempt if not already recorded
+  if (!existingAttempt) {
+    const attemptPayload: LessonAttemptInsert = {
+      id: input.runId,
+      user_id: userId,
+      lesson_id: input.lessonId,
+      wpm: input.wpm,
+      accuracy: input.accuracy,
+      stars: input.stars,
+      completed: input.completed,
+    };
 
-  if (attemptError) {
-    if (attemptError.code === UNIQUE_VIOLATION && input.runId) {
-      // Race condition idempotency recovery
-      const { data: currentProgress } = await supabase
+    const { error: attemptError } = await supabase
+      .from("lesson_attempts")
+      .insert(attemptPayload);
+
+    if (attemptError) {
+      if (attemptError.code === UNIQUE_VIOLATION) {
+        const { data: duplicate } = await supabase
+          .from("lesson_attempts")
+          .select("*")
+          .eq("id", input.runId)
+          .single();
+
+        if (duplicate) {
+          assertLessonPayloadMatch(duplicate, {
+            userId,
+            lessonId: input.lessonId,
+            wpm: input.wpm,
+            accuracy: input.accuracy,
+          });
+        } else {
+          throw new Error(`Failed to recover concurrent lesson attempt: ${attemptError.message}`);
+        }
+      } else {
+        throw new Error(`Failed to record lesson attempt: ${attemptError.message}`);
+      }
+    }
+
+    receipt.stage = "primary_saved";
+    await updateSettlementReceipt(receipt);
+  }
+
+  // 3. Aggregate Progress Save
+  let isFirstTimeCompletion = false;
+  let progressRecord: Record<string, unknown> | null = null;
+
+  if (receipt.stage === "primary_saved") {
+    progressRecord = await withOptimisticRetry(async () => {
+      isFirstTimeCompletion = false;
+      const { data: existing } = await supabase
         .from("lesson_progress")
         .select("*")
         .eq("user_id", userId)
         .eq("lesson_id", input.lessonId)
         .maybeSingle();
-      if (currentProgress) return { progress: currentProgress, earnedXp: 0, idempotent: true };
-    }
-    throw new Error(`Failed to record lesson attempt: ${attemptError.message}`);
-  }
 
-  // 3. Fetch existing aggregate progress and determine whether this is a FIRST-TIME completion
-  let isFirstTimeCompletion = false;
+      if (existing) {
+        const wasAlreadyCompleted = existing.completed;
+        const isCompleted = wasAlreadyCompleted || input.completed;
+        if (!wasAlreadyCompleted && input.completed) {
+          isFirstTimeCompletion = true;
+        }
 
-  const progressRecord = await withOptimisticRetry(async () => {
-    // Recompute this for every optimistic-lock attempt. A retry may observe
-    // another request's completion and must not retain the stale reward flag.
-    isFirstTimeCompletion = false;
-    const { data: existing } = await supabase
-      .from("lesson_progress")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("lesson_id", input.lessonId)
-      .maybeSingle();
+        const bestStars = Math.max(existing.stars, input.stars);
+        const bestWpm = Math.max(existing.best_wpm, input.wpm);
+        const bestAccuracy = Math.max(existing.best_accuracy, input.accuracy);
+        const attemptCount = existing.attempt_count + 1;
 
-    if (existing) {
-      const wasAlreadyCompleted = existing.completed;
-      const isCompleted = wasAlreadyCompleted || input.completed;
-      if (!wasAlreadyCompleted && input.completed) {
-        isFirstTimeCompletion = true;
-      }
+        const { data: updated, error: updateError } = await supabase
+          .from("lesson_progress")
+          .update({
+            completed: isCompleted,
+            stars: bestStars,
+            best_wpm: bestWpm,
+            best_accuracy: bestAccuracy,
+            attempt_count: attemptCount,
+            current_step: Math.max(existing.current_step ?? 0, input.step),
+            pass_count: (existing.pass_count ?? 0) + (input.completed ? 1 : 0),
+            avg_wpm: input.completed
+              ? (((existing.avg_wpm ?? 0) * (existing.pass_count ?? 0)) + input.wpm) / ((existing.pass_count ?? 0) + 1)
+              : (existing.avg_wpm ?? 0),
+            avg_accuracy: input.completed
+              ? (((existing.avg_accuracy ?? 0) * (existing.pass_count ?? 0)) + input.accuracy) / ((existing.pass_count ?? 0) + 1)
+              : (existing.avg_accuracy ?? 0),
+            last_attempt_at: new Date().toISOString(),
+            typed_chars: (existing.typed_chars ?? 0) + input.typedChars,
+            correct_chars: (existing.correct_chars ?? 0) + input.correctChars,
+            incorrect_chars: (existing.incorrect_chars ?? 0) + input.incorrectChars,
+            total_time_ms: (existing.total_time_ms ?? 0) + input.elapsedMs,
+            ...(isCompleted ? { completed_at: existing.completed_at ?? new Date().toISOString() } : {}),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+          .eq("lesson_id", input.lessonId)
+          .eq("updated_at", existing.updated_at)
+          .select()
+          .maybeSingle();
 
-      const bestStars = Math.max(existing.stars, input.stars);
-      const bestWpm = Math.max(existing.best_wpm, input.wpm);
-      const bestAccuracy = Math.max(existing.best_accuracy, input.accuracy);
-      // Never accept arbitrary attempt count from client; always increment by 1
-      const attemptCount = existing.attempt_count + 1;
+        if (updateError) throw new Error(`Failed to update lesson progress: ${updateError.message}`);
+        if (!updated) throw new Error("CONFLICT: lesson_progress row changed concurrently");
+        return updated;
+      } else {
+        if (input.completed) {
+          isFirstTimeCompletion = true;
+        }
 
-      const { data: updated, error: updateError } = await supabase
-        .from("lesson_progress")
-        .update({
-          completed: isCompleted,
-          stars: bestStars,
-          best_wpm: bestWpm,
-          best_accuracy: bestAccuracy,
-          attempt_count: attemptCount,
-          current_step: Math.max(existing.current_step ?? 0, input.step),
-          pass_count: (existing.pass_count ?? 0) + (input.completed ? 1 : 0),
-          avg_wpm: input.completed ? (((existing.avg_wpm ?? 0) * (existing.pass_count ?? 0)) + input.wpm) / ((existing.pass_count ?? 0) + 1) : (existing.avg_wpm ?? 0),
-          avg_accuracy: input.completed ? (((existing.avg_accuracy ?? 0) * (existing.pass_count ?? 0)) + input.accuracy) / ((existing.pass_count ?? 0) + 1) : (existing.avg_accuracy ?? 0),
-          last_attempt_at: new Date().toISOString(),
-          typed_chars: (existing.typed_chars ?? 0) + input.typedChars,
-          correct_chars: (existing.correct_chars ?? 0) + input.correctChars,
-          incorrect_chars: (existing.incorrect_chars ?? 0) + input.incorrectChars,
-          total_time_ms: (existing.total_time_ms ?? 0) + input.elapsedMs,
-          ...(isCompleted ? { completed_at: existing.completed_at ?? new Date().toISOString() } : {}),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", userId)
-        .eq("lesson_id", input.lessonId)
-        .eq("updated_at", existing.updated_at)
-        .select()
-        .maybeSingle();
-
-      if (updateError) {
-        throw new Error(`Failed to update lesson progress: ${updateError.message}`);
-      }
-      if (!updated) {
-        throw new Error("CONFLICT: lesson_progress row changed concurrently");
-      }
-      return updated;
-    } else {
-      if (input.completed) {
-        isFirstTimeCompletion = true;
-      }
-
-      const { data: inserted, error: insertError } = await supabase
-        .from("lesson_progress")
-        .insert({
-          user_id: userId,
-          lesson_id: input.lessonId,
-          completed: input.completed,
-          stars: input.stars,
-          best_wpm: input.wpm,
-          best_accuracy: input.accuracy,
+        const { data: inserted, error: insertError } = await supabase
+          .from("lesson_progress")
+          .insert({
+            user_id: userId,
+            lesson_id: input.lessonId,
+            completed: input.completed,
+            stars: input.stars,
+            best_wpm: input.wpm,
+            best_accuracy: input.accuracy,
             attempt_count: 1,
             current_step: input.step,
             pass_count: input.completed ? 1 : 0,
@@ -168,30 +206,43 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
             incorrect_chars: input.incorrectChars,
             total_time_ms: input.elapsedMs,
             ...(input.completed ? { completed_at: new Date().toISOString() } : {}),
-        })
-        .select()
-        .single();
+          })
+          .select()
+          .single();
 
-      if (insertError) {
-        if (insertError.code === UNIQUE_VIOLATION) {
-          throw new Error("CONFLICT: lesson_progress row created concurrently");
+        if (insertError) {
+          if (insertError.code === UNIQUE_VIOLATION) {
+            throw new Error("CONFLICT: lesson_progress row created concurrently");
+          }
+          throw new Error(`Failed to insert lesson progress: ${insertError.message}`);
         }
-        throw new Error(`Failed to insert lesson progress: ${insertError.message}`);
+        return inserted;
       }
-      return inserted;
-    }
-  });
+    });
 
-  // 4. If this is a first-time completion, award server-derived XP and increment daily stats
+    receipt.stage = "aggregate_saved";
+    await updateSettlementReceipt(receipt);
+  } else {
+    // Replay / recovery: fetch existing progress record
+    const { data: existingProgress } = await supabase
+      .from("lesson_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("lesson_id", input.lessonId)
+      .maybeSingle();
+    progressRecord = existingProgress;
+  }
+
+  // 4. Rewards Stage: XP and Daily Stats (strictly only if input.completed && isFirstTimeCompletion)
   let earnedXp = 0;
   let finalTotalXp = 0;
 
-  if (isFirstTimeCompletion) {
-    earnedXp = 50 + Math.min(100, Math.round(input.wpm));
-    const today = new Date().toISOString().split("T")[0];
+  if (isFirstTimeCompletion || receipt.stage === "aggregate_saved") {
+    if (input.completed && isFirstTimeCompletion) {
+      earnedXp = 50 + Math.min(100, Math.round(input.wpm));
+      const today = new Date().toISOString().split("T")[0];
 
-    try {
-      // Increment daily lessons completed
+      // Daily stats update
       await withOptimisticRetry(async () => {
         const { data: existingDaily } = await supabase
           .from("daily_stats")
@@ -231,7 +282,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         }
       });
 
-      // Award XP
+      // Player streak & XP update
       await withOptimisticRetry(async () => {
         const { data: streak } = await supabase
           .from("player_streaks")
@@ -258,20 +309,35 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         }
       });
 
-      // Evaluate achievements
-      await evaluateAndSyncAchievements(userId).catch((err) =>
-        console.warn("[lessons] achievement sync non-fatal error:", err)
-      );
-    } catch (err) {
-      console.error("Failed to update daily lesson stats/XP:", err);
-      throw err;
+      receipt.stage = "rewards_saved";
+      receipt.earnedXp = earnedXp;
+      await updateSettlementReceipt(receipt);
     }
   }
 
+  if (finalTotalXp === 0) {
+    const { data: streak } = await supabase
+      .from("player_streaks")
+      .select("total_xp")
+      .eq("user_id", userId)
+      .maybeSingle();
+    finalTotalXp = streak?.total_xp ?? 0;
+  }
+
+  // Evaluate achievements
+  await evaluateAndSyncAchievements(userId).catch((err) =>
+    console.warn("[lessons] achievement sync non-fatal error:", err)
+  );
+
+  // Settlement complete
+  receipt.stage = "complete";
+  await updateSettlementReceipt(receipt);
+
   return {
     progress: progressRecord,
-    earnedXp,
+    earnedXp: existingAttempt ? 0 : earnedXp,
     totalXp: finalTotalXp,
+    idempotent: Boolean(existingAttempt),
   };
 }
 
