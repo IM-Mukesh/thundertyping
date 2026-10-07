@@ -8,7 +8,7 @@ import { formatDuration, parseUrlDuration } from "@/lib/typing-engine/custom-dur
 
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 
-import type { TestConfig } from "@/lib/typing-engine/engine-types";
+import type { TestConfig, TestMode } from "@/lib/typing-engine/engine-types";
 import { getPersonalBest, paramForConfig, recordResult } from "@/lib/persistence/results-store";
 import {
   calculateAccuracy,
@@ -30,7 +30,19 @@ import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
 import { setTestStatus } from "@/lib/typing-engine/test-status-store";
 import { playSound } from "@/lib/games/game-audio";
 
-export function TypingTest() {
+export interface TypingTestProps {
+  initialMode?: TestMode;
+  initialTimeDuration?: number;
+  initialCustomText?: string;
+  autoOpenCustomModal?: boolean;
+}
+
+export function TypingTest({
+  initialMode,
+  initialTimeDuration,
+  initialCustomText,
+  autoOpenCustomModal = false,
+}: TypingTestProps = {}) {
   const mode = useSettingsStore((s) => s.mode);
   const timeDuration = useSettingsStore((s) => s.timeDuration);
   const wordCount = useSettingsStore((s) => s.wordCount);
@@ -65,9 +77,26 @@ export function TypingTest() {
     }
   }, [rawUrlDuration, setTimeDuration, setMode]);
 
+  // Initial props application for dedicated routes (e.g. /typing-test/1-minute or /typing-test/custom-text)
+  // Runs only on initial mount so user subsequent manual changes aren't continually overridden.
+  const initialPropsAppliedRef = useRef(false);
+  useEffect(() => {
+    if (initialPropsAppliedRef.current) return;
+    initialPropsAppliedRef.current = true;
 
-  const [customText, setCustomText] = useState("");
-  const [isCustomModalOpen, setCustomModalOpen] = useState(false);
+    // Only apply initial duration if URL doesn't specify an explicit valid duration override
+    if (rawUrlDuration === null && initialTimeDuration !== undefined) {
+      if (useSettingsStore.getState().timeDuration !== initialTimeDuration) {
+        setTimeDuration(initialTimeDuration);
+      }
+    }
+    if (initialMode && useSettingsStore.getState().mode !== initialMode) {
+      setMode(initialMode);
+    }
+  }, [initialMode, initialTimeDuration, rawUrlDuration, setMode, setTimeDuration]);
+
+  const [customText, setCustomText] = useState(initialCustomText ?? "");
+  const [isCustomModalOpen, setCustomModalOpen] = useState(autoOpenCustomModal);
   const [focusToken, setFocusToken] = useState(0);
   const [isNewBest, setIsNewBest] = useState(false);
   const [isFocused, setIsFocused] = useState(true);

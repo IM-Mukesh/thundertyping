@@ -7,8 +7,8 @@ import { pageMetadata } from "@/lib/seo/metadata";
 // title template ("%s | HeroTyping") already appends the brand name -- this
 // page previously duplicated it into "Weak Key Drill — HeroTyping | HeroTyping".
 export const metadata: Metadata = pageMetadata({
-  title: "Weak Key Drill",
-  description: "A short, targeted drill for the specific keys giving you trouble, built from your own lesson history.",
+  title: "Targeted Practice Lab",
+  description: "Targeted typing practice across weak keys, accuracy drills, trigrams, and adaptive sentences built from your lesson history.",
   path: "/lessons/practice",
 });
 
@@ -18,7 +18,7 @@ export default function PracticePage() {
       <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
         <div className="mb-6 flex w-full flex-col items-center gap-1 text-center">
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl">
-            Weak key drill
+            Targeted Practice Lab
           </h1>
         </div>
 

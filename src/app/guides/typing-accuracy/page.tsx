@@ -312,9 +312,9 @@ export default function TypingAccuracyPage() {
           </li>
         </ol>
         <p>
-          To establish your own baseline, <Link href="/">take the HeroTyping typing test</Link> under
+          To establish your own baseline, take the <Link href="/typing-test/1-minute">1-Minute Typing Test</Link> or standard <Link href="/">HeroTyping test</Link> under
           repeatable conditions and save a small set of results rather than chasing the highest
-           single percentage. If the pattern points to specific keys, the <Link href="/lessons/practice">Practice Lab</Link> can give you a focused place to work on them. If you want a step-by-step training system rather than an interpretation guide, continue to <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>.
+          single percentage. To train precision directly, use the dedicated <Link href="/practice/accuracy">Typing Accuracy Practice</Link> drill, or isolate error-prone letters in <Link href="/practice/weak-keys">Weak Keys Practice</Link>. If you want a step-by-step training system rather than an interpretation guide, continue to <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>.
         </p>
         <p>
           The purpose of a benchmark is to make your next decision clearer. If accuracy is the

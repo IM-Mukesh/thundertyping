@@ -188,7 +188,8 @@ export default function TypingTestDurationGuidePage() {
 
         <h2 id="which-one">Which one should you use?</h2>
         <p>
-          If you&apos;re not sure, default to a 1-minute test for regular practice and a 5-minute
+          If you&apos;re not sure, start with a standardized{" "}
+          <Link href="/typing-test/1-minute">1-minute typing test</Link> for regular benchmark practice and a 5-minute
           test occasionally to check your sustained speed and see whether it&apos;s meaningfully
           lower than your short-test number — a large gap is worth addressing with{" "}
           <Link href="/guides/how-to-improve-typing-speed">focused practice</Link>, since it

@@ -3,6 +3,8 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 
+import type { TypingTestProps } from "@/components/typing-test/typing-test";
+
 const TypingTestLoadingSkeleton = () => (
   <div className="flex w-full flex-col items-center gap-5 sm:gap-6 animate-pulse" aria-hidden="true">
     <div className="theme-transition h-10 w-full max-w-4xl rounded-xl bg-sub-alt/40 border border-border/40" />
@@ -40,10 +42,10 @@ const TypingTestDynamic = dynamic(() => import("@/components/typing-test/typing-
   loading: TypingTestLoadingSkeleton,
 });
 
-export function TypingTestClient() {
+export function TypingTestClient(props: TypingTestProps = {}) {
   return (
     <Suspense fallback={<TypingTestLoadingSkeleton />}>
-      <TypingTestDynamic />
+      <TypingTestDynamic {...props} />
     </Suspense>
   );
 }

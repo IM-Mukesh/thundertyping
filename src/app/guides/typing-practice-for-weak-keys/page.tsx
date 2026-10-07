@@ -75,7 +75,7 @@ const FAQ_ITEMS = [
   {
     question: "When should I graduate a weak key back to regular typing?",
     answer:
-      "Graduate the key when you can complete three consecutive drills containing the target key with at least 98% accuracy and zero hesitation pauses. In HeroTyping, the mastery engine graduates a key from struggling to mastered once its Wilson score confidence interval reaches 95% accuracy across live attempts.",
+      "Graduate the key when you can complete three consecutive drills containing the target key with at least 98% accuracy and zero hesitation pauses. In HeroTyping, the key performance tracker evaluates a rolling 20-attempt buffer. As you log clean repetitions, old errors cycle out, and once accuracy across 6+ attempts rises above 90%, the key graduates and is cleared from the struggling queue.",
     plainAnswer:
       "Retire the dedicated drill once you maintain 98%+ accuracy across three consecutive runs without hesitation pauses before striking the letter.",
   },
@@ -248,18 +248,18 @@ export default function TypingPracticeForWeakKeysPage() {
 
         <ol>
           <li>
-            Go directly to the <Link href="/lessons/practice">HeroTyping Practice Lab</Link>.
+            Go directly to the interactive <Link href="/practice/weak-keys">Weak Keys Typing Practice</Link> drill or the broader <Link href="/lessons/practice">HeroTyping Practice Lab</Link>.
           </li>
           <li>
             The engine reads your live mistake history from recent tests and curriculum exercises, automatically
             generating customized exercises centered on your exact problem keys across five modes (Focus Key, Trigram Flow, Common Words, Adaptive Sentences, and Real Sentences).
           </li>
           <li>
-            Complete 3 focused sets. Watch your per-key mastery progress—once your target letter stabilizes above
-            95% accuracy under the Wilson score model, the engine graduates the key to mastered status and updates your training queue.
+            Complete 3 focused sets. Watch your per-key mastery progress—once your target letter stabilizes above the
+            90% accuracy threshold across your rolling 20-attempt window, the engine graduates the key to mastered status and updates your training queue.
           </li>
           <li>
-            Finish your session with a standard 1-minute run on the <Link href="/">Speed Test</Link> to consolidate
+            Finish your session with a standardized run on the <Link href="/typing-test/1-minute">1-Minute Typing Test</Link> to consolidate
             your newly reinforced motor patterns into general typing flow.
           </li>
         </ol>

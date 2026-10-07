@@ -153,7 +153,7 @@ export default function HowToImproveTypingAccuracyPage() {
         />
         <ol>
           <li>
-            <strong>Take a test.</strong> <Link href="/">Run a normal test</Link> at your usual
+            <strong>Take a test.</strong> Run a benchmark on the <Link href="/typing-test/1-minute">1-Minute Typing Test</Link> or <Link href="/">standard test</Link> at your usual
             pace to establish your current accuracy honestly.
           </li>
           <li>
@@ -166,8 +166,7 @@ export default function HowToImproveTypingAccuracyPage() {
             combinations involved, not just &ldquo;I make mistakes sometimes.&rdquo;
           </li>
           <li>
-            <strong>Drill those keys specifically.</strong> Isolated repetition on the exact
-            pattern, rather than hoping general practice fixes it incidentally.
+            <strong>Drill those keys specifically.</strong> Isolate repeated errors using dedicated tools: launch the <Link href="/practice/accuracy">Typing Accuracy Practice</Link> lab for 3–4 letter cadence control, or target specific problem letters in <Link href="/practice/weak-keys">Weak Keys Practice</Link>.
           </li>
           <li>
             <strong>Slow down.</strong> Practice the drill at a pace where you can hold close to

@@ -262,7 +262,7 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
         </p>
         <ul>
           <li>
-            <strong>Net WPM Scoring:</strong> On the <Link href="/">HeroTyping Speed Test</Link>, net WPM counts fully
+            <strong>Net WPM Scoring:</strong> On the <Link href="/typing-test/1-minute">1-Minute Typing Test</Link> and standard <Link href="/">HeroTyping Speed Test</Link>, net WPM counts fully
             correct committed words and their following separators, plus an error-free prefix of the active word.
             Those characters are divided by five and by elapsed minutes. A committed word with an uncorrected error
             contributes nothing; there is no fixed WPM deduction per typo. Correcting a word can restore its net WPM
@@ -274,9 +274,8 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
             to unlock the next unit, while 4- and 5-star ratings depend on accuracy, pace, and the beginner setting.
           </li>
           <li>
-            <strong>Targeted Practice Lab:</strong> When errors cluster on specific letters, key-level performance tracking
-            identifies struggling keys and routes them into the <Link href="/lessons/practice">HeroTyping Practice Lab</Link> across
-            five targeted modes to help you work on recurring mistakes.
+            <strong>Targeted Practice Lab:</strong> When errors cluster on specific letters or speed surges shatter cadence,
+            use the <Link href="/practice/accuracy">Typing Accuracy Practice</Link> drill for controlled 3–4 letter pacing, or isolate struggling keys in <Link href="/practice/weak-keys">Weak Keys Practice</Link> (also available in the broader <Link href="/lessons/practice">Practice Lab</Link>).
           </li>
         </ul>
 

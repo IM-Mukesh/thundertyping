@@ -102,13 +102,17 @@ function buildConfig(text: string): TestConfig {
   };
 }
 
-export function PracticeDrill() {
+export interface PracticeDrillProps {
+  defaultMode?: PracticeMode;
+}
+
+export function PracticeDrill({ defaultMode }: PracticeDrillProps = {}) {
   const searchParams = useSearchParams();
   const keys = useKeyPerformanceStore((s) => s.keys);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const recordKeyAttempt = useKeyPerformanceStore((s) => s.recordKeyAttempt);
 
-  const initialMode = (searchParams.get("mode") as PracticeMode) || "weak-keys";
+  const initialMode = (searchParams.get("mode") as PracticeMode) || defaultMode || "weak-keys";
   const urlKeys = searchParams.get("keys") ? searchParams.get("keys")!.split(",").filter(Boolean) : [];
   const urlPairs = searchParams.get("pairs") ? searchParams.get("pairs")!.split(",").filter(Boolean) : [];
   const urlFinger = (searchParams.get("finger") as FingerId) || "left-pinky";

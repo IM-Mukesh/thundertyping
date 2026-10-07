@@ -9,9 +9,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Custom Text Typing Test: Practice With Your Own Text and Study Material",
+  title: "How to Practice Typing With Your Own Text & Code: Custom Test Guide",
   description:
-    "Type your own custom text, code snippets, legal briefs, medical terminology, or book passages. Learn how to configure HeroTyping's Custom Text Mode.",
+    "Learn how to practice typing your own custom text, code snippets, legal briefs, and study material. Formatting tips, workflow advice, and tool setup.",
   path: "/guides/custom-text-typing-test",
 });
 
@@ -44,9 +44,9 @@ const FAQ_ITEMS = [
   {
     question: "How do I load my own text into HeroTyping?",
     answer:
-      "On the HeroTyping homepage, click the 'Custom' mode button in the test toolbar. A modal window will appear. Paste or type your desired text (up to 2,000 characters) into the box and click 'Apply Text'. The speed test will immediately load your custom content with live WPM and accuracy tracking.",
+      "Visit the dedicated Custom Text Typing Test (/typing-test/custom-text) or click 'Custom' on the homepage toolbar. A modal window will appear. Paste or type your desired text (up to 2,000 characters) into the box and click 'Apply Text'. The speed test will immediately load your custom content with live WPM and accuracy tracking.",
     plainAnswer:
-      "Click the 'Custom' button on the homepage toolbar, paste your text (up to 2,000 characters) into the modal, and click 'Apply Text'.",
+      "Open the Custom Text Typing Test (/typing-test/custom-text) or click 'Custom' on the homepage toolbar, paste your text (up to 2,000 characters), and click 'Apply Text'.",
   },
   {
     question: "Does HeroTyping calculate Net WPM and accuracy accurately for custom text?",
@@ -91,9 +91,9 @@ const SOURCES = [
 
 export default function CustomTextTypingTestPage() {
   const schema = buildArticleSchema({
-    headline: "Custom Text Typing Test: Practice With Your Own Text and Study Material",
+    headline: "How to Practice Typing With Your Own Text & Code: Custom Test Guide",
     description:
-      "Type your own custom text, code snippets, legal briefs, medical terminology, or book passages. Learn how to configure HeroTyping's Custom Text Mode.",
+      "Learn how to practice typing your own custom text, code snippets, legal briefs, and study material. Formatting tips, workflow advice, and tool setup.",
     path: "/guides/custom-text-typing-test",
     datePublished: PUBLISHED,
   });
@@ -102,12 +102,12 @@ export default function CustomTextTypingTestPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
-        title="Custom Text Typing Test"
-        subtitle="Practice typing your own real-world content: programming syntax, medical notes, legal documents, or literature."
+        title="How to Practice Typing With Your Own Text & Code"
+        subtitle="A practical guide to training with real-world material: programming syntax, medical notes, legal documents, or study excerpts."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           { name: "Typing Tests & Tools", path: "/guides/typing-tests-tools" },
-          { name: "Custom Text Typing Test", path: "/guides/custom-text-typing-test" },
+          { name: "Custom Text Guide", path: "/guides/custom-text-typing-test" },
         ]}
         toc={[
           { id: "why-custom-text-matters", label: "Why custom text practice matters" },
@@ -119,11 +119,14 @@ export default function CustomTextTypingTestPage() {
         hasFaq
         hasSources
       >
-        <Callout label="Product capability">
+        <Callout label="Interactive tool available">
           <p>
-            Standard typing tests draw from common dictionary pools like English 200 or English 1000. HeroTyping&apos;s
-            built-in <strong>Custom Text Mode</strong> lets you paste up to 2,000 characters of your own content—from
-            Python syntax and medical terminology to essay drafts and speech transcripts.
+            Looking to start typing your passage immediately? Open our dedicated{" "}
+            <Link href="/typing-test/custom-text" className="font-semibold text-accent underline underline-offset-4">
+              Custom Text Typing Test
+            </Link>{" "}
+            tool to paste up to 2,000 characters and practice with instant keystroke scoring. Below is our comprehensive
+            guide on structuring custom text drills, syntax practice, and study sessions.
           </p>
         </Callout>
 
@@ -186,11 +189,8 @@ export default function CustomTextTypingTestPage() {
 
         <ol>
           <li>
-            Navigate to the <Link href="/">HeroTyping Home Page</Link>.
-          </li>
-          <li>
-            Look at the test mode selector in the top toolbar (Time | Words | Quote | Punctuation | Numbers |{" "}
-            <strong>Custom</strong>). Click on <strong>Custom</strong>.
+            Open the dedicated <Link href="/typing-test/custom-text">Custom Text Typing Test</Link>, or click on{" "}
+            <strong>Custom</strong> in the mode toolbar on the <Link href="/">HeroTyping Home Page</Link>.
           </li>
           <li>
             A dedicated modal window opens. Paste your snippet into the text area. You can enter up to 2,000 characters

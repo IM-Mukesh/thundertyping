@@ -18,6 +18,10 @@ export interface SitemapRouteEntry {
 export function getSitemapRoutes(): SitemapRouteEntry[] {
   return [
     { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-09-26" },
+    { path: "/typing-test/1-minute", priority: 0.9, changeFrequency: "daily", lastModified: "2026-10-07" },
+    { path: "/typing-test/custom-text", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-07" },
+    { path: "/practice/weak-keys", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-07" },
+    { path: "/practice/accuracy", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-07" },
     { path: "/about", priority: 0.5, changeFrequency: "monthly", lastModified: "2026-09-27" },
     { path: "/privacy", priority: 0.3, changeFrequency: "monthly", lastModified: "2026-09-26" },
     { path: "/terms", priority: 0.3, changeFrequency: "monthly", lastModified: "2026-09-27" },
