@@ -106,8 +106,8 @@ export default function OneMinuteTypingTestPage() {
                   Net WPM
                 </span>
                 <p className="mt-1 text-xs leading-relaxed text-sub">
-                  Calculated as <code className="font-mono text-foreground">(Correct Characters / 5) / Minutes</code>.
-                  This represents your usable typing output without error inflation.
+                  Calculated as <code className="font-mono text-foreground">(Scoring Characters / 5) / Minutes</code>.
+                  Each word only credits its characters (and space separator) toward your score if completed cleanly without uncorrected errors.
                 </p>
               </div>
               <div className="rounded-xl border border-border/70 bg-sub-alt/20 p-4">

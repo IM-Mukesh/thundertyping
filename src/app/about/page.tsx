@@ -6,7 +6,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
   title: `About ${SITE_NAME}`,
-  description: `${SITE_NAME} is a free typing speed test, plus structured lessons, typing games, and vocabulary practice. No sign-up, nothing sent to a server.`,
+  description: `${SITE_NAME} is a free typing speed test, plus structured lessons, typing games, and vocabulary practice. Instant guest practice with optional cloud sync.`,
   path: "/about",
 });
 
@@ -19,8 +19,9 @@ export default function AboutPage() {
         sign-up required. It&apos;s grown into a fuller practice platform since: structured{" "}
         <Link href="/lessons">typing lessons</Link> from the home row up, targeted{" "}
         <Link href="/lessons/practice">weak-key practice</Link> once the lessons know where you
-        struggle, a set of <Link href="/games">typing games</Link>,{" "}
-        <Link href="/vocabulary">vocabulary practice</Link>, and a handful of{" "}
+        struggle, a catalog of 9 arcade <Link href="/games">typing games</Link> (including Typebound,
+        Type Before Death, Ghost Racer, Fruit Fury, Falling Words, Word Rain, Word Blaster, Boss Battle, and Combo Rush),{" "}
+        <Link href="/vocabulary">vocabulary practice</Link>, and a comprehensive library of{" "}
         <Link href="/guides">guides</Link> on technique and what the numbers actually mean.
       </p>
 
@@ -39,11 +40,12 @@ export default function AboutPage() {
         high score means your pace stayed even, rather than swinging between bursts and stalls.
       </p>
 
-      <h2>Why there&apos;s no sign-up</h2>
+      <h2>Instant guest practice &amp; optional cloud sync</h2>
       <p>
-        {SITE_NAME} is built to work instantly, for anyone. Your settings and personal bests are
-        saved only in your own browser (using <code>localStorage</code>) — they never leave your
-        device, and clearing your browser data clears them for good. See the{" "}
+        {SITE_NAME} is built to work instantly without mandatory sign-up. As a guest, your settings,
+        custom configurations, and personal bests are stored locally in your own browser (using <code>localStorage</code>).
+        For typists who choose to create an account, profile stats, lesson progress, game scores, and personal bests
+        sync securely to your account so you can track your journey across multiple devices. See the{" "}
         <Link href="/privacy">Privacy Policy</Link> for details.
       </p>
 

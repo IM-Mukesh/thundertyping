@@ -63,7 +63,7 @@ const FAQ_ITEMS = [
   {
     question: "How should I fit games into my daily practice routine?",
     answer:
-      "Use games as the final 3- to 5-minute reward phase of your practice session. After completing your daily curriculum lessons and weak-key drills, finish with an arcade game like Fruit Fury or Type Defender to test your newly trained reflexes in a fun, dynamic setting.",
+      "Use games as the final 3- to 5-minute reward phase of your practice session. After completing your daily curriculum lessons and weak-key drills, finish with an arcade game like Fruit Fury or Type Before Death to test your newly trained reflexes in a fun, dynamic setting.",
     plainAnswer:
       "Play games for 3 to 5 minutes at the end of your session as a fun reward that tests your reflexes under dynamic pressure.",
   },
@@ -240,7 +240,7 @@ export default function TypingGamesVsTypingTestsPage() {
           </li>
           <li>
             <strong>Sharpen Reflexes (3 min):</strong> Finish your session with a high-energy round in{" "}
-            <Link href="/games">HeroTyping Arcade Games</Link> (try Fruit Fury or Type Defender) to cement your
+            <Link href="/games">HeroTyping Arcade Games</Link> (try Fruit Fury or Type Before Death) to cement your
             neuromuscular reflexes with high engagement.
           </li>
         </ol>

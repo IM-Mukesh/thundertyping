@@ -77,19 +77,19 @@ const FAQ_ITEMS = [
 
 const SOURCES = [
   {
-    title: "Motor Skill Learning and Keystroke Dynamics in Touch Typing",
-    author: "Logan, G. D., & Crump, M. J. (Cognitive Psychology, 2011)",
-    url: "https://doi.org/10.1016/j.cogpsych.2010.08.001",
+    title: "Cognitive illusions of authorship reveal hierarchical error detection in skilled typists",
+    author: "Logan, G. D., & Crump, M. J. C. (Science, 2010)",
+    url: "https://doi.org/10.1126/science.1190483",
   },
   {
-    title: "Error Detection and Correction Mechanisms in Skilled Typists",
-    author: "Rabbitt, P. (Journal of Experimental Psychology, 1978)",
-    url: "https://doi.org/10.1037/0096-1523.4.4.636",
+    title: "Ability-Based Optimization of Touchscreen Interactions",
+    author: "Sarcar, S., Jokinen, J. P. P., Oulasvirta, A., Wang, Z., Silpasuwanchai, C., & Ren, X. (IEEE Pervasive Computing, 2018)",
+    url: "https://doi.org/10.1109/mprv.2018.011591058",
   },
   {
-    title: "Biomechanical Analysis of Finger Trajectories on Standard QWERTY Layouts",
-    author: "Rempel, D., et al. (Human Factors and Ergonomics Society, 2007)",
-    url: "https://doi.org/10.1177/154193120705101804",
+    title: "How We Type: Movement Strategies and Performance in Everyday Typing",
+    author: "Feit, A. M., Weir, D., & Oulasvirta, A. (Proceedings of the 2016 CHI Conference on Human Factors in Computing Systems, 2016)",
+    url: "https://doi.org/10.1145/2858036.2858233",
   },
 ];
 

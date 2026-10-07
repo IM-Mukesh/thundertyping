@@ -94,8 +94,8 @@ export default function AccuracyPracticePage() {
                   Controlled Finger Coordination
                 </span>
                 <p className="mt-1 text-xs leading-relaxed text-sub">
-                  Sequences are generated across the full alphabet with balanced hand alternation, avoiding repetitive
-                  single-finger mash patterns.
+                  Sequences are generated across the full alphabet in rhythmic 3–4 letter segments with adjacent
+                  duplicate character suppression, preventing finger stutter and promoting clean keystroke isolation.
                 </p>
               </div>
               <div className="rounded-xl border border-border/70 bg-sub-alt/20 p-4">

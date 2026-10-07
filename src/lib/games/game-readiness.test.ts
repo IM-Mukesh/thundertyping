@@ -127,3 +127,62 @@ describe("game score persistence sanitization", () => {
     );
   });
 });
+
+describe("F24: Game Catalog Documentation Truth & Catalog Integrity", () => {
+  const EXPECTED_GAME_IDS = [
+    "rakshasa-war", // TYPEBOUND: THE LAST DAWN
+    "type-before-death", // TYPE BEFORE DEATH
+    "ghost-racer", // Ghost Racer
+    "fruit-fury", // Fruit Fury
+    "falling-words", // Falling Words
+    "word-rain", // Word Rain
+    "word-blaster", // Word Blaster
+    "boss-battle", // Boss Battle
+    "combo-rush", // Combo Rush
+  ];
+
+  it("verifies the game catalog contains exactly the 9 production games", () => {
+    assert.equal(GAME_LIST.length, 9, `GAME_LIST must contain exactly 9 games, found ${GAME_LIST.length}`);
+    assert.equal(PLAYABLE_GAME_LIST.length, 9, `PLAYABLE_GAME_LIST must contain exactly 9 games, found ${PLAYABLE_GAME_LIST.length}`);
+
+    const actualIds = GAME_LIST.map((g) => g.id);
+    assert.deepEqual(actualIds, EXPECTED_GAME_IDS);
+
+    // Verify all 9 games have complete metadata
+    for (const game of GAME_LIST) {
+      assert.ok(game.name.length > 0, `Game ${game.id} must have a name`);
+      assert.ok(game.tagline.length > 0, `Game ${game.id} must have a tagline`);
+      assert.ok(game.rules.length >= 3, `Game ${game.id} must have at least 3 rules`);
+      assert.ok(game.about.length >= 2, `Game ${game.id} must have at least 2 about paragraphs`);
+      assert.ok(["RPG", "Action", "Racing", "Strategy", "Arcade"].includes(game.category));
+      assert.ok(game.tags.length > 0, `Game ${game.id} must have tags`);
+    }
+  });
+
+  it("verifies README.md and About page accurately document the 9-game roster with zero stale names", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+
+    const readmeContent = fs.readFileSync(path.resolve(process.cwd(), "README.md"), "utf8");
+    const aboutContent = fs.readFileSync(path.resolve(process.cwd(), "src/app/about/page.tsx"), "utf8");
+
+    // Both documents must state 9 games
+    assert.ok(readmeContent.includes("9 Arcade Typing Games"), "README.md must state 9 Arcade Typing Games");
+    assert.ok(aboutContent.includes("9 arcade"), "About page must state 9 arcade typing games");
+
+    // Verify all 9 games are represented in README.md
+    assert.ok(readmeContent.includes("Typebound"), "README missing Typebound");
+    assert.ok(readmeContent.includes("Type Before Death"), "README missing Type Before Death");
+    assert.ok(readmeContent.includes("Ghost Racer"), "README missing Ghost Racer");
+    assert.ok(readmeContent.includes("Fruit Fury"), "README missing Fruit Fury");
+    assert.ok(readmeContent.includes("Falling Words"), "README missing Falling Words");
+    assert.ok(readmeContent.includes("Word Rain"), "README missing Word Rain");
+    assert.ok(readmeContent.includes("Word Blaster"), "README missing Word Blaster");
+    assert.ok(readmeContent.includes("Boss Battle"), "README missing Boss Battle");
+    assert.ok(readmeContent.includes("Combo Rush"), "README missing Combo Rush");
+
+    // Must NOT contain stale/invented game names in documentation
+    assert.ok(!readmeContent.includes("Type Defender"), "README must not mention Type Defender");
+    assert.ok(!aboutContent.includes("Type Defender"), "About must not mention Type Defender");
+  });
+});

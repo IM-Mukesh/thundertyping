@@ -152,6 +152,36 @@ describe("product-led SEO landing pages", () => {
       assert.equal(formatDuration(125), "2m 5s");
       assert.equal(formatDuration(300), "5m");
     });
+
+    it("resolves route initial duration when URL parameter is missing or invalid, respecting valid overrides", () => {
+      function resolveEffectiveDuration(
+        rawUrlDuration: string | null,
+        initialTimeDuration?: number,
+        currentStoredDuration: number = 30,
+      ): number {
+        const validUrlDuration = parseUrlDuration(rawUrlDuration);
+        if (validUrlDuration !== null) {
+          return validUrlDuration;
+        }
+        if (initialTimeDuration !== undefined) {
+          return initialTimeDuration;
+        }
+        return currentStoredDuration;
+      }
+
+      // 1-minute page (initialTimeDuration = 60) with stale stored duration (e.g. 15 or 30)
+      assert.equal(resolveEffectiveDuration(null, 60, 15), 60, "missing duration query uses route default 60");
+      assert.equal(resolveEffectiveDuration("abc", 60, 15), 60, "invalid ?duration=abc resets stale 15 to route default 60");
+      assert.equal(resolveEffectiveDuration("-10", 60, 30), 60, "negative ?duration=-10 resets stale 30 to route default 60");
+      assert.equal(resolveEffectiveDuration("0", 60, 15), 60, "zero ?duration=0 resets stale 15 to route default 60");
+      assert.equal(resolveEffectiveDuration("70", 60, 15), 70, "valid ?duration=70 overrides route default 60");
+      assert.equal(resolveEffectiveDuration("120", 60, 15), 120, "valid ?duration=120 overrides route default 60");
+
+      // Root homepage (initialTimeDuration = undefined)
+      assert.equal(resolveEffectiveDuration(null, undefined, 30), 30, "homepage preserves user stored duration when no query");
+      assert.equal(resolveEffectiveDuration("abc", undefined, 30), 30, "homepage preserves user stored duration when invalid query");
+      assert.equal(resolveEffectiveDuration("120", undefined, 30), 120, "homepage applies valid query override");
+    });
   });
 
   describe("guide cluster differentiation and bidirectional links", () => {
@@ -190,6 +220,47 @@ describe("product-led SEO landing pages", () => {
       const practicePage = fs.readFileSync(path.resolve(process.cwd(), "src/app/lessons/practice/page.tsx"), "utf8");
       assert.ok(practicePage.includes("Targeted Practice Lab"));
       assert.ok(!practicePage.includes('title: "Weak Key Drill"'));
+    });
+  });
+
+  describe("F14: Privacy and About Truthfulness", () => {
+    it("verifies /about, /privacy, and README.md truthfully distinguish guest localStorage from optional cloud sync", () => {
+      const aboutPath = path.resolve(process.cwd(), "src/app/about/page.tsx");
+      const aboutContent = fs.readFileSync(aboutPath, "utf8");
+
+      // Must not make false absolute offline/zero-server assertions
+      assert.ok(
+        !aboutContent.includes("nothing sent to a server"),
+        "About page must not make blanket 'nothing sent to a server' claim",
+      );
+      assert.ok(
+        !aboutContent.includes("never leave your device"),
+        "About page must not make blanket 'never leave your device' claim",
+      );
+
+      // Must describe both guest local storage and optional cloud sync
+      assert.ok(
+        aboutContent.includes("Instant guest practice") &&
+          aboutContent.includes("optional cloud sync"),
+        "About page must describe guest local storage and optional cloud sync",
+      );
+
+      // Verify README reflects guest mode and optional cloud sync
+      const readmePath = path.resolve(process.cwd(), "README.md");
+      const readmeContent = fs.readFileSync(readmePath, "utf8");
+      assert.ok(
+        readmeContent.includes("optional cloud sync"),
+        "README.md must mention optional cloud sync for signed-in accounts",
+      );
+
+      // Verify privacy policy explains the distinction
+      const privacyPath = path.resolve(process.cwd(), "src/app/privacy/page.tsx");
+      const privacyContent = fs.readFileSync(privacyPath, "utf8");
+      assert.ok(
+        privacyContent.includes("Signed-in accounts sync") ||
+          privacyContent.includes("Signed-in profile"),
+        "Privacy policy must explain signed-in cloud sync",
+      );
     });
   });
 });

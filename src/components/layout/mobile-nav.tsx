@@ -28,6 +28,7 @@ import {
 } from "@/lib/profile/player-profile";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
 import { GAME_LIST } from "@/lib/games/game-types";
+import { GUIDE_REGISTRY } from "@/lib/guides/guide-registry";
 import { cn } from "@/lib/utils/cn";
 
 interface MobileNavProps {
@@ -65,7 +66,7 @@ const PRIMARY_LINKS = [
   {
     href: "/guides",
     label: "Guides & Tools",
-    badge: "23 Guides",
+    badge: `${GUIDE_REGISTRY.length} Guides`,
     icon: Library,
   },
   {

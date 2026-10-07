@@ -85,7 +85,8 @@ export function TypingTest({
     initialPropsAppliedRef.current = true;
 
     // Only apply initial duration if URL doesn't specify an explicit valid duration override
-    if (rawUrlDuration === null && initialTimeDuration !== undefined) {
+    const validUrlDuration = parseUrlDuration(rawUrlDuration);
+    if (validUrlDuration === null && initialTimeDuration !== undefined) {
       if (useSettingsStore.getState().timeDuration !== initialTimeDuration) {
         setTimeDuration(initialTimeDuration);
       }

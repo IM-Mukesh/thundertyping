@@ -903,7 +903,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "number-row-typing-practice",
       "touch-typing-finger-map",
     ],
-    relatedProductRoute: "/lessons/top-row-left",
+    relatedProductRoute: "/lessons/top-row-combined",
     relatedProductLabel: "Drill Top-Row Lessons",
     heroImage: "/guides/keyboard-skills/how-to-type-top-row-without-looking/top-row-reach-vectors.webp",
 

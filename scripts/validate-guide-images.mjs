@@ -10,20 +10,69 @@ const MAX_KB = 100;
 function parseGuideRegistry(filePath) {
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, "utf-8");
-  const entries = [];
-  const matches = [
-    ...content.matchAll(
-      /slug:\s*"([^"]+)",[\s\S]*?category:\s*"([^"]+)",[\s\S]*?heroImage:\s*"([^"]+)"/g
-    ),
-  ];
+  const registryStart = content.indexOf("export const GUIDE_REGISTRY");
+  if (registryStart === -1) return [];
+  const equalsPos = content.indexOf("=", registryStart);
+  if (equalsPos === -1) return [];
+  const arrayStart = content.indexOf("[", equalsPos);
+  if (arrayStart === -1) return [];
 
-  for (const m of matches) {
-    entries.push({
-      slug: m[1],
-      category: m[2],
-      heroImage: m[3],
-      filename: path.basename(m[3]),
-    });
+  let depth = 0;
+  let arrayEnd = -1;
+  for (let i = arrayStart; i < content.length; i++) {
+    if (content[i] === "[") depth++;
+    else if (content[i] === "]") {
+      depth--;
+      if (depth === 0) {
+        arrayEnd = i;
+        break;
+      }
+    }
+  }
+  if (arrayEnd === -1) return [];
+
+  const arrayContent = content.slice(arrayStart + 1, arrayEnd);
+  const objects = [];
+  let objStart = -1;
+  let objDepth = 0;
+
+  for (let i = arrayContent.length; i < arrayContent.length; i++) {
+    // safety
+  }
+  for (let i = 0; i < arrayContent.length; i++) {
+    const char = arrayContent[i];
+    if (char === "{") {
+      if (objDepth === 0) objStart = i;
+      objDepth++;
+    } else if (char === "}") {
+      objDepth--;
+      if (objDepth === 0 && objStart !== -1) {
+        objects.push(arrayContent.slice(objStart, i + 1));
+        objStart = -1;
+      }
+    }
+  }
+
+  const entries = [];
+  for (const block of objects) {
+    const slugMatch = block.match(/slug:\s*"([^"]+)"/);
+    const catMatch = block.match(/category:\s*"([^"]+)"/);
+    const heroMatch = block.match(/heroImage:\s*"([^"]+)"/);
+    const articleImagesMatch = block.match(/articleImages:\s*\[([\s\S]*?)\]/);
+    let articleImages = [];
+    if (articleImagesMatch) {
+      articleImages = [...articleImagesMatch[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    }
+
+    if (slugMatch) {
+      entries.push({
+        slug: slugMatch[1],
+        category: catMatch ? catMatch[1] : undefined,
+        heroImage: heroMatch ? heroMatch[1] : undefined,
+        filename: heroMatch ? path.basename(heroMatch[1]) : "(no hero image)",
+        articleImages,
+      });
+    }
   }
   return entries;
 }
@@ -73,21 +122,41 @@ let missingCount = 0;
 let overMaxCount = 0;
 
 for (const guide of registeredGuides) {
-  const fullPath = path.join(ROOT_DIR, "public", guide.heroImage.replace(/^\//, ""));
-
-  if (fs.existsSync(fullPath)) {
-    const stat = fs.statSync(fullPath);
-    const kb = (stat.size / 1024).toFixed(1);
-    if (stat.size / 1024 > MAX_KB) {
-      overMaxCount++;
-      console.log(`| ${guide.slug.padEnd(42)} | ${guide.filename.padEnd(36)} | ${(kb + " KB").padStart(8)} | EXCEEDS 100KB |`);
-    } else {
-      readyCount++;
-      console.log(`| ${guide.slug.padEnd(42)} | ${guide.filename.padEnd(36)} | ${(kb + " KB").padStart(8)} | READY |`);
-    }
+  if (!guide.heroImage) {
+    console.log(`| ${guide.slug.padEnd(42)} | ${"(no hero image)".padEnd(36)} | ${"---".padStart(8)} | NO HERO DECLARED |`);
   } else {
-    missingCount++;
-    console.log(`| ${guide.slug.padEnd(42)} | ${guide.filename.padEnd(36)} | ${"---".padStart(8)} | MISSING ON DISK |`);
+    const fullPath = path.join(ROOT_DIR, "public", guide.heroImage.replace(/^\//, ""));
+
+    if (fs.existsSync(fullPath)) {
+      const stat = fs.statSync(fullPath);
+      const kb = (stat.size / 1024).toFixed(1);
+      if (stat.size / 1024 > MAX_KB) {
+        overMaxCount++;
+        console.log(`| ${guide.slug.padEnd(42)} | ${guide.filename.padEnd(36)} | ${(kb + " KB").padStart(8)} | EXCEEDS 100KB |`);
+      } else {
+        readyCount++;
+        console.log(`| ${guide.slug.padEnd(42)} | ${guide.filename.padEnd(36)} | ${(kb + " KB").padStart(8)} | READY |`);
+      }
+    } else {
+      missingCount++;
+      console.log(`| ${guide.slug.padEnd(42)} | ${guide.filename.padEnd(36)} | ${"---".padStart(8)} | MISSING ON DISK |`);
+    }
+  }
+
+  if (guide.articleImages && guide.articleImages.length > 0) {
+    for (const artImg of guide.articleImages) {
+      const artPath = path.join(ROOT_DIR, "public", artImg.replace(/^\//, ""));
+      if (fs.existsSync(artPath)) {
+        const stat = fs.statSync(artPath);
+        if (stat.size / 1024 > MAX_KB) {
+          overMaxCount++;
+          console.log(`| ${guide.slug.padEnd(42)} | ${path.basename(artImg).padEnd(36)} | ${((stat.size / 1024).toFixed(1) + " KB").padStart(8)} | EXCEEDS 100KB (ART) |`);
+        }
+      } else {
+        missingCount++;
+        console.log(`| ${guide.slug.padEnd(42)} | ${path.basename(artImg).padEnd(36)} | ${"---".padStart(8)} | MISSING ARTICLE IMG |`);
+      }
+    }
   }
 }
 
