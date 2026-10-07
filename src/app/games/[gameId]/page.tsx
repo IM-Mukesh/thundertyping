@@ -28,7 +28,7 @@ function TypeBeforeDeathSeoContent() {
   const faq = [
     { question: "What is Type Before Death?", answer: "Type Before Death is a free browser zombie typing survival game. Players type enemy words to fire, protect a barricade, build combo and defeat commanders." },
     { question: "How does typing speed affect the game?", answer: "Higher WPM lets you complete more attack words before enemies reach the defense line. Speed improves pressure handling, while accuracy preserves combo and precision damage." },
-    { question: "Can I play Type Before Death without an account?", answer: "Yes. The core game and personal progress work for guests on the device. Signed-in players can use HeroTyping's existing score settlement when the approved migration is available." },
+    { question: "Can I play Type Before Death without an account?", answer: "Yes. The core game and personal progress work for guests on the device. Signed-in players automatically sync scores and unlock cloud achievements to their HeroTyping account." },
   ];
   return <section className="mt-16 w-full max-w-4xl border-t border-border pt-12 text-sub">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildFaqSchema(faq)) }} />

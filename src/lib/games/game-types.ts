@@ -400,6 +400,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
   "card-battle": {
     id: "card-battle",
     name: "Card Battle",
+    upcoming: true,
     tagline: "A deck of cards you play by typing their names.",
     rules: [
       "Each card has a word. Type it to play the card.",

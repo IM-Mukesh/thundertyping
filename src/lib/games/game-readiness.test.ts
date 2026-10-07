@@ -186,3 +186,47 @@ describe("F24: Game Catalog Documentation Truth & Catalog Integrity", () => {
     assert.ok(!aboutContent.includes("Type Defender"), "About must not mention Type Defender");
   });
 });
+
+describe("Fix Verifications", () => {
+  it("card-battle is correctly classified as upcoming and excluded from public discovery", () => {
+    // 1. Marked upcoming
+    assert.equal(GAME_DEFINITIONS["card-battle"].upcoming, true, "card-battle must be marked upcoming");
+
+    // 2. Excluded from playable catalog
+    assert.ok(!PLAYABLE_GAME_LIST.some((g) => g.id === "card-battle"), "card-battle must not be in PLAYABLE_GAME_LIST");
+
+    // 3. Excluded from sitemap
+    const sitemapRoutes = getSitemapRoutes().map(r => r.path);
+    assert.ok(!sitemapRoutes.includes("/games/card-battle"), "card-battle must be excluded from sitemap");
+  });
+
+  it("achievements client conditionally renders links to avoid dead routes", async () => {
+    const { getAchievementGameLinkState } = await import("@/lib/profile/achievements");
+
+    // 1. Retired game (typing-survivor) does NOT produce a clickable link and appends (Legacy)
+    const retiredState = getAchievementGameLinkState("typing-survivor");
+    assert.equal(retiredState.href, null, "Retired game must not produce a clickable href");
+    assert.ok(retiredState.label.includes("(Legacy)"), "Retired game label must include (Legacy)");
+
+    // 2. Upcoming game (card-battle) does NOT produce a clickable link but has normal label
+    const upcomingState = getAchievementGameLinkState("card-battle");
+    assert.equal(upcomingState.href, null, "Upcoming game must not produce a clickable href");
+    assert.ok(!upcomingState.label.includes("(Legacy)"), "Upcoming game label must not include (Legacy)");
+
+    // 3. Active playable game (type-before-death) produces a normal link
+    const activeState = getAchievementGameLinkState("type-before-death");
+    assert.equal(activeState.href, "/games/type-before-death", "Active playable game must produce a valid href");
+
+    // 4. Site-wide achievements produce no link
+    const siteState = getAchievementGameLinkState("site");
+    assert.equal(siteState.href, null, "Site-wide must not produce a clickable href");
+  });
+
+  it("games page emits noindex for upcoming games", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const content = fs.readFileSync(path.resolve(process.cwd(), "src/app/games/[gameId]/page.tsx"), "utf8");
+
+    assert.ok(content.includes("robots: game.upcoming ? { index: false, follow: true } : undefined"), "Game page must emit noindex for upcoming games");
+  });
+});

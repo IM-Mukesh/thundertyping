@@ -11,7 +11,8 @@ import {
 } from "@/lib/profile/player-profile";
 import {
   ACHIEVEMENT_LIST,
-  GAME_LABELS,
+
+  getAchievementGameLinkState,
   type AchievementDef,
 } from "@/lib/profile/achievements";
 import { GAME_DEFINITIONS, type GameId } from "@/lib/games/game-types";
@@ -143,13 +144,17 @@ function GameAchievements({ earnedMap }: { earnedMap: Record<string, string> }) 
         return (
           <section key={game} style={accent ? ({ ["--accent" as string]: accent }) : undefined}>
             <h2 className="mb-3 flex items-baseline gap-2 font-mono text-lg font-bold text-foreground">
-              {game === "site" ? (
-                GAME_LABELS[game]
-              ) : (
-                <Link href={`/games/${game}`} className="hover:text-accent">
-                  {GAME_LABELS[game]}
-                </Link>
-              )}
+              {(() => {
+                const linkState = getAchievementGameLinkState(game as AchievementDef["game"]);
+                if (!linkState.href) {
+                  return <span>{linkState.label}</span>;
+                }
+                return (
+                  <Link href={linkState.href} className="hover:text-accent">
+                    {linkState.label}
+                  </Link>
+                );
+              })()}
               <span className="font-mono text-xs font-normal text-sub">
                 {list.filter((a) => earnedMap[a.id]).length}/{list.length}
               </span>

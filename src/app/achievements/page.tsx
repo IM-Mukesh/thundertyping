@@ -24,8 +24,7 @@ export default function AchievementsPage() {
           Achievements
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-sub">
-          {TOTAL_COUNT} to earn across Lessons and Games. Progress is stored on this device — no
-          account, nothing uploaded. A few game achievements are hidden until you find them.
+          {TOTAL_COUNT} to earn across Lessons and Games. Progress is stored locally for guests, with optional cloud sync for signed-in accounts. A few game achievements are hidden until you find them.
         </p>
       </header>
 

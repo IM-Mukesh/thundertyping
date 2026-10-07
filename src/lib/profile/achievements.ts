@@ -1,3 +1,4 @@
+import { GAME_DEFINITIONS, type GameId } from "@/lib/games/game-types";
 /**
  * The achievement registry.
  *
@@ -86,3 +87,13 @@ export const GAME_LABELS: Record<AchievementDef["game"], string> = {
   "type-before-death": "TYPE BEFORE DEATH",
   site: "Across the site",
 };
+
+
+export function getAchievementGameLinkState(gameId: AchievementDef["game"]): { label: string, href: string | null, isLegacy: boolean } {
+  if (gameId === "site") return { label: GAME_LABELS.site, href: null, isLegacy: false };
+  const def = GAME_DEFINITIONS[gameId as GameId];
+  if (!def) return { label: GAME_LABELS[gameId] ?? gameId, href: null, isLegacy: true };
+  if (def.retired) return { label: `${GAME_LABELS[gameId]} (Legacy)`, href: null, isLegacy: true };
+  if (def.upcoming) return { label: GAME_LABELS[gameId], href: null, isLegacy: false };
+  return { label: GAME_LABELS[gameId], href: `/games/${gameId}`, isLegacy: false };
+}
