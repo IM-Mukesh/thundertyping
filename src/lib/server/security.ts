@@ -40,22 +40,52 @@ export function getTrustedOrigin(request: NextRequest): string {
     return canonicalOrigin;
   }
 
-  // Clean the host (remove any port if needed)
-  const hostOnly = forwardedHost.split(":")[0].toLowerCase();
+  // Reject any userinfo (@), path separators (/ or \), or spaces
+  if (
+    forwardedHost.includes("@") ||
+    forwardedHost.includes("/") ||
+    forwardedHost.includes("\\") ||
+    forwardedHost.includes(" ")
+  ) {
+    return canonicalOrigin;
+  }
 
-  // Trusted host allowlist. Never trust arbitrary Vercel tenant hosts: a
-  // forwarded host is only useful when it is one of our configured origins.
+  let parsed: URL;
+  try {
+    parsed = new URL(`https://${forwardedHost}`);
+  } catch {
+    return canonicalOrigin;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const port = parsed.port;
+
+  // Validate port if present: must be integer within valid 1..65535 range
+  if (port && (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535)) {
+    return canonicalOrigin;
+  }
+
+  // Trusted host allowlist. Never trust arbitrary tenant hosts:
+  // a forwarded host is only trusted when it matches configured origins.
   const canonicalHost = new URL(canonicalOrigin).hostname.toLowerCase();
-  const vercelUrlHost = process.env.VERCEL_URL ? process.env.VERCEL_URL.split(":")[0].toLowerCase() : null;
+  let vercelUrlHost: string | null = null;
+  if (process.env.VERCEL_URL) {
+    try {
+      vercelUrlHost = new URL(`https://${process.env.VERCEL_URL}`).hostname.toLowerCase();
+    } catch {
+      vercelUrlHost = null;
+    }
+  }
 
   const isTrusted =
-    hostOnly === canonicalHost ||
-    hostOnly === "herotyping.com" ||
-    hostOnly === "www.herotyping.com" ||
-    (vercelUrlHost && hostOnly === vercelUrlHost);
+    hostname === canonicalHost ||
+    hostname === "herotyping.com" ||
+    hostname === "www.herotyping.com" ||
+    (vercelUrlHost !== null && hostname === vercelUrlHost);
 
   if (isTrusted) {
-    return `https://${forwardedHost}`;
+    // Only return standard https origin with trusted hostname and validated non-default port if present
+    return port && port !== "443" ? `https://${hostname}:${port}` : `https://${hostname}`;
   }
 
   // Untrusted host: fall back to canonical origin

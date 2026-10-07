@@ -94,14 +94,15 @@ export function reducer(state: VocabTestState, action: VocabTestAction): VocabTe
       let incorrectKeystrokes = state.incorrectKeystrokes;
       let mistakeThisWord = state.mistakeThisWord;
 
-      // Only newly appended characters are scored — matches every other
-      // engine in this codebase: backspacing edits the buffer but never
-      // un-counts a keystroke that already happened.
+      // Evaluate newly typed/inserted characters in the edited range.
+      // Backspacing alone removes characters without adding any, so prefix >= value.length - suffix.
+      // Selection replacement or insertion replaces characters, so any newly inserted characters
+      // in [prefix, value.length - suffix) must be scored and mistakes accounted for.
       let prefix = 0;
       while (prefix < prevTyped.length && prefix < value.length && prevTyped[prefix] === value[prefix]) prefix++;
       let suffix = 0;
       while (suffix < prevTyped.length - prefix && suffix < value.length - prefix && prevTyped[prevTyped.length - 1 - suffix] === value[value.length - 1 - suffix]) suffix++;
-      if (value.length > prevTyped.length || value.length === prevTyped.length) {
+      if (prefix < value.length - suffix) {
         for (let i = prefix; i < value.length - suffix; i++) {
           const isTrailingSpaceCommit =
             i === target.length &&

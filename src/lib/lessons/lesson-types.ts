@@ -90,7 +90,7 @@ export type DrillStyle =
 export type LessonContentSpec =
   | { kind: "drill"; allowedKeys: string[]; wordCount: number; style?: DrillStyle; focusKeys?: string[] }
   | { kind: "review"; allowedKeys: string[]; wordCount: number }
-  | { kind: "graduation"; wordCount: number; numbers?: boolean };
+  | { kind: "graduation"; wordCount: number; numbers?: boolean; advancedMode?: "prose" | "code" | "numbers-symbols" };
 
 export interface LessonDefinition {
   id: LessonId;
@@ -500,7 +500,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
       "Condition reflex memory for quotes, contractions, and compound terms without hesitating on Shift.",
     ],
     minAccuracy: 88,
-    content: { kind: "graduation", wordCount: 25, numbers: true },
+    content: { kind: "graduation", wordCount: 25, numbers: true, advancedMode: "numbers-symbols" },
     subLessonCount: 7,
   },
   "precision-under-pressure": {
@@ -530,7 +530,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
       "This is what real-world professional typing feels like -- sustained, effortless output across complete passages.",
     ],
     minAccuracy: 90,
-    content: { kind: "graduation", wordCount: 35 },
+    content: { kind: "graduation", wordCount: 35, advancedMode: "prose" },
     subLessonCount: 8,
   },
   "numbers-and-symbols-mastery": {
@@ -545,7 +545,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
       "Purpose-built for software engineers, data analysts, and technical professionals.",
     ],
     minAccuracy: 90,
-    content: { kind: "graduation", wordCount: 30, numbers: true },
+    content: { kind: "graduation", wordCount: 30, numbers: true, advancedMode: "code" },
     subLessonCount: 8,
   },
   "final-challenge": {

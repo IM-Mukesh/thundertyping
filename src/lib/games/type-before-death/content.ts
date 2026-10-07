@@ -8,7 +8,7 @@ export const DEATH_LIMITS = {
   counter: 10_000_000,
   score: 2_000_000_000,
   runMs: 3_600_000,
-  wpm: 1000,
+  wpm: 350,
   wordLength: 24,
   receipts: 32,
   dailyBests: 14,

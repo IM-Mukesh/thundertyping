@@ -2,6 +2,7 @@ import { generateWords } from "@/lib/typing-engine/word-generator";
 import type { DrillStyle, LessonContentSpec, LessonDefinition } from "@/lib/lessons/lesson-types";
 import {
   generateAccuracyDrill,
+  generateAdvancedText,
   generateAlternationDrill,
   generatePairMixDrill,
   generatePatternDrill,
@@ -61,7 +62,13 @@ export function buildReviewText(allowedKeys: string[], wordCount: number, seed: 
 }
 
 /** The later tiers reuse the same generator the real typing test uses, now that every key has been taught. */
-export function buildGraduationText(wordCount: number, options: { numbers?: boolean } = {}): string {
+export function buildGraduationText(
+  wordCount: number,
+  options: { numbers?: boolean; advancedMode?: "prose" | "code" | "numbers-symbols"; seed?: number } = {},
+): string {
+  if (options.advancedMode) {
+    return generateAdvancedText(options.advancedMode, wordCount, options.seed ?? 707);
+  }
   return generateWords(wordCount, { punctuation: true, numbers: options.numbers ?? false }).join(" ");
 }
 
@@ -101,7 +108,11 @@ export function buildTextForContent(content: LessonContentSpec, seed?: number): 
       text = buildReviewText(content.allowedKeys, content.wordCount, actualSeed);
       break;
     case "graduation":
-      text = buildGraduationText(content.wordCount, { numbers: content.numbers });
+      text = buildGraduationText(content.wordCount, {
+        numbers: content.numbers,
+        advancedMode: content.advancedMode,
+        seed: actualSeed,
+      });
       break;
   }
   return text.length > MAX_LESSON_CHARS ? text.slice(0, MAX_LESSON_CHARS).trim() : text;
@@ -155,7 +166,7 @@ function getStepPedagogy(
           phase: "warmup",
           title: `Discover ${k1}`,
           description: `Focus on tactile feel and finger placement for ${k1}. Strike cleanly without looking at the keyboard.`,
-          objective: `Tap ${k1} with relaxed, consistent touch (~75% accuracy to pass).`,
+          objective: `Tap ${k1} with relaxed, consistent touch (60%+ accuracy to pass step).`,
           style: "discover-1",
           minAccuracy: 75,
         };
@@ -164,7 +175,7 @@ function getStepPedagogy(
           phase: "warmup",
           title: `Discover ${k2}`,
           description: `Focus on tactile feel and finger placement for ${k2}. Strike cleanly without looking at the keyboard.`,
-          objective: `Tap ${k2} with relaxed, consistent touch (~75% accuracy to pass).`,
+          objective: `Tap ${k2} with relaxed, consistent touch (60%+ accuracy to pass step).`,
           style: "discover-2",
           minAccuracy: 75,
         };
@@ -173,7 +184,7 @@ function getStepPedagogy(
           phase: "patterns",
           title: `Pair & Mix: ${k1} + ${k2}`,
           description: `Combine ${k1} and ${k2} in rhythmic blocks to build coordinated reflex between both hands.`,
-          objective: `Balance finger strikes smoothly between both hands (78%+ accuracy).`,
+          objective: `Balance finger strikes smoothly between both hands (60%+ to advance; aim for 80%+ accuracy).`,
           style: "pair-mix",
           minAccuracy: Math.min(78, unit.minAccuracy),
         };
@@ -182,7 +193,7 @@ function getStepPedagogy(
           phase: "patterns",
           title: "Rapid Alternation",
           description: `Alternate strokes between ${k1} and ${k2} to train two-hand cadence and avoid hesitation.`,
-          objective: `Maintain steady cadence without pausing on hand switches (80%+ accuracy).`,
+          objective: `Maintain steady cadence without pausing on hand switches (60%+ to advance; aim for 80%+ accuracy).`,
           style: "alternation",
           minAccuracy: Math.min(80, unit.minAccuracy),
         };
@@ -191,7 +202,7 @@ function getStepPedagogy(
           phase: "accuracy",
           title: "Prior Key Integration",
           description: `Combine ${k1} and ${k2} with all previously learned keys across the keyboard.`,
-          objective: `Integrate new reaches into the established home-row baseline (80%+ accuracy).`,
+          objective: `Integrate new reaches into the established home-row baseline (60%+ to advance; aim for 80%+ accuracy).`,
           style: "integration",
           minAccuracy: Math.min(80, unit.minAccuracy),
         };
@@ -200,7 +211,7 @@ function getStepPedagogy(
           phase: "mixed",
           title: "Flow Challenge",
           description: "Dynamic character patterns testing real-time recall under speed.",
-          objective: "Maintain consistent typing rhythm without rushing (82%+ accuracy).",
+          objective: "Maintain consistent typing rhythm without rushing (60%+ to advance; aim for 80%+ accuracy).",
           style: "random",
           minAccuracy: Math.min(82, unit.minAccuracy),
         };
@@ -210,7 +221,7 @@ function getStepPedagogy(
           phase: "checkpoint",
           title: "Unit Checkpoint",
           description: "Full-length evaluation testing accuracy and rhythm across the full unit passage.",
-          objective: `Score ${unit.minAccuracy}%+ accuracy to complete this unit and earn your stars.`,
+          objective: `Score 60%+ accuracy to complete this unit (higher accuracy earns up to 3 stars).`,
           style: "random",
           minAccuracy: unit.minAccuracy,
         };
@@ -226,7 +237,7 @@ function getStepPedagogy(
       phase: "checkpoint",
       title: "Unit Checkpoint",
       description: "Full-length evaluation testing accuracy and rhythm across the full unit passage.",
-      objective: `Score ${unit.minAccuracy}%+ accuracy to complete this unit.`,
+      objective: `Score 60%+ accuracy to complete this unit (higher accuracy earns up to 3 stars).`,
       style: "random",
       minAccuracy: unit.minAccuracy,
     };
@@ -284,7 +295,7 @@ function getStepPedagogy(
       phase: "accuracy",
       title: "Controlled Accuracy",
       description: "Precision-focused drills with zero tolerance for rushed keystrokes.",
-      objective: `Hit ${unit.minAccuracy}%+ with steady, deliberate finger movement.`,
+      objective: "Hit 60%+ accuracy to advance (steady finger movement builds higher speed).",
       style: "accuracy",
       minAccuracy: Math.max(78, unit.minAccuracy - 2),
     };
@@ -331,7 +342,12 @@ function scaleContent(
   }
 
   if (content.kind === "graduation") {
-    return { ...content, wordCount, numbers: content.numbers ? progress >= NUMBERS_INTRODUCED_AT : false };
+    return {
+      ...content,
+      wordCount,
+      numbers: content.numbers ? progress >= NUMBERS_INTRODUCED_AT : false,
+      advancedMode: content.advancedMode,
+    };
   }
 
   if (content.kind === "drill") {

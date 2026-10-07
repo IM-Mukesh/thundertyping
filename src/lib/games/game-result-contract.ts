@@ -51,7 +51,7 @@ export function normalizeGameRun(run: GameRun): GameRun {
     if (!isMetric(run[field]) || !Number.isSafeInteger(run[field])) throw new Error(`${field} must be a non-negative safe integer`);
   }
   if (!isGameVariant(run.variant ?? "")) throw new Error("Invalid game variant");
-  if (run.wpm != null && !isMetric(run.wpm)) throw new Error("wpm must be a finite non-negative number");
+  if (run.wpm != null && (!isMetric(run.wpm) || run.wpm > 350)) throw new Error("wpm must be between 0 and 350");
   if (run.accuracy != null && (!isMetric(run.accuracy) || run.accuracy > 100)) throw new Error("accuracy must be between 0 and 100");
   return {
     score: run.score, cleared: run.cleared, bestCombo: run.bestCombo,

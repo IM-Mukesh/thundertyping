@@ -23,7 +23,8 @@
   --accent: #e2b714;
   --caret: #e2b714;
   --correct: #d1d0c5;
-  --error: #ca4754;
+  /* #f87171 provides 4.5:1 contrast against #323437 for WCAG AA compliance (matches forest/sunset) */
+  --error: #f87171;
   --border: #3c3e42;
 }
 
@@ -33,8 +34,9 @@
   /* #52524e provides 6.8:1 contrast against #fafaf8 so even 70% opacity passes WCAG AA (4.5:1) */
   --sub: #52524e;
   --sub-alt: #ececea;
-  --accent: #ca8a04;
-  --caret: #ca8a04;
+  /* #a16207 provides 4.7:1 contrast against #fafaf8 for WCAG AA compliance while keeping brand amber hue */
+  --accent: #a16207;
+  --caret: #a16207;
   --correct: #17171a;
   --error: #dc2626;
   --border: #e2e2df;

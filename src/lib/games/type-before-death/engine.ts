@@ -631,6 +631,10 @@ export function calculateDeathWordDamage(state: DeathState, enemy: DeathEnemy, l
   return Math.max(0, wordDamage(state, enemy, integer(length, 1, DEATH_LIMITS.wordLength), clean));
 }
 
+export function calculateDeathWordScore(state: DeathState, enemy: DeathEnemy, length = enemy.word.length, clean = enemy.wordMistakes === 0): number {
+  return scoreForCompletion(state, enemy, length, clean);
+}
+
 function scoreForCompletion(state: DeathState, enemy: DeathEnemy, length: number, clean: boolean): number {
   const definition = DEATH_ENEMIES[enemy.kind];
   const comboMultiplier = 1 + Math.min(20, Math.max(0, state.combo - 1)) * 0.05;
@@ -661,7 +665,7 @@ function activateDeathOverdriveInPlace(state: DeathState): void {
   state.overdriveMs = DEATH_OVERDRIVE_MS + state.upgrades.capacitor * 1200;
   state.overdrives = counter(state.overdrives + 1);
   addEffect(state, "overdrive", 2, 0.5);
-  state.message = "OVERDRIVE: the barricade systems are synchronized. Damage and score doubled.";
+  state.message = "OVERDRIVE: the barricade systems are synchronized. 1.5x damage and 2x score.";
 }
 
 export function activateDeathOverdrive(state: DeathState): DeathState {
@@ -1016,9 +1020,14 @@ export const getTypeBeforeDeathStats = deathStats;
 export const typeBeforeDeathStats = deathStats;
 
 export function deathRunStats(state: DeathState): DeathRunStats {
+  const flags: string[] = [];
+  if (state.outcome === "victory") flags.push("victory");
+  if (state.overdrives > 0) flags.push("overdrive");
+  const flagSuffix = flags.length > 0 ? `:${flags.join(":")}` : "";
+
   return {
     ...deathStats(state),
-    variant: `${state.mode}:${state.difficulty}:mission-${state.mission}:${state.weapon}:${state.survivor}${state.dailyDay ? `:${state.dailyDay}` : ""}`,
+    variant: `${state.mode}:${state.difficulty}:mission-${state.mission}:${state.weapon}:${state.survivor}${state.dailyDay ? `:${state.dailyDay}` : ""}${flagSuffix}`,
     outcome: state.outcome,
     mission: state.mission,
     wave: state.wave,

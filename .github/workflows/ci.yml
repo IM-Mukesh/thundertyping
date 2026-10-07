@@ -35,4 +35,8 @@ jobs:
         run: npm test
 
       - name: Build Next.js
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder-build.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-build-anon-key"
+          NEXT_PUBLIC_SITE_URL: "https://herotyping.com"
         run: npm run build

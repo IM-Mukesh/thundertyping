@@ -398,6 +398,7 @@ export function TypingTest({
 
         {/* Live Timer during test: left-aligned timer, with mobile restart button on right */}
         <div
+          inert={!isRunning}
           className={cn(
             "[grid-area:1/1] w-full flex items-end justify-between pb-0.5 transition-opacity duration-200",
             isRunning ? "opacity-100" : "pointer-events-none opacity-0",
@@ -472,7 +473,7 @@ export function TypingTest({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" inert={isRunning}>
             <button
               type="button"
               onClick={handleRestart}

@@ -432,20 +432,25 @@ export function generateFingerIsolationDrill(
   wordCount: number = 16,
   seed: number = 606,
 ): string {
+  const safeFinger: FingerId =
+    targetFinger && HOME_KEY_FOR_FINGER[targetFinger]
+      ? targetFinger
+      : "left-pinky";
+
   // Find all keys typed by this finger
   const fingerKeys = [
     "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
     "q", "w", "e", "r", "t", "y", "u", "i", "o", "p",
     "a", "s", "d", "f", "g", "h", "j", "k", "l", ";",
     "z", "x", "c", "v", "b", "n", "m", ",", ".", "/",
-  ].filter((k) => fingerForKey(k) === targetFinger);
+  ].filter((k) => fingerForKey(k) === safeFinger);
 
-  const homeKey = HOME_KEY_FOR_FINGER[targetFinger];
+  const homeKey = HOME_KEY_FOR_FINGER[safeFinger] || "a";
   const keys = allAvailableKeys.length > 0
     ? fingerKeys.filter((k) => allAvailableKeys.map((c) => c.toLowerCase()).includes(k))
     : fingerKeys;
 
-  const activeKeys = keys.length > 0 ? keys : fingerKeys;
+  const activeKeys = keys.length > 0 ? keys : fingerKeys.length > 0 ? fingerKeys : [homeKey];
   const rng = createRng(seed);
   const words: string[] = [];
 
@@ -492,13 +497,29 @@ export function generateAdvancedText(
   const rng = createRng(seed);
 
   if (mode === "prose") {
-    const sample = NATURAL_PROSE_SAMPLES[Math.floor(rng() * NATURAL_PROSE_SAMPLES.length)];
-    return sample;
+    const sentences: string[] = [];
+    let currentWords = 0;
+    const startIdx = Math.floor(rng() * NATURAL_PROSE_SAMPLES.length);
+    for (let i = 0; i < NATURAL_PROSE_SAMPLES.length; i++) {
+      const sentence = NATURAL_PROSE_SAMPLES[(startIdx + i) % NATURAL_PROSE_SAMPLES.length];
+      sentences.push(sentence);
+      currentWords += sentence.split(" ").length;
+      if (currentWords >= wordCount) break;
+    }
+    return sentences.join(" ");
   }
 
   if (mode === "code") {
-    const sample = CODE_SAMPLES[Math.floor(rng() * CODE_SAMPLES.length)];
-    return sample;
+    const lines: string[] = [];
+    let currentTokens = 0;
+    const startIdx = Math.floor(rng() * CODE_SAMPLES.length);
+    for (let i = 0; i < CODE_SAMPLES.length; i++) {
+      const line = CODE_SAMPLES[(startIdx + i) % CODE_SAMPLES.length];
+      lines.push(line);
+      currentTokens += line.split(" ").length;
+      if (currentTokens >= wordCount) break;
+    }
+    return lines.join(" ");
   }
 
   if (mode === "numbers-symbols") {

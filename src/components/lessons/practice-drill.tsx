@@ -33,7 +33,15 @@ import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils/cn";
 
-export type PracticeMode = "weak-keys" | "transitions" | "finger" | "accuracy" | "speed" | "coding";
+import {
+  type PracticeMode,
+  parsePracticeMode,
+  parsePracticeFinger,
+  parseKeyList,
+  parsePairList,
+} from "@/lib/lessons/practice-query";
+
+export type { PracticeMode };
 
 const HIGH_FREQUENCY_TRANSITIONS = ["th", "he", "in", "er", "an", "re", "on", "at", "en", "nd", "st", "es", "ed", "te", "or"];
 
@@ -85,6 +93,10 @@ function buildPracticeText(
       const codingKeys = ["a", "s", "d", "f", "j", "k", "l", ";", "{", "}", "(", ")"];
       return generatePatternDrill(codingKeys, wordCount, seed);
     }
+    default: {
+      const activeKeys = weakKeys.length > 0 ? weakKeys : ["a", "s", "d", "f", "j", "k", "l", ";"];
+      return generateWeakKeyDrill(activeKeys, [], wordCount, seed);
+    }
   }
 }
 
@@ -112,10 +124,10 @@ export function PracticeDrill({ defaultMode }: PracticeDrillProps = {}) {
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const recordKeyAttempt = useKeyPerformanceStore((s) => s.recordKeyAttempt);
 
-  const initialMode = (searchParams.get("mode") as PracticeMode) || defaultMode || "weak-keys";
-  const urlKeys = searchParams.get("keys") ? searchParams.get("keys")!.split(",").filter(Boolean) : [];
-  const urlPairs = searchParams.get("pairs") ? searchParams.get("pairs")!.split(",").filter(Boolean) : [];
-  const urlFinger = (searchParams.get("finger") as FingerId) || "left-pinky";
+  const initialMode = parsePracticeMode(searchParams.get("mode"), defaultMode || "weak-keys");
+  const urlKeys = parseKeyList(searchParams.get("keys"));
+  const urlPairs = parsePairList(searchParams.get("pairs"));
+  const urlFinger = parsePracticeFinger(searchParams.get("finger"), "left-pinky");
 
   const [mode, setMode] = useState<PracticeMode>(initialMode);
   const [selectedFinger, setSelectedFinger] = useState<FingerId>(urlFinger);

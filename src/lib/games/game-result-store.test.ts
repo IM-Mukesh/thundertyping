@@ -66,7 +66,7 @@ describe("game result contract", () => {
     assert.equal(normalizeGameDuration(123.6), 124);
     for (const survivedMs of [0, 17.25, 999, 7_200_001, 3_000_000_000]) {
       const result = validateGameScoreInput({ ...RUN, gameId: "fruit-fury", runId: RUN_ID, ownerId: OWNER_A,
-        score: 3_000_000_000, cleared: 2500, bestCombo: 300, survivedMs, wpm: 401.2, variant: "keyboard:easy:home" });
+        score: 3_000_000_000, cleared: 2500, bestCombo: 300, survivedMs, wpm: 301.2, variant: "keyboard:easy:home" });
       assert.equal(result.valid, true);
       if (result.valid) assert.equal(result.data.survivedMs, Math.round(survivedMs));
     }

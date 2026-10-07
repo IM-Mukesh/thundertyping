@@ -20,8 +20,10 @@ import {
   buildAccuracyLine,
   buildReviewText,
   buildSubLessons,
+  buildLessonText,
+  buildTextForContent,
 } from "@/lib/lessons/lesson-content";
-import { LESSON_LIST, LESSON_STAGES, LESSON_TIERS } from "@/lib/lessons/lesson-types";
+import { LESSON_DEFINITIONS, LESSON_LIST, LESSON_STAGES, LESSON_TIERS } from "@/lib/lessons/lesson-types";
 import {
   computeUnitProgressUpdate,
   isLessonUnlocked,
@@ -311,6 +313,121 @@ describe("pedagogical sub-lesson phase progression", () => {
     const allowedSet = new Set(allowed);
     for (const char of line.replace(/ /g, "")) {
       assert.ok(allowedSet.has(char), `"${char}" in accuracy line is not allowed`);
+    }
+  });
+});
+
+describe("F21: Advanced Lesson Content Generator Correctness", () => {
+  it("traces and verifies 'Natural Prose & Paragraph Stamina' (long-form-typing -> prose)", () => {
+    // 1. Trace: title -> lesson ID -> advancedMode -> generator -> generated text
+    const unit = LESSON_DEFINITIONS["long-form-typing"];
+    assert.ok(unit);
+    assert.equal(unit.name, "Natural Prose & Paragraph Stamina");
+    assert.equal(unit.content.kind, "graduation");
+    if (unit.content.kind === "graduation") {
+      assert.equal(unit.content.advancedMode, "prose");
+    }
+
+    const text = buildLessonText(unit);
+
+    // 2. Meaningful linguistic & grammatical characteristics
+    assert.ok(text.length >= 80, "Prose text should be multi-sentence passage");
+    assert.ok(/^[A-Z]/.test(text), "Prose passage must start with a capital letter");
+    assert.ok(/[.!?]$/.test(text.trim()), "Prose passage must terminate with sentence-ending punctuation");
+    assert.ok(/[.!?,;\-]/.test(text), "Prose passage must contain punctuation marks");
+
+    // Must consist of natural dictionary words
+    const words = text.split(/\s+/);
+    assert.ok(words.length >= 25, "Must have substantial word count");
+    const avgLen = words.reduce((acc, w) => acc + w.length, 0) / words.length;
+    assert.ok(avgLen >= 4 && avgLen <= 8, `Natural prose average word length expected 4-8, got ${avgLen}`);
+    assert.ok(
+      words.some((w) =>
+        ["practice", "speed", "accuracy", "fingers", "typing", "rhythm"].includes(
+          w.toLowerCase().replace(/[^a-z]/g, "")
+        )
+      ),
+      "Must contain relevant touch-typing prose vocabulary",
+    );
+
+    // All sub-lessons must also adhere to prose generator contract
+    const subLessons = buildSubLessons(unit);
+    assert.equal(subLessons.length, 8);
+    for (const sub of subLessons) {
+      const subText = buildTextForContent(sub.content);
+      assert.ok(subText.length > 20, "Sub-lesson prose text must not be empty");
+      assert.ok(/^[A-Z]/.test(subText), "Sub-lesson must begin with capital letter");
+      assert.ok(/[.;,]/.test(subText), "Sub-lesson must contain natural punctuation");
+    }
+  });
+
+  it("traces and verifies 'Code Syntax & Technical Formats' (numbers-and-symbols-mastery -> code)", () => {
+    // 1. Trace: title -> lesson ID -> advancedMode -> generator -> generated text
+    const unit = LESSON_DEFINITIONS["numbers-and-symbols-mastery"];
+    assert.ok(unit);
+    assert.equal(unit.name, "Code Syntax & Technical Formats");
+    assert.equal(unit.content.kind, "graduation");
+    if (unit.content.kind === "graduation") {
+      assert.equal(unit.content.advancedMode, "code");
+    }
+
+    const text = buildLessonText(unit);
+
+    // 2. Meaningful code syntax characteristics
+    // Keywords & types
+    const keywords = ["const", "function", "return", "interface", "let", "number"];
+    assert.ok(keywords.some((kw) => text.includes(kw)), `Must contain code keywords. Got: "${text}"`);
+
+    // Brackets: (), {}, []
+    assert.ok(/[(){}[\]]/.test(text), `Must contain programming brackets. Got: "${text}"`);
+
+    // Operators: =, =>, +, *, /
+    assert.ok(/[=+\-*/<>]/.test(text), `Must contain programming operators. Got: "${text}"`);
+
+    // Statement separators / semicolons
+    assert.ok(text.includes(";"), `Must contain statement-terminating semicolons. Got: "${text}"`);
+
+    // Identifiers with camelCase or snake_case
+    assert.ok(/[a-z]+[A-Z][a-zA-Z]*/.test(text), `Must contain camelCase programming identifiers. Got: "${text}"`);
+
+    // All sub-lessons must also generate code syntax
+    const subLessons = buildSubLessons(unit);
+    assert.equal(subLessons.length, 8);
+    for (const sub of subLessons) {
+      const subText = buildTextForContent(sub.content);
+      assert.ok(subText.length > 15, "Sub-lesson code text must not be empty");
+      assert.ok(/[(){}[\];=]/.test(subText), `Sub-lesson must contain code syntax symbols. Got: "${subText}"`);
+    }
+  });
+
+  it("traces and verifies 'Symbols & Practical Punctuation' (speed-endurance -> numbers-symbols)", () => {
+    // 1. Trace: title -> lesson ID -> advancedMode -> generator -> generated text
+    const unit = LESSON_DEFINITIONS["speed-endurance"];
+    assert.ok(unit);
+    assert.equal(unit.name, "Symbols & Practical Punctuation");
+    assert.equal(unit.content.kind, "graduation");
+    if (unit.content.kind === "graduation") {
+      assert.equal(unit.content.advancedMode, "numbers-symbols");
+    }
+
+    const text = buildLessonText(unit);
+
+    // 2. Meaningful symbols & formatted numbers characteristics
+    assert.ok(text.includes("$"), "Must contain currency symbol ($)");
+    assert.ok(text.includes("%"), "Must contain percent symbol (%)");
+    assert.ok(text.includes("#"), "Must contain hashtag/number symbol (#)");
+    assert.ok(text.includes(":"), "Must contain colon (:)");
+    assert.ok(text.includes("-"), "Must contain hyphen (-)");
+    assert.ok(/\d/.test(text), "Must contain numeric digits");
+    assert.ok(/\$\d+\.\d{2}/.test(text) || /\d+%/.test(text), "Must contain formatted practical figures ($XX.XX or XX%)");
+
+    // All sub-lessons must also generate symbols & practical punctuation
+    const subLessons = buildSubLessons(unit);
+    assert.equal(subLessons.length, 7);
+    for (const sub of subLessons) {
+      const subText = buildTextForContent(sub.content);
+      assert.ok(subText.length > 10, "Sub-lesson text must not be empty");
+      assert.ok(/[$%#:\-\d]/.test(subText), `Sub-lesson must contain symbols. Got: "${subText}"`);
     }
   });
 });

@@ -160,6 +160,43 @@ describe("vocabulary: round reducer", () => {
     assert.equal(state.correctKeystrokes, 1);
     assert.equal(state.incorrectKeystrokes, 1);
   });
+
+  it("F08: accounts for mistakes when text selection is replaced with a shorter string containing errors (alph -> az -> al -> alpha)", () => {
+    const words = [{ word: "alpha", pos: "noun", definition: "the first letter" }];
+    let state = reducer(createInitialState(), { type: "START", difficulty: "easy", words });
+    // User types "alph"
+    state = reducer(state, { type: "SET_TYPED", value: "a" });
+    state = reducer(state, { type: "SET_TYPED", value: "al" });
+    state = reducer(state, { type: "SET_TYPED", value: "alp" });
+    state = reducer(state, { type: "SET_TYPED", value: "alph" });
+    assert.equal(state.mistakeThisWord, false);
+    assert.equal(state.incorrectKeystrokes, 0);
+
+    // User selects "lph" and replaces with "z", resulting in shorter string "az"
+    state = reducer(state, { type: "SET_TYPED", value: "az" });
+    assert.equal(state.mistakeThisWord, true, "replacement with typo 'z' must mark mistakeThisWord = true");
+    assert.ok(state.incorrectKeystrokes >= 1, "incorrectKeystrokes must be incremented");
+
+    // User backspaces to "a", then types "al", then finishes "alpha"
+    state = reducer(state, { type: "SET_TYPED", value: "a" });
+    state = reducer(state, { type: "SET_TYPED", value: "al" });
+    state = reducer(state, { type: "SET_TYPED", value: "alp" });
+    state = reducer(state, { type: "SET_TYPED", value: "alph" });
+    state = reducer(state, { type: "SET_TYPED", value: "alpha" });
+
+    assert.equal(state.status, "over");
+    assert.equal(state.results[0].correct, false, "word must not be marked correct after typo in selection replacement");
+  });
+
+  it("F08: marks mistake when user selects all text and replaces with an incorrect character", () => {
+    const words = [{ word: "brave", pos: "adj.", definition: "showing courage" }];
+    let state = reducer(createInitialState(), { type: "START", difficulty: "easy", words });
+    state = reducer(state, { type: "SET_TYPED", value: "brav" });
+    // Select all and replace with 'x' (shorter, 1 char)
+    state = reducer(state, { type: "SET_TYPED", value: "x" });
+    assert.equal(state.mistakeThisWord, true);
+    assert.equal(state.incorrectKeystrokes, 1);
+  });
 });
 
 describe("vocabulary: progress sanitizer", () => {

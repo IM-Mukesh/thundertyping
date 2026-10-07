@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   activateDeathOverdrive,
   calculateDeathWordDamage,
+  calculateDeathWordScore,
   chooseDeathUpgrade,
   dailyChallengeSeed,
   deathStats,
@@ -281,5 +282,30 @@ describe("Type Before Death daily challenge", () => {
     assert.ok(engineer.maxBarricade > base.maxBarricade);
     assert.equal(engineer.weapon, "shotgun");
     assert.equal(engineer.survivor, "engineer");
+  });
+
+  it("F11: Overdrive notification accurately describes 1.5x damage and 2x score multipliers", () => {
+    const base = combat("overdrive-test");
+    const enemy = base.enemies[0];
+    assert.ok(enemy);
+
+    const readyState = { ...base, energy: 100, overdriveMs: 0 };
+    const overdriveState = activateDeathOverdrive(readyState);
+
+    assert.equal(
+      overdriveState.message,
+      "OVERDRIVE: the barricade systems are synchronized. 1.5x damage and 2x score.",
+      "Overdrive message must accurately state 1.5x damage and 2x score",
+    );
+
+    // Verify exact 1.5x damage multiplier
+    const normalDmg = calculateDeathWordDamage(readyState, enemy, 6, true);
+    const overdriveDmg = calculateDeathWordDamage(overdriveState, enemy, 6, true);
+    assert.equal(Math.round(overdriveDmg * 100), Math.round(normalDmg * 1.5 * 100));
+
+    // Verify exact 2x score multiplier
+    const normalScore = calculateDeathWordScore(readyState, enemy, 6, true);
+    const overdriveScore = calculateDeathWordScore(overdriveState, enemy, 6, true);
+    assert.equal(Math.round(overdriveScore), Math.round(normalScore * 2));
   });
 });
