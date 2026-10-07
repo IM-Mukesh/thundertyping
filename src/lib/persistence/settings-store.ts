@@ -19,6 +19,8 @@ import {
   PACE_CARET_MODES,
   type PaceCaretMode,
 } from "@/lib/typing-engine/pace-caret";
+import { getInitialUrlDuration } from "@/lib/typing-engine/custom-duration";
+
 
 interface SettingsState {
   theme: ThemeId;
@@ -134,44 +136,47 @@ function sanitizePersistedSettings(persisted: unknown, fallback: PersistedSettin
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
-      theme: DEFAULT_THEME,
-      mode: "time",
-      timeDuration: 60,
-      wordCount: 25,
-      quoteLength: "medium",
-      vocabDifficulty: "easy",
-      wordDifficulty: "all",
-      punctuation: false,
-      numbers: false,
-      paceCaretMode: "off",
-      paceCaretCustomWpm: 60,
-      // On by default for the games, which feel inert without it. Nothing can
-      // actually sound until the player clicks Start (browsers gate audio
-      // behind a gesture), so this never autoplays at someone, and the games
-      // HUD carries a mute toggle. The typing test itself stays silent — it
-      // has no sounds wired up.
-      soundEnabled: true,
-      // Music sits under effects by default: it plays continuously while the
-      // effects are the ones carrying feedback.
-      musicVolume: 0.45,
-      sfxVolume: 0.8,
-      setTheme: (theme) => set({ theme }),
-      setMode: (mode) => set({ mode }),
-      setTimeDuration: (timeDuration) => set({ timeDuration }),
-      setWordCount: (wordCount) => set({ wordCount }),
-      setQuoteLength: (quoteLength) => set({ quoteLength }),
-      setVocabDifficulty: (vocabDifficulty) => set({ vocabDifficulty }),
-      setWordDifficulty: (wordDifficulty) => set({ wordDifficulty }),
-      setPaceCaretMode: (paceCaretMode) => set({ paceCaretMode }),
-      setPaceCaretCustomWpm: (wpm) =>
-        set({ paceCaretCustomWpm: Math.round(Math.max(MIN_PACE_CARET_WPM, Math.min(MAX_PACE_CARET_WPM, wpm))) }),
-      togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
-      toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
-      toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
-      setMusicVolume: (v) => set({ musicVolume: Math.max(0, Math.min(1, v)) }),
-      setSfxVolume: (v) => set({ sfxVolume: Math.max(0, Math.min(1, v)) }),
-    }),
+    (set) => {
+      const initialUrlDuration = getInitialUrlDuration();
+      return {
+        theme: DEFAULT_THEME,
+        mode: initialUrlDuration !== null ? "time" : "time",
+        timeDuration: initialUrlDuration ?? 60,
+        wordCount: 25,
+        quoteLength: "medium",
+        vocabDifficulty: "easy",
+        wordDifficulty: "all",
+        punctuation: false,
+        numbers: false,
+        paceCaretMode: "off",
+        paceCaretCustomWpm: 60,
+        // On by default for the games, which feel inert without it. Nothing can
+        // actually sound until the player clicks Start (browsers gate audio
+        // behind a gesture), so this never autoplays at someone, and the games
+        // HUD carries a mute toggle. The typing test itself stays silent — it
+        // has no sounds wired up.
+        soundEnabled: true,
+        // Music sits under effects by default: it plays continuously while the
+        // effects are the ones carrying feedback.
+        musicVolume: 0.45,
+        sfxVolume: 0.8,
+        setTheme: (theme) => set({ theme }),
+        setMode: (mode) => set({ mode }),
+        setTimeDuration: (timeDuration) => set({ timeDuration }),
+        setWordCount: (wordCount) => set({ wordCount }),
+        setQuoteLength: (quoteLength) => set({ quoteLength }),
+        setVocabDifficulty: (vocabDifficulty) => set({ vocabDifficulty }),
+        setWordDifficulty: (wordDifficulty) => set({ wordDifficulty }),
+        setPaceCaretMode: (paceCaretMode) => set({ paceCaretMode }),
+        setPaceCaretCustomWpm: (wpm) =>
+          set({ paceCaretCustomWpm: Math.round(Math.max(MIN_PACE_CARET_WPM, Math.min(MAX_PACE_CARET_WPM, wpm))) }),
+        togglePunctuation: () => set((s) => ({ punctuation: !s.punctuation })),
+        toggleNumbers: () => set((s) => ({ numbers: !s.numbers })),
+        toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+        setMusicVolume: (v) => set({ musicVolume: Math.max(0, Math.min(1, v)) }),
+        setSfxVolume: (v) => set({ sfxVolume: Math.max(0, Math.min(1, v)) }),
+      };
+    },
     {
       // Left unrenamed on the HeroTyping rebrand -- every existing player's
       // settings are saved under this name (layout.tsx's inline theme-init
@@ -179,10 +184,18 @@ export const useSettingsStore = create<SettingsState>()(
       // wrong theme before hydration), and renaming it would orphan both.
       name: "thundertyping-settings",
       storage: createJSONStorage(() => localStorage),
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...sanitizePersistedSettings(persistedState, currentState),
-      }),
+      merge: (persistedState, currentState) => {
+        const sanitized = sanitizePersistedSettings(persistedState, currentState);
+        const urlDuration = getInitialUrlDuration();
+        if (urlDuration !== null) {
+          sanitized.timeDuration = urlDuration;
+          sanitized.mode = "time";
+        }
+        return {
+          ...currentState,
+          ...sanitized,
+        };
+      },
     },
   ),
 );

@@ -122,12 +122,19 @@ export function CustomDurationControl({
           input.focus({ preventScroll: true });
         }}
         className={cn(
-          "inline-flex h-11 w-11 flex-none items-center justify-center rounded transition-colors pointer-fine:h-9 pointer-fine:w-9 focus-visible:outline-2 focus-visible:outline-accent",
-          isCustom ? "bg-accent/15 text-accent" : "text-sub hover:bg-sub-alt hover:text-foreground",
+          "inline-flex h-11 flex-none items-center justify-center rounded transition-colors pointer-fine:h-9 focus-visible:outline-2 focus-visible:outline-accent",
+          isCustom
+            ? "min-w-11 gap-1 px-2 font-mono text-[11px] font-semibold lowercase tracking-wide text-accent bg-accent/15 sm:gap-1.5 sm:px-2.5 pointer-fine:min-w-9 pointer-fine:px-2"
+            : "w-11 text-sub hover:bg-sub-alt hover:text-foreground pointer-fine:w-9",
           className,
         )}
       >
-        <Pencil size={14} aria-hidden="true" />
+        <Pencil size={isCustom ? 12 : 14} aria-hidden="true" className="shrink-0" />
+        {isCustom && (
+          <span className="font-mono text-[11px] lowercase tracking-wide sm:text-xs">
+            {formatDuration(value)}
+          </span>
+        )}
         <span className="sr-only">{triggerLabel}</span>
       </button>
 

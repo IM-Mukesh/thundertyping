@@ -160,4 +160,32 @@ describe("compact duration control regression", () => {
     assert.equal(slots[3].props.value, 73);
     assert.equal(slots[3].props.onApply, state.setTimeDuration);
   });
+
+  it("visibly displays human-friendly formatted duration when isCustom is true, and updates dynamically", () => {
+    const render = loadComponent("./custom-duration-control.tsx", "CustomDurationControl");
+
+    // 70s -> 1m 10s
+    const tree70 = render({ value: 70, isCustom: true, onApply: () => {} });
+    const spans70 = elements(tree70).filter((el) => el.type === "span" && !String(el.props.className).includes("sr-only"));
+    assert.equal(spans70.length, 1);
+    assert.equal(spans70[0].props.children, "1m 10s");
+
+    // 125s -> 2m 5s
+    const tree125 = render({ value: 125, isCustom: true, onApply: () => {} });
+    const spans125 = elements(tree125).filter((el) => el.type === "span" && !String(el.props.className).includes("sr-only"));
+    assert.equal(spans125.length, 1);
+    assert.equal(spans125[0].props.children, "2m 5s");
+
+    // 300s -> 5m
+    const tree300 = render({ value: 300, isCustom: true, onApply: () => {} });
+    const spans300 = elements(tree300).filter((el) => el.type === "span" && !String(el.props.className).includes("sr-only"));
+    assert.equal(spans300.length, 1);
+    assert.equal(spans300[0].props.children, "5m");
+
+    // Preset / not custom (isCustom: false) -> no visible custom duration span
+    const tree60 = render({ value: 60, isCustom: false, onApply: () => {} });
+    const spans60 = elements(tree60).filter((el) => el.type === "span" && !String(el.props.className).includes("sr-only"));
+    assert.equal(spans60.length, 0);
+  });
 });
+

@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RotateCcw, SlidersHorizontal, Volume2, VolumeX, Wrench } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
+import { formatDuration, parseUrlDuration } from "@/lib/typing-engine/custom-duration";
+
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
+
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { getPersonalBest, paramForConfig, recordResult } from "@/lib/persistence/results-store";
 import {
@@ -40,6 +44,27 @@ export function TypingTest() {
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const toggleSound = useSettingsStore((s) => s.toggleSound);
   const setMode = useSettingsStore((s) => s.setMode);
+  const setTimeDuration = useSettingsStore((s) => s.setTimeDuration);
+  const searchParams = useSearchParams();
+
+  const rawUrlDuration = searchParams.get("duration");
+  const lastAppliedUrlDurationRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (rawUrlDuration === lastAppliedUrlDurationRef.current) return;
+    lastAppliedUrlDurationRef.current = rawUrlDuration;
+
+    const validDuration = parseUrlDuration(rawUrlDuration);
+    if (validDuration !== null) {
+      if (useSettingsStore.getState().timeDuration !== validDuration) {
+        setTimeDuration(validDuration);
+      }
+      if (useSettingsStore.getState().mode !== "time") {
+        setMode("time");
+      }
+    }
+  }, [rawUrlDuration, setTimeDuration, setMode]);
+
 
   const [customText, setCustomText] = useState("");
   const [isCustomModalOpen, setCustomModalOpen] = useState(false);
@@ -53,7 +78,7 @@ export function TypingTest() {
   const prevKeystrokesRef = useRef({ correct: 0, incorrect: 0 });
 
   const modeBadge = useMemo(() => {
-    if (mode === "time") return `${timeDuration}s`;
+    if (mode === "time") return formatDuration(timeDuration);
     if (mode === "words") return `${wordCount}w`;
     if (mode === "quote") return `quote · ${quoteLength}`;
     if (mode === "vocabulary") return `vocab · ${vocabDifficulty}`;

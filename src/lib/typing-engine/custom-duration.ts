@@ -28,3 +28,30 @@ export function formatDuration(totalSeconds: number): string {
   if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
   return `${s}s`;
 }
+
+/**
+ * Parses and validates an optional URL duration parameter in seconds.
+ * Reuses parseCustomDuration to enforce integer and min/max constraints.
+ * Returns valid seconds or null if missing, malformed, or out of range.
+ */
+export function parseUrlDuration(param: string | string[] | null | undefined): number | null {
+  if (param === null || param === undefined) return null;
+  const raw = Array.isArray(param) ? param[0] : param;
+  if (typeof raw !== "string") return null;
+  return parseCustomDuration(raw);
+}
+
+/**
+ * Reads and validates an initial duration parameter from the browser URL search query, if available.
+ * Returns valid whole seconds within supported custom duration range, or null if not in browser or missing/invalid.
+ */
+export function getInitialUrlDuration(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return parseUrlDuration(params.get("duration"));
+  } catch {
+    return null;
+  }
+}
+
