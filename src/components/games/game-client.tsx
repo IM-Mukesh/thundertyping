@@ -48,6 +48,7 @@ function lazyGame(load: () => Promise<{ default: ComponentType<GameComponentProp
  */
 const GAME_COMPONENTS: Partial<Record<GameId, ComponentType<GameComponentProps>>> = {
   "rakshasa-war": lazyGame(() => import("@/components/games/rakshasa-war-game")),
+  "type-before-death": lazyGame(() => import("@/components/games/type-before-death-game")),
   "falling-words": lazyGame(() =>
     import("@/components/games/falling-words-game").then((m) => ({ default: m.FallingWordsGame })),
   ),

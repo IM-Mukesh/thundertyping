@@ -1,0 +1,178 @@
+.scene {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #070d21;
+  contain: layout paint;
+}
+
+.scene::before,
+.scene::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+}
+
+.scene::before {
+  background: linear-gradient(180deg, #02051026, transparent 24%, transparent 70%, #03050bc4 100%);
+}
+
+.scene::after {
+  background: radial-gradient(ellipse at 50% 48%, transparent 30%, #02040b18 66%, #02040bb8 100%);
+}
+
+.canvas,
+.labels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas {
+  display: block;
+  z-index: 0;
+}
+
+.labels {
+  z-index: 2;
+}
+
+.label,
+.bossLabel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: min(280px, calc(100% - 16px));
+  padding: 6px 10px 7px;
+  border: 1px solid #9cb2c66e;
+  border-radius: 4px;
+  background: #0b1522eb;
+  box-shadow: 0 4px 12px #02050caa;
+  color: #edf5f5;
+  line-height: 1.12;
+  white-space: nowrap;
+  user-select: none;
+  will-change: transform;
+}
+
+.bossLabel {
+  border-color: #e66a5c99;
+  background: #23121bec;
+}
+
+.word,
+.bossName {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+}
+
+.bossName {
+  color: #ffb36d;
+  font-size: 12px;
+}
+
+.typed {
+  color: #71edc5;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.remaining {
+  color: #f5f6ec;
+}
+
+.badge {
+  color: #a5c8d0;
+  font: 700 9px/1.1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.11em;
+}
+
+.hp {
+  display: block;
+  width: min(180px, 100%);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #050a12;
+  box-shadow: inset 0 0 0 1px #cce3e31f;
+}
+
+.hpFill,
+.bossHpFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4ae0ae, #a2f4c7);
+  transition: width 80ms linear;
+}
+
+.bossHpFill {
+  background: linear-gradient(90deg, #df4f56, #ffb45f);
+}
+
+.targeted {
+  border-color: #f5c56c;
+  background: #221b15f2;
+  box-shadow: 0 0 0 2px #f5bd5b31, 0 4px 13px #02050cbd;
+}
+
+.targeted::after {
+  position: absolute;
+  top: 100%;
+  left: calc(50% - 5px);
+  width: 0;
+  height: 0;
+  border-top: 6px solid #f5c56c;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  content: "";
+}
+
+.hit {
+  border-color: #ff8b63;
+  box-shadow: 0 0 0 2px #ff754e3d, 0 4px 14px #02050cbd;
+}
+
+.mode {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  z-index: 3;
+  padding: 4px 7px;
+  border: 1px solid #9bb6c54d;
+  border-radius: 3px;
+  background: #071323df;
+  color: #cae2e7;
+  font: 700 10px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.035em;
+  pointer-events: none;
+}
+
+.canvas[hidden],
+.label[hidden],
+.bossLabel[hidden],
+.mode[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label,
+  .bossLabel {
+    will-change: auto;
+  }
+}

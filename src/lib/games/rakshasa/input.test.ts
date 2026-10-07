@@ -10,6 +10,7 @@ describe("Typebound: The Last Dawn phase-one registration and input boundary", (
     const ids = GAME_LIST.map((g) => g.id);
     assert.deepEqual(ids, [
       "rakshasa-war",
+      "type-before-death",
       "ghost-racer",
       "fruit-fury",
       "falling-words",

@@ -14,7 +14,7 @@ export interface AchievementDef {
   name: string;
   description: string;
   /** Which game's page to link to. "site" for cross-game ones. */
-  game: "spellbound" | "typing-survivor" | "ghost-racer" | "card-battle" | "fruit-fury" | "site";
+  game: "spellbound" | "typing-survivor" | "ghost-racer" | "card-battle" | "fruit-fury" | "type-before-death" | "site";
   /** Hidden until earned, for endings and surprises. */
   secret?: boolean;
 }
@@ -58,6 +58,14 @@ export const ACHIEVEMENT_LIST: readonly AchievementDef[] = [
   { id: "fruit-fury:level-5", name: "High Velocity", description: "Reach Level 5 in Fruit Fury.", game: "fruit-fury" },
   { id: "fruit-fury:score-10000", name: "Fruit Overlord", description: "Score 10,000 or more points in a single run.", game: "fruit-fury", secret: true },
 
+  // ----------------------------------------------------- TYPE BEFORE DEATH
+  { id: "type-before-death:first-run", name: "First Blood", description: "Finish a Type Before Death run.", game: "type-before-death" },
+  { id: "type-before-death:combo-25", name: "Unbroken Line", description: "Reach a 25-word combo.", game: "type-before-death" },
+  { id: "type-before-death:overdrive", name: "Redline", description: "Activate Overdrive in a run.", game: "type-before-death" },
+  { id: "type-before-death:boss", name: "Commander Down", description: "Defeat a city commander.", game: "type-before-death", secret: true },
+  { id: "type-before-death:daily", name: "Same Outbreak", description: "Finish a Type Before Death daily challenge.", game: "type-before-death" },
+  { id: "type-before-death:100-wpm", name: "No Time Left", description: "Record 100 WPM or faster in a run.", game: "type-before-death", secret: true },
+
   // -------------------------------------------------------------- site-wide
   { id: "site:all-games", name: "Full Arcade", description: "Play every game at least once.", game: "site" },
   { id: "site:level-10", name: "Regular", description: "Reach player level 10.", game: "site" },
@@ -75,5 +83,6 @@ export const GAME_LABELS: Record<AchievementDef["game"], string> = {
   "ghost-racer": "Ghost Racer",
   "card-battle": "Card Battle",
   "fruit-fury": "Fruit Fury",
+  "type-before-death": "TYPE BEFORE DEATH",
   site: "Across the site",
 };

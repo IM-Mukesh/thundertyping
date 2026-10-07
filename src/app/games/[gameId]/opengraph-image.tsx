@@ -27,8 +27,8 @@ export default async function Image({ params }: { params: Promise<{ gameId: stri
 
   return new ImageResponse(
     ogImageElement({
-      eyebrow: "Free Typing Game",
-      title: game?.name ?? "HeroTyping",
+      eyebrow: game?.id === "type-before-death" ? "Zombie Typing Game" : "Free Typing Game",
+      title: game?.id === "type-before-death" ? "TYPE BEFORE DEATH" : game?.name ?? "HeroTyping",
       subtitle: game?.tagline ?? "Free typing games that build real speed and accuracy.",
     }),
     { ...size },

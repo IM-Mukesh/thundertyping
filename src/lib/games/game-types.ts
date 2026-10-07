@@ -25,7 +25,8 @@ export type GameId =
   | "ghost-racer"
   | "card-battle"
   | "fruit-fury"
-  | "rakshasa-war";
+  | "rakshasa-war"
+  | "type-before-death";
 
 export type GameStatus = "idle" | "running" | "paused" | "over";
 
@@ -130,6 +131,31 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     featured: true,
     pitch: "Eight fallen kingdoms. Ten undead legions. Your keyboard is the weapon.",
     highlights: ["8 battlefields", "10 humanoid enemy classes", "Sentence bosses", "3 earned specials", "Procedural 3D", "Adaptive enemy pacing"],
+  },
+  "type-before-death": {
+    id: "type-before-death",
+    name: "TYPE BEFORE DEATH",
+    tagline: "TYPE FAST. STAY ALIVE.",
+    rules: [
+      "Type the first letter of a visible threat to lock it, then finish its word. The most urgent matching target is selected automatically.",
+      "Correct words fire your weapon; longer words hit harder. Accuracy builds combo, energy and critical damage while mistakes add heat and can jam the weapon.",
+      "Protect your barricade and health through three escalating waves, choose a field upgrade, then break the commander's three phases.",
+      "Campaign missions unlock a persistent safehouse map. Endless survival and the deterministic daily challenge turn the same typing fundamentals into score attacks.",
+    ],
+    about: [
+      "TYPE BEFORE DEATH is HeroTyping's cinematic zombie typing survival game. You defend a collapsing city street from walkers, runners, brutes, spitters, bombers, stalkers, swarms, mutants and elites. Every word is an action inside a procedural low-poly city: type cleanly and the last defender fires; stop typing and the line moves closer.",
+      "The central decision is threat priority under pressure. A runner may reach the barricade before a brute, a spitter can damage the defense from range, and a bomber forces an immediate choice. WPM changes how quickly you convert words into attacks, while accuracy preserves combo and creates precision damage. A mistake is recoverable, but repeated mistakes heat the weapon until a fair, readable jam.",
+      "Each campaign mission has a short briefing, three waves, an upgrade choice and a three-phase boss. Personal bests use HeroTyping's existing score store, progress is kept locally with account-separated keys, and the daily challenge derives one UTC seed for every player. The WebGL city has a Canvas tactical fallback so the core typing combat remains playable when 3D is unavailable.",
+    ],
+    lives: 2,
+    scoreBy: "points",
+    accent: "#f9735b",
+    category: "Action",
+    tags: ["3D Survival", "Zombies", "Keyboard"],
+    duration: "5-12 min",
+    replayability: "Very High",
+    pitch: "Your keyboard is the last weapon in a city that refuses to stay dead.",
+    highlights: ["10 enemy archetypes", "3-phase commanders", "Overdrive combat", "6 campaign missions", "Daily seed", "Procedural 3D"],
   },
   "falling-words": {
     id: "falling-words",
@@ -426,6 +452,7 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
 
 export const GAME_LIST: GameDefinition[] = [
   GAME_DEFINITIONS["rakshasa-war"],
+  GAME_DEFINITIONS["type-before-death"],
   GAME_DEFINITIONS["ghost-racer"],
   GAME_DEFINITIONS["fruit-fury"],
   GAME_DEFINITIONS["falling-words"],

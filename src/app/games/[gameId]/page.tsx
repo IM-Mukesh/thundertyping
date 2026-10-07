@@ -17,11 +17,37 @@ import { GameBestBadge } from "@/components/games/game-best-badge";
 import { GameInfoPanel } from "@/components/games/game-info-panel";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { buildGameSchema } from "@/lib/seo/json-ld";
+import { buildFaqSchema, buildGameSchema } from "@/lib/seo/json-ld";
 import { truncateAtWord } from "@/lib/seo/metadata";
 
 export function generateStaticParams() {
   return GAME_LIST.map((game) => ({ gameId: game.id }));
+}
+
+function TypeBeforeDeathSeoContent() {
+  const faq = [
+    { question: "What is Type Before Death?", answer: "Type Before Death is a free browser zombie typing survival game. Players type enemy words to fire, protect a barricade, build combo and defeat commanders." },
+    { question: "How does typing speed affect the game?", answer: "Higher WPM lets you complete more attack words before enemies reach the defense line. Speed improves pressure handling, while accuracy preserves combo and precision damage." },
+    { question: "Can I play Type Before Death without an account?", answer: "Yes. The core game and personal progress work for guests on the device. Signed-in players can use HeroTyping's existing score settlement when the approved migration is available." },
+  ];
+  return <section className="mt-16 w-full max-w-4xl border-t border-border pt-12 text-sub">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildFaqSchema(faq)) }} />
+    <div className="prose prose-invert max-w-none prose-headings:font-display prose-headings:uppercase prose-headings:tracking-tight prose-p:text-sm prose-p:leading-7 prose-li:text-sm prose-li:leading-7">
+      <h2>How Type Before Death works</h2>
+      <p>Type Before Death is a 3D zombie typing game built around a simple survival promise: your keyboard is the weapon. Read the word above a threat, type its letters, and your defender fires inside an abandoned city. The interactive battle is client-side, while this guide keeps the rules and typing practice advice available to search engines and screen readers.</p>
+      <h2>How typing controls combat</h2>
+      <p>Start with a visible first letter to lock the most urgent matching enemy. Every correct character advances the weapon prefix. Completing a word creates an attack, with longer words delivering more damage. A clean run of words builds combo and energy; repeated mistakes break the streak, add heat and can cause a short weapon jam. Your WPM therefore changes how many threats you can answer before the barricade is reached, while accuracy decides how consistently you access the strongest damage.</p>
+      <h2>Enemy types and boss battles</h2>
+      <p>Walkers teach the opening rhythm. Runners accelerate, brutes absorb long-word pressure, spitters attack from range, bombers punish a late response, and stalkers reveal themselves from the mist. Swarms test reaction speed; mutants regenerate; elites enrage when damaged. Three escalating waves lead to a commander with three health phases and a faster charged strike. The campaign includes six brief missions, while Endless introduces boss events without a final wave.</p>
+      <h2>Game modes and daily challenge</h2>
+      <ul><li><strong>Story:</strong> clear missions, choose between field upgrades and unlock the next safehouse route.</li><li><strong>Endless:</strong> survive rising waves and periodic commanders until your health and barricade can no longer hold.</li><li><strong>Daily:</strong> every player receives the same UTC seed, mission and normal difficulty for a fair daily score comparison. The page shows real personal data only; it does not invent a global rank.</li></ul>
+      <h2>How to improve your typing speed for survival</h2>
+      <p>Choose the safest correct target before chasing a longer word, keep your eyes on the next character, and let heat cool instead of forcing a panic burst. If your accuracy is unstable, use the free <Link href="/">typing speed test</Link> for measured practice, then reinforce weak keys in <Link href="/lessons">HeroTyping lessons</Link>. The <Link href="/guides/how-to-improve-typing-speed">typing speed guide</Link> explains posture, rhythm and deliberate accuracy practice.</p>
+      <h2>Frequently asked questions</h2>
+      {faq.map((item) => <div key={item.question} className="not-prose mb-5"><h3 className="font-display text-base font-bold uppercase text-foreground">{item.question}</h3><p className="mt-1 text-sm leading-7">{item.answer}</p></div>)}
+      <p className="not-prose text-xs text-sub/80">Ready for another typing game? Explore the <Link href="/games" className="text-accent underline underline-offset-2">HeroTyping arcade</Link>, or practice accuracy before taking on the next outbreak.</p>
+    </div>
+  </section>;
 }
 
 function isRetiredGameId(gameId: string): boolean {
@@ -35,6 +61,18 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
   if (!game) {
     if (isRetiredGameId(gameId)) notFound();
     return {};
+  }
+  if (game.id === "type-before-death") {
+    const title = "Zombie Typing Game – Type Before Death";
+    const socialTitle = "Zombie Typing Game – Type Before Death | HeroTyping";
+    const description = "Play Type Before Death, a 3D zombie typing game where your typing speed and accuracy keep you alive. Type fast, build combos, defeat bosses, and survive the outbreak.";
+    return {
+      title,
+      description,
+      alternates: { canonical: "/games/type-before-death" },
+      openGraph: { title: socialTitle, description, url: "/games/type-before-death", type: "website" },
+      twitter: { title: socialTitle, description },
+    };
   }
   const title = `${game.name} — Typing Game`;
   const description = `${game.tagline} ${truncateAtWord(game.about[0], 120)}`;
@@ -56,7 +94,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
   const heroArt = getGameArt(game.id, "hero") ?? game.coverImage ?? null;
   const characterArt = getGameArt(game.id, "character");
   const others = GAME_LIST.filter((g) => g.id !== game.id);
-  const immersiveRacer = game.id === "ghost-racer" || game.id === "rakshasa-war" || game.id === "falling-words";
+  const immersiveRacer = game.id === "ghost-racer" || game.id === "rakshasa-war" || game.id === "falling-words" || game.id === "type-before-death";
 
   // A small, generic set of extra roles a game's own board can reach for
   // beyond the five fixed GameArtRole slots above — resolved here (server
@@ -139,7 +177,14 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(
-              buildGameSchema({ name: game.name, description: game.about[0], path: `/games/${game.id}` }),
+              buildGameSchema({
+                name: game.id === "type-before-death" ? "Type Before Death – Zombie Typing Game" : game.name,
+                description: game.id === "type-before-death"
+                  ? "A 3D zombie typing survival game where speed, accuracy and combos keep the city alive."
+                  : game.about[0],
+                path: `/games/${game.id}`,
+                genre: game.id === "type-before-death" ? "Action typing survival game" : undefined,
+              }),
             ),
           }}
         />
@@ -156,7 +201,7 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
       {/* MARQUEE — the artwork at full strength, with the character standing
           in it. This is where the game gets its personality; the board below
           stays clean so falling words are never fighting a background. */}
-      {immersiveRacer ? <h1 className="sr-only">{game.id === "ghost-racer" ? "Ghost Racer — Neon Night Time Trial" : `${game.name} — ${game.tagline}`}</h1> : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
+      {immersiveRacer ? <h1 className="sr-only">{game.id === "ghost-racer" ? "Ghost Racer — Neon Night Time Trial" : game.id === "type-before-death" ? "Type Before Death – Zombie Typing Game" : `${game.name} — ${game.tagline}`}</h1> : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
         <div className="absolute inset-0">
           {heroArt ? (
             <Image
@@ -257,6 +302,8 @@ export default async function GamePage({ params }: PageProps<"/games/[gameId]">)
           <GameClient definition={game} art={boardArt} />
         )}
       </div>
+
+      {game.id === "type-before-death" && <TypeBeforeDeathSeoContent />}
 
       {/* Below the cabinet, never beside or above it — an ad next to an active
           game area is both a distraction and an accidental-click risk. */}

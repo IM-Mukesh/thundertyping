@@ -11,6 +11,7 @@ export type AnalyticsEventName =
   | "practice_completed"
   | "game_started"
   | "game_completed"
+  | "game_event"
   | "placement_started"
   | "placement_completed";
 
@@ -80,6 +81,18 @@ export interface GameCompletedParams {
   result?: string;
 }
 
+export interface GameEventParams {
+  game_id: string;
+  game_name: string;
+  event: string;
+  mode?: string;
+  wave?: number;
+  score?: number;
+  duration_ms?: number;
+  wpm?: number;
+  accuracy?: number;
+}
+
 export interface PlacementStartedParams {
   assessment_type: "typing_placement";
 }
@@ -101,6 +114,7 @@ export interface AnalyticsEventParamsMap {
   practice_completed: PracticeCompletedParams;
   game_started: GameStartedParams;
   game_completed: GameCompletedParams;
+  game_event: GameEventParams;
   placement_started: PlacementStartedParams;
   placement_completed: PlacementCompletedParams;
 }
