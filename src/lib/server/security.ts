@@ -10,12 +10,12 @@ export { sanitizeInternalRedirect };
  */
 export function getTrustedOrigin(request: NextRequest): string {
   const isDevelopment = process.env.NODE_ENV === "development";
-  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://herotyping.com";
+  const canonicalUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.herotyping.com";
   let canonicalOrigin: string;
   try {
     canonicalOrigin = new URL(canonicalUrl).origin;
   } catch {
-    canonicalOrigin = "https://herotyping.com";
+    canonicalOrigin = "https://www.herotyping.com";
   }
 
   if (isDevelopment) {
@@ -96,7 +96,15 @@ export function getTrustedOrigin(request: NextRequest): string {
 export function hasTrustedMutationOrigin(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
   if (origin) {
-    try { return new URL(origin).origin === getTrustedOrigin(request); } catch { return false; }
+    try {
+      const parsedOrigin = new URL(origin).origin;
+      const trusted = getTrustedOrigin(request);
+      if (parsedOrigin === trusted) return true;
+      // Explicitly allow both www and apex in case of cross-origin CORS preflight during redirect phase
+      if (trusted === "https://www.herotyping.com" && parsedOrigin === "https://herotyping.com") return true;
+      if (trusted === "https://herotyping.com" && parsedOrigin === "https://www.herotyping.com") return true;
+      return false;
+    } catch { return false; }
   }
   // Modern browsers send Sec-Fetch-Site for fetch/navigation requests.  Do not
   // treat a missing Origin as proof of same-site (old browsers are ambiguous).

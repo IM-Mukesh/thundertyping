@@ -52,6 +52,8 @@ const nextConfig: NextConfig = {
     qualities: [45, 75],
   },
 
+  
+
   async headers() {
     // Supabase calls from the browser (auth session/token exchange) go
     // straight to the project's own REST/Auth endpoint, not through our API
@@ -139,7 +141,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NEXT_PUBLIC_SITE_URL ?? "https://herotyping.com",
+            value: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.herotyping.com",
           },
         ],
       },

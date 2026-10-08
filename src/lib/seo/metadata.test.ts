@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import { pageMetadata, truncateAtWord } from "@/lib/seo/metadata";
 
 describe("pageMetadata", () => {
+  
+
   for (const path of ["/", "/guides", "/guides/typing-accuracy"]) {
     it(`uses the canonical path for Open Graph at ${path}`, () => {
       const title = "Page-specific title";
@@ -12,8 +14,8 @@ describe("pageMetadata", () => {
         title,
         description,
         alternates: { canonical: path },
-        openGraph: { title, description, url: path },
-        twitter: { title, description },
+        openGraph: { title, description, url: path, images: [{ url: "/opengraph-image" }] },
+        twitter: { title, description, images: ["/opengraph-image"] },
       });
     });
   }
@@ -27,8 +29,8 @@ describe("pageMetadata", () => {
       title,
       description,
       alternates: { canonical: "/profile" },
-      openGraph: { title, description, url: "/profile" },
-      twitter: { title, description },
+      openGraph: { title, description, url: "/profile", images: [{ url: "/opengraph-image" }] },
+      twitter: { title, description, images: ["/opengraph-image"] },
       robots,
     });
   });
@@ -118,6 +120,22 @@ describe("sitemap integrity", () => {
         dateRegex,
         `lastModified must be YYYY-MM-DD: ${r.path} has ${r.lastModified}`
       );
+    }
+  });
+});
+
+import { SITE_URL } from "@/lib/seo/constants";
+import sitemap from "@/app/sitemap";
+
+describe("Canonical URL Safety", () => {
+  it("never emits apex herotyping.com URLs anywhere in canonical generation", () => {
+    assert.equal(SITE_URL, "https://www.herotyping.com");
+    assert.ok(!SITE_URL.startsWith("https://herotyping.com"));
+    
+    const urls = sitemap();
+    for (const urlObj of urls) {
+      assert.ok(!urlObj.url.startsWith("https://herotyping.com"), "Sitemap must use www: " + urlObj.url);
+      assert.ok(urlObj.url.startsWith("https://www.herotyping.com"), "Sitemap must start with www: " + urlObj.url);
     }
   });
 });

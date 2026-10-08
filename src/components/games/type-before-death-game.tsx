@@ -323,7 +323,7 @@ function TypeBeforeDeathSession({ definition, owner, generation }: GameComponent
       onShare={() => {
         const stats = deathStats(stateRef.current);
         trackGameEvent("share_clicked");
-        const text = `TYPE BEFORE DEATH\n${stats.score.toLocaleString("en-US")} score · ${stats.wpm.toFixed(0)} WPM · ${stats.accuracy.toFixed(1)}% accuracy · ${stats.cleared} threats cleared\nPlay at herotyping.com/games/type-before-death`;
+        const text = `TYPE BEFORE DEATH\n${stats.score.toLocaleString("en-US")} score · ${stats.wpm.toFixed(0)} WPM · ${stats.accuracy.toFixed(1)}% accuracy · ${stats.cleared} threats cleared\nPlay at www.herotyping.com/games/type-before-death`;
         void (async () => {
           try {
             if (navigator.share) await navigator.share({ title: "TYPE BEFORE DEATH", text, url: "/games/type-before-death" });

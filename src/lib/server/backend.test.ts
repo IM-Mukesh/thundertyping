@@ -552,7 +552,7 @@ describe("getTrustedOrigin (FINDING 10 & F12 X-Forwarded-Host Hardening)", () =>
       headers: { "x-forwarded-host": "herotyping.com:evil.com" },
     });
     const origin = getTrustedOrigin(req);
-    assert.equal(origin, "https://herotyping.com");
+    assert.equal(origin, "https://www.herotyping.com");
   });
 
   it("F12: rejects userinfo injection attempts like herotyping.com@evil.com", () => {
@@ -560,26 +560,26 @@ describe("getTrustedOrigin (FINDING 10 & F12 X-Forwarded-Host Hardening)", () =>
       headers: { "x-forwarded-host": "herotyping.com@evil.com" },
     });
     const origin = getTrustedOrigin(req);
-    assert.equal(origin, "https://herotyping.com");
+    assert.equal(origin, "https://www.herotyping.com");
   });
 
   it("F12: rejects path injection or backslash in forwarded-host", () => {
     const req1 = new NextRequest("https://herotyping.com/api/auth/callback", {
       headers: { "x-forwarded-host": "herotyping.com/evil" },
     });
-    assert.equal(getTrustedOrigin(req1), "https://herotyping.com");
+    assert.equal(getTrustedOrigin(req1), "https://www.herotyping.com");
 
     const req2 = new NextRequest("https://herotyping.com/api/auth/callback", {
       headers: { "x-forwarded-host": "herotyping.com\\evil" },
     });
-    assert.equal(getTrustedOrigin(req2), "https://herotyping.com");
+    assert.equal(getTrustedOrigin(req2), "https://www.herotyping.com");
   });
 
   it("F12: validates port bounds and rejects invalid or out-of-range ports", () => {
     const reqBadPort = new NextRequest("https://herotyping.com/api/auth/callback", {
       headers: { "x-forwarded-host": "herotyping.com:99999" },
     });
-    assert.equal(getTrustedOrigin(reqBadPort), "https://herotyping.com");
+    assert.equal(getTrustedOrigin(reqBadPort), "https://www.herotyping.com");
 
     const reqValidPort = new NextRequest("https://herotyping.com/api/auth/callback", {
       headers: { "x-forwarded-host": "herotyping.com:8443" },
