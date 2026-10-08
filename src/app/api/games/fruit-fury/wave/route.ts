@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { advanceFruitFuryChunk } from "@/lib/server/fruit-fury-evaluator";
+import { FruitFuryPersistenceError } from "@/lib/server/fruit-fury-state";
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +12,9 @@ export async function POST(req: Request) {
     const result = await advanceFruitFuryChunk(runId, token, events);
     return NextResponse.json(result);
   } catch (err: unknown) {
+    if (err instanceof FruitFuryPersistenceError) {
+      return NextResponse.json({ error: "Database/persistence failure" }, { status: 503 });
+    }
     return NextResponse.json({ error: (err as Error).message }, { status: 403 });
   }
 }

@@ -92,6 +92,13 @@ export async function createRunState(userId?: string): Promise<{ runId: string; 
   };
 }
 
+export class FruitFuryPersistenceError extends Error {
+  constructor() {
+    super("Database/persistence failure");
+    this.name = "FruitFuryPersistenceError";
+  }
+}
+
 export async function getActiveRunState(runId: string, providedToken: string): Promise<FruitFuryRunState> {
   const expectedHash = hashToken(providedToken);
   
@@ -112,7 +119,22 @@ export async function getActiveRunState(runId: string, providedToken: string): P
     .eq("status", "active")
     .single();
 
-  if (error || !data) throw new Error("Invalid or replayed token");
+  if (error) {
+    if (error.code === "PGRST116") {
+      throw new Error("Invalid or replayed token");
+    } else {
+      console.error(JSON.stringify({
+        message: "FruitFury wave lookup persistence error",
+        runId,
+        supabaseErrorCode: error.code,
+        supabaseErrorMessage: error.message,
+        supabaseDetails: error.details
+      }));
+      throw new FruitFuryPersistenceError();
+    }
+  }
+
+  if (!data) throw new Error("Invalid or replayed token");
   return data as unknown as FruitFuryRunState;
 }
 
