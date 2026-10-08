@@ -8,8 +8,9 @@ import { primeCloudXp } from "@/lib/profile/player-profile";
 // them.
 const KEY_PREFIX = "thundertyping-pb";
 
-function pbKey(mode: TestMode, param: number | string, punctuation: boolean, numbers: boolean): string {
-  return `${KEY_PREFIX}:${mode}:${param}:${punctuation ? 1 : 0}:${numbers ? 1 : 0}`;
+function pbKey(mode: TestMode, param: number | string, punctuation: boolean, numbers: boolean, languageCode: string = "en"): string {
+  const prefix = languageCode === "en" ? KEY_PREFIX : `${KEY_PREFIX}:${languageCode}`;
+  return `${prefix}:${mode}:${param}:${punctuation ? 1 : 0}:${numbers ? 1 : 0}`;
 }
 
 // The mode-specific dimension that, together with mode/punctuation/numbers,
@@ -112,9 +113,10 @@ export function primeCloudPersonalBests(userId: string): Promise<void> {
         wpm: number;
         accuracy: number;
         created_at: string;
+        language_code: string;
       }>) {
         if (!isTrackableMode(row.mode as TestMode)) continue;
-        const key = pbKey(row.mode as TestMode, row.param ?? "", row.punctuation, row.numbers);
+        const key = pbKey(row.mode as TestMode, row.param ?? "", row.punctuation, row.numbers, row.language_code);
         const existing = cloudBestCache.get(key);
         if (!existing || row.wpm > existing.wpm) {
           cloudBestCache.set(key, {
@@ -144,12 +146,13 @@ export function getPersonalBest(
   param: number | string,
   punctuation: boolean,
   numbers: boolean,
+  languageCode: string = "en",
 ): PersonalBest | null {
   if (!isTrackableMode(mode)) return null;
   if (getCurrentUserId()) {
-    return cloudBestCache.get(pbKey(mode, param, punctuation, numbers)) ?? null;
+    return cloudBestCache.get(pbKey(mode, param, punctuation, numbers, languageCode)) ?? null;
   }
-  const raw = getStorageItem(pbKey(mode, param, punctuation, numbers));
+  const raw = getStorageItem(pbKey(mode, param, punctuation, numbers, languageCode));
   if (!raw) return null;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -181,6 +184,7 @@ export function recordResult(
   /** Unrounded accuracy percentage. */
   accuracy: number,
   details?: RecordResultDetails,
+  languageCode: string = "en",
 ): { isNewBest: boolean; best: PersonalBest | null } {
   if (!isTrackableMode(mode)) return { isNewBest: false, best: null };
 
@@ -191,7 +195,7 @@ export function recordResult(
   const userId = getCurrentUserId();
   const generation = getAuthGeneration();
   if (userId) {
-    if (isNewBest) cloudBestCache.set(pbKey(mode, param, punctuation, numbers), best);
+    if (isNewBest) cloudBestCache.set(pbKey(mode, param, punctuation, numbers, languageCode), best);
     if (details) {
       const runId = getValidRunId(details.runId);
       fetch("/api/typing-results", {
@@ -213,6 +217,7 @@ export function recordResult(
           param: String(param),
           punctuation,
           numbers,
+          languageCode: ["en", "es", "pt-br", "de"].includes(window.location.pathname.split("/")[1]?.toLowerCase()) ? window.location.pathname.split("/")[1] : "en",
         }),
       })
         .then((res) => {
@@ -230,9 +235,9 @@ export function recordResult(
           console.warn("[results-store] failed to save cloud result:", err);
           if (isNewBest && generation === getAuthGeneration() && userId === getCurrentUserId()) {
             if (existing) {
-              cloudBestCache.set(pbKey(mode, param, punctuation, numbers), existing);
+              cloudBestCache.set(pbKey(mode, param, punctuation, numbers, languageCode), existing);
             } else {
-              cloudBestCache.delete(pbKey(mode, param, punctuation, numbers));
+              cloudBestCache.delete(pbKey(mode, param, punctuation, numbers, languageCode));
             }
           }
         });
@@ -243,6 +248,6 @@ export function recordResult(
   if (!isNewBest) {
     return { isNewBest: false, best: existing };
   }
-  setStorageItem(pbKey(mode, param, punctuation, numbers), JSON.stringify(best));
+  setStorageItem(pbKey(mode, param, punctuation, numbers, languageCode), JSON.stringify(best));
   return { isNewBest: true, best };
 }

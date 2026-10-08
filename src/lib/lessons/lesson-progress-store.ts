@@ -242,6 +242,7 @@ export const useLessonProgressStore = create<LessonProgressState>()(
             body: JSON.stringify({
               runId,
               lessonId: unitId,
+              languageCode: ["en", "es", "pt-br", "de"].includes(window.location.pathname.split("/")[1]?.toLowerCase()) ? window.location.pathname.split("/")[1] : "en",
               completed: unit.completed,
               stars,
               wpm: input.wpm,
@@ -406,7 +407,10 @@ export async function primeCloudLessonProgress(): Promise<void> {
   // Clear immediately to prevent showing previous user's data while loading or on failure
   useLessonProgressStore.getState().replaceCloudUnits([]);
   try {
-    const res = await fetch("/api/lessons/progress");
+    const pathSegment = window.location.pathname.split("/")[1];
+    const validLocales = ["en", "es", "pt-br", "de"];
+    const languageCode = validLocales.includes(pathSegment?.toLowerCase()) ? pathSegment : "en";
+    const res = await fetch(`/api/lessons/progress?languageCode=${languageCode}`);
     const json = await res.json();
     if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && Array.isArray(json.data)) {
       useLessonProgressStore.getState().replaceCloudUnits(json.data);

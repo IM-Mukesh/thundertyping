@@ -89,6 +89,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       accuracy: input.accuracy,
       stars: input.stars,
       completed: input.completed,
+      language_code: input.languageCode || "en",
     };
 
     const { error: attemptError } = await supabase
@@ -134,6 +135,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .select("*")
         .eq("user_id", userId)
         .eq("lesson_id", input.lessonId)
+        .eq("language_code", input.languageCode || "en")
         .maybeSingle();
 
       if (existing) {
@@ -176,6 +178,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           })
           .eq("user_id", userId)
           .eq("lesson_id", input.lessonId)
+          .eq("language_code", input.languageCode || "en")
           .eq("updated_at", existing.updated_at)
           .select()
           .maybeSingle();
@@ -195,6 +198,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           .insert({
             user_id: userId,
             lesson_id: input.lessonId,
+            language_code: input.languageCode || "en",
             completed: input.completed,
             stars: input.stars,
             best_wpm: input.wpm,
@@ -348,13 +352,14 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
   };
 }
 
-export async function getUserLessonProgress(userId: string) {
+export async function getUserLessonProgress(userId: string, languageCode: string = "en") {
   const supabase = await getSupabaseForRead();
 
   const { data, error } = await supabase
     .from("lesson_progress")
     .select("*")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .eq("language_code", languageCode);
 
   if (error) {
     throw new Error(`Failed to fetch lesson progress: ${error.message}`);

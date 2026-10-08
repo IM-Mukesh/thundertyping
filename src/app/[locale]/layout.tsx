@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono, Orbitron } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import "./globals.css";
+import "../globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
@@ -67,10 +67,11 @@ const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 const organizationSchema = buildOrganizationSchema();
 const webSiteSchema = buildWebSiteSchema();
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children, params }: { children: React.ReactNode, params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   return (
     <html
-      lang="en"
+      lang={locale || "en"}
       data-theme="dark"
       suppressHydrationWarning
       className={`${geistSans.variable} ${jetbrainsMono.variable} h-full antialiased ${orbitron.variable}`}
@@ -106,7 +107,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               slider reaches every game rather than only the one that set it. */}
           <AudioVolumeBridge />
           <AuthProvider>
-            <SiteHeader />
+            <SiteHeader locale={locale} />
             {/* min-h-0 lets a page opt into filling exactly the remaining
                 viewport (see /games, which scrolls its own content instead of
                 the document). A flex item defaults to min-height:auto, which
@@ -115,7 +116,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 that simply grow are unaffected — they still expand the document
                 and scroll normally. */}
             <main id="main-content" className="flex min-h-0 flex-1 flex-col">{children}</main>
-            <SiteFooter />
+            <SiteFooter locale={locale} />
           </AuthProvider>
         </ThemeProvider>
       </body>

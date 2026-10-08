@@ -55,7 +55,7 @@ function isRetiredGameId(gameId: string): boolean {
     && GAME_DEFINITIONS[gameId as GameId].retired === true;
 }
 
-export async function generateMetadata({ params }: PageProps<"/games/[gameId]">): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ gameId: string, locale: string }> }): Promise<Metadata> {
   const { gameId } = await params;
   const game = getPublicGameDefinition(gameId);
   if (!game) {
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: PageProps<"/games/[gameId]">)
   };
 }
 
-export default async function GamePage({ params }: PageProps<"/games/[gameId]">) {
+export default async function GamePage({ params }: { params: Promise<{ gameId: string, locale: string }> }) {
   const { gameId } = await params;
   const game = getPublicGameDefinition(gameId);
   if (!game) notFound();

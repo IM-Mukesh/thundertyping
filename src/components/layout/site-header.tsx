@@ -1,4 +1,5 @@
 "use client";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -52,7 +53,7 @@ function GameSearchInput() {
   );
 }
 
-export function SiteHeader() {
+export function SiteHeader({ locale = "en" }: { locale?: string }) { const dict = getDictionary(locale);
   const pathname = usePathname();
   const onGamesPage = pathname === "/games";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

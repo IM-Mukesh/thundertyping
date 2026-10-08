@@ -11,12 +11,13 @@ import type { VocabWordResult } from "@/lib/vocabulary/use-vocabulary-test";
 // Left unrenamed on the HeroTyping rebrand -- every existing player's
 // vocabulary progress is saved under this name, and renaming it would orphan
 // it.
-const KEY = "thundertyping-vocabulary-progress";
+const KEY_BASE = "thundertyping-vocabulary-progress";
 
 /** Exposed so a component can key `useSyncExternalStore` off the raw storage
  *  string (a stable primitive) instead of setting state from a mount effect. */
-export function vocabProgressKey(): string {
-  return accountStorageKey(KEY);
+export function vocabProgressKey(languageCode: string): string {
+  const key = languageCode === "en" ? KEY_BASE : `${KEY_BASE}-${languageCode}`;
+  return accountStorageKey(key);
 }
 
 export interface VocabDifficultyProgress {
@@ -68,8 +69,8 @@ export function parseVocabProgress(raw: string | null): VocabProgress {
   }
 }
 
-export function getVocabProgress(): VocabProgress {
-  return parseVocabProgress(getStorageItem(vocabProgressKey()));
+export function getVocabProgress(languageCode: string): VocabProgress {
+  return parseVocabProgress(getStorageItem(vocabProgressKey(languageCode)));
 }
 
 export interface RecordVocabSessionResult {
@@ -79,12 +80,13 @@ export interface RecordVocabSessionResult {
 }
 
 export function recordVocabSession(
+  languageCode: string,
   difficulty: VocabDifficulty,
   results: VocabWordResult[],
   wpm: number,
   accuracy: number,
 ): RecordVocabSessionResult {
-  const progress = getVocabProgress();
+  const progress = getVocabProgress(languageCode);
   const tier = progress[difficulty];
   const masteredSet = new Set(tier.mastered);
 
@@ -104,6 +106,6 @@ export function recordVocabSession(
     sessionsCompleted: tier.sessionsCompleted + 1,
   };
   const next: VocabProgress = { ...progress, [difficulty]: updatedTier };
-  setStorageItem(vocabProgressKey(), JSON.stringify(next));
+  setStorageItem(vocabProgressKey(languageCode), JSON.stringify(next));
   return { newlyMastered, isNewBest, progress: next };
 }

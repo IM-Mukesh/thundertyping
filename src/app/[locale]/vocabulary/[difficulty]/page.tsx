@@ -24,7 +24,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({
   params,
-}: PageProps<"/vocabulary/[difficulty]">): Promise<Metadata> {
+}: { params: Promise<{ difficulty: string, locale: string }> }): Promise<Metadata> {
   const { difficulty: raw } = await params;
   const difficulty = getDifficulty(raw);
   if (!difficulty) return {};
@@ -50,7 +50,7 @@ export async function generateMetadata({
 
 export default async function VocabularyDifficultyPage({
   params,
-}: PageProps<"/vocabulary/[difficulty]">) {
+}: { params: Promise<{ difficulty: string, locale: string }> }) {
   const { difficulty: raw } = await params;
   const difficulty = getDifficulty(raw);
   if (!difficulty) notFound();

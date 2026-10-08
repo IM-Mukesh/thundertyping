@@ -25,7 +25,7 @@ function getLesson(lessonId: string) {
     : null;
 }
 
-export async function generateMetadata({ params }: PageProps<"/lessons/[lessonId]">): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lessonId: string, locale: string }> }): Promise<Metadata> {
   const { lessonId } = await params;
   const lesson = getLesson(lessonId);
   if (!lesson) return {};
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps<"/lessons/[lessonId
   };
 }
 
-export default async function LessonPage({ params }: PageProps<"/lessons/[lessonId]">) {
+export default async function LessonPage({ params }: { params: Promise<{ lessonId: string, locale: string }> }) {
   const { lessonId } = await params;
   const lesson = getLesson(lessonId);
   if (!lesson) notFound();

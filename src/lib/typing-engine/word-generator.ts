@@ -1,6 +1,5 @@
 import { ENGLISH_WORDS } from "@/data/words/english-1k";
-
-export const PUNCTUATION_MARKS = [",", ".", "!", "?", ";", ":"];
+import { getTypingConfig } from "./language-config";
 
 // ENGLISH_WORDS is ordered most- to least-frequent (it's a trimmed Dolch/Fry
 // list), so the first N words ARE the common subset -- no separate word list
@@ -10,8 +9,9 @@ export const COMMON_WORD_COUNT = 200;
 export type WordDifficulty = "common" | "all";
 export const WORD_DIFFICULTIES: WordDifficulty[] = ["common", "all"];
 
-function wordPool(difficulty: WordDifficulty | undefined): readonly string[] {
-  return difficulty === "common" ? ENGLISH_WORDS.slice(0, COMMON_WORD_COUNT) : ENGLISH_WORDS;
+function wordPool(difficulty: WordDifficulty | undefined, customPool?: readonly string[]): readonly string[] {
+  const basePool = customPool || ENGLISH_WORDS;
+  return difficulty === "common" ? basePool.slice(0, Math.min(COMMON_WORD_COUNT, basePool.length)) : basePool;
 }
 
 function randomInt(max: number): number {
@@ -27,14 +27,12 @@ function pickRandomWord(pool: readonly string[], exclude?: string): string {
 }
 
 function capitalize(word: string): string {
+  if (!word) return word;
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
 function randomNumberToken(): string {
   const digits = Math.random() < 0.8 ? 1 + randomInt(2) : 3 + randomInt(2);
-  // The leading digit of a multi-digit token must not be 0 -- "07"/"003" are
-  // not how anyone writes a number to be typed. A lone single-digit token can
-  // still legitimately be "0".
   let token = String(digits > 1 ? 1 + randomInt(9) : randomInt(10));
   for (let i = 1; i < digits; i++) token += randomInt(10);
   return token;
@@ -43,16 +41,23 @@ function randomNumberToken(): string {
 export interface WordGenerationOptions {
   punctuation: boolean;
   numbers: boolean;
-  // Omitted (games, lessons) means "all" -- the full pool, unchanged from
-  // before this option existed.
   wordDifficulty?: WordDifficulty;
+  languageCode?: string;
+  customWordPool?: readonly string[];
 }
 
 export function generateWords(count: number, options: WordGenerationOptions): string[] {
-  const pool = wordPool(options.wordDifficulty);
+  const pool = wordPool(options.wordDifficulty, options.customWordPool);
   const words: string[] = [];
   let previous: string | undefined;
   let sentenceStart = true;
+  
+  const config = getTypingConfig(options.languageCode || "en");
+  const punctuationMarks = config.punctuation;
+
+  if (!pool || pool.length === 0) {
+    return Array(count).fill("error");
+  }
 
   for (let i = 0; i < count; i++) {
     if (options.numbers && Math.random() < 0.12) {
@@ -67,8 +72,8 @@ export function generateWords(count: number, options: WordGenerationOptions): st
     if (options.punctuation) {
       if (sentenceStart) word = capitalize(word);
 
-      if (Math.random() < 0.12) {
-        const mark = Math.random() < 0.7 ? "," : PUNCTUATION_MARKS[randomInt(PUNCTUATION_MARKS.length)];
+      if (Math.random() < 0.12 && punctuationMarks.length > 0) {
+        const mark = Math.random() < 0.7 ? "," : punctuationMarks[randomInt(punctuationMarks.length)];
         word += mark;
         sentenceStart = mark === "." || mark === "!" || mark === "?";
       } else {

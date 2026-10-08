@@ -1,5 +1,5 @@
 "use client";
-
+import { usePathname } from "next/navigation";
 import { useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -23,13 +23,16 @@ interface VocabularyHubCardProps {
 }
 
 export function VocabularyHubCard({ difficulty, wordCount }: VocabularyHubCardProps) {
+  const pathname = usePathname();
+  const segment = pathname.split("/")[1];
+  const locale = (["en", "es", "pt-BR", "de"].includes(segment) ? segment : "en");
   // useSyncExternalStore rather than a mount effect: it returns null for the
   // server snapshot and the real value for the client one, so React
   // reconciles the difference itself instead of a hydration mismatch (or the
   // setState-in-effect lint rule) — same pattern as GameBestBadge.
   const raw = useSyncExternalStore(
     noopSubscribe,
-    () => getStorageItem(vocabProgressKey()),
+    () => getStorageItem(vocabProgressKey(locale)),
     () => null,
   );
   const mastered = useMemo(() => parseVocabProgress(raw)[difficulty].mastered.length, [raw, difficulty]);

@@ -9,6 +9,49 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      languages: {
+        Row: { id: string; code: string; name: string; native_name: string; direction: string | null; enabled: boolean | null; sort_order: number | null; created_at: string; updated_at: string; };
+        Insert: { id?: string; code: string; name: string; native_name: string; direction?: string | null; enabled?: boolean | null; sort_order?: number | null; created_at?: string; updated_at?: string; };
+        Update: { id?: string; code?: string; name?: string; native_name?: string; direction?: string | null; enabled?: boolean | null; sort_order?: number | null; created_at?: string; updated_at?: string; };
+        Relationships: [];
+      };
+      vocabulary_items: {
+        Row: { id: string; language_code: string; word: string; normalized_word: string; difficulty: string; category: string | null; frequency_rank: number | null; part_of_speech: string | null; meaning: string | null; example: string | null; status: string | null; content_version: number | null; created_at: string; updated_at: string; };
+        Insert: { id?: string; language_code: string; word: string; normalized_word: string; difficulty: string; category?: string | null; frequency_rank?: number | null; part_of_speech?: string | null; meaning?: string | null; example?: string | null; status?: string | null; content_version?: number | null; created_at?: string; updated_at?: string; };
+        Update: { id?: string; language_code?: string; word?: string; normalized_word?: string; difficulty?: string; category?: string | null; frequency_rank?: number | null; part_of_speech?: string | null; meaning?: string | null; example?: string | null; status?: string | null; content_version?: number | null; created_at?: string; updated_at?: string; };
+        Relationships: [];
+      };
+      typing_texts: {
+        Row: { id: string; language_code: string; content_type: string; difficulty: string | null; text: string; normalized_text: string; word_count: number; char_count: number; source: string | null; category: string | null; status: string | null; content_version: number | null; created_at: string; };
+        Insert: { id?: string; language_code: string; content_type: string; difficulty?: string | null; text: string; normalized_text: string; word_count: number; char_count: number; source?: string | null; category?: string | null; status?: string | null; content_version?: number | null; created_at?: string; };
+        Update: { id?: string; language_code?: string; content_type?: string; difficulty?: string | null; text?: string; normalized_text?: string; word_count?: number; char_count?: number; source?: string | null; category?: string | null; status?: string | null; content_version?: number | null; created_at?: string; };
+        Relationships: [];
+      };
+      quotes: {
+        Row: { id: string; language_code: string; text: string; author: string; source: string | null; difficulty: string | null; status: string | null; created_at: string; };
+        Insert: { id?: string; language_code: string; text: string; author: string; source?: string | null; difficulty?: string | null; status?: string | null; created_at?: string; };
+        Update: { id?: string; language_code?: string; text?: string; author?: string; source?: string | null; difficulty?: string | null; status?: string | null; created_at?: string; };
+        Relationships: [];
+      };
+      guides: {
+        Row: { id: string; guide_key: string; language_code: string; slug: string; title: string; description: string; content: string; excerpt: string | null; category: string | null; author: string | null; published_at: string | null; updated_at: string; status: string | null; };
+        Insert: { id?: string; guide_key: string; language_code: string; slug: string; title: string; description: string; content: string; excerpt?: string | null; category?: string | null; author?: string | null; published_at?: string | null; updated_at?: string; status?: string | null; };
+        Update: { id?: string; guide_key?: string; language_code?: string; slug?: string; title?: string; description?: string; content?: string; excerpt?: string | null; category?: string | null; author?: string | null; published_at?: string | null; updated_at?: string; status?: string | null; };
+        Relationships: [];
+      };
+      lessons: {
+        Row: { id: string; lesson_key: string; language_code: string; title: string; description: string | null; order_index: number; difficulty: string | null; tier: string | null; stage: string | null; new_keys: string[] | null; instructions: string[] | null; min_accuracy: number | null; status: string | null; content_version: number | null; };
+        Insert: { id?: string; lesson_key: string; language_code: string; title: string; description?: string | null; order_index: number; difficulty?: string | null; tier?: string | null; stage?: string | null; new_keys?: string[] | null; instructions?: string[] | null; min_accuracy?: number | null; status?: string | null; content_version?: number | null; };
+        Update: { id?: string; lesson_key?: string; language_code?: string; title?: string; description?: string | null; order_index?: number; difficulty?: string | null; tier?: string | null; stage?: string | null; new_keys?: string[] | null; instructions?: string[] | null; min_accuracy?: number | null; status?: string | null; content_version?: number | null; };
+        Relationships: [];
+      };
+      lesson_steps: {
+        Row: { id: string; lesson_id: string; step_order: number; practice_type: string; target_text: string | null; target_keys: string[] | null; word_count: number | null; numbers: boolean | null; advanced_mode: string | null; };
+        Insert: { id?: string; lesson_id: string; step_order: number; practice_type: string; target_text?: string | null; target_keys?: string[] | null; word_count?: number | null; numbers?: boolean | null; advanced_mode?: string | null; };
+        Update: { id?: string; lesson_id?: string; step_order?: number; practice_type?: string; target_text?: string | null; target_keys?: string[] | null; word_count?: number | null; numbers?: boolean | null; advanced_mode?: string | null; };
+        Relationships: [];
+      };
+
       profiles: {
         Row: {
           id: string;
@@ -121,8 +164,7 @@ export type Database = {
         Relationships: [];
       };
       lesson_progress: {
-        Row: {
-          id: string;
+        Row: { language_code: string; id: string;
           user_id: string;
           lesson_id: string;
           completed: boolean;
@@ -141,10 +183,8 @@ export type Database = {
           correct_chars: number;
           incorrect_chars: number;
           created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
+          updated_at: string; };
+        Insert: { language_code?: string; id?: string;
           user_id: string;
           lesson_id: string;
           completed?: boolean;
@@ -163,10 +203,8 @@ export type Database = {
           correct_chars?: number;
           incorrect_chars?: number;
           created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
+          updated_at?: string; };
+        Update: { language_code?: string; id?: string;
           user_id?: string;
           lesson_id?: string;
           completed?: boolean;
@@ -185,13 +223,11 @@ export type Database = {
           correct_chars?: number;
           incorrect_chars?: number;
           created_at?: string;
-          updated_at?: string;
-        };
+          updated_at?: string; };
         Relationships: [];
       };
       lesson_attempts: {
-        Row: {
-          id: string;
+        Row: { language_code: string; id: string;
           user_id: string;
           lesson_id: string;
           wpm: number;
@@ -199,10 +235,8 @@ export type Database = {
           accuracy: number;
           stars: number;
           completed: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
+          created_at: string; };
+        Insert: { language_code?: string; id?: string;
           user_id: string;
           lesson_id: string;
           wpm: number;
@@ -210,10 +244,8 @@ export type Database = {
           accuracy: number;
           stars: number;
           completed?: boolean;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
+          created_at?: string; };
+        Update: { language_code?: string; id?: string;
           user_id?: string;
           lesson_id?: string;
           wpm?: number;
@@ -221,13 +253,11 @@ export type Database = {
           accuracy?: number;
           stars?: number;
           completed?: boolean;
-          created_at?: string;
-        };
+          created_at?: string; };
         Relationships: [];
       };
       typing_results: {
-        Row: {
-          id: string;
+        Row: { language_code: string; id: string;
           user_id: string;
           mode: string;
           duration: number;
@@ -242,10 +272,8 @@ export type Database = {
           param: string | null;
           punctuation: boolean;
           numbers: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
+          created_at: string; };
+        Insert: { language_code?: string; id?: string;
           user_id: string;
           mode: string;
           duration: number;
@@ -260,10 +288,8 @@ export type Database = {
           param?: string | null;
           punctuation?: boolean;
           numbers?: boolean;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
+          created_at?: string; };
+        Update: { language_code?: string; id?: string;
           user_id?: string;
           mode?: string;
           duration?: number;
@@ -278,8 +304,7 @@ export type Database = {
           param?: string | null;
           punctuation?: boolean;
           numbers?: boolean;
-          created_at?: string;
-        };
+          created_at?: string; };
         Relationships: [];
       };
       game_scores: {

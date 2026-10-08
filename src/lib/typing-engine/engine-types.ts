@@ -28,6 +28,8 @@ export interface TestConfig {
   numbers: boolean;
   vocabDifficulty: VocabDifficulty;
   wordDifficulty: WordDifficulty;
+  languageCode?: string;
+  customWordPool?: readonly string[];
 }
 
 // "missed" is a character the user skipped past by committing the word early.

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils/cn";
 // While a test is running, it smoothly fades to opacity-0 without collapsing height
 // so there is zero layout jump or scrolling disruption during typing.
 // When displaying results or while idle, it stays fully visible.
-export function SiteFooter() {
+export function SiteFooter({ locale = "en" }: { locale?: string }) {
   const isRunning = useIsTestRunning();
 
   return (

@@ -367,10 +367,24 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return getSitemapRoutes().map(({ path, priority, changeFrequency, lastModified }) => ({
-    url: `${SITE_URL}${path}`,
-    lastModified,
-    changeFrequency,
-    priority,
-  }));
+  const routes = getSitemapRoutes();
+
+  return routes.map(({ path, priority, changeFrequency, lastModified }) => {
+    const url = `${SITE_URL}${path}`;
+    return {
+      url,
+      lastModified,
+      changeFrequency,
+      priority,
+      alternates: {
+        languages: {
+          en: url,
+          es: `${SITE_URL}/es${path}`,
+          "pt-BR": `${SITE_URL}/pt-br${path}`,
+          de: `${SITE_URL}/de${path}`,
+          "x-default": url,
+        },
+      },
+    };
+  });
 }

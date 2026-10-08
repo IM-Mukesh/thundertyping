@@ -5,13 +5,11 @@ import type { Database } from "@/lib/supabase/database.types";
 /**
  * Refreshes auth tokens stored in cookies and updates request/response headers.
  * Used by Next.js 16 Proxy (`src/proxy.ts`).
- *
- * Strictly requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
- * (falling back to NEXT_PUBLIC_SUPABASE_ANON_KEY if set).
- *
- * No hardcoded project URLs or placeholder fallbacks are permitted.
  */
-export async function updateSession(request: NextRequest): Promise<NextResponse> {
+export async function updateSession(
+  request: NextRequest,
+  createResponse: () => NextResponse = () => NextResponse.next({ request })
+): Promise<NextResponse> {
   const pathname = request.nextUrl.pathname;
 
   // Do not interfere with callback exchange or signout
@@ -19,7 +17,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     pathname.startsWith("/api/auth/callback") ||
     pathname.startsWith("/api/auth/signout")
   ) {
-    return NextResponse.next({ request });
+    return createResponse();
   }
 
   // If there are no Supabase auth cookies present, this is a guest visitor.
@@ -31,12 +29,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   const hasAuthCookies = supabaseCookieNames.length > 0;
 
   if (!hasAuthCookies) {
-    return NextResponse.next({ request });
+    return createResponse();
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let supabaseResponse = createResponse();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
@@ -55,9 +51,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          supabaseResponse = createResponse();
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

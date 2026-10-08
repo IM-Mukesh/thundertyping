@@ -183,10 +183,12 @@ export function makePbBucketKey(
   mode: string,
   param: string | number | null | undefined,
   punctuation: boolean,
-  numbers: boolean
+  numbers: boolean,
+  languageCode: string = "en"
 ): string {
   const safeParam = param !== null && param !== undefined ? String(param) : "";
-  return `thundertyping-pb:${mode}:${safeParam}:${punctuation ? 1 : 0}:${numbers ? 1 : 0}`;
+  const prefix = languageCode === "en" ? "thundertyping-pb" : `thundertyping-pb:${languageCode}`;
+  return `${prefix}:${mode}:${safeParam}:${punctuation ? 1 : 0}:${numbers ? 1 : 0}`;
 }
 
 export interface TrackableBucketSpec {

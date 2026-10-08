@@ -1,5 +1,5 @@
 "use client";
-
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Check, Headphones, Play, RotateCcw, Sparkles, Trophy, Volume2, VolumeX, X } from "lucide-react";
@@ -34,6 +34,9 @@ interface VocabularyTestProps {
 }
 
 export function VocabularyTest({ difficulty }: VocabularyTestProps) {
+  const pathname = usePathname();
+  const segment = pathname.split("/")[1];
+  const locale = (["en", "es", "pt-BR", "de"].includes(segment) ? segment : "en");
   const { state, start, setTyped } = useVocabularyTest();
   const inputRef = useRef<HTMLInputElement>(null);
   const [outcome, setOutcome] = useState<{ newlyMastered: number; isNewBest: boolean } | null>(null);
@@ -53,7 +56,7 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
   // snapshot, so this alone stays correct across "New round" clicks too.
   const rawProgress = useSyncExternalStore(
     noopSubscribe,
-    () => getStorageItem(vocabProgressKey()),
+    () => getStorageItem(vocabProgressKey(locale)),
     () => null,
   );
   const progress = useMemo(() => parseVocabProgress(rawProgress), [rawProgress]);
@@ -94,7 +97,7 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
 
     const accuracy = round(calculateAccuracy(state.correctKeystrokes, state.incorrectKeystrokes));
     const wpm = round(calculateNetWpm(state.correctKeystrokes, state.elapsedMs));
-    const result = recordVocabSession(difficulty, state.results, wpm, accuracy);
+    const result = recordVocabSession(locale, difficulty, state.results, wpm, accuracy);
     setOutcome({ newlyMastered: result.newlyMastered, isNewBest: result.isNewBest });
   }, [state.status, state.results, state.correctKeystrokes, state.incorrectKeystrokes, state.elapsedMs, difficulty]);
 

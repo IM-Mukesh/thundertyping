@@ -42,7 +42,8 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
       p_run_id: input.runId, p_user_id: userId, p_mode: input.mode, p_duration: input.duration,
       p_wpm: authoritativeWpm, p_accuracy: authoritativeAccuracy, p_correct_chars: input.correctChars,
       p_incorrect_chars: input.incorrectChars, p_missed_chars: input.missedChars, p_extra_chars: input.extraChars,
-      p_param: input.param, p_punctuation: input.punctuation, p_numbers: input.numbers, p_earned_xp: earnedXp
+      p_param: input.param, p_punctuation: input.punctuation, p_numbers: input.numbers, p_earned_xp: earnedXp,
+      p_language_code: input.languageCode || "en"
     });
 
     if (!error && data) {

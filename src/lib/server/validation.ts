@@ -46,6 +46,7 @@ export interface ValidatedTypingResultInput {
   punctuation: boolean;
   numbers: boolean;
   runId: string;
+  languageCode?: string;
 }
 
 export function validateTypingResultInput(
@@ -167,6 +168,7 @@ export function validateTypingResultInput(
       punctuation,
       numbers,
       runId,
+      languageCode: p.languageCode !== undefined && p.languageCode !== null ? String(p.languageCode) : "en",
     },
   };
 }
@@ -185,6 +187,7 @@ export interface ValidatedLessonProgressInput {
   correctChars: number;
   incorrectChars: number;
   elapsedMs: number;
+  languageCode?: string;
 }
 
 export function validateLessonProgressInput(
@@ -274,6 +277,7 @@ export function validateLessonProgressInput(
       correctChars,
       incorrectChars,
       elapsedMs: (p.elapsedMs as number | undefined) ?? 0,
+      languageCode: p.languageCode !== undefined && p.languageCode !== null ? String(p.languageCode) : "en",
     },
   };
 }
