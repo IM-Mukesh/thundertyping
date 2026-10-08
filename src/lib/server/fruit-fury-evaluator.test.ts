@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { TEST_MODE_STORE } from "@/lib/server/fruit-fury-state";

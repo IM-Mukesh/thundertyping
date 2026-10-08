@@ -21,7 +21,7 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
   // Extract current locale and path from pathname
   const segments = pathname.split("/");
   const firstSegment = segments[1];
-  const isLocalePrefix = LOCALES.includes(firstSegment as any);
+  const isLocalePrefix = LOCALES.includes(firstSegment as (typeof LOCALES)[number]);
   
   const currentLocale = isLocalePrefix ? firstSegment : DEFAULT_LOCALE;
   const pathWithoutLocale = isLocalePrefix ? `/${segments.slice(2).join("/")}` : pathname;
@@ -31,7 +31,7 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
       const willOpen = !prev;
       if (willOpen) {
         requestAnimationFrame(() => {
-          const idx = LOCALES.indexOf(currentLocale as any);
+          const idx = LOCALES.indexOf(currentLocale as (typeof LOCALES)[number]);
           itemRefs.current[idx >= 0 ? idx : 0]?.focus();
         });
       }

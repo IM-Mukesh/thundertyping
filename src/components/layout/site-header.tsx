@@ -53,7 +53,7 @@ function GameSearchInput() {
   );
 }
 
-export function SiteHeader({ locale = "en" }: { locale?: string }) { const dict = getDictionary(locale);
+export function SiteHeader({ locale = "en" }: { locale?: string }) { 
   const pathname = usePathname();
   const onGamesPage = pathname === "/games";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

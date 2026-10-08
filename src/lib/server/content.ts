@@ -182,13 +182,15 @@ export const getGuide = unstable_cache(
     const supabase = createAdminClient();
     
     // First try by guide_key, then fallback to slug
-    let { data: guide, error } = await supabase
+    const guideRes = await supabase
       .from("guides")
       .select("*")
       .eq("language_code", languageCode)
       .eq("guide_key", slugOrKey)
       .eq("status", "published")
       .single();
+    let guide = guideRes.data;
+    const error = guideRes.error;
 
     if (!guide) {
       const { data: guideBySlug } = await supabase
