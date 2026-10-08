@@ -4,11 +4,8 @@ import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Globe } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-
-// Single-entry on purpose: English is the only supported language right now
-// (see PROGRESS.md). This is a real, working selector — not a decorative
-// placeholder — so adding a second language later is just a second row here.
-const LANGUAGES = [{ id: "english", label: "English" }] as const;
+import { LOCALES, LOCALE_NAMES, DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { usePathname, useRouter } from "next/navigation";
 
 interface LanguageSelectorProps {
   compact?: boolean;
@@ -18,13 +15,24 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Extract current locale and path from pathname
+  const segments = pathname.split("/");
+  const firstSegment = segments[1];
+  const isLocalePrefix = LOCALES.includes(firstSegment as any);
+  
+  const currentLocale = isLocalePrefix ? firstSegment : DEFAULT_LOCALE;
+  const pathWithoutLocale = isLocalePrefix ? `/${segments.slice(2).join("/")}` : pathname;
 
   const handleToggle = () => {
     setOpen((prev) => {
       const willOpen = !prev;
       if (willOpen) {
         requestAnimationFrame(() => {
-          itemRefs.current[0]?.focus();
+          const idx = LOCALES.indexOf(currentLocale as any);
+          itemRefs.current[idx >= 0 ? idx : 0]?.focus();
         });
       }
       return willOpen;
@@ -33,7 +41,7 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
 
   const handleMenuKeyDown = (e: React.KeyboardEvent) => {
     const currentIndex = itemRefs.current.findIndex((el) => el === document.activeElement);
-    const total = LANGUAGES.length;
+    const total = LOCALES.length;
     if (e.key === "Escape") {
       e.preventDefault();
       setOpen(false);
@@ -55,13 +63,31 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
     }
   };
 
+  const switchLanguage = (locale: string) => {
+    if (locale === currentLocale) {
+      setOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    const newPath = locale === DEFAULT_LOCALE
+      ? pathWithoutLocale || "/"
+      : `/${locale}${pathWithoutLocale === "/" ? "" : pathWithoutLocale}`;
+
+    setOpen(false);
+    // Hard navigate if you want full refresh or soft navigate if App Router can handle it?
+    // Using window.location.href ensures that states relying on full hydration reload correctly,
+    // but router.push is softer. For full language switch, router.push is usually fine in Next.js 13+
+    router.push(newPath);
+  };
+
   return (
     <div className="relative">
       <button
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        aria-label="Language: English"
+        aria-label={`Language: ${LOCALE_NAMES[currentLocale as keyof typeof LOCALE_NAMES]}`}
         aria-expanded={open}
         aria-haspopup="true"
         className={cn(
@@ -72,7 +98,7 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
         )}
       >
         <Globe size={compact ? 18 : 13} />
-        {!compact && <span>English</span>}
+        {!compact && <span>{LOCALE_NAMES[currentLocale as keyof typeof LOCALE_NAMES]}</span>}
       </button>
 
       <AnimatePresence>
@@ -98,23 +124,20 @@ export function LanguageSelector({ compact }: LanguageSelectorProps) {
                 compact ? "right-0 top-12" : "left-1/2 top-9 -translate-x-1/2",
               )}
             >
-              {LANGUAGES.map((lang, idx) => (
+              {LOCALES.map((locale, idx) => (
                 <button
-                  key={lang.id}
+                  key={locale}
                   ref={(el) => {
                     itemRefs.current[idx] = el;
                   }}
                   type="button"
                   role="menuitemradio"
-                  aria-checked="true"
-                  onClick={() => {
-                    setOpen(false);
-                    triggerRef.current?.focus();
-                  }}
+                  aria-checked={locale === currentLocale}
+                  onClick={() => switchLanguage(locale)}
                   className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-sub-alt focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
-                  {lang.label}
-                  <Check size={14} className="ml-auto shrink-0" />
+                  {LOCALE_NAMES[locale]}
+                  {locale === currentLocale && <Check size={14} className="ml-auto shrink-0" />}
                 </button>
               ))}
             </motion.div>
