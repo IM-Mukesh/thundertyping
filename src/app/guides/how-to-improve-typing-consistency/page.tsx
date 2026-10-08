@@ -75,23 +75,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Eye-Hand Span in Skilled Transcription Typing",
-    author: "Rayner, K. (Cognitive Psychology, 1983)",
-    url: "https://doi.org/10.1016/0010-0285(83)90013-0",
-  },
-  {
-    title: "Rhythmic Structure and Inter-Keystroke Interval Distribution in Touch Typing",
-    author: "Gentner, D. R. (Acta Psychologica, 1982)",
-    url: "https://doi.org/10.1016/0001-6918(82)90022-7",
-  },
-  {
-    title: "Motor Timing Variability and the Acquisition of Complex Temporal Skills",
-    author: "Ivry, R. B., & Hazeltine, R. E. (Journal of Experimental Psychology: Human Perception and Performance, 1995)",
-    url: "https://doi.org/10.1037/0096-1523.21.1.3",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HowToImproveTypingConsistencyPage() {
   const schema = buildArticleSchema({
@@ -183,11 +167,11 @@ export default function HowToImproveTypingConsistencyPage() {
             represents the classical coefficient of variation, quantifying relative speed dispersion.
           </li>
           <li>
-            <strong>Clamped Consistency Score:</strong> To present an intuitive 0% to 100% metric bounded
-            against negative outliers, HeroTyping clamps the result:
+            <strong>Sigmoid Mapping (Kogasa curve):</strong> To present an intuitive 0% to 100% metric that gracefully handles extreme outliers (like stopping entirely for several seconds), HeroTyping maps the coefficient of variation (CoV) through a modified tanh sigmoid curve:
             <code className="block my-2 p-2 bg-sub-alt/40 rounded text-xs font-mono">
-              Consistency % = Math.max(0, Math.min(100, Math.round((1 - (Standard Deviation / Mean)) * 100)))
+              Consistency % = 100 * (1 - Math.tanh(CoV + (CoV^3)/3 + (CoV^5)/5))
             </code>
+            This gently curves the penalty for variation, ensuring that realistic typing fluctuations result in scores between 70-95%, while only extreme bursting and pausing pushes the score near 0%.
           </li>
         </ol>
 
@@ -248,7 +232,7 @@ export default function HowToImproveTypingConsistencyPage() {
 
         <h2 id="the-look-ahead-buffer">The Visual Look-Ahead Buffer</h2>
         <p>
-          The primary neurological reason typists stall is that their eyes are locked on the active word being typed.
+          A common reason typists stall is that their eyes are locked on the active word being typed.
           When your fingers finish typing a word, your brain suddenly realizes it does not know what word comes next.
           Your hands freeze while your eyes move forward to read the next word.
         </p>

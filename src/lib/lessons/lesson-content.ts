@@ -221,7 +221,7 @@ function getStepPedagogy(
           phase: "checkpoint",
           title: "Unit Checkpoint",
           description: "Full-length evaluation testing accuracy and rhythm across the full unit passage.",
-          objective: `Score 60%+ accuracy to complete this unit (higher accuracy earns up to 3 stars).`,
+          objective: `Score 60%+ accuracy to complete this unit (higher accuracy earns up to 5 stars).`,
           style: "random",
           minAccuracy: unit.minAccuracy,
         };
@@ -237,7 +237,7 @@ function getStepPedagogy(
       phase: "checkpoint",
       title: "Unit Checkpoint",
       description: "Full-length evaluation testing accuracy and rhythm across the full unit passage.",
-      objective: `Score 60%+ accuracy to complete this unit (higher accuracy earns up to 3 stars).`,
+      objective: `Score 60%+ accuracy to complete this unit (higher accuracy earns up to 5 stars).`,
       style: "random",
       minAccuracy: unit.minAccuracy,
     };

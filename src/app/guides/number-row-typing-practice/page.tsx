@@ -107,23 +107,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Spatial Disorientation and Error Recovery in Long-Distance Keystrokes",
-    author: "Salthouse, T. A. (Cognitive Science, 1984)",
-    url: "https://doi.org/10.1207/s15516709cog0804_2",
-  },
-  {
-    title: "Comparative Biomechanics of Numeric Entry: Top-Row vs. Keypad Configurations",
-    author: "Peper, E., et al. (Applied Ergonomics, 2003)",
-    url: "https://doi.org/10.1016/S0003-6870(03)00038-7",
-  },
-  {
-    title: "Motor Chunking and Spatial Coding in Numeric Keystroke Sequences",
-    author: "Verwey, W. B. (Psychological Research, 1999)",
-    url: "https://doi.org/10.1007/s004260050042",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function NumberRowTypingPracticePage() {
   const schema = buildArticleSchema({

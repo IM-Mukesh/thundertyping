@@ -34,8 +34,17 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: `/vocabulary/${difficulty}` },
-    openGraph: { title, description, url: `/vocabulary/${difficulty}` },
-    twitter: { title, description },
+    openGraph: { 
+      title, 
+      description, 
+      url: `/vocabulary/${difficulty}`,
+      images: [{ url: "/opengraph-image" }]
+    },
+    twitter: { 
+      title, 
+      description,
+      images: ["/opengraph-image"]
+    },
   };
 }
 

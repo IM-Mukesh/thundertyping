@@ -107,23 +107,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Carpal Tunnel Pressure and Tendon Travel During Keyboard Operations",
-    author: "Rempel, D., et al. (Journal of Bone and Joint Surgery, 1999)",
-    url: "https://doi.org/10.2106/00004623-199911000-00006",
-  },
-  {
-    title: "Biomechanical Evaluation of Flexor Tendon Loading in Rapid Finger Tapping",
-    author: "Dennerlein, J. T., & Johnson, P. W. (Ergonomics, 2006)",
-    url: "https://doi.org/10.1080/00140130600612739",
-  },
-  {
-    title: "Kinematic and Electromyographic Comparison of Touch-Typing Techniques",
-    author: "Baker, N. A., & Cidboy, C. (Work: A Journal of Prevention, Assessment and Rehabilitation, 2006)",
-    url: "https://content.iospress.com/articles/work/wor00511",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function BottomRowTypingPracticePage() {
   const schema = buildArticleSchema({

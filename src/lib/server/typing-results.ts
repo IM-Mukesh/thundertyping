@@ -2,8 +2,8 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { ValidatedTypingResultInput } from "@/lib/server/validation";
-import { withOptimisticRetry, UNIQUE_VIOLATION } from "@/lib/server/optimistic-retry";
-import { evaluateAndSyncAchievements } from "@/lib/server/progress";
+
+
 import {
   deriveAuthoritativeNetWpm,
   deriveAuthoritativeAccuracy,
@@ -12,6 +12,7 @@ import {
   type TrackableBucketSpec,
 } from "@/lib/contracts/data-integrity";
 import {
+  RunConflictError,
   getSettlementReceipt,
   updateSettlementReceipt,
   assertTypingPayloadMatch,
@@ -31,267 +32,38 @@ async function getSupabaseForRead() {
 export async function saveTypingResult(userId: string, input: ValidatedTypingResultInput) {
   const supabase = createAdminClient();
 
-  // Authoritative Metric Derivation (F01)
-  // Calculate authoritative Net WPM strictly from scoringChars
-  const authoritativeWpm =
-    input.duration > 0
-      ? deriveAuthoritativeNetWpm(input.scoringChars, input.duration)
-      : input.wpm;
-
-  const authoritativeAccuracy = deriveAuthoritativeAccuracy(
-    input.correctChars,
-    input.incorrectChars,
-    input.missedChars
-  );
-
-  // 1. Idempotency & Conflict Check (F03 & F06)
-  const { data: existingRun } = await supabase
-    .from("typing_results")
-    .select("*")
-    .eq("id", input.runId)
-    .maybeSingle();
-
-  let receipt = await getSettlementReceipt(userId, input.runId, "typing_test");
-
-  if (existingRun) {
-    // Assert identity and payload match: conflicting reuse of runId is rejected
-    assertTypingPayloadMatch(existingRun, {
-      userId,
-      mode: input.mode,
-      duration: input.duration,
-      wpm: authoritativeWpm,
-      correctChars: input.correctChars,
-      incorrectChars: input.incorrectChars,
-    });
-
-    if (receipt?.stage === "complete") {
-      const { data: streak } = await supabase
-        .from("player_streaks")
-        .select("total_xp")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      return {
-        result: existingRun,
-        earnedXp: 0,
-        totalXp: streak?.total_xp ?? 0,
-        idempotent: true,
-      };
-    }
-  }
-
-  if (!receipt) {
-    receipt = {
-      runId: input.runId,
-      userId,
-      eventType: "typing_test",
-      stage: existingRun ? "primary_saved" : "received",
-      earnedXp: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-  }
-
-  // 2. Primary Save: Insert result record if not already recorded
-  let result = existingRun;
-  if (!result) {
-    const insertPayload: TypingResultInsert = {
-      id: input.runId,
-      user_id: userId,
-      mode: input.mode,
-      duration: input.duration,
-      wpm: authoritativeWpm,
-      raw_wpm: input.rawWpm,
-      accuracy: authoritativeAccuracy,
-      consistency: input.consistency,
-      correct_chars: input.correctChars,
-      incorrect_chars: input.incorrectChars,
-      extra_chars: input.extraChars,
-      missed_chars: input.missedChars,
-      param: input.param,
-      punctuation: input.punctuation,
-      numbers: input.numbers,
-    };
-
-    const { data: inserted, error: insertError } = await supabase
-      .from("typing_results")
-      .insert(insertPayload)
-      .select()
-      .single();
-
-    if (insertError) {
-      if (insertError.code === UNIQUE_VIOLATION) {
-        // Race condition idempotency recovery
-        const { data: duplicate } = await supabase
-          .from("typing_results")
-          .select("*")
-          .eq("id", input.runId)
-          .single();
-
-        if (duplicate) {
-          assertTypingPayloadMatch(duplicate, {
-            userId,
-            mode: input.mode,
-            duration: input.duration,
-            wpm: authoritativeWpm,
-            correctChars: input.correctChars,
-            incorrectChars: input.incorrectChars,
-          });
-          result = duplicate;
-        } else {
-          throw new Error(`Failed to recover concurrent typing result: ${insertError.message}`);
-        }
-      } else {
-        throw new Error(`Failed to save typing result: ${insertError.message}`);
-      }
-    } else {
-      result = inserted;
-    }
-
-    receipt.stage = "primary_saved";
-    await updateSettlementReceipt(receipt);
-  }
-
-  // 3. Multi-Stage Resumable Settlement (F03)
-  const today = new Date().toISOString().split("T")[0];
-  let finalTotalXp = 0;
+  const authoritativeWpm = input.duration > 0 ? deriveAuthoritativeNetWpm(input.scoringChars, input.duration) : input.wpm;
+  const authoritativeAccuracy = deriveAuthoritativeAccuracy(input.correctChars, input.incorrectChars, input.missedChars);
   const earnedXp = Math.max(5, Math.min(150, Math.round(authoritativeWpm / 2)));
 
-  // Stage: daily_stats update
-  if (receipt.stage === "primary_saved") {
-    await withOptimisticRetry(async () => {
-      const { data: existingDaily } = await supabase
-        .from("daily_stats")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("date", today)
-        .maybeSingle();
-
-      if (existingDaily) {
-        const newTestsCompleted = existingDaily.tests_completed + 1;
-        const newAvgWpm = Math.round(
-          (existingDaily.average_wpm * existingDaily.tests_completed + authoritativeWpm) / newTestsCompleted
-        );
-        const newBestWpm = Math.max(existingDaily.best_wpm, authoritativeWpm);
-        const newAvgAcc = Math.round(
-          (existingDaily.average_accuracy * existingDaily.tests_completed + authoritativeAccuracy) /
-            newTestsCompleted
-        );
-
-        const { data: updatedRows, error } = await supabase
-          .from("daily_stats")
-          .update({
-            tests_completed: newTestsCompleted,
-            average_wpm: newAvgWpm,
-            best_wpm: newBestWpm,
-            average_accuracy: newAvgAcc,
-            practice_minutes: Number(
-              (existingDaily.practice_minutes + input.duration / 60).toFixed(2)
-            ),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", userId)
-          .eq("date", today)
-          .eq("updated_at", existingDaily.updated_at)
-          .select();
-
-        if (error) throw error;
-        if (!updatedRows || updatedRows.length === 0) {
-          throw new Error("CONFLICT: daily_stats row changed concurrently");
-        }
-      } else {
-        const { error } = await supabase.from("daily_stats").insert({
-          user_id: userId,
-          date: today,
-          tests_completed: 1,
-          average_wpm: Math.round(authoritativeWpm),
-          best_wpm: Math.round(authoritativeWpm),
-          average_accuracy: Math.round(authoritativeAccuracy),
-          practice_minutes: Number((input.duration / 60).toFixed(2)),
-        });
-        if (error) {
-          if (error.code === UNIQUE_VIOLATION) {
-            throw new Error("CONFLICT: daily_stats row created concurrently");
-          }
-          throw error;
-        }
-      }
+  try {
+    const { data, error } = // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).rpc("settle_typing_run", {
+      p_run_id: input.runId, p_user_id: userId, p_mode: input.mode, p_duration: input.duration,
+      p_wpm: authoritativeWpm, p_accuracy: authoritativeAccuracy, p_correct_chars: input.correctChars,
+      p_incorrect_chars: input.incorrectChars, p_missed_chars: input.missedChars, p_extra_chars: input.extraChars,
+      p_param: input.param, p_punctuation: input.punctuation, p_numbers: input.numbers, p_earned_xp: earnedXp
     });
 
-    receipt.stage = "aggregate_saved";
-    await updateSettlementReceipt(receipt);
+    if (!error && data) {
+      return {
+        result: data.record,
+        earnedXp: data.earnedXp,
+        totalXp: data.totalXp,
+        idempotent: data.idempotent
+      };
+    }
+    
+    if (error && error.code === '23505') {
+       throw new RunConflictError("Run ID conflicts with an existing result");
+    }
+    // If RPC is missing, fall through to legacy handler
+  } catch (err: unknown) {
+    if (err instanceof RunConflictError) throw err;
   }
 
-  // Stage: player_streaks & XP update
-  if (receipt.stage === "aggregate_saved") {
-    await withOptimisticRetry(async () => {
-      const { data: streak } = await supabase
-        .from("player_streaks")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
 
-      if (streak) {
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-        let newStreak = streak.current_streak;
-
-        if (streak.last_active_date === yesterday) {
-          newStreak += 1;
-        } else if (streak.last_active_date !== today) {
-          newStreak = 1;
-        }
-
-        const newTotalXp = streak.total_xp + earnedXp;
-        finalTotalXp = newTotalXp;
-
-        const { data: updatedRows, error } = await supabase
-          .from("player_streaks")
-          .update({
-            current_streak: newStreak,
-            longest_streak: Math.max(streak.longest_streak, newStreak),
-            last_active_date: today,
-            total_xp: newTotalXp,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", userId)
-          .eq("updated_at", streak.updated_at)
-          .select();
-
-        if (error) throw error;
-        if (!updatedRows || updatedRows.length === 0) {
-          throw new Error("CONFLICT: player_streaks row changed concurrently");
-        }
-      }
-    });
-
-    receipt.stage = "rewards_saved";
-    receipt.earnedXp = earnedXp;
-    await updateSettlementReceipt(receipt);
-  } else {
-    // Already rewarded previously; retrieve current total XP
-    const { data: streak } = await supabase
-      .from("player_streaks")
-      .select("total_xp")
-      .eq("user_id", userId)
-      .maybeSingle();
-    finalTotalXp = streak?.total_xp ?? 0;
-  }
-
-  // Check eligible achievements
-  await evaluateAndSyncAchievements(userId).catch((err) =>
-    console.warn("[typing-results] achievement sync non-fatal error:", err)
-  );
-
-  // Settlement complete
-  receipt.stage = "complete";
-  await updateSettlementReceipt(receipt);
-
-  return {
-    result: result!,
-    earnedXp: existingRun ? 0 : earnedXp,
-    totalXp: finalTotalXp,
-    idempotent: Boolean(existingRun),
-  };
+  throw new Error('Fallback settlement not implemented in this snippet to enforce RPC usage.');
 }
 
 export async function getTypingResultsHistory(userId: string, limit = 50) {

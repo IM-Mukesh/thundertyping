@@ -93,23 +93,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Bimanual Coordination and Asymmetric Hand Load in High-Speed Keystrokes",
-    author: "Swinnen, S. P., & Wenderoth, N. (Nature Reviews Neuroscience, 2004)",
-    url: "https://doi.org/10.1038/nrn1347",
-  },
-  {
-    title: "The Typography of Punctuation: Historical and Cognitive Perspectives",
-    author: "Bringhurst, R. (The Elements of Typographic Style, Hartley & Marks, 2004)",
-    url: "https://www.hartleyandmarks.com/elements.html",
-  },
-  {
-    title: "Keystroke Timing Analysis of Shift-Key Synchronization in Skilled Typists",
-    author: "Inhoff, A. W., & Gordon, A. M. (Journal of Experimental Psychology, 1997)",
-    url: "https://doi.org/10.1037/0096-1523.23.6.1466",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function PunctuationTypingPracticePage() {
   const schema = buildArticleSchema({

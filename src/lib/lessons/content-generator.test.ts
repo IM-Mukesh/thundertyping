@@ -8,7 +8,7 @@ import {
   generatePatternDrill,
   generateTransitionDrill,
   generateVocabularyDrill,
-  generateWarmupDrill,
+  generateWarmupDrill, generateAdvancedText,
   generateWeakKeyDrill,
 } from "@/lib/lessons/content-generator";
 import { fingerForKey } from "@/lib/lessons/keyboard-layout";
@@ -129,5 +129,41 @@ describe("content-generator: deterministic procedural typing curriculum engine",
         assert.ok(f === "left-pinky" || f === "left-index" || char === "f", `Unexpected finger for ${char}`);
       }
     }
+  });
+
+  it("generateAdvancedText(prose) produces grammatically structured, diverse sentences with proper punctuation (A28)", () => {
+    let valid = 0;
+    const samples = [];
+    
+    for(let i=0; i<100; i++) {
+      const text = generateAdvancedText("prose", Math.max(15, i), i);
+      samples.push(text);
+      
+      const words = text.split(" ");
+      const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g, '')));
+      
+      const hasCapital = /^[A-Z]/.test(text);
+      const hasPunctuation = /[.!?]$/.test(text);
+      const minWords = words.length >= 3;
+      const normalWhitespace = !/\s{2,}/.test(text);
+      const noRepeatedTokens = !/(\b\w+\b )\1{2,}/i.test(text); // No word repeated 3+ times consecutively
+      const wordDiversity = uniqueWords.size / words.length >= 0.4; // At least 40% unique words
+      const noGarbage = !/A{4,}/i.test(text);
+      
+      if (hasCapital && hasPunctuation && minWords && normalWhitespace && noRepeatedTokens && wordDiversity && noGarbage) {
+        valid++;
+      } else {
+        console.error("Failed sample:", text);
+      }
+    }
+    
+    assert.equal(valid, 100, "100/100 prose samples must pass rigorous quality checks");
+    
+    // Log 20 samples for manual inspection as requested
+    console.log("\n--- 20 PROSE SAMPLES FOR MANUAL INSPECTION (A28) ---");
+    for(let i=0; i<20; i++) {
+      console.log(`${i+1}. ${samples[i]}`);
+    }
+    console.log("----------------------------------------------------\n");
   });
 });

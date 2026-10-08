@@ -742,7 +742,7 @@ function StartCard({
         Start
       </ArcadeButton>
 
-      <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
+      <p className="font-mono text-[11px] uppercase tracking-wider text-sub">
         Type to attack — fill the shields before the bar fills
       </p>
     </div>
@@ -828,7 +828,7 @@ function ResultCard({
           Play again
         </ArcadeButton>
 
-        <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-sub">
           Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to battle again
         </p>
       </div>

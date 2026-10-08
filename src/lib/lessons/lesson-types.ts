@@ -410,7 +410,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
       "Type real, capitalized sentences with periods and commas. Experience the full cadence of natural English prose.",
     ],
     minAccuracy: 84,
-    content: { kind: "graduation", wordCount: 20 },
+    content: { kind: "graduation", wordCount: 20, advancedMode: "prose" },
     subLessonCount: 6,
   },
   "building-speed": {

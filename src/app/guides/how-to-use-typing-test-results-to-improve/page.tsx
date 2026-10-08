@@ -71,23 +71,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Feedback and Knowledge of Results in Perceptual-Motor Skill Learning",
-    author: "Salmoni, A. W., Schmidt, R. A., & Walter, C. B. (Psychological Bulletin, 1984)",
-    url: "https://doi.org/10.1037/0033-2909.95.3.355",
-  },
-  {
-    title: "Deliberate Practice and the Modifiability of Cognitive and Motor Performance",
-    author: "Ericsson, K. A. (Medical Education, 2004)",
-    url: "https://doi.org/10.1111/j.1365-2929.2004.02032.x",
-  },
-  {
-    title: "Keystroke Timing Variability and Skill Progression in Typists",
-    author: "Gentner, D. R. (Cognitive Science, 1983)",
-    url: "https://doi.org/10.1207/s15516709cog0703_2",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HowToUseTypingTestResultsToImprovePage() {
   const schema = buildArticleSchema({

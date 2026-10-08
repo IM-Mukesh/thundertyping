@@ -499,7 +499,7 @@ function StartCard({
         Start
       </ArcadeButton>
 
-      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-sub/70">
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-sub">
         Every word buys time
         <span aria-hidden="true">&middot;</span>
         <SkipForward size={11} />
@@ -581,7 +581,7 @@ function GameOverCard({
         Play again
       </ArcadeButton>
 
-      <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-sub">
         Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to play again
       </p>
     </div>

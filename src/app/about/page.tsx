@@ -27,12 +27,9 @@ export default function AboutPage() {
 
       <h2>How your stats are calculated</h2>
       <p>
-        <strong>Words per minute (WPM)</strong> counts every correctly typed character, divides by
-        five (the standard word length used by typing tests), and divides again by the minutes
-        elapsed. <strong>Raw WPM</strong> uses the same formula but counts every keystroke,
-        correct or not, so it reflects your typing speed before mistakes are factored in. See the{" "}
+        <strong>Words per minute (WPM)</strong> is measured using standard net WPM: it counts all attempted characters (including spaces), divides by five (the standard word length) to create standardized words, and subtracts any uncorrected errors before dividing by the minutes elapsed. <strong>Raw WPM</strong> counts every keystroke, correct or not, so it reflects your maximum output speed before mistake penalties are factored in. See the{" "}
         <Link href="/guides/net-wpm-vs-gross-wpm">WPM calculation guide</Link> for the full
-        breakdown, including why a single typo can cost a whole word&apos;s credit.
+        breakdown, including why a single uncorrected typo can cost a whole word&apos;s credit.
       </p>
       <p>
         <strong>Accuracy</strong> is the share of keystrokes that were correct.{" "}

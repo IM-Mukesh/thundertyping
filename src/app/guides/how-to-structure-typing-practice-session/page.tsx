@@ -75,23 +75,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Structure of Practice and the Acquisition of Complex Perceptual Motor Skills",
-    author: "Lee, T. D., & Magill, R. A. (Motor Learning and Control, 1983)",
-    url: "https://doi.org/10.1080/02701367.1983.10605282",
-  },
-  {
-    title: "The Effects of Warm-Up Exercises on Tendon Gliding and Finger Velocity in Typists",
-    author: "Rempel, D., et al. (Human Factors, 2008)",
-    url: "https://doi.org/10.1518/001872008X312198",
-  },
-  {
-    title: "Deliberate Practice in Sports, Music, and Typing: A Comparative Analysis",
-    author: "Ericsson, K. A. (Cambridge University Press, 1996)",
-    url: "https://doi.org/10.1017/CBO9780511527944",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HowToStructureTypingPracticeSessionPage() {
   const schema = buildArticleSchema({

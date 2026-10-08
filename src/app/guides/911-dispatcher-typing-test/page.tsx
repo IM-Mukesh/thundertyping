@@ -155,7 +155,7 @@ export default function DispatcherTypingTestPage() {
           a monitor and re-type it. A 911 dispatcher rarely does this.
         </p>
         <p>
-          Instead, emergency typing demands three distinct neurological skills:
+          Instead, emergency typing demands three distinct cognitive skills:
         </p>
         <ul>
           <li>
@@ -293,7 +293,7 @@ export default function DispatcherTypingTestPage() {
           ]}
         />
 
-        <p className="text-xs text-sub/70">Last updated {UPDATED}.</p>
+        <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>
     </>
   );

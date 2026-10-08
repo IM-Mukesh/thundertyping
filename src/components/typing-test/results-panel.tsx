@@ -83,7 +83,7 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
             </span>
           )}
         </div>
-        <p className="mt-2 text-center text-xs text-sub/70">
+        <p className="mt-2 text-center text-xs text-sub">
           {round(elapsedMs / 100) / 10}s elapsed &middot; the space between two
           words counts as a character
         </p>

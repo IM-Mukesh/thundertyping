@@ -162,7 +162,7 @@ export default async function LessonPage({ params }: PageProps<"/lessons/[lesson
                 >
                   <ArrowLeft size={16} className="shrink-0 text-accent" aria-hidden="true" />
                   <span className="flex min-w-0 flex-col">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-sub/70">Previous Lesson</span>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-sub">Previous Lesson</span>
                     <span className="truncate font-semibold text-foreground">{previousLesson.name}</span>
                   </span>
                 </Link>
@@ -176,7 +176,7 @@ export default async function LessonPage({ params }: PageProps<"/lessons/[lesson
                   )}
                 >
                   <span className="flex min-w-0 flex-col">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-sub/70">Next Lesson</span>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-sub">Next Lesson</span>
                     <span className="truncate font-semibold text-foreground">{nextLesson.name}</span>
                   </span>
                   <ArrowRight size={16} className="shrink-0 text-accent" aria-hidden="true" />

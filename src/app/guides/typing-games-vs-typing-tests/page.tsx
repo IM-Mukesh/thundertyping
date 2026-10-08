@@ -76,23 +76,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Gamification in Perceptual-Motor Skill Training: A Systematic Meta-Analysis",
-    author: "Sailer, M., & Homner, L. (Educational Psychology Review, 2020)",
-    url: "https://doi.org/10.1007/s10648-019-09498-w",
-  },
-  {
-    title: "Stress Inoculation Training and Motor Performance Under High Pressure",
-    author: "Saunders, T., et al. (Journal of Applied Sport Psychology, 1996)",
-    url: "https://doi.org/10.1080/10413209608406478",
-  },
-  {
-    title: "Action Video Games and the Enhancement of Visual Motor Reflexes",
-    author: "Green, C. S., & Bavelier, D. (Nature, 2003)",
-    url: "https://doi.org/10.1038/nature01647",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function TypingGamesVsTypingTestsPage() {
   const schema = buildArticleSchema({

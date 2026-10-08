@@ -125,7 +125,10 @@ export function primeCloudPersonalBests(userId: string): Promise<void> {
         }
       }
     })
-    .catch((err) => console.warn("[results-store] failed to load cloud bests:", err));
+    .catch((err) => {
+      cloudBestsPrimedForUserId = null;
+      console.warn("[results-store] failed to load cloud bests:", err);
+    });
 }
 
 /** Called by AuthProvider on sign-out. */
@@ -212,13 +215,27 @@ export function recordResult(
           numbers,
         }),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error("Save failed");
+          return res.json();
+        })
         .then((json) => {
           if (generation === getAuthGeneration() && userId === getCurrentUserId() && json?.success && json.data?.totalXp !== undefined) {
             primeCloudXp(json.data.totalXp);
+          } else if (!json?.success) {
+            throw new Error(json?.error?.message || "Server rejected save");
           }
         })
-        .catch((err) => console.warn("[results-store] failed to save cloud result:", err));
+        .catch((err) => {
+          console.warn("[results-store] failed to save cloud result:", err);
+          if (isNewBest && generation === getAuthGeneration() && userId === getCurrentUserId()) {
+            if (existing) {
+              cloudBestCache.set(pbKey(mode, param, punctuation, numbers), existing);
+            } else {
+              cloudBestCache.delete(pbKey(mode, param, punctuation, numbers));
+            }
+          }
+        });
     }
     return { isNewBest, best: isNewBest ? best : existing };
   }

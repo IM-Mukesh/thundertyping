@@ -174,7 +174,7 @@ export default function EnglishTypingTestPage() {
 
         <FaqSection items={FAQ_ITEMS} />
 
-        <p className="text-xs text-sub/70">Last updated {UPDATED}.</p>
+        <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>
     </>
   );

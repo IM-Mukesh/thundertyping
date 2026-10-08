@@ -76,23 +76,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Deliberate Practice and the Acquisition of Expert Performance",
-    author: "Ericsson, K. A., Krampe, R. T., & Tesch-Römer, C. (Psychological Review, 1993)",
-    url: "https://doi.org/10.1037/0033-295X.100.3.363",
-  },
-  {
-    title: "Testing Effects in Motor Skill Acquisition: Testing vs. Training Paradigms",
-    author: "Kromann, C. B., et al. (Medical Education, 2009)",
-    url: "https://doi.org/10.1111/j.1365-2923.2008.03248.x",
-  },
-  {
-    title: "Motor Learning and Performance: From Principles to Application",
-    author: "Schmidt, R. A., & Lee, T. D. (Human Kinetics, 2019)",
-    url: "https://us.humankinetics.com/products/motor-learning-and-performance-6th-edition-with-web-study-guide",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function TypingTestVsTypingPracticePage() {
   const schema = buildArticleSchema({
@@ -157,7 +141,7 @@ export default function TypingTestVsTypingPracticePage() {
           technique refinement. The race itself is merely the evaluative event.
         </p>
         <p>
-          Typing follows the exact same physiological laws. Testing measures your existing capacity; deliberate practice
+          Typing follows similar skill-building patterns. Testing measures your existing capacity; deliberate practice
           builds new capacity.
         </p>
 

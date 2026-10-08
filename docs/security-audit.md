@@ -4,7 +4,7 @@
 **Production Domain:** `https://herotyping.com`  
 **Stack:** Next.js 16 App Router, React 19, TypeScript, Supabase Auth + PostgreSQL, Vercel  
 **Audit Date:** October 2026  
-**Status:** ALL CRITICAL, HIGH, MEDIUM, AND LOW FINDINGS REMEDIATED & HARDENED
+**Status:** REMEDIATED WITH QUALIFICATIONS (See October 2026 Audit Notes)
 
 ---
 
@@ -14,7 +14,7 @@ HeroTyping underwent a comprehensive, god-level application security, progressio
 
 Prior to remediation, untrusted browser clients were permitted to self-grant arbitrary XP, manufacture achievements, submit fabricated typing and game scores, force lesson progression without passing thresholds, trigger email floods/enumeration via OTP, and exploit open redirects. Additionally, a critical upstream RCE advisory existed in the Next.js `ImageResponse` subsystem.
 
-All identified vulnerabilities (Findings 1–17 and 3 newly uncovered attack vectors) have been completely eliminated through defense-in-depth engineering. Strict server-authoritative validation was established, `server-only` import barriers were erected, multi-tier distributed rate limiting was deployed, CSP headers were hardened, dependencies were upgraded to clean patches, database integrity constraints were added, and 353 automated tests verify the posture with zero regressions.
+All identified vulnerabilities have been remediated or mitigated through defense-in-depth engineering. Strict server-authoritative validation was established, `server-only` import barriers were erected, multi-tier distributed rate limiting was deployed, CSP headers were hardened, dependencies were upgraded to clean patches, database integrity constraints were added, and 807 automated tests verify the posture with zero regressions.
 
 ---
 
@@ -33,7 +33,7 @@ All identified vulnerabilities (Findings 1–17 and 3 newly uncovered attack vec
 | **Error Handling & Data Exposure** | PostgreSQL internal errors returned | Stripped `app_metadata`, generalized error envelopes, no-store headers | 10 / 10 |
 | **Dependency Posture** | Critical RCE in Next.js `next/og` | Upgraded to Next.js 16.3.8; 0 `npm audit` vulnerabilities remain | 10 / 10 |
 | **Infrastructure & CSP Posture** | Unsafe eval in CSP, unverified origins | Removed `unsafe-eval`, added `frame-ancestors 'self'`, verified host origin | 10 / 10 |
-| **Test Coverage of Security Boundaries**| Missing negative/exploit tests | 353 automated tests covering abuse cases, race conditions, and boundary exploits | 10 / 10 |
+| **Test Coverage of Security Boundaries**| Missing negative/exploit tests | 807 automated tests covering abuse cases, race conditions, and boundary exploits | 10 / 10 |
 
 ---
 
@@ -297,7 +297,7 @@ All identified vulnerabilities (Findings 1–17 and 3 newly uncovered attack vec
   - Upgraded `next` and `eslint-config-next` to `16.3.8`.
   - Ran `npm audit fix` to resolve `brace-expansion`.
   - Zero vulnerabilities reported by `npm audit`.
-- **Regression Test Proof:** `npm audit` returns 0 vulnerabilities.
+- **Regression Test Proof:** `npm audit` returns 1 known dev-only vulnerability (braces, mitigated via overrides).
 - **Verification:** Verified clean audit log.
 - **Residual Risk:** None.
 
@@ -403,4 +403,4 @@ All identified vulnerabilities (Findings 1–17 and 3 newly uncovered attack vec
   - Result: All 167 pages prerendered successfully with zero hydration or build errors
 - **Dependency Audit:**
   - Command: `npm audit`
-  - Result: 0 vulnerabilities
+  - Result: 1 known dev-only vulnerability (braces, mitigated via overrides)

@@ -75,23 +75,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Motor Performance in Alphanumeric Transcription Tasks: Letters vs. Mathematical Symbols",
-    author: "Salthouse, T. A. (Human Factors, 1986)",
-    url: "https://doi.org/10.1177/001872088602800307",
-  },
-  {
-    title: "Bimanual Coordination Patterns in Symbolic and Numeric Data Entry",
-    author: "Swinnen, S. P. (Psychological Bulletin, 2002)",
-    url: "https://doi.org/10.1037/0033-2909.128.2.348",
-  },
-  {
-    title: "The Ergonomics of Programming: Keystroke Latency on Non-Alphanumeric Tokens",
-    author: "Card, S. K., Moran, T. P., & Newell, A. (The Psychology of Human-Computer Interaction, CRC Press, 1983)",
-    url: "https://doi.org/10.1201/9780203736166",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function PracticeTypingNumbersAndSymbolsWithoutLookingPage() {
   const schema = buildArticleSchema({

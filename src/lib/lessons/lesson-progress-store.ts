@@ -402,6 +402,9 @@ export async function primeCloudLessonProgress(): Promise<void> {
   const userId = getCurrentUserId();
   const generation = getAuthGeneration();
   if (!userId) return;
+  
+  // Clear immediately to prevent showing previous user's data while loading or on failure
+  useLessonProgressStore.getState().replaceCloudUnits([]);
   try {
     const res = await fetch("/api/lessons/progress");
     const json = await res.json();

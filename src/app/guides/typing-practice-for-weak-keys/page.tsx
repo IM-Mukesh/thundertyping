@@ -81,23 +81,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Contextual Interference Effects in Motor Skill Acquisition",
-    author: "Magill, R. A., & Hall, K. G. (Perceptual and Motor Skills, 1990)",
-    url: "https://doi.org/10.2466/pms.1990.70.3c.1243",
-  },
-  {
-    title: "Deliberate Practice and the Acquisition of Expert Performance",
-    author: "Ericsson, K. A., Krampe, R. T., & Tesch-Römer, C. (Psychological Review, 1993)",
-    url: "https://doi.org/10.1037/0033-295X.100.3.363",
-  },
-  {
-    title: "The Role of Sub-word Chunking and Bigram Frequency in Touch Typing",
-    author: "Gentner, D. R. (Cognitive Science, 1983)",
-    url: "https://doi.org/10.1207/s15516709cog0703_2",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function TypingPracticeForWeakKeysPage() {
   const schema = buildArticleSchema({

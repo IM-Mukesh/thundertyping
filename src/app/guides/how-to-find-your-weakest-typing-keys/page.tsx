@@ -75,23 +75,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Cognitive illusions of authorship reveal hierarchical error detection in skilled typists",
-    author: "Logan, G. D., & Crump, M. J. C. (Science, 2010)",
-    url: "https://doi.org/10.1126/science.1190483",
-  },
-  {
-    title: "Ability-Based Optimization of Touchscreen Interactions",
-    author: "Sarcar, S., Jokinen, J. P. P., Oulasvirta, A., Wang, Z., Silpasuwanchai, C., & Ren, X. (IEEE Pervasive Computing, 2018)",
-    url: "https://doi.org/10.1109/mprv.2018.011591058",
-  },
-  {
-    title: "How We Type: Movement Strategies and Performance in Everyday Typing",
-    author: "Feit, A. M., Weir, D., & Oulasvirta, A. (Proceedings of the 2016 CHI Conference on Human Factors in Computing Systems, 2016)",
-    url: "https://doi.org/10.1145/2858036.2858233",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HowToFindYourWeakestTypingKeysPage() {
   const schema = buildArticleSchema({
@@ -192,6 +176,18 @@ export default function HowToFindYourWeakestTypingKeysPage() {
             (<code>E, T, A, O, I, N, S, R</code>) before troubleshooting low-frequency fringe keys.
           </li>
         </ul>
+
+        <div className="my-8 p-6 bg-sub-alt/20 rounded-xl border border-border">
+          <h3 className="text-xl font-bold mb-4">What HeroTyping Actually Measures</h3>
+          <p className="mb-4">Our weak-key heuristic is based purely on <strong>rolling final target outcomes</strong> within the practice sandbox. It explicitly tracks:</p>
+          <ul className="list-disc pl-6 mb-4 space-y-1">
+            <li><strong>Correct characters:</strong> Successfully typed final target outcomes.</li>
+            <li><strong>Corrected errors:</strong> Mistakes caught and fixed before completing the word.</li>
+            <li><strong>Skipped characters:</strong> Target letters left un-typed.</li>
+            <li><strong>Extra characters:</strong> Rogue keystrokes inserted into the target sequence.</li>
+          </ul>
+          <p>HeroTyping does <strong>NOT</strong> perform complete keystroke timeline analysis, motor-latency diagnosis, or collect data from every typing surface across your OS. It offers statistical heuristics for practice, not clinical meaning or physiological diagnosis.</p>
+        </div>
 
         <h2 id="four-error-categories">The Four Major Error Patterns</h2>
         <p>

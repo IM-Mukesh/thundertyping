@@ -38,8 +38,17 @@ export function pageMetadata({
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description, url: path },
-    twitter: { title, description },
+    openGraph: { 
+      title, 
+      description, 
+      url: path,
+      images: [{ url: "/opengraph-image" }]
+    },
+    twitter: { 
+      title, 
+      description,
+      images: ["/opengraph-image"]
+    },
     ...(robots ? { robots } : {}),
   };
 }

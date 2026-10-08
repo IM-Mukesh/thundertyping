@@ -81,23 +81,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Anatomical Variations and Tendon Interconnections of the Extensor Digiti Minimi",
-    author: "Zilber, S., & Latil, F. (Surgical and Radiologic Anatomy, 2004)",
-    url: "https://doi.org/10.1007/s00276-004-0242-1",
-  },
-  {
-    title: "Independence of Individual Finger Movements in Humans",
-    author: "Schieber, M. H. (Journal of Neuroscience, 1991)",
-    url: "https://doi.org/10.1523/JNEUROSCI.11-06-01811.1991",
-  },
-  {
-    title: "Electromyography of Extensor and Flexor Tendons in High-Speed Repetitive Keystrokes",
-    author: "Sommerich, C. M., et al. (Ergonomics, 1998)",
-    url: "https://doi.org/10.1080/001401398186937",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function TypingPracticeForDifficultKeysPage() {
   const schema = buildArticleSchema({

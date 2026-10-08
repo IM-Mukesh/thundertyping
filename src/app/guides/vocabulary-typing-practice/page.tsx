@@ -69,23 +69,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Orthographic Mapping in the Acquisition of Sight Word Reading and Spelling",
-    author: "Ehri, L. C. (Scientific Studies of Reading, 2014)",
-    url: "https://doi.org/10.1080/10888438.2013.819356",
-  },
-  {
-    title: "The Role of Phonological and Orthographic Representations in Word Recognition",
-    author: "Perfetti, C. A. (Reading and Writing: An Interdisciplinary Journal, 1992)",
-    url: "https://doi.org/10.1007/BF01027471",
-  },
-  {
-    title: "Motor Memory and Lexical Representation in High-Speed Typing",
-    author: "Crump, M. J., & Logan, G. D. (Psychological Science, 2010)",
-    url: "https://doi.org/10.1177/0956797610383437",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function VocabularyTypingPracticePage() {
   const schema = buildArticleSchema({

@@ -71,23 +71,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Domain-Specific Vocabulary and Motor Chunking in Transcription Tasks",
-    author: "Salthouse, T. A., & Saults, J. S. (Journal of Applied Psychology, 1987)",
-    url: "https://doi.org/10.1037/0021-9010.72.4.603",
-  },
-  {
-    title: "Dual Coding Theory and Motor Memory in Educational Transcription",
-    author: "Paivio, A. (Mental Representations: A Dual Coding Approach, Oxford University Press, 1990)",
-    url: "https://doi.org/10.1093/acprof:oso/9780195066661.001.0001",
-  },
-  {
-    title: "Keystroke Latency and Cognitive Load in Programming Language Syntax Entry",
-    author: "Ko, A. J., & Myers, B. A. (Human-Computer Interaction, 2005)",
-    url: "https://doi.org/10.1207/s15327051hci2003_1",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function CustomTextTypingTestPage() {
   const schema = buildArticleSchema({

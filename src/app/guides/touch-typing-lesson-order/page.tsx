@@ -122,23 +122,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Cognitive Load Theory and the Acquisition of Complex Perceptual-Motor Skills",
-    author: "Sweller, J., van Merriënboer, J. J., & Paas, F. (Educational Psychology Review, 1998)",
-    url: "https://doi.org/10.1023/A:1022193728205",
-  },
-  {
-    title: "Cortical Representation of Hand and Finger Movements in Skilled Typists",
-    author: "Karni, A., et al. (Nature, 1995)",
-    url: "https://doi.org/10.1038/377155a0",
-  },
-  {
-    title: "Curriculum Design in Psychomotor Education: A Taxonomic Approach",
-    author: "Singer, R. N. (Journal of Physical Education, Recreation & Dance, 1980)",
-    url: "https://doi.org/10.1080/07303084.1980.10629731",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function TouchTypingLessonOrderPage() {
   const schema = buildArticleSchema({
@@ -334,7 +318,7 @@ export default function TouchTypingLessonOrderPage() {
         <FaqSection items={FAQ_ITEMS} />
         <SourceList sources={SOURCES} />
 
-        <p className="text-xs text-sub/70">Last updated {UPDATED}.</p>
+        <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>
     </>
   );

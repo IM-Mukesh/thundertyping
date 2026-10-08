@@ -271,7 +271,7 @@ export default function CardBattleGame({ definition }: GameComponentProps) {
                 <span className="font-mono text-[10px] uppercase tracking-wider text-sub">
                   Draw {state.draw.length} · Discard {state.discard.length}
                 </span>
-                <span className="hidden font-mono text-[10px] text-sub/70 sm:inline">
+                <span className="hidden font-mono text-[10px] text-sub sm:inline">
                   (Tap card or type keyword)
                 </span>
                 <button

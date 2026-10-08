@@ -936,7 +936,7 @@ function StartCard({
         Start
       </ArcadeButton>
 
-      <p className="font-mono text-[11px] uppercase tracking-wider text-sub/70">
+      <p className="font-mono text-[11px] uppercase tracking-wider text-sub">
         Type an enemy&apos;s word to shoot it down — survive the boss when it arrives
       </p>
     </div>
@@ -1023,7 +1023,7 @@ function GameOverCard({
           Play again
         </ArcadeButton>
 
-        <p className="font-mono text-[10px] uppercase tracking-wider text-sub/70">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-sub">
           Press <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Enter</kbd> or <kbd className="rounded border border-border bg-sub-alt/40 px-1 py-0.5 font-mono text-[9px] text-foreground">Space</kbd> to restart
         </p>
       </div>

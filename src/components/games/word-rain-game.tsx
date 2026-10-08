@@ -249,7 +249,7 @@ export function WordRainGame({ definition, art }: GameComponentProps) {
 
           {/* Storm Pressure Bar */}
           <div className="mt-2.5 flex items-center gap-2">
-            <Gauge size={12} className={state.pressure > 70 ? "text-error" : "text-sub/70"} />
+            <Gauge size={12} className={state.pressure > 70 ? "text-error" : "text-sub"} />
             <div
               className="h-1.5 flex-1 overflow-hidden rounded-full bg-sub-alt/60"
               role="progressbar"

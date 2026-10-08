@@ -148,6 +148,8 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         const bestAccuracy = Math.max(existing.best_accuracy, input.accuracy);
         const attemptCount = existing.attempt_count + 1;
 
+        const passed = input.stars >= 3;
+        
         const { data: updated, error: updateError } = await supabase
           .from("lesson_progress")
           .update({
@@ -157,11 +159,11 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
             best_accuracy: bestAccuracy,
             attempt_count: attemptCount,
             current_step: Math.max(existing.current_step ?? 0, input.step),
-            pass_count: (existing.pass_count ?? 0) + (input.completed ? 1 : 0),
-            avg_wpm: input.completed
+            pass_count: (existing.pass_count ?? 0) + (passed ? 1 : 0),
+            avg_wpm: passed
               ? (((existing.avg_wpm ?? 0) * (existing.pass_count ?? 0)) + input.wpm) / ((existing.pass_count ?? 0) + 1)
               : (existing.avg_wpm ?? 0),
-            avg_accuracy: input.completed
+            avg_accuracy: passed
               ? (((existing.avg_accuracy ?? 0) * (existing.pass_count ?? 0)) + input.accuracy) / ((existing.pass_count ?? 0) + 1)
               : (existing.avg_accuracy ?? 0),
             last_attempt_at: new Date().toISOString(),
@@ -185,6 +187,8 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         if (input.completed) {
           isFirstTimeCompletion = true;
         }
+        
+        const passed = input.stars >= 3;
 
         const { data: inserted, error: insertError } = await supabase
           .from("lesson_progress")
@@ -197,9 +201,9 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
             best_accuracy: input.accuracy,
             attempt_count: 1,
             current_step: input.step,
-            pass_count: input.completed ? 1 : 0,
-            avg_wpm: input.completed ? input.wpm : 0,
-            avg_accuracy: input.completed ? input.accuracy : 0,
+            pass_count: passed ? 1 : 0,
+            avg_wpm: passed ? input.wpm : 0,
+            avg_accuracy: passed ? input.accuracy : 0,
             last_attempt_at: new Date().toISOString(),
             typed_chars: input.typedChars,
             correct_chars: input.correctChars,
@@ -221,6 +225,9 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
     });
 
     receipt.stage = "aggregate_saved";
+    if (isFirstTimeCompletion) {
+      receipt.earnedXp = 50 + Math.min(100, Math.round(input.wpm));
+    }
     await updateSettlementReceipt(receipt);
   } else {
     // Replay / recovery: fetch existing progress record
@@ -233,13 +240,13 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
     progressRecord = existingProgress;
   }
 
-  // 4. Rewards Stage: XP and Daily Stats (strictly only if input.completed && isFirstTimeCompletion)
+  // 4. Rewards Stage: XP and Daily Stats
   let earnedXp = 0;
   let finalTotalXp = 0;
 
-  if (isFirstTimeCompletion || receipt.stage === "aggregate_saved") {
-    if (input.completed && isFirstTimeCompletion) {
-      earnedXp = 50 + Math.min(100, Math.round(input.wpm));
+  if (receipt.stage === "aggregate_saved") {
+    if (receipt.earnedXp > 0) {
+      earnedXp = receipt.earnedXp;
       const today = new Date().toISOString().split("T")[0];
 
       // Daily stats update

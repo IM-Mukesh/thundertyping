@@ -310,7 +310,7 @@ export default function AverageTypingSpeedPage() {
         ]}
         />
 
-        <p className="text-xs text-sub/70">Last reviewed {UPDATED}.</p>
+        <p className="text-xs text-sub">Last reviewed {UPDATED}.</p>
       </GuideLayout>
     </>
   );

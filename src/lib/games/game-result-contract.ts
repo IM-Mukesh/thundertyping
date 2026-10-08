@@ -25,6 +25,7 @@ export interface GameScorePayload {
   survivedMs: number;
   wpm: number | null;
   accuracy: number | null;
+  evidence?: unknown;
 }
 
 export const isUuid = (value: unknown): value is string =>
@@ -70,7 +71,7 @@ export function parseGameScorePayload(value: unknown): GameScorePayload {
   if (!isGameId(p.gameId)) throw new Error("Invalid or unknown gameId");
   const normalized = normalizeGameRun(p as unknown as GameRun);
   return { ...normalized, runId: p.runId, ownerId: p.ownerId, gameId: p.gameId,
-    variant: normalized.variant ?? "", wpm: normalized.wpm ?? null, accuracy: normalized.accuracy ?? null };
+    variant: normalized.variant ?? "", wpm: normalized.wpm ?? null, accuracy: normalized.accuracy ?? null, evidence: p.evidence };
 }
 
 export function parseGameBest(raw: string | null): GameBest | null {

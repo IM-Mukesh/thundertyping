@@ -46,8 +46,12 @@ export async function POST(request: NextRequest) {
     }
 
     const bodyResult = await readBoundedJson<unknown>(request, 8192);
+    
+    if (!bodyResult.ok) {
+      return apiError("INVALID_INPUT", bodyResult.error, bodyResult.status, undefined, undefined, requestId);
+    }
 
-    if (bodyResult.ok && typeof bodyResult.data === "object" && bodyResult.data !== null && "achievementId" in bodyResult.data) {
+    if (typeof bodyResult.data === "object" && bodyResult.data !== null && "achievementId" in bodyResult.data) {
       const validation = validateAchievementGrantInput(bodyResult.data);
       if (!validation.valid) {
         return apiError("INVALID_INPUT", validation.message, 400, undefined, undefined, requestId);
@@ -58,7 +62,11 @@ export async function POST(request: NextRequest) {
       return apiSuccess(result);
     }
 
-    // Default: sync all eligible achievements based on authoritative DB records
+    if (typeof bodyResult.data !== "object" || bodyResult.data === null || Object.keys(bodyResult.data).length > 0) {
+       return apiError("INVALID_INPUT", "Invalid achievement payload", 400, undefined, undefined, requestId);
+    }
+
+    // Default: sync all eligible achievements based on authoritative DB records (when {} is sent)
     const syncResult = await evaluateAndSyncAchievements(user.id);
     return apiSuccess({
       granted: syncResult.newlyUnlocked.length > 0,

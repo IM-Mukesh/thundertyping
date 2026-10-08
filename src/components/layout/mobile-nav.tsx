@@ -288,7 +288,7 @@ export function MobileNav({ open, onClose, triggerRef }: MobileNavProps) {
                           {label}
                         </span>
                       </div>
-                      <span className="font-mono text-[10px] text-sub/70">
+                      <span className="font-mono text-[10px] text-sub">
                         {badge}
                       </span>
                     </Link>

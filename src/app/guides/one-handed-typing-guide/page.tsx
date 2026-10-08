@@ -53,7 +53,7 @@ const FAQ_ITEMS = [
   {
     question: "What is the Half-QWERTY mirror typing method?",
     answer:
-      "Half-QWERTY relies on a clever neurological phenomenon: bilaterally symmetric muscle memory. When you hold down the Spacebar, your hand types the 'mirror image' of the other half of the keyboard. For example, your left fingers on A-S-D-F instantly type semicolon-L-K-J. It allows experienced QWERTY typists to regain 70% of their speed within a single week.",
+      "Half-QWERTY relies on the concept of mirrored mapping. When you hold down the Spacebar, your hand types the 'mirror image' of the other half of the keyboard. For example, your left fingers on A-S-D-F instantly type semicolon-L-K-J. It allows experienced QWERTY typists to regain 70% of their speed within a single week.",
     plainAnswer:
       "Half-QWERTY lets one hand type the entire keyboard by holding the spacebar to mirror keys from the opposite side, leveraging your existing muscle memory.",
   },
@@ -113,7 +113,7 @@ export default function OneHandedTypingGuidePage() {
         <Callout label="Realistic Performance Expectations">
           <p>
             Losing the use of one hand—whether temporarily due to a fracture or permanently from stroke
-            or limb difference—can feel overwhelming. But clinical occupational studies show that with
+            or limb difference—can feel overwhelming. But many users find that with
             proper adaptive techniques, <strong>speeds of 40 to 60 Net WPM</strong> are completely
             attainable, placing you right at the average of all two-handed adult keyboard users.
           </p>
@@ -300,7 +300,7 @@ export default function OneHandedTypingGuidePage() {
           ]}
         />
 
-        <p className="text-xs text-sub/70">Last updated {UPDATED}.</p>
+        <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>
     </>
   );

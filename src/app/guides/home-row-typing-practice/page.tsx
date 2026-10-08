@@ -99,23 +99,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Tactile Perception and Haptic Anchoring in Typing Performance",
-    author: "Lederman, S. J., & Klatzky, R. L. (Cognitive Psychology, 1987)",
-    url: "https://doi.org/10.1016/0010-0285(87)90008-9",
-  },
-  {
-    title: "Electromyographic Analysis of Hand Tendon Strain During Home-Row Typing",
-    author: "Gerard, M. J., et al. (Ergonomics, 1999)",
-    url: "https://doi.org/10.1080/001401399185108",
-  },
-  {
-    title: "The Development of Motor Programs for Typing",
-    author: "Shaffer, L. H. (Quarterly Journal of Experimental Psychology, 1978)",
-    url: "https://doi.org/10.1080/14640747808400662",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HomeRowTypingPracticePage() {
   const schema = buildArticleSchema({

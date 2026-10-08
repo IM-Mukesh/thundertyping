@@ -284,6 +284,7 @@ export type Database = {
       };
       game_scores: {
         Row: {
+          metadata: Json;
           id: string;
           user_id: string;
           game_id: string;
@@ -299,6 +300,7 @@ export type Database = {
           created_at: string;
         };
         Insert: {
+          metadata?: Json;
           id?: string;
           user_id: string;
           game_id: string;
@@ -314,6 +316,7 @@ export type Database = {
           created_at?: string;
         };
         Update: {
+          metadata?: Json;
           id?: string;
           user_id?: string;
           game_id?: string;

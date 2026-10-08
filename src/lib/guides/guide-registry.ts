@@ -1308,7 +1308,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "typing-for-programmers",
       "data-entry-typing-test",
     ],
-    relatedProductRoute: "/",
+    relatedProductRoute: "/typing-test/custom-text",
     relatedProductLabel: "Try Custom Mode on HeroTyping",
     heroImage: "/guides/typing-tests-tools/custom-text-typing-test/custom-text-typing-workflow.webp",
 

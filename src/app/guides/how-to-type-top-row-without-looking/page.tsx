@@ -107,23 +107,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Kinematic Analysis of Hand and Finger Motions During Touch Typing",
-    author: "Soechting, J. F., & Flanders, M. (Journal of Neurophysiology, 1997)",
-    url: "https://doi.org/10.1152/jn.1997.78.2.904",
-  },
-  {
-    title: "Motor Control and Spatial Coordinates in Keyboard Reaching Tasks",
-    author: "Gordon, J., Ghilardi, M. F., & Ghez, C. (Experimental Brain Research, 1994)",
-    url: "https://doi.org/10.1007/BF00241498",
-  },
-  {
-    title: "Upper Extremity Posture and Tendon Excursion in Keyboard Operators",
-    author: "Armstrong, T. J., et al. (Ergonomics, 1994)",
-    url: "https://doi.org/10.1080/00140139408963737",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HowToTypeTopRowWithoutLookingPage() {
   const schema = buildArticleSchema({

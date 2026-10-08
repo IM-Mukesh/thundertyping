@@ -122,7 +122,7 @@ export async function updateSettlementReceipt(
   try {
     const supabase = createAdminClient();
     const dbClient = supabase as unknown as SupabaseWithReceipts;
-    await dbClient.from("settlement_receipts").upsert(
+    const { error } = await dbClient.from("settlement_receipts").upsert(
       {
         user_id: receipt.userId,
         event_type: receipt.eventType,
@@ -133,8 +133,15 @@ export async function updateSettlementReceipt(
       },
       { onConflict: "user_id,event_type,run_id" }
     );
-  } catch {
-    // Non-fatal if table not installed yet
+    if (error) {
+      if ((error as { code?: string }).code === '42P01') { // relation does not exist
+        // Ignore if table not installed yet
+      } else {
+        throw new Error((error as Error).message);
+      }
+    }
+  } catch (err: unknown) {
+    console.warn("[settlement] Receipt persistence error:", err);
   }
 }
 

@@ -11,7 +11,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function PrivacyPage() {
   return (
-    <ContentPage title="Privacy Policy" subtitle="Last updated: September 27, 2026">
+    <ContentPage title="Privacy Policy" subtitle="Last updated: October 8, 2026">
       <p>
          {SITE_NAME} stores guest settings and progress locally. Signed-in accounts sync profile,
          lesson, game, and typing-result data to the service so it is available across sessions.

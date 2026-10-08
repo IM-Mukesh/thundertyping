@@ -163,7 +163,7 @@ export function LessonUnitRow({
               )}
             </span>
           ) : (
-            <span className="font-mono text-[11px] text-sub/70 flex items-center gap-1">
+            <span className="font-mono text-[11px] text-sub flex items-center gap-1">
               <Lock size={12} aria-hidden="true" /> Locked
             </span>
           )}
@@ -171,7 +171,7 @@ export function LessonUnitRow({
       </div>
 
       {!unlocked && lockedReason && (
-        <div className="text-[11px] text-sub/70 italic border-t border-border/20 pt-1.5">
+        <div className="text-[11px] text-sub italic border-t border-border/20 pt-1.5">
           {lockedReason}
         </div>
       )}

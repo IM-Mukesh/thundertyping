@@ -277,7 +277,7 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
                       "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-all active:scale-95",
                       autoPronounce
                         ? "border-accent/60 bg-accent/15 text-accent"
-                        : "border-border bg-sub-alt/20 text-sub/70 hover:border-border/80 hover:text-sub",
+                        : "border-border bg-sub-alt/20 text-sub hover:border-border/80 hover:text-sub",
                     )}
                     title={`Auto-pronounce new words: ${autoPronounce ? "Enabled (Alt+A)" : "Disabled (Alt+A)"}`}
                     aria-label="Toggle auto-pronounce"

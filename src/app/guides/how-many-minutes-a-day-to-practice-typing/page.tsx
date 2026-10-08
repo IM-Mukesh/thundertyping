@@ -79,23 +79,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Spacing Effects in Learning: A Temporal Distribution Analysis of Motor Skills",
-    author: "Cepeda, N. J., et al. (Psychological Bulletin, 2006)",
-    url: "https://doi.org/10.1037/0033-2909.132.3.354",
-  },
-  {
-    title: "Sleep-Dependent Consolidation of a Motor Skill in the Human Brain",
-    author: "Walker, M. P., et al. (Neuron, 2002)",
-    url: "https://doi.org/10.1016/S0896-6273(02)00746-8",
-  },
-  {
-    title: "Distributed Practice and the Optimisation of Cognitive and Motor Learning",
-    author: "Baddeley, A. D., & Longman, D. J. (Ergonomics, 1978)",
-    url: "https://doi.org/10.1080/00140137808931727",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function HowManyMinutesADayToPracticeTypingPage() {
   const schema = buildArticleSchema({
@@ -151,7 +135,7 @@ export default function HowManyMinutesADayToPracticeTypingPage() {
           their fingers feel sluggish, and their motivation collapses.
         </p>
         <p>
-          Decades of motor learning research reveal a clear consensus: <strong>the optimal duration for keyboard skill
+          General skill acquisition principles suggest: <strong>the optimal duration for keyboard skill
           acquisition is between 15 and 20 minutes per day</strong>.
         </p>
         <p>
@@ -193,7 +177,7 @@ export default function HowManyMinutesADayToPracticeTypingPage() {
                 <th className="p-3 font-semibold text-foreground">Practice Strategy</th>
                 <th className="p-3 font-semibold text-foreground">Weekly Volume</th>
                 <th className="p-3 font-semibold text-foreground">Motor Skill Retention</th>
-                <th className="p-3 font-semibold text-foreground">Neurological Mechanism</th>
+                <th className="p-3 font-semibold text-foreground">Skill Mechanism</th>
               </tr>
             </thead>
             <tbody className="divide-y border-border">

@@ -82,23 +82,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "What makes a faster typist?",
-    author: "University of Cambridge (2018), summary of Dhakal et al.’s typing study",
-    url: "https://www.cam.ac.uk/research/news/what-makes-a-faster-typist",
-  },
-  {
-    title: "Speed-accuracy tradeoff and information processing dynamics",
-    author: "Wickelgren, W. A. (Acta Psychologica, 1977)",
-    url: "https://doi.org/10.1016/0001-6918(77)90012-9",
-  },
-  {
-    title: "Speed–accuracy trade-off in skilled typewriting: Decomposing the contributions of hierarchical control loops",
-    author: "Yamaguchi, M., Crump, M. J. C., & Logan, G. D. (2013)",
-    url: "https://doi.org/10.1037/a0030512",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function WhyWpmIsHighAccuracyIsLowPage() {
   const schema = buildArticleSchema({

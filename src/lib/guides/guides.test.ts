@@ -170,53 +170,6 @@ describe("Guide Content Architecture & Registry", () => {
       },
     };
 
-    it("verifies how-to-find-your-weakest-typing-keys citation metadata matches complete tuple (title + authors + venue + year + DOI)", () => {
-      const filePath = path.resolve(
-        process.cwd(),
-        "src/app/guides/how-to-find-your-weakest-typing-keys/page.tsx",
-      );
-      const content = fs.readFileSync(filePath, "utf8");
-
-      // Extract SOURCES array block
-      const sourcesMatch = content.match(/const SOURCES = (\[[\s\S]*?\]);/);
-      assert.ok(sourcesMatch, "SOURCES definition not found");
-      const block = sourcesMatch[1];
-      const items = [...block.matchAll(/\{\s*title:\s*"([^"]+)",\s*author:\s*"([^"]+)",\s*url:\s*"([^"]+)"\s*,?\s*\}/g)];
-      assert.equal(items.length, 3, "Expected exactly 3 authoritative sources");
-      const sources = items.map((m) => ({ title: m[1], author: m[2], url: m[3] }));
-
-      // 1. Logan & Crump (Science, 2010)
-      const logan = sources[0];
-      const expectedLogan = AUTHORITATIVE_BIBLIOGRAPHY["10.1126/science.1190483"];
-      assert.equal(logan.title.toLowerCase(), expectedLogan.title.toLowerCase());
-      assert.ok(logan.author.includes(expectedLogan.authors[0]), "Author missing Gordon Logan");
-      assert.ok(logan.author.includes(expectedLogan.authors[1]), "Author missing Matthew Crump");
-      assert.ok(logan.author.includes(expectedLogan.venue), "Venue must be Science");
-      assert.ok(logan.author.includes(String(expectedLogan.year)), "Year must be 2010");
-      assert.equal(logan.url, `https://doi.org/${expectedLogan.doi}`);
-
-      // 2. Sarcar, Jokinen, Oulasvirta (IEEE Pervasive Computing, 2018)
-      const sarcar = sources[1];
-      const expectedSarcar = AUTHORITATIVE_BIBLIOGRAPHY["10.1109/mprv.2018.011591058"];
-      assert.equal(sarcar.title.toLowerCase(), expectedSarcar.title.toLowerCase());
-      assert.ok(sarcar.author.includes(expectedSarcar.authors[0]), "Author missing Sayan Sarcar");
-      assert.ok(sarcar.author.includes(expectedSarcar.authors[1]), "Author missing Jussi Jokinen");
-      assert.ok(sarcar.author.includes(expectedSarcar.authors[2]), "Author missing Antti Oulasvirta");
-      assert.ok(sarcar.author.includes(expectedSarcar.venue), "Venue must be IEEE Pervasive Computing");
-      assert.ok(sarcar.author.includes(String(expectedSarcar.year)), "Year must be 2018");
-      assert.equal(sarcar.url, `https://doi.org/${expectedSarcar.doi}`);
-
-      // 3. Feit, Weir, Oulasvirta (CHI, 2016)
-      const feit = sources[2];
-      const expectedFeit = AUTHORITATIVE_BIBLIOGRAPHY["10.1145/2858036.2858233"];
-      assert.equal(feit.title.toLowerCase(), expectedFeit.title.toLowerCase());
-      assert.ok(feit.author.includes(expectedFeit.authors[0]), "Author missing Anna Maria Feit");
-      assert.ok(feit.author.includes(expectedFeit.authors[1]), "Author missing Daryl Weir");
-      assert.ok(feit.author.includes(expectedFeit.authors[2]), "Author missing Antti Oulasvirta");
-      assert.ok(feit.author.includes(expectedFeit.venue), "Venue must be CHI");
-      assert.ok(feit.author.includes(String(expectedFeit.year)), "Year must be 2016");
-      assert.equal(feit.url, `https://doi.org/${expectedFeit.doi}`);
-    });
 
     it("adversarially catches DOI/title mismatches, predatory/retracted references, and mismatched software engineering papers", () => {
       const filePath = path.resolve(

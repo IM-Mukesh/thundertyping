@@ -52,9 +52,9 @@ const FAQ_ITEMS = [
   {
     question: "How long does it take an absolute beginner to learn to touch type?",
     answer:
-      "Most adults learn the full keyboard without looking within 15 to 20 total hours of deliberate practice. Spread across 15 minutes a day, that translates to approximately 6 to 8 weeks to reach comfortable, confident 40 WPM touch typing.",
+      "Most adults learn the full keyboard without looking within 10 to 14 total hours of deliberate practice. Spread across 15 minutes a day, that translates to approximately 6 to 8 weeks to reach comfortable, confident 40 WPM touch typing.",
     plainAnswer:
-      "With 15 minutes of daily practice, expect to achieve comfortable 40 WPM touch typing within 6 to 8 weeks (about 15 to 20 total practice hours).",
+      "With 15 minutes of daily practice, expect to achieve comfortable 40 WPM touch typing within 6 to 8 weeks (about 10 to 14 total practice hours).",
   },
   {
     question: "Will I get slower before I get faster?",
@@ -79,23 +79,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES = [
-  {
-    title: "Stages of Learning and the Acquisition of Complex Perceptual Motor Skills",
-    author: "Fitts, P. M., & Posner, M. I. (Human Performance, Brooks/Cole, 1967)",
-    url: "https://psycnet.apa.org/record/1967-35012-000",
-  },
-  {
-    title: "The Time Course of Perceptual and Motor Skill Learning",
-    author: "Newell, K. M., & Rosenbloom, P. S. (Cognitive Skills and Their Acquisition, 1981)",
-    url: "https://doi.org/10.1016/B978-0-89859-094-4.50006-2",
-  },
-  {
-    title: "Neuroplasticity and Skill Learning in the Adult Human Motor Cortex",
-    author: "Sanes, J. N., & Donoghue, J. P. (Annual Review of Neuroscience, 2000)",
-    url: "https://doi.org/10.1146/annurev.neuro.23.1.393",
-  },
-];
+const SOURCES: never[] = [];
 
 export default function TouchTypingRoadmapForBeginnersPage() {
   const schema = buildArticleSchema({
@@ -129,7 +113,7 @@ export default function TouchTypingRoadmapForBeginnersPage() {
       >
         <Callout label="Realistic timeline">
           <p>
-            Ignore claims that you can reach 100 WPM in one week. Genuine touch typing requires roughly 15 to 20 hours
+            Ignore claims that you can reach 100 WPM in one week. Genuine touch typing requires roughly 10 to 14 hours
             of distributed practice across 6 to 8 weeks to achieve effortless 40 to 50 WPM fluency without looking at
             the keyboard. Consistency beats binge practice every time.
           </p>
