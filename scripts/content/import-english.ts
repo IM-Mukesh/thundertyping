@@ -116,7 +116,7 @@ async function importLessons() {
         lesson_id: insertedLesson.id,
         step_order: sub.step,
         practice_type: sub.content.kind,
-        target_keys: sub.content.kind === "graduation" ? null : sub.content.allowedKeys,
+        target_keys: 'allowedKeys' in sub.content ? sub.content.allowedKeys : null,
         word_count: sub.content.wordCount,
         numbers: sub.content.kind === "graduation" ? sub.content.numbers : null,
         advanced_mode: sub.content.kind === "graduation" ? sub.content.advancedMode : null,

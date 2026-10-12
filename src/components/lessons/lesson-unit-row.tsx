@@ -5,7 +5,7 @@ import type { UnitProgress } from "@/lib/lessons/lesson-progress-store";
 import { round } from "@/lib/typing-engine/stats";
 import { cn } from "@/lib/utils/cn";
 
-interface LessonUnitRowProps {
+interface LessonUnitRowProps { locale?: string;
   unit: LessonDefinition;
   position: number;
   unlocked: boolean;
@@ -14,7 +14,7 @@ interface LessonUnitRowProps {
   lockedReason?: string;
 }
 
-export function LessonUnitRow({
+export function LessonUnitRow({ locale,
   unit,
   position,
   unlocked,
@@ -193,7 +193,7 @@ export function LessonUnitRow({
 
   return (
     <Link
-      href={`/lessons/${unit.id}`}
+      href={locale ? `/${locale}/lessons/${unit.id}` : `/lessons/${unit.id}`}
       className="block rounded-xl focus-visible:outline-2 focus-visible:outline-accent"
     >
       {content}

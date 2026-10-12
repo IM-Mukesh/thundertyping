@@ -174,7 +174,7 @@ describe("Guide Content Architecture & Registry", () => {
     it("adversarially catches DOI/title mismatches, predatory/retracted references, and mismatched software engineering papers", () => {
       const filePath = path.resolve(
         process.cwd(),
-        "src/app/guides/how-to-find-your-weakest-typing-keys/page.tsx",
+        "src/app/[locale]/guides/how-to-find-your-weakest-typing-keys/page.tsx",
       );
       const content = fs.readFileSync(filePath, "utf8");
 
@@ -220,7 +220,7 @@ describe("Guide Content Architecture & Registry", () => {
     it("verifies all guide lesson links reference valid lesson IDs in LESSON_LIST", () => {
       const validLessonIds = new Set<string>(LESSON_LIST.map((l) => l.id));
       validLessonIds.add("practice"); // /lessons/practice is the Practice Lab
-      const guidesDir = path.resolve(process.cwd(), "src/app/guides");
+      const guidesDir = path.resolve(process.cwd(), "src/app/[locale]/guides");
       const guideFiles = fs
         .readdirSync(guidesDir, { recursive: true })
         .filter((f) => String(f).endsWith("page.tsx"));
@@ -404,7 +404,7 @@ describe("Guide Content Architecture & Registry", () => {
       ];
 
       for (const rule of semanticRules) {
-        const fullPath = path.resolve(process.cwd(), "src/app/guides", rule.guideFile);
+        const fullPath = path.resolve(process.cwd(), "src/app/[locale]/guides", rule.guideFile);
         assert.ok(fs.existsSync(fullPath), `Guide file ${rule.guideFile} must exist`);
         const guideText = fs.readFileSync(fullPath, "utf8");
 

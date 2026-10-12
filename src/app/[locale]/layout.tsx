@@ -4,6 +4,7 @@ import { Geist, JetBrains_Mono, Orbitron } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "../globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ThemeInitScript } from "@/components/theme/theme-init-script";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -32,30 +33,32 @@ const orbitron = Orbitron({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  openGraph: {
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description: SITE_DESCRIPTION,
-  },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const dict = (await import("@/lib/i18n/dictionaries")).getDictionary(locale);
+  const title = `${SITE_NAME} — ${dict.home.title}`;
 
-// Runs before hydration so a returning visitor's saved theme applies on
-// first paint instead of flashing the default dark theme.
-const THEME_INIT_SCRIPT = `(function(){try{var r=localStorage.getItem("thundertyping-settings");var t="dark";if(r){var p=JSON.parse(r);if(p&&p.state&&p.state.theme)t=p.state.theme;}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`;
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: title,
+      template: `%s | ${SITE_NAME}`,
+    },
+    description: SITE_DESCRIPTION,
+    openGraph: {
+      title: title,
+      description: SITE_DESCRIPTION,
+      url: SITE_URL,
+      siteName: SITE_NAME,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: title,
+      description: SITE_DESCRIPTION,
+    },
+  };
+}
 
 // Loads AdSense's own script once, in the document head, only when a real
 // client id is configured -- AdSlot's individual <ins> tags render nothing
@@ -78,11 +81,11 @@ export default async function RootLayout({ children, params }: { children: React
       className={`${geistSans.variable} ${jetbrainsMono.variable} h-full antialiased ${orbitron.variable}`}
     >
       <head>
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeInitScript />
         {/* Sitewide identity, once, rather than duplicated per-route -- the
             homepage's own WebApplication schema covers the product itself. */}
-        <Script id="org-schema" type="application/ld+json" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
-        <Script id="website-schema" type="application/ld+json" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }} />
         {adsenseClientId && (
           <Script id="adsense" async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`} crossOrigin="anonymous" strategy="afterInteractive" />
         )}

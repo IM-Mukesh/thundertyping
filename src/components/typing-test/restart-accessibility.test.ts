@@ -4,6 +4,9 @@ import { createRequire } from "node:module";
 import { describe, it } from "node:test";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import ts from "typescript";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { getBundledTypingContent, isAvailableTypingLanguage } from "@/lib/typing-engine/typing-content";
+import type { TestConfig } from "@/lib/typing-engine/engine-types";
 
 import { fileURLToPath } from "node:url";
 
@@ -18,9 +21,15 @@ function flattenElements(node: ReactNode): Element[] {
   return [node, ...flattenElements(children)];
 }
 
-function createTypingTestHarness(engineStatus: "idle" | "running" | "finished" = "idle") {
+function createTypingTestHarness(
+  engineStatus: "idle" | "running" | "finished" = "idle",
+  storedLanguage: string | null = null,
+) {
   const hooks: unknown[] = [];
   let cursor = 0;
+  const storageWrites: Array<{ key: string; value: string }> = [];
+  const storageReads: string[] = [];
+  const engineConfigs: TestConfig[] = [];
 
   const react = {
     useId: () => "test-id",
@@ -35,7 +44,7 @@ function createTypingTestHarness(engineStatus: "idle" | "running" | "finished" =
     },
     useState: (initial: unknown) => {
       const idx = cursor++;
-      if (!(idx in hooks)) hooks[idx] = initial;
+      if (!(idx in hooks)) hooks[idx] = typeof initial === "function" ? (initial as () => unknown)() : initial;
       return [hooks[idx], (next: unknown) => { hooks[idx] = next; }];
     },
   };
@@ -75,6 +84,7 @@ function createTypingTestHarness(engineStatus: "idle" | "running" | "finished" =
     previewComposition: () => {},
     commitWord: () => {},
     restart: () => {},
+    applyConfig: () => {},
   };
 
   const stub = (name: string) => {
@@ -104,12 +114,16 @@ function createTypingTestHarness(engineStatus: "idle" | "running" | "finished" =
     "@/lib/persistence/settings-store": {
       useSettingsStore: (selector: (s: typeof mockSettings) => unknown) => selector(mockSettings),
     },
+    "@/lib/persistence/storage": {
+      getStorageItem: (key: string) => { storageReads.push(key); return storedLanguage; },
+      setStorageItem: (key: string, value: string) => storageWrites.push({ key, value }),
+    },
     "@/lib/typing-engine/custom-duration": {
       formatDuration: (s: number) => `${s}s`,
       parseUrlDuration: () => null,
     },
     "@/lib/typing-engine/use-typing-engine": {
-      useTypingEngine: () => mockEngine,
+      useTypingEngine: (config: TestConfig) => { engineConfigs.push(config); return mockEngine; },
     },
     "@/lib/persistence/results-store": {
       getPersonalBest: () => null,
@@ -163,6 +177,16 @@ function createTypingTestHarness(engineStatus: "idle" | "running" | "finished" =
     "@/lib/games/game-audio": {
       playSound: () => {},
     },
+    "@/lib/i18n/dictionaries": {
+      getDictionary: () => ({ test: { wpm: "wpm", accuracy: "accuracy", restart: "Restart" }, lesson: { consistency: "consistency" } }),
+    },
+    "@/lib/i18n/config": {
+      DEFAULT_LOCALE,
+    },
+    "@/lib/typing-engine/typing-content": {
+      isAvailableTypingLanguage,
+      getBundledTypingContent,
+    },
   };
 
   const file = fileURLToPath(new URL("./typing-test.tsx", import.meta.url));
@@ -183,10 +207,13 @@ function createTypingTestHarness(engineStatus: "idle" | "running" | "finished" =
   );
 
   return {
-    render: () => {
+    render: (props: Record<string, unknown> = {}) => {
       cursor = 0;
-      return exports.TypingTest!({});
+      return exports.TypingTest!(props);
     },
+    storageWrites,
+    storageReads,
+    engineConfigs,
   };
 }
 
@@ -408,6 +435,9 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
       react: {
         useMemo: (factory: () => unknown) => factory(),
       },
+      "next/navigation": {
+        useParams: () => ({ locale: "en" }),
+      },
       "next/link": stub("Link"),
       "motion/react": {
         motion: {
@@ -431,6 +461,9 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
       },
       "@/components/typing-test/results-graph": {
         ResultsGraph: stub("ResultsGraph"),
+      },
+      "@/lib/i18n/dictionaries": {
+        getDictionary: () => ({ test: { wpm: "wpm", accuracy: "accuracy", restart: "Restart" }, lesson: { consistency: "consistency" } }),
       },
     };
 
@@ -480,5 +513,65 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
     // Verify parent containers are NOT inert
     const inertParent = elements.find((el) => el.props.inert === true);
     assert.equal(inertParent, undefined, "ResultsPanel must not be wrapped in any inert container");
+  });
+});
+
+describe("homepage typing language persistence", () => {
+  function languageSelector(elements: Element[]): Element | undefined {
+    return elements.find(
+      (el) => (el.type as { displayName?: string })?.displayName === "LanguageSelector",
+    );
+  }
+
+  it("restores an available stored language on the homepage", () => {
+    const harness = createTypingTestHarness("idle", "de");
+    const selector = languageSelector(
+      flattenElements(harness.render({ locale: "en", enableTypingLanguageSelection: true })),
+    );
+
+    assert.ok(selector, "Homepage should render the language selector");
+    assert.equal(selector.props.language, "de");
+  });
+
+  it("falls back to the route's initial language for an unavailable stored value", () => {
+    const harness = createTypingTestHarness("idle", "fr");
+    const selector = languageSelector(
+      flattenElements(
+        harness.render({
+          locale: "de",
+          localizedContent: {
+            commonWords: ["hallo"],
+            vocab: { easy: [], medium: [], hard: [] },
+            quotes: [],
+          },
+          enableTypingLanguageSelection: true,
+        }),
+      ),
+    );
+
+    assert.ok(selector, "Homepage should render the language selector");
+    assert.equal(selector.props.language, "de");
+  });
+
+  it("persists a newly selected homepage language without involving route navigation", async () => {
+    const harness = createTypingTestHarness();
+    const selector = languageSelector(
+      flattenElements(harness.render({ locale: "en", enableTypingLanguageSelection: true })),
+    );
+
+    assert.ok(selector, "Homepage should render the language selector");
+    await (selector.props.onLanguageChange as (language: "de") => Promise<void>)("de");
+    assert.deepEqual(harness.storageWrites, [
+      { key: "thundertyping-typing-language", value: "de" },
+    ]);
+  });
+
+  it("does not read or write the homepage language preference on non-home typing routes", async () => {
+    const harness = createTypingTestHarness("idle", "de");
+    const elements = flattenElements(harness.render());
+    const selector = languageSelector(elements);
+
+    assert.equal(selector, undefined);
+    assert.deepEqual(harness.storageWrites, []);
   });
 });

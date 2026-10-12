@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { RotateCcw, SlidersHorizontal, Volume2, VolumeX, Wrench } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
+import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import { formatDuration, parseUrlDuration } from "@/lib/typing-engine/custom-duration";
 
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
@@ -28,13 +29,33 @@ import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { MobileTestSettingsModal } from "@/components/typing-test/mobile-test-settings-modal";
 import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
 import { setTestStatus } from "@/lib/typing-engine/test-status-store";
+import type { LocalizedContent, TestStatus } from "@/lib/typing-engine/engine-types";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
+import {
+  getBundledTypingContent,
+  isAvailableTypingLanguage,
+} from "@/lib/typing-engine/typing-content";
 import { playSound } from "@/lib/games/game-audio";
+
+export const TYPING_LANGUAGE_STORAGE_KEY = "thundertyping-typing-language";
+
+function resolveInitialTypingLanguage(initialLanguage: Locale, enabled: boolean): Locale {
+  if (!enabled) return DEFAULT_LOCALE;
+
+  const storedLanguage = getStorageItem(TYPING_LANGUAGE_STORAGE_KEY);
+  return storedLanguage && isAvailableTypingLanguage(storedLanguage)
+    ? storedLanguage
+    : initialLanguage;
+}
 
 export interface TypingTestProps {
   initialMode?: TestMode;
   initialTimeDuration?: number;
   initialCustomText?: string;
   autoOpenCustomModal?: boolean;
+  locale?: string;
+  localizedContent?: LocalizedContent | null;
+  enableTypingLanguageSelection?: boolean;
 }
 
 export function TypingTest({
@@ -42,6 +63,9 @@ export function TypingTest({
   initialTimeDuration,
   initialCustomText,
   autoOpenCustomModal = false,
+  locale = "en",
+  localizedContent,
+  enableTypingLanguageSelection = false,
 }: TypingTestProps = {}) {
   const mode = useSettingsStore((s) => s.mode);
   const timeDuration = useSettingsStore((s) => s.timeDuration);
@@ -102,6 +126,19 @@ export function TypingTest({
   const [isNewBest, setIsNewBest] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
   const [isMobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+  const initialTypingLanguage: Locale = enableTypingLanguageSelection && isAvailableTypingLanguage(locale)
+    ? locale
+    : DEFAULT_LOCALE;
+  const [typingLanguage, setTypingLanguage] = useState<Locale>(() =>
+    resolveInitialTypingLanguage(initialTypingLanguage, enableTypingLanguageSelection),
+  );
+  const [typingContent, setTypingContent] = useState<LocalizedContent | null>(
+    enableTypingLanguageSelection
+      ? typingLanguage === initialTypingLanguage
+        ? localizedContent ?? getBundledTypingContent(typingLanguage)
+        : getBundledTypingContent(typingLanguage)
+      : null,
+  );
   // Diagnostic only -- never subtracted from the test duration. See
   // docs/typing-engine.md for why the clock deliberately keeps running.
   const focusLossCountRef = useRef(0);
@@ -127,6 +164,8 @@ export function TypingTest({
       numbers,
       vocabDifficulty,
       wordDifficulty,
+      languageCode: typingLanguage,
+      localizedContent: typingContent,
     }),
     [
       mode,
@@ -138,10 +177,43 @@ export function TypingTest({
       numbers,
       vocabDifficulty,
       wordDifficulty,
+      typingLanguage,
+      typingContent,
     ],
   );
 
   const engine = useTypingEngine(config);
+  const applyConfig = engine.applyConfig;
+  const engineStatusRef = useRef<TestStatus>(engine.state.status);
+
+  const applyTypingLanguage = useCallback(
+    (nextLanguage: Locale) => {
+      if (
+        !enableTypingLanguageSelection ||
+        !isAvailableTypingLanguage(nextLanguage) ||
+        engineStatusRef.current !== "idle" ||
+        nextLanguage === typingLanguage
+      ) return;
+
+      const content = nextLanguage === DEFAULT_LOCALE
+        ? null
+        : getBundledTypingContent(nextLanguage);
+      if (nextLanguage !== DEFAULT_LOCALE && content === null) return;
+
+      setTypingContent(content);
+      setTypingLanguage(nextLanguage);
+      setStorageItem(TYPING_LANGUAGE_STORAGE_KEY, nextLanguage);
+    },
+    [
+      enableTypingLanguageSelection,
+      typingLanguage,
+    ],
+  );
+
+  const handleTypingLanguageChange = useCallback(
+    (nextLanguage: Locale) => applyTypingLanguage(nextLanguage),
+    [applyTypingLanguage],
+  );
 
   // Resolved fresh on every status change (not memoized on config alone) so
   // a PB set by the attempt that just finished is what the very next attempt
@@ -168,21 +240,10 @@ export function TypingTest({
   useEffect(() => {
     if (lastAppliedConfigRef.current === config) return;
     lastAppliedConfigRef.current = config;
-    engine.applyConfig(config);
+    applyConfig(config);
     setIsNewBest(false);
-    // config identity changes whenever any setting above changes; engine.applyConfig is stable
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    mode,
-    timeDuration,
-    wordCount,
-    quoteLength,
-    customText,
-    punctuation,
-    numbers,
-    vocabDifficulty,
-    wordDifficulty,
-  ]);
+    // config identity changes whenever any setting above changes; engine.applyConfig is stable.
+  }, [applyConfig, config]);
 
   // useLayoutEffect, not useEffect: this island's own idle-chrome hiding
   // happens synchronously during render (showIdleChrome below), but sibling
@@ -193,6 +254,7 @@ export function TypingTest({
   // exact bug class test-status-store.ts's own comment describes shipping
   // before.
   useLayoutEffect(() => {
+    engineStatusRef.current = engine.state.status;
     setTestStatus(engine.state.status);
   }, [engine.state.status]);
 
@@ -376,7 +438,13 @@ export function TypingTest({
           {/* Desktop Config Bar & Language Selector */}
           <div className="hidden sm:flex sm:flex-col sm:items-center sm:gap-2 w-full">
             <TestConfigBar onOpenCustomText={() => setCustomModalOpen(true)} />
-            <LanguageSelector />
+            {enableTypingLanguageSelection && (
+              <LanguageSelector
+                language={typingLanguage}
+                onLanguageChange={handleTypingLanguageChange}
+                disabled={engine.state.status !== "idle"}
+              />
+            )}
           </div>
 
           {/* Mobile Single "Test Settings" Button */}
@@ -526,6 +594,10 @@ export function TypingTest({
         open={isMobileSettingsOpen}
         onClose={() => setMobileSettingsOpen(false)}
         onOpenCustomText={() => setCustomModalOpen(true)}
+        typingLanguage={typingLanguage}
+        onTypingLanguageChange={handleTypingLanguageChange}
+        typingLanguageDisabled={engine.state.status !== "idle"}
+        showTypingLanguage={enableTypingLanguageSelection}
       />
     </div>
   );

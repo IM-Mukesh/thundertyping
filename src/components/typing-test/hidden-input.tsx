@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TestStatus } from "@/lib/typing-engine/engine-types";
 import { splitOnCommit } from "@/lib/typing-engine/input-commit";
 import { focusInputDuringGesture } from "@/lib/typing-engine/input-focus";
+import { graphemeEqual } from "@/lib/typing-engine/unicode";
 
 interface HiddenInputProps {
   value: string;
@@ -32,6 +33,11 @@ interface InputEcho {
 function isCompositionInput(event: InputEvent) {
   return event.isComposing || event.type === "compositionend" ||
     event.inputType?.includes("Composition");
+}
+
+function isEcho(raw: string, echo: InputEcho): boolean {
+  return raw === echo.raw || raw === echo.value ||
+    graphemeEqual(raw, echo.raw) || graphemeEqual(raw, echo.value);
 }
 
 export function HiddenInput({
@@ -175,12 +181,13 @@ export function HiddenInput({
           const native = e.nativeEvent as InputEvent;
           const echo = echoRef.current;
           echoRef.current = null;
-          if (echo && (raw === echo.raw || raw === echo.value)) return;
-          if (native.isComposing || isComposingRef.current) {
+          if (echo && isEcho(raw, echo)) return;
+          const nativeComposition = isCompositionInput(native);
+          if (nativeComposition || isComposingRef.current) {
             // A native composing input can arrive without React observing a
             // compositionstart. In that case the first non-composing change
             // is also our fallback end event.
-            if (native.isComposing || hasCompositionStartRef.current) {
+            if (nativeComposition || hasCompositionStartRef.current) {
               isComposingRef.current = true;
               echoRef.current = null;
               updateDraft(raw);
@@ -203,7 +210,8 @@ export function HiddenInput({
           // than a new edit; the native beforeinput listener above disambiguates
           // actual edits on current mobile browsers.
           if (native.type === "textInput" && echo &&
-            (native.data === echo.raw || native.data === echo.value)) return;
+            (native.data === echo.raw || native.data === echo.value ||
+              (native.data !== null && isEcho(native.data, echo)))) return;
           echoRef.current = null;
           cancelledCompositionRef.current = false;
         }}
@@ -211,6 +219,17 @@ export function HiddenInput({
           if (isDisabled || !acceptsInputRef.current) return;
           isComposingRef.current = true;
           hasCompositionStartRef.current = true;
+          cancelledCompositionRef.current = false;
+          echoRef.current = null;
+          updateDraft(e.currentTarget.value);
+        }}
+        onCompositionUpdate={(e) => {
+          if (isDisabled || !acceptsInputRef.current) return;
+          // Some mobile browsers deliver the candidate text through
+          // compositionupdate before their corresponding input/change event.
+          // Keep the browser-owned draft visible, but do not call onChange:
+          // candidate revisions are not committed keystrokes yet.
+          isComposingRef.current = true;
           cancelledCompositionRef.current = false;
           echoRef.current = null;
           updateDraft(e.currentTarget.value);

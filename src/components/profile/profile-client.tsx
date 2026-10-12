@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   Flame,
@@ -38,6 +38,7 @@ const emptySubscribe = () => () => {};
 
 export function ProfileClient() {
   const router = useRouter();
+  const params = useParams();
   const { user, profile: serverProfile, streak, refreshProfile, signOut } = useAuth();
   const [cloudBestsTick, setCloudBestsTick] = useState(0);
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
@@ -278,7 +279,7 @@ export function ProfileClient() {
             </div>
 
             <Link
-              href="/auth/login"
+              href={typeof params?.locale === 'string' && params.locale !== 'en' ? `/${params.locale}/auth/login` : "/auth/login"}
               className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 font-display text-xs font-bold uppercase tracking-wider text-background shadow-sm hover:brightness-110 active:scale-95 transition-all"
             >
               <LogIn size={14} />

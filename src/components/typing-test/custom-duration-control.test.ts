@@ -149,6 +149,7 @@ describe("compact duration control regression", () => {
       "@/lib/persistence/settings-store": { useSettingsStore: (select: (s: typeof state) => unknown) => select(state) },
       "@/lib/vocabulary/vocabulary-words": { VOCAB_DIFFICULTIES: ["easy", "medium", "hard"] },
       "motion/react": { AnimatePresence: "div", motion: { div: "div" } },
+      "@/components/typing-test/language-selector": { LanguageSelector: () => null },
     });
     const tree = render({ open: true, onClose() {}, onOpenCustomText() {} });
     const grid = elements(tree).find((element) => String(element.props.className).includes("grid-cols-4"));
@@ -188,4 +189,3 @@ describe("compact duration control regression", () => {
     assert.equal(spans60.length, 0);
   });
 });
-

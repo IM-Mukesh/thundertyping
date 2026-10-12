@@ -11,6 +11,7 @@ import {
   emptyCharTally,
   MIN_LIVE_WPM_WINDOW_MS,
 } from "@/lib/typing-engine/stats";
+import { comparisonGraphemes, graphemeEqual, graphemeLength } from "@/lib/typing-engine/unicode";
 
 const TIME_MODE_BATCH = 40;
 const TIME_MODE_LOOKAHEAD = 15;
@@ -34,34 +35,39 @@ function computeEditRegion(
   prev: string,
   next: string,
 ): { prevStart: number; prevEnd: number; nextStart: number; nextEnd: number } {
-  const maxPrefix = Math.min(prev.length, next.length);
+  const prevGraphemes = comparisonGraphemes(prev);
+  const nextGraphemes = comparisonGraphemes(next);
+  const maxPrefix = Math.min(prevGraphemes.length, nextGraphemes.length);
   let prefixLen = 0;
-  while (prefixLen < maxPrefix && prev[prefixLen] === next[prefixLen]) prefixLen++;
+  while (prefixLen < maxPrefix && prevGraphemes[prefixLen] === nextGraphemes[prefixLen]) prefixLen++;
 
-  const maxSuffix = Math.min(prev.length, next.length) - prefixLen;
+  const maxSuffix = Math.min(prevGraphemes.length, nextGraphemes.length) - prefixLen;
   let suffixLen = 0;
   while (
     suffixLen < maxSuffix &&
-    prev[prev.length - 1 - suffixLen] === next[next.length - 1 - suffixLen]
+    prevGraphemes[prevGraphemes.length - 1 - suffixLen] ===
+      nextGraphemes[nextGraphemes.length - 1 - suffixLen]
   ) {
     suffixLen++;
   }
 
   return {
     prevStart: prefixLen,
-    prevEnd: prev.length - suffixLen,
+    prevEnd: prevGraphemes.length - suffixLen,
     nextStart: prefixLen,
-    nextEnd: next.length - suffixLen,
+    nextEnd: nextGraphemes.length - suffixLen,
   };
 }
 
 function computeCharStates(target: string, typed: string): CharState[] {
-  const len = Math.max(target.length, typed.length);
+  const targetGraphemes = comparisonGraphemes(target);
+  const typedGraphemes = comparisonGraphemes(typed);
+  const len = Math.max(targetGraphemes.length, typedGraphemes.length);
   const chars: CharState[] = new Array(len);
   for (let i = 0; i < len; i++) {
-    if (i >= target.length) chars[i] = "extra";
-    else if (i >= typed.length) chars[i] = "pending";
-    else chars[i] = typed[i] === target[i] ? "correct" : "incorrect";
+    if (i >= targetGraphemes.length) chars[i] = "extra";
+    else if (i >= typedGraphemes.length) chars[i] = "pending";
+    else chars[i] = typedGraphemes[i] === targetGraphemes[i] ? "correct" : "incorrect";
   }
   return chars;
 }
@@ -70,7 +76,7 @@ function computeCharStates(target: string, typed: string): CharState[] {
 export function selectDisplayWordStates(state: TestState): WordState[] {
   const { wordStates, activeWordIndex, compositionPreview } = state;
   const activeWord = wordStates[activeWordIndex];
-  if (compositionPreview === null || !activeWord || compositionPreview === activeWord.typed) {
+  if (compositionPreview === null || !activeWord || graphemeEqual(compositionPreview, activeWord.typed)) {
     return wordStates;
   }
   const display = [...wordStates];
@@ -87,6 +93,8 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
     punctuation: config.punctuation,
     numbers: config.numbers,
     wordDifficulty: config.wordDifficulty,
+    languageCode: config.languageCode,
+    customWordPool: config.localizedContent?.commonWords,
   };
   switch (config.mode) {
     case "time":
@@ -96,7 +104,7 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
     case "words":
       return { words: generateWords(config.wordCount, options), quoteSource: null };
     case "quote": {
-      const quote = pickRandomQuote(config.quoteLength);
+      const quote = pickRandomQuote(config.quoteLength, config.localizedContent?.quotes);
       return { words: quote.text.split(" ").filter(Boolean), quoteSource: quote.source };
     }
     case "custom": {
@@ -105,7 +113,7 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
       return { words: parsed.length > 0 ? parsed : fallback, quoteSource: null };
     }
     case "vocabulary":
-      return { words: pickPracticeWords(config.vocabDifficulty, config.wordCount), quoteSource: null };
+      return { words: pickPracticeWords(config.vocabDifficulty, config.wordCount, config.localizedContent?.vocab), quoteSource: null };
   }
 }
 
@@ -152,7 +160,7 @@ export function createInitialState(config: TestConfig): TestState {
 // is. Treating punctuation and digits as free also made accuracy read 100%
 // on a run with visible skips, which is what surfaced it.
 function countMissed(target: string, typed: string): number {
-  return Math.max(0, target.length - typed.length);
+  return Math.max(0, graphemeLength(target) - graphemeLength(typed));
 }
 
 function tallyWord(
@@ -176,11 +184,13 @@ function tallyWord(
 // word is committed — while it's still active, untyped characters are simply
 // not typed yet, not mistakes.
 function markMissedChars(word: WordState): WordState {
-  if (word.typed.length >= word.target.length) return word;
+  const targetLength = graphemeLength(word.target);
+  const typedLength = graphemeLength(word.typed);
+  if (typedLength >= targetLength) return word;
   return {
     ...word,
     chars: word.chars.map((c, i) =>
-      i >= word.typed.length && i < word.target.length ? "missed" : c,
+      i >= typedLength && i < targetLength ? "missed" : c,
     ),
   };
 }
@@ -225,7 +235,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       if (!state.wordStates[state.activeWordIndex] || state.compositionPreview === action.value) return state;
       // Starting composition/focusing is not typing, but the first real draft
       // character is. Candidate selection must not buy untimed thinking time.
-      const startsClock = state.status === "idle" && action.value !== null && action.value.length > 0;
+      const startsClock = state.status === "idle" && action.value !== null && graphemeLength(action.value) > 0;
       return {
         ...state,
         compositionPreview: action.value,
@@ -251,8 +261,15 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       const newTyped = action.value;
       // compositionend can be followed by the same input value. Clearing a
       // preview is meaningful, but a duplicate value is not another keypress.
-      if (newTyped === prevTyped) {
-        return state.compositionPreview === null ? state : { ...state, compositionPreview: null };
+      if (graphemeEqual(newTyped, prevTyped)) {
+        if (newTyped === prevTyped && state.compositionPreview === null) return state;
+        const nextWordStates = [...state.wordStates];
+        nextWordStates[activeIndex] = {
+          ...prevWordState,
+          typed: newTyped,
+          chars: computeCharStates(target, newTyped),
+        };
+        return { ...state, wordStates: nextWordStates, compositionPreview: null };
       }
       const chars = computeCharStates(target, newTyped);
 
@@ -270,6 +287,9 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       // insert/delete/replace with the same logic -- rather than assuming
       // the edit can only ever happen at the tail.
       const region = computeEditRegion(prevTyped, newTyped);
+      const prevGraphemes = comparisonGraphemes(prevTyped);
+      const newGraphemes = comparisonGraphemes(newTyped);
+      const targetGraphemes = comparisonGraphemes(target);
 
       // Characters removed from their old position: deleting a mistake does
       // not un-make it (correctKeystrokes/incorrectKeystrokes are a running
@@ -277,14 +297,14 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       // is recorded as corrected, so the results screen can distinguish
       // "typed badly" from "typed badly and fixed it".
       for (let i = region.prevStart; i < region.prevEnd; i++) {
-        const wasWrong = i >= target.length || prevTyped[i] !== target[i];
+        const wasWrong = i >= targetGraphemes.length || prevGraphemes[i] !== targetGraphemes[i];
         if (wasWrong) correctedErrors += 1;
       }
 
       // Characters newly present at their new position are genuinely new
       // keystrokes, scored against what the target expects right there.
       for (let i = region.nextStart; i < region.nextEnd; i++) {
-        const isCorrect = i < target.length && newTyped[i] === target[i];
+        const isCorrect = i < targetGraphemes.length && newGraphemes[i] === targetGraphemes[i];
         if (isCorrect) correctKeystrokes += 1;
         else incorrectKeystrokes += 1;
         totalTyped += 1;
@@ -301,7 +321,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       }
 
       const isLastWord = activeIndex === state.words.length - 1;
-      const isExactMatch = newTyped === target;
+      const isExactMatch = graphemeEqual(newTyped, target);
       const shouldAutoFinish = state.config.mode !== "time" && isLastWord && isExactMatch;
 
       // committedNetWpmChars already accounts for every word before this one
@@ -362,14 +382,14 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       // A command during candidate selection must not submit a provisional
       // word (or skip the older committed prefix behind it). SET_TYPED first
       // finalizes changed candidates; identical previews are already safe.
-      if (state.compositionPreview !== null && state.compositionPreview !== wordState.typed) return state;
-      if (wordState.typed.length === 0) {
+      if (state.compositionPreview !== null && !graphemeEqual(state.compositionPreview, wordState.typed)) return state;
+      if (graphemeLength(wordState.typed) === 0) {
         return state.compositionPreview === null ? state : { ...state, compositionPreview: null };
       }
 
       const tally = tallyWord(state.charTally, wordState);
       const isLastWord = activeIndex === state.words.length - 1;
-      const isWordCorrect = wordState.typed === wordState.target;
+      const isWordCorrect = graphemeEqual(wordState.typed, wordState.target);
 
       // The space between two words is part of the target text and standard
       // 5-character word normalization.
@@ -427,6 +447,8 @@ export function reducer(state: TestState, action: EngineAction): TestState {
           punctuation: state.config.punctuation,
           numbers: state.config.numbers,
           wordDifficulty: state.config.wordDifficulty,
+          languageCode: state.config.languageCode,
+          customWordPool: state.config.localizedContent?.commonWords,
         });
         words = [...words, ...more];
         wordStates = [...wordStates, ...more.map((w) => ({ target: w, typed: "", chars: [] as CharState[] }))];

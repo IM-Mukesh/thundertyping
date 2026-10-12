@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { LogIn, LogOut, User as UserIcon, CheckCircle2, Trophy, GraduationCap, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/utils/cn";
@@ -12,6 +12,9 @@ export function UserAccountMenu({ isMobile = false }: { isMobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const params = useParams();
+  const locale = typeof params?.locale === 'string' ? params.locale : 'en';
+  const loginHref = locale === 'en' ? '/auth/login' : `/${locale}/auth/login`;
 
   // Close dropdown on outside click or Escape
   useEffect(() => {
@@ -52,7 +55,7 @@ export function UserAccountMenu({ isMobile = false }: { isMobile?: boolean }) {
     if (isMobile) {
       return (
         <Link
-          href="/auth/login"
+          href={loginHref}
           className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 font-display text-xs font-bold uppercase tracking-wider text-background shadow-sm hover:brightness-110 active:scale-[0.98] transition-all"
         >
           <LogIn size={16} aria-hidden="true" />
@@ -63,7 +66,7 @@ export function UserAccountMenu({ isMobile = false }: { isMobile?: boolean }) {
 
     return (
       <Link
-        href="/auth/login"
+        href={loginHref}
         className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 font-display text-[11px] font-semibold uppercase tracking-wider text-accent transition-all hover:bg-accent hover:text-background active:scale-95"
       >
         <LogIn size={14} aria-hidden="true" />

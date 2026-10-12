@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils/cn";
 // was the exact shape of a real shipped bug here: TypingTest is loaded via
 // next/dynamic({ssr:false}), so a plain isRunning flag can silently diverge
 // between the lazy chunk and this shared chunk.
-export function PageIntro() {
+export function PageIntro({ dict }: { dict: { title: string; subtitle: string; guestNote: string; wantToTypeFaster: string } }) {
   const status = useTestStatus();
   const hidden = status !== "idle";
   // isGuest defaults true (no user yet) while the session is still resolving,
@@ -45,16 +45,16 @@ export function PageIntro() {
             would cost the SEO. It returns as a normal heading from sm: up. */}
         <div className="sr-only flex flex-col items-center gap-3 text-center sm:not-sr-only">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Free Online Typing Speed Test
+            {dict.title}
           </h1>
           <p className="text-sm text-sub sm:text-base">
-            Measure your words per minute and accuracy.{" "}
-            {isGuest && "No sign-up required. "}
+            {dict.subtitle}{" "}
+            {isGuest && `${dict.guestNote} `}
             <Link
               href="/guides/how-to-improve-typing-speed"
               className="underline underline-offset-2 transition-colors hover:text-foreground"
             >
-              Want to type faster?
+              {dict.wantToTypeFaster}
             </Link>
           </p>
         </div>

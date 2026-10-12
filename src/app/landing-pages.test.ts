@@ -9,7 +9,7 @@ describe("product-led SEO landing pages", () => {
   const landingPages = [
     {
       route: "/typing-test/1-minute",
-      file: "src/app/typing-test/1-minute/page.tsx",
+      file: "src/app/[locale]/typing-test/1-minute/page.tsx",
       expectedTitle: "1-Minute Typing Test — 60-Second WPM Speed Test",
       expectedH1: "1-Minute Typing Test",
       expectedCanonical: "/typing-test/1-minute",
@@ -28,7 +28,7 @@ describe("product-led SEO landing pages", () => {
     },
     {
       route: "/typing-test/custom-text",
-      file: "src/app/typing-test/custom-text/page.tsx",
+      file: "src/app/[locale]/typing-test/custom-text/page.tsx",
       expectedTitle: "Custom Text Typing Test — Practice Typing Your Own Text",
       expectedH1: "Custom Text Typing Test",
       expectedCanonical: "/typing-test/custom-text",
@@ -46,7 +46,7 @@ describe("product-led SEO landing pages", () => {
     },
     {
       route: "/practice/weak-keys",
-      file: "src/app/practice/weak-keys/page.tsx",
+      file: "src/app/[locale]/practice/weak-keys/page.tsx",
       expectedTitle: "Weak Keys Typing Practice — Targeted Keyboard Drills",
       expectedH1: "Weak Keys Typing Practice",
       expectedCanonical: "/practice/weak-keys",
@@ -65,7 +65,7 @@ describe("product-led SEO landing pages", () => {
     },
     {
       route: "/practice/accuracy",
-      file: "src/app/practice/accuracy/page.tsx",
+      file: "src/app/[locale]/practice/accuracy/page.tsx",
       expectedTitle: "Typing Accuracy Practice — Drills to Reduce Mistakes",
       expectedH1: "Typing Accuracy Practice",
       expectedCanonical: "/practice/accuracy",
@@ -186,15 +186,15 @@ describe("product-led SEO landing pages", () => {
 
   describe("guide cluster differentiation and bidirectional links", () => {
     it("differentiates custom text guide and links to /typing-test/custom-text", () => {
-      const guidePath = path.resolve(process.cwd(), "src/app/guides/custom-text-typing-test/page.tsx");
+      const guidePath = path.resolve(process.cwd(), "src/app/[locale]/guides/custom-text-typing-test/page.tsx");
       const content = fs.readFileSync(guidePath, "utf8");
       assert.ok(content.includes("How to Practice Typing With Your Own Text & Code: Custom Test Guide"));
       assert.ok(content.includes("/typing-test/custom-text"));
     });
 
     it("verifies weak-key guides use accurate rolling window metrics and link to /practice/weak-keys", () => {
-      const guide1 = fs.readFileSync(path.resolve(process.cwd(), "src/app/guides/how-to-find-your-weakest-typing-keys/page.tsx"), "utf8");
-      const guide2 = fs.readFileSync(path.resolve(process.cwd(), "src/app/guides/typing-practice-for-weak-keys/page.tsx"), "utf8");
+      const guide1 = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/guides/how-to-find-your-weakest-typing-keys/page.tsx"), "utf8");
+      const guide2 = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/guides/typing-practice-for-weak-keys/page.tsx"), "utf8");
 
       assert.ok(!guide1.includes("Bayesian Wilson score"), "Guide 1 still contains false Bayesian Wilson score claim");
       assert.ok(!guide2.includes("Wilson score"), "Guide 2 still contains false Wilson score claim");
@@ -205,10 +205,10 @@ describe("product-led SEO landing pages", () => {
     });
 
     it("verifies duration and accuracy guides link to new landing pages", () => {
-      const durationGuide = fs.readFileSync(path.resolve(process.cwd(), "src/app/guides/typing-test-duration-guide/page.tsx"), "utf8");
-      const accGuide1 = fs.readFileSync(path.resolve(process.cwd(), "src/app/guides/typing-accuracy/page.tsx"), "utf8");
-      const accGuide2 = fs.readFileSync(path.resolve(process.cwd(), "src/app/guides/how-to-improve-typing-accuracy/page.tsx"), "utf8");
-      const accGuide3 = fs.readFileSync(path.resolve(process.cwd(), "src/app/guides/why-wpm-is-high-accuracy-is-low/page.tsx"), "utf8");
+      const durationGuide = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/guides/typing-test-duration-guide/page.tsx"), "utf8");
+      const accGuide1 = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/guides/typing-accuracy/page.tsx"), "utf8");
+      const accGuide2 = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/guides/how-to-improve-typing-accuracy/page.tsx"), "utf8");
+      const accGuide3 = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/guides/why-wpm-is-high-accuracy-is-low/page.tsx"), "utf8");
 
       assert.ok(durationGuide.includes("/typing-test/1-minute"));
       assert.ok(accGuide1.includes("/practice/accuracy"));
@@ -217,7 +217,7 @@ describe("product-led SEO landing pages", () => {
     });
 
     it("verifies /lessons/practice is differentiated as Targeted Practice Lab", () => {
-      const practicePage = fs.readFileSync(path.resolve(process.cwd(), "src/app/lessons/practice/page.tsx"), "utf8");
+      const practicePage = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/lessons/practice/page.tsx"), "utf8");
       assert.ok(practicePage.includes("Targeted Practice Lab"));
       assert.ok(!practicePage.includes('title: "Weak Key Drill"'));
     });
@@ -225,7 +225,7 @@ describe("product-led SEO landing pages", () => {
 
   describe("F14: Privacy and About Truthfulness", () => {
     it("verifies /about, /privacy, and README.md truthfully distinguish guest localStorage from optional cloud sync", () => {
-      const aboutPath = path.resolve(process.cwd(), "src/app/about/page.tsx");
+      const aboutPath = path.resolve(process.cwd(), "src/app/[locale]/about/page.tsx");
       const aboutContent = fs.readFileSync(aboutPath, "utf8");
 
       // Must not make false absolute offline/zero-server assertions
@@ -254,7 +254,7 @@ describe("product-led SEO landing pages", () => {
       );
 
       // Verify privacy policy explains the distinction
-      const privacyPath = path.resolve(process.cwd(), "src/app/privacy/page.tsx");
+      const privacyPath = path.resolve(process.cwd(), "src/app/[locale]/privacy/page.tsx");
       const privacyContent = fs.readFileSync(privacyPath, "utf8");
       assert.ok(
         privacyContent.includes("Signed-in accounts sync") ||

@@ -1,0 +1,1 @@
+export const THEME_INIT_SCRIPT = `(function(){try{var r=localStorage.getItem("thundertyping-settings");var t="dark";if(r){var p=JSON.parse(r);if(p&&p.state&&p.state.theme)t=p.state.theme;}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`;

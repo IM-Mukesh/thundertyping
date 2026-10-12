@@ -1,9 +1,11 @@
 export const SITE_NAME = "HeroTyping";
 
 // Overridable via NEXT_PUBLIC_SITE_URL (e.g. for preview deployments); the
-// production domain is the default.
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.herotyping.com";
+let _siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.herotyping.com";
+if (_siteUrl === "https://herotyping.com") {
+  _siteUrl = "https://www.herotyping.com";
+}
+export const SITE_URL = _siteUrl;
 
 export const SITE_TAGLINE = "Free Online Typing Speed Test";
 

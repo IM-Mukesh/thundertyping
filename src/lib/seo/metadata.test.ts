@@ -1,3 +1,4 @@
+
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { pageMetadata, truncateAtWord } from "@/lib/seo/metadata";
@@ -128,14 +129,24 @@ import { SITE_URL } from "@/lib/seo/constants";
 import sitemap from "@/app/sitemap";
 
 describe("Canonical URL Safety", () => {
-  it("never emits apex herotyping.com URLs anywhere in canonical generation", () => {
+  it("never emits apex herotyping.com URLs anywhere in canonical generation", async () => {
     assert.equal(SITE_URL, "https://www.herotyping.com");
     assert.ok(!SITE_URL.startsWith("https://herotyping.com"));
-    
-    const urls = sitemap();
+
+    const urls = await sitemap();
     for (const urlObj of urls) {
       assert.ok(!urlObj.url.startsWith("https://herotyping.com"), "Sitemap must use www: " + urlObj.url);
       assert.ok(urlObj.url.startsWith("https://www.herotyping.com"), "Sitemap must start with www: " + urlObj.url);
+
+      // Verify all hreflang targets
+      if (urlObj.alternates && urlObj.alternates.languages) {
+        for (const [lang, langUrl] of Object.entries(urlObj.alternates.languages)) {
+          if (langUrl) {
+            assert.ok(!langUrl.startsWith("https://herotyping.com"), `hreflang for ${lang} must use www: ${langUrl}`);
+            assert.ok(langUrl.startsWith("https://www.herotyping.com"), `hreflang for ${lang} must start with www: ${langUrl}`);
+          }
+        }
+      }
     }
   });
 });

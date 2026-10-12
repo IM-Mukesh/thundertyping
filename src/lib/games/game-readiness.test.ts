@@ -164,7 +164,7 @@ describe("F24: Game Catalog Documentation Truth & Catalog Integrity", () => {
     const path = await import("node:path");
 
     const readmeContent = fs.readFileSync(path.resolve(process.cwd(), "README.md"), "utf8");
-    const aboutContent = fs.readFileSync(path.resolve(process.cwd(), "src/app/about/page.tsx"), "utf8");
+    const aboutContent = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/about/page.tsx"), "utf8");
 
     // Both documents must state 9 games
     assert.ok(readmeContent.includes("9 Arcade Typing Games"), "README.md must state 9 Arcade Typing Games");
@@ -225,7 +225,7 @@ describe("Fix Verifications", () => {
   it("games page emits noindex for upcoming games", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const content = fs.readFileSync(path.resolve(process.cwd(), "src/app/games/[gameId]/page.tsx"), "utf8");
+    const content = fs.readFileSync(path.resolve(process.cwd(), "src/app/[locale]/games/[gameId]/page.tsx"), "utf8");
 
     assert.ok(content.includes("robots: game.upcoming ? { index: false, follow: true } : undefined"), "Game page must emit noindex for upcoming games");
   });

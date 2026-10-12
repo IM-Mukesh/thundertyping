@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {
   LESSON_LIST,
+  LessonDefinition,
   LESSON_STAGES,
   LESSON_TIERS,
   type LessonTier,
@@ -41,7 +42,7 @@ const GOAL_OPTIONS: { id: LearnerGoal; label: string; desc: string }[] = [
   { id: "coding", label: "Developer Syntax", desc: "Master brackets, symbols, and code flow" },
 ];
 
-export function LessonDashboard() {
+export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonList?: LessonDefinition[], locale?: string }) {
   const units = useLessonProgressStore((s) => s.units);
   const learnerGoal = useLessonProgressStore((s) => s.learnerGoal);
   const setLearnerGoal = useLessonProgressStore((s) => s.setLearnerGoal);
@@ -59,22 +60,22 @@ export function LessonDashboard() {
 
   // Overall journey metrics
   const completedCount = useMemo(() => {
-    return LESSON_LIST.filter((l) => units[l.id]?.completed).length;
+    return lessonList.filter((l) => units[l.id]?.completed).length;
   }, [units]);
 
   const inProgressUnit = useMemo(() => {
-    return LESSON_LIST.find((l) => {
+    return lessonList.find((l) => {
       const p = units[l.id];
       return p && !p.completed && p.currentStep > 0;
     });
   }, [units]);
 
   const nextRecommendedUnit = useMemo(() => {
-    return inProgressUnit ?? LESSON_LIST.find((l) => !units[l.id]?.completed) ?? LESSON_LIST[0];
+    return inProgressUnit ?? lessonList.find((l) => !units[l.id]?.completed) ?? lessonList[0];
   }, [inProgressUnit, units]);
 
   const isNewUser = completedCount === 0 && !inProgressUnit;
-  const journeyProgressPct = Math.round((completedCount / LESSON_LIST.length) * 100);
+  const journeyProgressPct = Math.round((completedCount / lessonList.length) * 100);
 
   // Key records and transition stats for mastery analysis
   const keyRecords = useMemo(() => {
@@ -103,7 +104,7 @@ export function LessonDashboard() {
   // Stage grouping for curriculum roadmap
   const stages = useMemo(() => {
     return LESSON_STAGES.map((stageDef, index) => {
-      const stageUnits = LESSON_LIST.filter((l) => l.stage === stageDef.id);
+      const stageUnits = lessonList.filter((l) => l.stage === stageDef.id);
       const stageCompleted = stageUnits.filter((l) => units[l.id]?.completed).length;
       const isCurrentStage = stageUnits.some((l) => l.id === nextRecommendedUnit.id);
       const isStageCompleted = stageCompleted === stageUnits.length && stageUnits.length > 0;
@@ -195,7 +196,7 @@ export function LessonDashboard() {
 
             <div className="flex flex-col gap-3 sm:shrink-0 sm:items-end">
               <Link
-                href={`/lessons/${LESSON_LIST[0].id}`}
+                href={locale ? `/${locale}/lessons/${lessonList[0].id}` : `/lessons/${lessonList[0].id}`}
                 className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-8 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] duration-200 hover:brightness-110 shadow-lg shadow-accent/10"
               >
                 Start from Home Row
@@ -221,7 +222,7 @@ export function LessonDashboard() {
                   <Sparkles size={11} aria-hidden="true" /> Welcome back
                 </span>
                 <span className="font-mono text-xs text-sub">
-                  {completedCount} of {LESSON_LIST.length} lessons complete ({journeyProgressPct}%)
+                  {completedCount} of {lessonList.length} lessons complete ({journeyProgressPct}%)
                 </span>
               </div>
 
@@ -407,7 +408,7 @@ export function LessonDashboard() {
               All Stages (28)
             </button>
             {LESSON_TIERS.map((t) => {
-              const count = LESSON_LIST.filter((l) => l.tier === t.id).length;
+              const count = lessonList.filter((l) => l.tier === t.id).length;
               return (
                 <button
                   key={t.id}
@@ -501,7 +502,7 @@ export function LessonDashboard() {
                     const progress = units[unit.id];
 
                     return (
-                      <LessonUnitRow
+                      <LessonUnitRow locale={locale}
                         key={unit.id}
                         unit={unit}
                         position={unit.order}

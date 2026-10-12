@@ -107,6 +107,12 @@ export function buildTextForContent(content: LessonContentSpec, seed?: number): 
     case "review":
       text = buildReviewText(content.allowedKeys, content.wordCount, actualSeed);
       break;
+    case "exact_text":
+      text = content.text;
+      break;
+    case "database_steps":
+      text = "";
+      break;
     case "graduation":
       text = buildGraduationText(content.wordCount, {
         numbers: content.numbers,
@@ -114,6 +120,8 @@ export function buildTextForContent(content: LessonContentSpec, seed?: number): 
         seed: actualSeed,
       });
       break;
+    default:
+      text = "";
   }
   return text.length > MAX_LESSON_CHARS ? text.slice(0, MAX_LESSON_CHARS).trim() : text;
 }
@@ -329,6 +337,10 @@ function scaleContent(
   style?: DrillStyle,
   focusKeys?: string[],
 ): LessonContentSpec {
+  if (content.kind === "database_steps" || content.kind === "exact_text") {
+    return content;
+  }
+
   const wordCount = Math.max(
     MIN_WORD_COUNT_FLOOR,
     Math.round(content.wordCount * (MIN_WORD_COUNT_FRACTION + (1 - MIN_WORD_COUNT_FRACTION) * progress)),
@@ -370,6 +382,18 @@ function scaleContent(
  * from a dashboard row or preview.
  */
 export function buildSubLessons(unit: LessonDefinition): SubLessonSpec[] {
+  if (unit.content.kind === "database_steps") {
+    return unit.content.steps.map((dbStep, i) => ({
+      step: i + 1,
+      content: { kind: "exact_text", wordCount: 15, text: dbStep.targetText, allowedKeys: unit.newKeys },
+      minAccuracy: unit.minAccuracy,
+      phase: "accuracy",
+      title: "Practice",
+      description: "Type the target text accurately.",
+      objective: "Match the provided text.",
+    }));
+  }
+
   const n = Math.max(1, unit.subLessonCount);
   const steps: SubLessonSpec[] = [];
   for (let i = 0; i < n; i++) {

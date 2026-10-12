@@ -6,6 +6,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import ts from "typescript";
 import * as commit from "@/lib/typing-engine/input-commit";
 import * as focus from "@/lib/typing-engine/input-focus";
+import * as unicode from "@/lib/typing-engine/unicode";
 import { createInitialState, reducer, selectDisplayWordStates } from "@/lib/typing-engine/use-typing-engine";
 
 // Actual component event handlers, with hooks and native input represented by
@@ -56,7 +57,12 @@ function harness(connectEngine = false) {
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX }, fileName: "hidden-input.tsx",
   }).outputText;
-  const modules: Record<string, unknown> = { react, "@/lib/typing-engine/input-commit": commit, "@/lib/typing-engine/input-focus": focus };
+  const modules: Record<string, unknown> = {
+    react,
+    "@/lib/typing-engine/input-commit": commit,
+    "@/lib/typing-engine/input-focus": focus,
+    "@/lib/typing-engine/unicode": unicode,
+  };
   new Function("require", "exports", compiled)((id: string) => id in modules ? modules[id] : require(id), exports);
   const scored: string[] = [];
   const previews: (string | null)[] = [];
@@ -128,6 +134,18 @@ describe("mobile composition input", () => {
     assert.deepEqual(h.scored, []);
   });
 
+  it("keeps Hindi composition updates in the draft without scoring candidate revisions", () => {
+    const h = harness(true);
+    h.fire("onCompositionStart", "ह");
+    h.fire("onCompositionUpdate", "हि", { isComposing: true });
+    h.fire("onCompositionUpdate", "हिं", { isComposing: true });
+    assert.equal(h.render().props.value, "हिं");
+    assert.equal(h.previews.at(-1), "हिं");
+    assert.equal(h.state().totalTyped, 0);
+    assert.equal(h.state().totalKeypresses, 0);
+    assert.deepEqual(h.scored, []);
+  });
+
   it("does not pin selection while the mobile keyboard owns a composition range", () => {
     const h = harness();
     h.fire("onCompositionStart");
@@ -172,6 +190,14 @@ describe("mobile composition input", () => {
     assert.equal(h.commitCount(), 2);
   });
 
+  it("suppresses a canonically equivalent Spanish final echo", () => {
+    const h = harness();
+    h.fire("onCompositionStart", "man\u0303ana");
+    h.fire("onCompositionEnd", "man\u0303ana");
+    h.fire("onChange", "mañana", { inputType: "insertCompositionText" });
+    assert.deepEqual(h.scored, ["man\u0303ana"]);
+  });
+
   it("retains native composing input even if compositionstart is missing", () => {
     const h = harness();
     h.fire("onChange", "h", { isComposing: true });
@@ -180,6 +206,22 @@ describe("mobile composition input", () => {
     assert.deepEqual(h.scored, ["hello"]);
     assert.equal(h.commitCount(), 1);
     assert.equal(h.render().props.value, "");
+  });
+
+  it("recognizes a composition inputType even when the browser omits isComposing", () => {
+    const h = harness();
+    h.fire("onChange", "हि", { isComposing: false, inputType: "insertCompositionText" });
+    assert.equal(h.render().props.value, "हि");
+    assert.equal(h.previews.at(-1), "हि");
+    assert.deepEqual(h.scored, []);
+  });
+
+  it("falls back to the first final change when compositionstart is missing after an update", () => {
+    const h = harness();
+    h.fire("onCompositionUpdate", "हिं", { isComposing: true });
+    h.fire("onChange", "हिंदी", { isComposing: false, inputType: "insertText" });
+    assert.deepEqual(h.scored, ["हिंदी"]);
+    assert.equal(h.render().props.value, "हिंदी");
   });
 
   it("cancels an empty composition without resurrecting text or stopping the clock", () => {
@@ -222,6 +264,42 @@ describe("mobile composition input", () => {
     h.fire("onChange", "hello");
     h.fire("onKeyDown", "hello", { isComposing: false }, { key: " ", preventDefault() { prevented = true; } });
     assert.equal(prevented, true);
+    assert.equal(h.commitCount(), 1);
+  });
+
+  it("lets Chinese IMEs use Space for a candidate, then commits on a deliberate second Space", () => {
+    const h = harness(true);
+    h.fire("onCompositionStart", "zhong");
+    h.fire("onCompositionUpdate", "中", { isComposing: true });
+
+    let candidateSpacePrevented = false;
+    h.fire(
+      "onKeyDown",
+      "中",
+      { isComposing: true, keyCode: 229 },
+      { key: " ", preventDefault() { candidateSpacePrevented = true; } },
+    );
+    assert.equal(candidateSpacePrevented, false);
+    assert.equal(h.commitCount(), 0);
+    assert.equal(h.state().totalTyped, 0, "candidate text stays unscored");
+
+    h.fire("onCompositionUpdate", "中文", { isComposing: true });
+    h.fire("onCompositionEnd", "中文", { type: "compositionend" });
+    assert.deepEqual(h.scored, ["中文"]);
+    assert.equal(h.state().totalTyped, 2);
+
+    // A final input echo after compositionend is ignored, while a real
+    // non-composing Space remains the word separator command.
+    h.fire("onChange", "中文", { inputType: "insertCompositionText" });
+    assert.deepEqual(h.scored, ["中文"]);
+    let deliberateSpacePrevented = false;
+    h.fire(
+      "onKeyDown",
+      "中文",
+      { isComposing: false, keyCode: 32 },
+      { key: " ", preventDefault() { deliberateSpacePrevented = true; } },
+    );
+    assert.equal(deliberateSpacePrevented, true);
     assert.equal(h.commitCount(), 1);
   });
 });

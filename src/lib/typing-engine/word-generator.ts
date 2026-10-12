@@ -1,5 +1,5 @@
 import { ENGLISH_WORDS } from "@/data/words/english-1k";
-import { getTypingConfig } from "./language-config";
+import { getTypingConfig } from "@/lib/typing-engine/language-config";
 
 // ENGLISH_WORDS is ordered most- to least-frequent (it's a trimmed Dolch/Fry
 // list), so the first N words ARE the common subset -- no separate word list

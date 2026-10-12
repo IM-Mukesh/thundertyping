@@ -12,7 +12,11 @@ export const metadata: Metadata = pageMetadata({
   path: "/lessons",
 });
 
-export default function LessonsHubPage() {
+export default async function LessonsHubPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const { getLocalizedLessonList } = await import("@/lib/server/lesson-mapper");
+  const lessons = await getLocalizedLessonList(locale);
+
   return (
     <div className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8">
       {/* Top Breadcrumb / Title Area */}
@@ -25,7 +29,7 @@ export default function LessonsHubPage() {
           Typing Lessons &amp; Curriculum
         </h1>
         <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-sub">
-          Master touch typing without looking down. Follow our structured 28-lesson progression
+          Master touch typing without looking down. Follow our structured {lessons.length}-lesson progression
           from home row fundamentals through speed and precision.
         </p>
       </header>
@@ -36,7 +40,7 @@ export default function LessonsHubPage() {
         </div>
 
         <h2 className="sr-only">Lessons Learning Dashboard</h2>
-        <LessonDashboard />
+        <LessonDashboard locale={locale} lessonList={lessons} />
 
         {/* Crawlable Educational Guide Content (SEO & Learning Pillars) */}
         <section className="mt-8 flex flex-col gap-6 rounded-2xl border border-border/70 bg-sub-alt/10 p-6 sm:p-10">

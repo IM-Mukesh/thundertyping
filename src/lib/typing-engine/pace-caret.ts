@@ -1,4 +1,5 @@
 import { CHARS_PER_WORD } from "@/lib/typing-engine/stats";
+import { graphemeLength } from "@/lib/typing-engine/unicode";
 
 export type PaceCaretMode = "off" | "pb" | "custom";
 export const PACE_CARET_MODES: PaceCaretMode[] = ["off", "pb", "custom"];
@@ -34,11 +35,12 @@ export function computePaceCaretPosition(
   let cumulative = 0;
   for (let i = 0; i < words.length; i++) {
     const isLastWord = i === words.length - 1;
-    const wordTotal = words[i].length + (isLastWord ? 0 : 1); // +1 for the inter-word separator
+    const wordLength = graphemeLength(words[i]);
+    const wordTotal = wordLength + (isLastWord ? 0 : 1); // +1 for the inter-word separator
     // On the last word there's nowhere further to go -- pin the ghost at
     // its end rather than reporting a position past the end of the list.
     if (isLastWord || cumulative + wordTotal > targetChars) {
-      const charIndex = Math.max(0, Math.min(words[i].length, Math.round(targetChars - cumulative)));
+      const charIndex = Math.max(0, Math.min(wordLength, Math.round(targetChars - cumulative)));
       return { wordIndex: i, charIndex };
     }
     cumulative += wordTotal;

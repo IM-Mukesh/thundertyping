@@ -35,9 +35,11 @@ export function pickSessionWords(
  * tier instead of the generic word list. No definitions here (that's the
  * dedicated /vocabulary test); this is the same test, different word source.
  */
-export function pickPracticeWords(difficulty: VocabDifficulty, count: number): string[] {
-  const pool = VOCAB_WORDS[difficulty];
-  if (pool.length === 0) return [];
+export function pickPracticeWords(difficulty: VocabDifficulty, count: number, customVocab?: Record<string, { word: string }[]>): string[] {
+  const pool = customVocab && customVocab[difficulty] && customVocab[difficulty].length > 0
+    ? customVocab[difficulty]
+    : VOCAB_WORDS[difficulty];
+  if (!pool || pool.length === 0) return [];
   const words: string[] = [];
   // Reshuffle per lap rather than one shuffle sliced/repeated -- a tier
   // smaller than `count` (or a future shorter tier) still fills the request

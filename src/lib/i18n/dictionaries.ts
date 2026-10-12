@@ -8,6 +8,33 @@ export const uiDictionaries = {
     },
     header: {
       searchGames: "Search games...",
+    },
+    home: {
+      title: "Free Online Typing Speed Test",
+      subtitle: "Measure your words per minute and accuracy.",
+      guestNote: "No sign-up required.",
+      wantToTypeFaster: "Want to type faster?",
+    },
+    footer: {
+      about: "About",
+      achievements: "Achievements",
+      guides: "Guides",
+      privacy: "Privacy",
+      terms: "Terms"
+    },
+    test: {
+      wpm: "wpm",
+      accuracy: "accuracy",
+      mistakes: "mistakes",
+      restart: "restart",
+      share: "Share"
+    },
+    lesson: {
+      previous: "Previous Lesson",
+      next: "Next Lesson",
+      technique: "Technique Guidance",
+      aggregateSpeed: "Aggregate speed",
+      consistency: "Consistency"
     }
   },
   es: {
@@ -19,6 +46,33 @@ export const uiDictionaries = {
     },
     header: {
       searchGames: "Buscar juegos...",
+    },
+    home: {
+      title: "Prueba de Velocidad de Escritura Gratis",
+      subtitle: "Mide tus palabras por minuto y precisión.",
+      guestNote: "No es necesario registrarse.",
+      wantToTypeFaster: "¿Quieres escribir más rápido?",
+    },
+    footer: {
+      about: "Acerca de",
+      achievements: "Logros",
+      guides: "Guías",
+      privacy: "Privacidad",
+      terms: "Términos"
+    },
+    test: {
+      wpm: "ppm",
+      accuracy: "precisión",
+      mistakes: "errores",
+      restart: "reiniciar",
+      share: "Compartir"
+    },
+    lesson: {
+      previous: "Lección Anterior",
+      next: "Siguiente Lección",
+      technique: "Guía de Técnica",
+      aggregateSpeed: "Velocidad media",
+      consistency: "Consistencia"
     }
   },
   "pt-BR": {
@@ -30,6 +84,33 @@ export const uiDictionaries = {
     },
     header: {
       searchGames: "Buscar jogos...",
+    },
+    home: {
+      title: "Teste de Velocidade de Digitação Grátis",
+      subtitle: "Meça suas palavras por minuto e precisão.",
+      guestNote: "Não é necessário cadastro.",
+      wantToTypeFaster: "Quer digitar mais rápido?",
+    },
+    footer: {
+      about: "Sobre",
+      achievements: "Conquistas",
+      guides: "Guias",
+      privacy: "Privacidade",
+      terms: "Termos"
+    },
+    test: {
+      wpm: "ppm",
+      accuracy: "precisão",
+      mistakes: "erros",
+      restart: "reiniciar",
+      share: "Compartilhar"
+    },
+    lesson: {
+      previous: "Lição Anterior",
+      next: "Próxima Lição",
+      technique: "Guia de Técnica",
+      aggregateSpeed: "Velocidade média",
+      consistency: "Consistência"
     }
   },
   de: {
@@ -41,6 +122,33 @@ export const uiDictionaries = {
     },
     header: {
       searchGames: "Spiele suchen...",
+    },
+    home: {
+      title: "Kostenloser Online-Tipptest",
+      subtitle: "Messen Sie Ihre Wörter pro Minute und Genauigkeit.",
+      guestNote: "Keine Anmeldung erforderlich.",
+      wantToTypeFaster: "Möchten Sie schneller tippen?",
+    },
+    footer: {
+      about: "Über uns",
+      achievements: "Erfolge",
+      guides: "Leitfäden",
+      privacy: "Datenschutz",
+      terms: "Bedingungen"
+    },
+    test: {
+      wpm: "wpm",
+      accuracy: "Genauigkeit",
+      mistakes: "Fehler",
+      restart: "Neustart",
+      share: "Teilen"
+    },
+    lesson: {
+      previous: "Vorherige Lektion",
+      next: "Nächste Lektion",
+      technique: "Technik-Anleitung",
+      aggregateSpeed: "Gesamtgeschwindigkeit",
+      consistency: "Beständigkeit"
     }
   }
 } as const;

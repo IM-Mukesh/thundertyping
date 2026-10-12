@@ -56,7 +56,7 @@ function isRetiredGameId(gameId: string): boolean {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ gameId: string, locale: string }> }): Promise<Metadata> {
-  const { gameId } = await params;
+  const { gameId, locale } = await params;
   const game = getPublicGameDefinition(gameId);
   if (!game) {
     if (isRetiredGameId(gameId)) notFound();
@@ -69,8 +69,8 @@ export async function generateMetadata({ params }: { params: Promise<{ gameId: s
     return {
       title,
       description,
-      alternates: { canonical: "/games/type-before-death" },
-      openGraph: { title: socialTitle, description, url: "/games/type-before-death", type: "website" },
+      alternates: { canonical: locale === "en" ? "/games/type-before-death" : `/${locale}/games/type-before-death` },
+      openGraph: { title: socialTitle, description, url: locale === "en" ? "/games/type-before-death" : `/${locale}/games/type-before-death`, type: "website" },
       twitter: { title: socialTitle, description },
     };
   }
@@ -79,15 +79,15 @@ export async function generateMetadata({ params }: { params: Promise<{ gameId: s
   return {
     title,
     description,
-    alternates: { canonical: `/games/${game.id}` },
-    openGraph: { title, description, url: `/games/${game.id}` },
+    alternates: { canonical: locale === "en" ? `/games/${game.id}` : `/${locale}/games/${game.id}` },
+    openGraph: { title, description, url: locale === "en" ? `/games/${game.id}` : `/${locale}/games/${game.id}` },
     twitter: { title, description },
     robots: game.upcoming ? { index: false, follow: true } : undefined,
   };
 }
 
 export default async function GamePage({ params }: { params: Promise<{ gameId: string, locale: string }> }) {
-  const { gameId } = await params;
+  const { gameId, locale } = await params;
   const game = getPublicGameDefinition(gameId);
   if (!game) notFound();
 

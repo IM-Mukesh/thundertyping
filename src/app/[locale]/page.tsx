@@ -5,13 +5,28 @@ import { AdRail } from "@/components/layout/ad-rail";
 import { HomepageExploreSection } from "@/components/layout/homepage-explore-section";
 import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
 import { SITE_URL } from "@/lib/seo/constants";
+import { notFound } from "next/navigation";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getBundledTypingContent } from "@/lib/typing-engine/typing-content";
 
-export const metadata: Metadata = {
-  alternates: { canonical: SITE_URL },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const canonicalUrl = locale === "en" ? SITE_URL : `${SITE_URL}/${locale}`;
+  return {
+    alternates: { canonical: canonicalUrl },
+  };
+}
 
-export default function Home() {
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const schema = buildWebApplicationSchema();
+
+  const dict = getDictionary(locale);
+  const localizedContent = getBundledTypingContent(locale);
+
+  if (!localizedContent) {
+    notFound();
+  }
 
   return (
     // flex-1 (not h-full): this div is a flex ITEM inside main's column flex
@@ -30,7 +45,7 @@ export default function Home() {
       />
 
       <div className="flex w-full flex-col items-center">
-        <PageIntro />
+        <PageIntro dict={dict.home} />
 
         {/* grid-cols-1 below the breakpoint means the content is simply full
             width, exactly as before the rail existed. At the breakpoint, three
@@ -46,7 +61,11 @@ export default function Home() {
         <div className="mt-3 grid w-full grid-cols-1 min-[1760px]:grid-cols-[1fr_auto_1fr] min-[1760px]:items-start sm:mt-6">
           <div aria-hidden="true" className="hidden min-[1760px]:block" />
           <div className="mx-auto w-full max-w-6xl">
-            <TypingTestClient />
+            <TypingTestClient
+              locale={locale}
+              localizedContent={localizedContent}
+              enableTypingLanguageSelection
+            />
           </div>
           <div className="hidden min-[1760px]:flex min-[1760px]:justify-start min-[1760px]:pl-6">
             <AdRail id="home-rail" />

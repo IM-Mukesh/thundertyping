@@ -19,44 +19,46 @@ export function generateStaticParams() {
   return LESSON_LIST.map((lesson) => ({ lessonId: lesson.id }));
 }
 
-function getLesson(lessonId: string) {
-  return Object.prototype.hasOwnProperty.call(LESSON_DEFINITIONS, lessonId)
-    ? LESSON_DEFINITIONS[lessonId as LessonId]
-    : null;
-}
+
 
 export async function generateMetadata({ params }: { params: Promise<{ lessonId: string, locale: string }> }): Promise<Metadata> {
-  const { lessonId } = await params;
-  const lesson = getLesson(lessonId);
+  const { lessonId, locale } = await params;
+  const { getLocalizedLesson } = await import("@/lib/server/lesson-mapper");
+  const lesson = await getLocalizedLesson(locale, lessonId);
   if (!lesson) return {};
   const title = `${lesson.name} — Typing Lesson`;
   const description = lesson.instructions[0];
   return {
     title,
     description,
-    alternates: { canonical: `/lessons/${lesson.id}` },
-    openGraph: { title, description, url: `/lessons/${lesson.id}` },
+    alternates: { canonical: locale === "en" ? `/lessons/${lesson.id}` : `/${locale}/lessons/${lesson.id}` },
+    openGraph: { title, description, url: locale === "en" ? `/lessons/${lesson.id}` : `/${locale}/lessons/${lesson.id}` },
     twitter: { title, description },
   };
 }
 
 export default async function LessonPage({ params }: { params: Promise<{ lessonId: string, locale: string }> }) {
-  const { lessonId } = await params;
-  const lesson = getLesson(lessonId);
+  const { lessonId, locale } = await params;
+  const { getLocalizedLesson, getLocalizedLessonList } = await import("@/lib/server/lesson-mapper");
+  const lesson = await getLocalizedLesson(locale, lessonId);
   if (!lesson) notFound();
+
+  const lessonList = await getLocalizedLessonList(locale);
 
   const stageLabel = LESSON_STAGES.find((s) => s.id === lesson.stage)?.label ?? lesson.stage;
   const tierLabel = LESSON_TIERS.find((t) => t.id === lesson.tier)?.label ?? lesson.tier;
-  const lessonIndex = LESSON_LIST.findIndex((l) => l.id === lesson.id);
-  const previousLesson = lessonIndex > 0 ? LESSON_LIST[lessonIndex - 1] : undefined;
+  const lessonIndex = lessonList.findIndex((l) => l.id === lesson.id);
+  const previousLesson = lessonIndex > 0 ? lessonList[lessonIndex - 1] : undefined;
   const nextLesson =
-    lessonIndex >= 0 && lessonIndex < LESSON_LIST.length - 1 ? LESSON_LIST[lessonIndex + 1] : undefined;
+    lessonIndex >= 0 && lessonIndex < lessonList.length - 1 ? lessonList[lessonIndex + 1] : undefined;
   const practiceKeys =
     lesson.newKeys.length > 0
       ? lesson.newKeys
-      : lesson.content.kind !== "graduation"
-        ? lesson.content.allowedKeys
-        : [];
+      : lesson.content.kind === "exact_text" || lesson.content.kind === "database_steps"
+        ? lesson.newKeys
+        : lesson.content.kind !== "graduation"
+          ? lesson.content.allowedKeys
+          : [];
 
   return (
     <div className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8">
@@ -81,7 +83,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
           {/* Top Navigation & Breadcrumbs */}
           <div className="flex w-full items-center justify-between gap-4 pb-6">
             <Link
-              href="/lessons"
+              href={locale === "en" ? "/lessons" : `/${locale}/lessons`}
               className="flex items-center gap-1 font-display text-xs font-bold uppercase tracking-wider text-sub transition-colors hover:text-accent"
             >
               <ChevronLeft size={14} aria-hidden="true" />
@@ -92,7 +94,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
                 {tierLabel}
               </span>
               <span className="font-mono text-[11px] uppercase tracking-wider text-sub">
-                {stageLabel} &middot; {lesson.order} of {LESSON_LIST.length}
+                {stageLabel} &middot; {lesson.order} of {lessonList.length}
               </span>
             </div>
           </div>
@@ -140,15 +142,15 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
 
             <p className="text-xs text-sub">
               Want the full finger-to-key map?{" "}
-              <Link href="/guides/how-to-touch-type" className="text-accent underline underline-offset-2 hover:text-foreground">
+              <Link href={locale === "en" ? "/guides/how-to-touch-type" : `/${locale}/guides/how-to-touch-type`} className="text-accent underline underline-offset-2 hover:text-foreground">
                 How to touch type
               </Link>{" "}
               covers posture and ergonomics. Once comfortable, build vocabulary with{" "}
-              <Link href="/vocabulary" className="text-accent underline underline-offset-2 hover:text-foreground">
+              <Link href={locale === "en" ? "/vocabulary" : `/${locale}/vocabulary`} className="text-accent underline underline-offset-2 hover:text-foreground">
                 vocabulary practice
               </Link>{" "}
               or test reflexes in an{" "}
-              <Link href="/games" className="text-accent underline underline-offset-2 hover:text-foreground">
+              <Link href={locale === "en" ? "/games" : `/${locale}/games`} className="text-accent underline underline-offset-2 hover:text-foreground">
                 arcade typing game
               </Link>
               .
@@ -157,7 +159,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2">
               {previousLesson && (
                 <Link
-                  href={`/lessons/${previousLesson.id}`}
+                  href={locale === "en" ? `/lessons/${previousLesson.id}` : `/${locale}/lessons/${previousLesson.id}`}
                   className="flex items-center gap-3 rounded-xl border border-border bg-sub-alt/20 p-4 text-sm text-sub transition-colors hover:border-accent hover:text-foreground"
                 >
                   <ArrowLeft size={16} className="shrink-0 text-accent" aria-hidden="true" />
@@ -169,7 +171,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
               )}
               {nextLesson && (
                 <Link
-                  href={`/lessons/${nextLesson.id}`}
+                  href={locale === "en" ? `/lessons/${nextLesson.id}` : `/${locale}/lessons/${nextLesson.id}`}
                   className={cn(
                     "flex items-center justify-between gap-3 rounded-xl border border-border bg-sub-alt/20 p-4 text-sm text-sub transition-colors hover:border-accent hover:text-foreground",
                     !previousLesson && "sm:col-start-2",

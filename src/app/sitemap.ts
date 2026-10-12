@@ -3,6 +3,7 @@ import { SITE_URL } from "@/lib/seo/constants";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import { PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
 import { VOCAB_DIFFICULTIES } from "@/lib/vocabulary/vocabulary-words";
+import { LOCALES } from "@/lib/i18n/config";
 
 export interface SitemapRouteEntry {
   path: string;
@@ -368,22 +369,31 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = getSitemapRoutes();
+  // Route languages are local configuration. Homepage typing languages (for
+  // example Hindi and Chinese) do not create localized URL routes or require
+  // a database/network lookup while building the sitemap.
+  const includeDe = LOCALES.includes("de");
+  const includeEs = LOCALES.includes("es");
+  const includePt = LOCALES.includes("pt-BR");
 
   return routes.map(({ path, priority, changeFrequency, lastModified }) => {
     const url = `${SITE_URL}${path}`;
+    const languages: Record<string, string> = {
+      en: url,
+      "x-default": url,
+    };
+
+    if (includeEs) languages.es = `${SITE_URL}/es${path}`;
+    if (includePt) languages["pt-BR"] = `${SITE_URL}/pt-br${path}`;
+    if (includeDe) languages.de = `${SITE_URL}/de${path}`;
+
     return {
       url,
       lastModified,
       changeFrequency,
       priority,
       alternates: {
-        languages: {
-          en: url,
-          es: `${SITE_URL}/es${path}`,
-          "pt-BR": `${SITE_URL}/pt-br${path}`,
-          de: `${SITE_URL}/de${path}`,
-          "x-default": url,
-        },
+        languages,
       },
     };
   });

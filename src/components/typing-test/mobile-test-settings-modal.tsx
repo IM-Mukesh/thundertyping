@@ -18,6 +18,8 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { LanguageSelector } from "@/components/typing-test/language-selector";
+import type { Locale } from "@/lib/i18n/config";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { CustomDurationControl } from "@/components/typing-test/custom-duration-control";
 import {
@@ -52,12 +54,20 @@ interface MobileTestSettingsModalProps {
   open: boolean;
   onClose: () => void;
   onOpenCustomText: () => void;
+  typingLanguage: Locale;
+  onTypingLanguageChange: (language: Locale) => void;
+  typingLanguageDisabled?: boolean;
+  showTypingLanguage?: boolean;
 }
 
 export function MobileTestSettingsModal({
   open,
   onClose,
   onOpenCustomText,
+  typingLanguage,
+  onTypingLanguageChange,
+  typingLanguageDisabled = false,
+  showTypingLanguage = false,
 }: MobileTestSettingsModalProps) {
   const mode = useSettingsStore((s) => s.mode);
   const timeDuration = useSettingsStore((s) => s.timeDuration);
@@ -168,6 +178,20 @@ export function MobileTestSettingsModal({
 
             {/* Scrollable Settings Body */}
             <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-4 no-scrollbar">
+              {showTypingLanguage && (
+                <div className="flex items-center justify-between rounded-xl border border-border/70 bg-sub-alt/20 px-3 py-2">
+                  <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
+                    Typing Language
+                  </span>
+                  <LanguageSelector
+                    language={typingLanguage}
+                    onLanguageChange={onTypingLanguageChange}
+                    disabled={typingLanguageDisabled}
+                    compact
+                  />
+                </div>
+              )}
+
               {/* Mode Selection */}
               <div>
                 <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">

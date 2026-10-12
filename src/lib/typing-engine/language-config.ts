@@ -44,6 +44,20 @@ export const LANGUAGE_CONFIGS: Record<string, TypingLanguageConfig> = {
     punctuation: [",", ".", "!", "?", ";", ":"],
     normalizeChar: (c) => c,
   },
+  hi: {
+    code: "hi",
+    name: "Hindi",
+    alphabet: "अआइईउऊऋएऐओऔकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसह़ािीुूृेैोौंःँ्",
+    punctuation: [",", ".", "!", "?", "।", ";", ":"],
+    normalizeChar: (c) => c,
+  },
+  zh: {
+    code: "zh",
+    name: "Chinese",
+    alphabet: "的一是不了在人有我他这中大来上个国到说们为子和你地出道也时年得就那要下以生会可着对里过家学对能如小多天都行发作当成者用主理心本开前面已只从后站见两长高间把想实什样现动方经么去法又同所三全回因由分手意力与正明看已点问最将还进等体新些主样",
+    punctuation: [",", ".", "!", "?", "，", "。", "！", "？", "；", "："],
+    normalizeChar: (c) => c,
+  },
   de: {
     code: "de",
     name: "German",

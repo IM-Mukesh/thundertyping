@@ -41,35 +41,7 @@ export const LESSON_STAGES: { id: LessonStage; label: string }[] = [
   { id: "graduation", label: "Graduation" },
 ];
 
-export type LessonId =
-  | "home-row-left"
-  | "home-row-right"
-  | "home-row-combined"
-  | "home-row-words"
-  | "top-row-left"
-  | "top-row-right"
-  | "top-row-combined"
-  | "top-row-words"
-  | "bottom-row-left"
-  | "bottom-row-right"
-  | "bottom-row-combined"
-  | "bottom-row-words"
-  | "numbers-low"
-  | "numbers-high"
-  | "full-keyboard-words"
-  | "full-keyboard-punctuation"
-  | "graduation"
-  | "everyday-sentences"
-  | "building-speed"
-  | "numbers-and-words"
-  | "longer-passages"
-  | "mixed-practice"
-  | "intermediate-checkpoint"
-  | "speed-endurance"
-  | "precision-under-pressure"
-  | "long-form-typing"
-  | "numbers-and-symbols-mastery"
-  | "final-challenge";
+export type LessonId = string;
 
 // A unit's content is generated, not hand-typed, so the curriculum stays
 // cheap to extend -- see lesson-content.ts for how each kind is built, and
@@ -90,6 +62,8 @@ export type DrillStyle =
 export type LessonContentSpec =
   | { kind: "drill"; allowedKeys: string[]; wordCount: number; style?: DrillStyle; focusKeys?: string[] }
   | { kind: "review"; allowedKeys: string[]; wordCount: number }
+  | { kind: "database_steps"; wordCount: number; steps: { targetText: string; practiceType: string }[] }
+  | { kind: "exact_text"; wordCount: number; text: string; allowedKeys: string[] }
   | { kind: "graduation"; wordCount: number; numbers?: boolean; advancedMode?: "prose" | "code" | "numbers-symbols" };
 
 export interface LessonDefinition {

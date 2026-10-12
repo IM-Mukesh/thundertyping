@@ -4,6 +4,7 @@ import { memo, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import type { CharState, WordState } from "@/lib/typing-engine/engine-types";
 import type { PaceCaretPosition } from "@/lib/typing-engine/pace-caret";
+import { graphemeLength, segmentGraphemes } from "@/lib/typing-engine/unicode";
 import { cn } from "@/lib/utils/cn";
 
 // Starting guess only. The real pitch is measured from the laid-out words on
@@ -61,6 +62,35 @@ interface WordStreamProps {
   paceCaretPosition?: PaceCaretPosition | null;
 }
 
+export interface WordVisualUnit {
+  /** The complete grapheme rendered by one visual span. */
+  value: string;
+  /** The engine state for this grapheme. */
+  state: CharState;
+}
+
+/**
+ * Builds the visual units for a word without exposing UTF-16 indexes to the
+ * renderer.  `WordState.chars` is indexed in the same grapheme space by the
+ * typing engine; the target spelling wins for prompt characters and typed
+ * graphemes fill the extra-character tail.
+ */
+export function getWordVisualUnits(word: WordState): WordVisualUnit[] {
+  const targetGraphemes = segmentGraphemes(word.target);
+  const typedGraphemes = segmentGraphemes(word.typed);
+  const length = Math.max(targetGraphemes.length, typedGraphemes.length, word.chars.length);
+
+  return Array.from({ length }, (_, index) => ({
+    value: targetGraphemes[index] ?? typedGraphemes[index] ?? "",
+    state: word.chars[index] ?? "pending",
+  }));
+}
+
+/** The real caret is positioned in the same grapheme index space as a word. */
+export function getWordCaretIndex(typed: string): number {
+  return graphemeLength(typed);
+}
+
 export function WordStream({ wordStates, activeWordIndex, paceCaretPosition }: WordStreamProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeWordElRef = useRef<HTMLSpanElement | null>(null);
@@ -102,7 +132,7 @@ export function WordStream({ wordStates, activeWordIndex, paceCaretPosition }: W
     <div className="relative w-full overflow-hidden" style={{ height: linePitch * VISIBLE_LINES }}>
       <div
         ref={containerRef}
-        className="flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"
+        className="typing-word-stream flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"
         style={{ transform: `translateY(-${offset}px)` }}
       >
         {wordStates.map((word, index) => (
@@ -136,25 +166,28 @@ const Word = memo(function Word({
   /** Index within THIS word, or undefined when the pace caret is elsewhere. */
   paceCaretCharIndex?: number;
 }) {
-  const target = word.target;
-  const renderLength = Math.max(target.length, word.chars.length);
-  const caretIndex = word.typed.length;
+  const visualUnits = getWordVisualUnits(word);
+  const caretIndex = getWordCaretIndex(word.typed);
   const nodes: ReactNode[] = [];
 
-  for (let i = 0; i <= renderLength; i++) {
+  for (let i = 0; i <= visualUnits.length; i++) {
     if (isActive && i === caretIndex) {
       nodes.push(<Caret key="caret" />);
     }
     if (i === paceCaretCharIndex) {
       nodes.push(<PaceCaret key="pace-caret" />);
     }
-    if (i === renderLength) break;
+    if (i === visualUnits.length) break;
 
-    const state: CharState = word.chars[i] ?? "pending";
-    const char = i < target.length ? target[i] : word.typed[i];
+    const { value: grapheme, state } = visualUnits[i];
     nodes.push(
-      <span key={i} className={cn("char-instant", charClass(state))}>
-        {char}
+      <span
+        key={`grapheme-${i}`}
+        data-grapheme-index={i}
+        data-grapheme-state={state}
+        className={cn("typing-grapheme char-instant", charClass(state))}
+      >
+        {grapheme}
       </span>,
     );
   }

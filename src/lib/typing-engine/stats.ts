@@ -1,4 +1,5 @@
 import type { CharTally, WordState, WpmSample } from "@/lib/typing-engine/engine-types";
+import { graphemeEqual, graphemeLength, graphemeStartsWith } from "@/lib/typing-engine/unicode";
 
 export const CHARS_PER_WORD = 5;
 
@@ -11,8 +12,8 @@ export const CHARS_PER_WORD = 5;
  * - An inter-word separator (space) only contributes if the word it follows
  *   was completed correctly.
  * - For an uncommitted active word (e.g. during live typing or upon time-mode
- *   expiration), typed characters contribute only if they match the target
- *   prefix without error (i.e. target.startsWith(typed)). If there are any
+ *   expiration), typed visual units contribute only if they match the target
+ *   prefix without error (i.e. graphemeStartsWith(target, typed)). If there are any
  *   errors or extra characters, the active word contributes 0.
  */
 // A single already-committed word's own contribution (rule 1 above), so a
@@ -20,15 +21,15 @@ export const CHARS_PER_WORD = 5;
 // instead of re-summed from every word on every later keystroke -- see
 // calculateNetWpmCharacters for why that incremental sum matters.
 export function calculateCommittedWordNetWpmChars(word: WordState, isLastWord: boolean): number {
-  if (word.typed !== word.target) return 0;
-  return word.target.length + (isLastWord ? 0 : 1); // +1 for the inter-word separator
+  if (!graphemeEqual(word.typed, word.target)) return 0;
+  return graphemeLength(word.target) + (isLastWord ? 0 : 1); // +1 for the inter-word separator
 }
 
 // The active (not yet committed) word's own contribution (rule 2 above).
 export function calculateActiveWordNetWpmChars(target: string, typed: string): number {
-  if (typed.length === 0) return 0;
-  if (typed === target) return target.length;
-  if (target.startsWith(typed)) return typed.length; // clean prefix in progress
+  if (graphemeLength(typed) === 0) return 0;
+  if (graphemeEqual(typed, target)) return graphemeLength(target);
+  if (graphemeStartsWith(target, typed)) return graphemeLength(typed); // clean prefix in progress
   return 0;
 }
 

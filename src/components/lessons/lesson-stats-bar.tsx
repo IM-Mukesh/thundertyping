@@ -21,7 +21,7 @@ export function LessonStatsBar() {
   const avgWpm = round(calculateNetWpm(totals.correctChars, totals.timeMs));
   const avgAccuracy = round(calculateAccuracy(totals.correctChars, totals.incorrectChars));
   const hasData = totals.timeMs > 0;
-  const totalStars = Object.values(units).reduce((acc, u) => acc + (u.bestStars ?? (u.completed ? 3 : 0)), 0);
+  const totalStars = Object.values(units).filter(Boolean).reduce((acc, u) => acc + (u!.bestStars ?? (u!.completed ? 3 : 0)), 0);
   const maxStars = 28 * 5;
 
   return (

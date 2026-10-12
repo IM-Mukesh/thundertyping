@@ -160,6 +160,32 @@ textarea,
   transition: none;
 }
 
+/* The typing prompt is laid out as grapheme-sized flex items. JetBrains Mono
+   remains the Latin face, while these fallbacks cover scripts it does not
+   contain (notably Devanagari and CJK) without asking a browser to synthesize
+   a broken monospace glyph. Keeping white-space and letter-spacing neutral is
+   important here: spacing a Latin code point is harmless, but spacing inside
+   an Indic cluster can detach a mark from its base. */
+.typing-word-stream {
+  font-family:
+    var(--font-jetbrains-mono),
+    "Noto Sans Devanagari",
+    "Noto Sans CJK SC",
+    "Noto Sans CJK TC",
+    "Noto Sans CJK JP",
+    "Noto Sans SC",
+    "Noto Sans TC",
+    "Noto Sans JP",
+    ui-monospace,
+    monospace;
+  letter-spacing: normal;
+}
+
+.typing-grapheme {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
 html,
 body {
   overflow-x: clip;

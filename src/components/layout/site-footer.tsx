@@ -5,12 +5,15 @@ import { AdSlot } from "@/components/layout/ad-slot";
 import { SITE_NAME } from "@/lib/seo/constants";
 import { useIsTestRunning } from "@/lib/typing-engine/test-status-store";
 import { cn } from "@/lib/utils/cn";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 // While a test is running, it smoothly fades to opacity-0 without collapsing height
 // so there is zero layout jump or scrolling disruption during typing.
 // When displaying results or while idle, it stays fully visible.
 export function SiteFooter({ locale = "en" }: { locale?: string }) {
   const isRunning = useIsTestRunning();
+  const dict = getDictionary(locale);
+  const prefix = locale === "en" ? "" : `/${locale}`;
 
   return (
     <div
@@ -28,35 +31,35 @@ export function SiteFooter({ locale = "en" }: { locale?: string }) {
             <span>
               &copy; {new Date().getFullYear()} {SITE_NAME}
             </span>
-            <Link href="/about" className="py-1 transition-colors hover:text-foreground">
-              About
+            <Link href={`${prefix}/about`} className="py-1 transition-colors hover:text-foreground">
+              {dict.footer.about}
             </Link>
-            <Link href="/games" className="py-1 transition-colors hover:text-foreground">
-              Games
+            <Link href={`${prefix}/games`} className="py-1 transition-colors hover:text-foreground">
+              {dict.nav.games}
             </Link>
-            <Link href="/lessons" className="py-1 transition-colors hover:text-foreground">
-              Lessons
+            <Link href={`${prefix}/lessons`} className="py-1 transition-colors hover:text-foreground">
+              {dict.nav.lessons}
             </Link>
-            <Link href="/vocabulary" className="py-1 transition-colors hover:text-foreground">
-              Vocabulary
-            </Link>
-            <Link
-              href="/achievements"
-              className="py-1 transition-colors hover:text-foreground"
-            >
-              Achievements
+            <Link href={`${prefix}/vocabulary`} className="py-1 transition-colors hover:text-foreground">
+              {dict.nav.vocabulary}
             </Link>
             <Link
-              href="/guides"
+              href={`${prefix}/achievements`}
               className="py-1 transition-colors hover:text-foreground"
             >
-              Guides
+              {dict.footer.achievements}
             </Link>
-            <Link href="/privacy" className="py-1 transition-colors hover:text-foreground">
-              Privacy
+            <Link
+              href={`${prefix}/guides`}
+              className="py-1 transition-colors hover:text-foreground"
+            >
+              {dict.footer.guides}
             </Link>
-            <Link href="/terms" className="py-1 transition-colors hover:text-foreground">
-              Terms
+            <Link href={`${prefix}/privacy`} className="py-1 transition-colors hover:text-foreground">
+              {dict.footer.privacy}
+            </Link>
+            <Link href={`${prefix}/terms`} className="py-1 transition-colors hover:text-foreground">
+              {dict.footer.terms}
             </Link>
           </div>
         </footer>

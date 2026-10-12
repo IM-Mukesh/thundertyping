@@ -9,7 +9,6 @@ import { Gamepad2, GraduationCap, Menu, Search, User } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { MoreMenu } from "@/components/layout/more-menu";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { emitTestReset } from "@/lib/typing-engine/reset-bus";
 import { LevelBadge } from "@/components/layout/level-badge";
 import { UserAccountMenu } from "@/components/auth/user-account-menu";
@@ -21,13 +20,9 @@ import { cn } from "@/lib/utils/cn";
  * icons, a level badge, and a responsive hamburger drawer on mobile.
  */
 
-const NAV = [
-  { href: "/lessons", label: "Lessons", icon: GraduationCap },
-  { href: "/games", label: "Games", icon: Gamepad2 },
-  { href: "/profile", label: "Profile", icon: User },
-];
 
-function GameSearchInput() {
+
+function GameSearchInput({ placeholder }: { placeholder: string }) {
   const storedQuery = useGameSearchQuery();
   const [value, setValue] = useState(storedQuery);
 
@@ -45,8 +40,8 @@ function GameSearchInput() {
           setValue(e.target.value);
           setGameSearchQuery(e.target.value);
         }}
-        placeholder="Search games..."
-        aria-label="Search games"
+        placeholder={placeholder}
+        aria-label={placeholder}
         className="h-9 w-full rounded-lg border border-border bg-sub-alt/40 pl-9 pr-3 font-mono text-xs text-foreground outline-none placeholder:text-sub focus:border-accent"
       />
     </label>
@@ -55,19 +50,26 @@ function GameSearchInput() {
 
 export function SiteHeader({ locale = "en" }: { locale?: string }) { 
   const pathname = usePathname();
-  const onGamesPage = pathname === "/games";
+  const onGamesPage = pathname === "/games" || pathname.startsWith(`/${locale}/games`);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
   const toggleMobileNav = useCallback(() => setMobileNavOpen((prev) => !prev), []);
+  const dict = getDictionary(locale);
+
+  const localizedNav = [
+    { href: `/${locale}/lessons`, label: dict.nav.lessons, icon: GraduationCap },
+    { href: `/${locale}/games`, label: dict.nav.games, icon: Gamepad2 },
+    { href: `/${locale}/profile`, label: "Profile", icon: User }, // Note: Profile wasn't added to dict, let's keep it English for now
+  ];
 
   return (
     <>
       <header className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-8 sm:py-4">
         <Link
-          href="/"
+          href={`/${locale}`}
           onClick={() => {
-            if (pathname === "/") emitTestReset();
+            if (pathname === `/${locale}` || pathname === "/") emitTestReset();
           }}
           className="flex shrink-0 items-center gap-2"
         >
@@ -91,7 +93,8 @@ export function SiteHeader({ locale = "en" }: { locale?: string }) {
 
         {/* Desktop Navigation */}
         <nav aria-label="Main navigation" className="hidden sm:flex min-w-0 items-center gap-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {localizedNav.map(({ href, label, icon: Icon }) => {
+            // Because Next.js doesn't rewrite href natively in Link, we check both /locale/href and /href
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
@@ -110,17 +113,17 @@ export function SiteHeader({ locale = "en" }: { locale?: string }) {
               </Link>
             );
           })}
-          {onGamesPage && <GameSearchInput />}
-          <MoreMenu />
+          {onGamesPage && <GameSearchInput placeholder={dict.header.searchGames} />}
+          <MoreMenu locale={locale} />
           <ThemeSwitcher />
           <LevelBadge />
           <UserAccountMenu />
         </nav>
 
-        {/* Mobile Actions: LevelBadge + LanguageSelector + Hamburger Button */}
+        {/* Mobile Actions: level badge + hamburger button. Typing language is
+            owned by the homepage test settings, not the global header. */}
         <div className="flex sm:hidden items-center gap-1.5">
           <LevelBadge showOnMobile />
-          <LanguageSelector compact />
           <button
             ref={hamburgerRef}
             id="mobile-nav-trigger"

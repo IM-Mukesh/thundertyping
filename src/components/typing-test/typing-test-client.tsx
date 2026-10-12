@@ -42,7 +42,7 @@ const TypingTestDynamic = dynamic(() => import("@/components/typing-test/typing-
   loading: TypingTestLoadingSkeleton,
 });
 
-export function TypingTestClient(props: TypingTestProps = {}) {
+export function TypingTestClient(props: TypingTestProps) {
   return (
     <Suspense fallback={<TypingTestLoadingSkeleton />}>
       <TypingTestDynamic {...props} />

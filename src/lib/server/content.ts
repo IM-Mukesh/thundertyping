@@ -3,7 +3,6 @@ import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 
-type Language = Database["public"]["Tables"]["languages"]["Row"];
 type VocabularyItem = Database["public"]["Tables"]["vocabulary_items"]["Row"];
 type Quote = Database["public"]["Tables"]["quotes"]["Row"];
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
@@ -11,40 +10,15 @@ type LessonStep = Database["public"]["Tables"]["lesson_steps"]["Row"];
 type Guide = Database["public"]["Tables"]["guides"]["Row"];
 
 const CACHE_TAGS = {
-  languages: "languages",
   content: "content",
 };
 
 /**
- * Get all supported languages configured in the database
- */
-export const getLanguages = unstable_cache(
-  async (): Promise<Language[]> => {
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-      .from("languages")
-      .select("*")
-      .eq("enabled", true)
-      .order("sort_order", { ascending: true });
-
-    if (error) {
-      console.error("Failed to fetch languages:", error);
-      return [];
-    }
-    return data || [];
-  },
-  ["get-languages"],
-  {
-    tags: [CACHE_TAGS.languages],
-    revalidate: 3600, // 1 hour
-  }
-);
-
-/**
  * Get random quotes for typing practice
  */
-export const getQuotes = unstable_cache(
-  async (languageCode: string, limit: number = 50): Promise<Quote[]> => {
+export const getQuotes = async (languageCode: string, limit: number = 50): Promise<Quote[]> => {
+  return unstable_cache(
+    async () => {
     const supabase = createAdminClient();
     
     // For quotes, we might have hundreds. Randomizing in DB is slow,
@@ -66,18 +40,20 @@ export const getQuotes = unstable_cache(
     // Simple randomization
     return data.sort(() => 0.5 - Math.random()).slice(0, limit);
   },
-  ["get-quotes"],
-  {
-    tags: [CACHE_TAGS.content],
-    revalidate: 3600,
-  }
-);
+    ["get-quotes", languageCode, limit.toString()],
+    {
+      tags: [CACHE_TAGS.content],
+      revalidate: 3600,
+    }
+  )();
+};
 
 /**
  * Get vocabulary words by difficulty
  */
-export const getVocabulary = unstable_cache(
-  async (languageCode: string, difficulty: string, limit: number = 200): Promise<VocabularyItem[]> => {
+export const getVocabulary = async (languageCode: string, difficulty: string, limit: number = 200): Promise<VocabularyItem[]> => {
+  return unstable_cache(
+    async () => {
     const supabase = createAdminClient();
     
     const { data, error } = await supabase
@@ -96,18 +72,20 @@ export const getVocabulary = unstable_cache(
 
     return data || [];
   },
-  ["get-vocabulary"],
-  {
-    tags: [CACHE_TAGS.content],
-    revalidate: 3600,
-  }
-);
+    ["get-vocabulary", languageCode, difficulty, limit.toString()],
+    {
+      tags: [CACHE_TAGS.content],
+      revalidate: 3600,
+    }
+  )();
+};
 
 /**
  * Get all published lessons for a language
  */
-export const getLessons = unstable_cache(
-  async (languageCode: string): Promise<Lesson[]> => {
+export const getLessons = async (languageCode: string): Promise<Lesson[]> => {
+  return unstable_cache(
+    async () => {
     const supabase = createAdminClient();
     
     const { data, error } = await supabase
@@ -124,18 +102,20 @@ export const getLessons = unstable_cache(
 
     return data || [];
   },
-  ["get-lessons"],
-  {
-    tags: [CACHE_TAGS.content],
-    revalidate: 3600,
-  }
-);
+    ["get-lessons", languageCode],
+    {
+      tags: [CACHE_TAGS.content],
+      revalidate: 3600,
+    }
+  )();
+};
 
 /**
  * Get a specific lesson and all its steps (0 N+1 query pattern)
  */
-export const getLessonWithSteps = unstable_cache(
-  async (languageCode: string, lessonKey: string): Promise<{ lesson: Lesson; steps: LessonStep[] } | null> => {
+export const getLessonWithSteps = async (languageCode: string, lessonKey: string): Promise<{ lesson: Lesson; steps: LessonStep[] } | null> => {
+  return unstable_cache(
+    async () => {
     const supabase = createAdminClient();
     
     const { data: lesson, error: lessonError } = await supabase
@@ -167,18 +147,20 @@ export const getLessonWithSteps = unstable_cache(
       steps: steps || [],
     };
   },
-  ["get-lesson-with-steps"],
-  {
-    tags: [CACHE_TAGS.content],
-    revalidate: 3600,
-  }
-);
+    ["get-lesson-with-steps", languageCode, lessonKey],
+    {
+      tags: [CACHE_TAGS.content],
+      revalidate: 3600,
+    }
+  )();
+};
 
 /**
  * Get a single guide by key or slug
  */
-export const getGuide = unstable_cache(
-  async (languageCode: string, slugOrKey: string): Promise<Guide | null> => {
+export const getGuide = async (languageCode: string, slugOrKey: string): Promise<Guide | null> => {
+  return unstable_cache(
+    async () => {
     const supabase = createAdminClient();
     
     // First try by guide_key, then fallback to slug
@@ -210,9 +192,10 @@ export const getGuide = unstable_cache(
 
     return guide;
   },
-  ["get-guide"],
-  {
-    tags: [CACHE_TAGS.content],
-    revalidate: 3600,
-  }
-);
+    ["get-guide", languageCode, slugOrKey],
+    {
+      tags: [CACHE_TAGS.content],
+      revalidate: 3600,
+    }
+  )();
+};

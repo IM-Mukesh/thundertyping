@@ -30,6 +30,7 @@ export interface TestConfig {
   wordDifficulty: WordDifficulty;
   languageCode?: string;
   customWordPool?: readonly string[];
+  localizedContent?: LocalizedContent | null;
 }
 
 // "missed" is a character the user skipped past by committing the word early.
@@ -122,4 +123,10 @@ export interface TestState {
   wpmSamples: WpmSample[];
   charTally: CharTally;
   quoteSource: string | null;
+}
+
+export interface LocalizedContent {
+  commonWords: string[];
+  vocab: Record<string, { word: string; pos: string; definition: string }[]>;
+  quotes: { id: string; text: string; source: string; length: "short" | "medium" | "long" }[];
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { BookOpen, LayoutGrid, Library, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 // The header's primary pills (Lessons, Games, Profile) are budget-constrained
 // to a documented 375px width -- see the comment above NAV in
@@ -14,14 +15,16 @@ import { cn } from "@/lib/utils/cn";
 // a new feature page (a new game mode's own route, a future hub, etc.) means
 // appending one entry here, not adding another header icon.
 const MORE_LINKS = [
-  { href: "/guides", label: "Guides", icon: Library },
-  { href: "/vocabulary", label: "Vocabulary", icon: BookOpen },
-  { href: "/achievements", label: "Achievements", icon: Trophy },
-];
+  { href: "/guides", labelKey: "guides", icon: Library },
+  { href: "/vocabulary", labelKey: "vocabulary", icon: BookOpen },
+  { href: "/achievements", labelKey: "achievements", icon: Trophy },
+] as const;
 
-export function MoreMenu() {
+export function MoreMenu({ locale = "en" }: { locale?: string }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const prefix = locale === "en" ? "" : `/${locale}`;
+  const dict = getDictionary(locale);
 
   useEffect(() => {
     if (!open) return;
@@ -64,12 +67,14 @@ export function MoreMenu() {
               transition={{ duration: 0.12 }}
               className="absolute right-0 top-11 z-50 flex w-44 flex-col gap-0.5 rounded-lg border border-border bg-background p-1.5 shadow-lg sm:top-10"
             >
-              {MORE_LINKS.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href || pathname.startsWith(`${href}/`);
+              {MORE_LINKS.map(({ href, labelKey, icon: Icon }) => {
+                const localizedHref = `${prefix}${href}`;
+                const active = pathname === localizedHref || pathname.startsWith(`${localizedHref}/`);
+                const label = labelKey === "vocabulary" ? dict.nav.vocabulary : dict.footer[labelKey as keyof typeof dict.footer];
                 return (
                   <Link
                     key={href}
-                    href={href}
+                    href={localizedHref}
                     role="menuitem"
                     aria-current={active ? "page" : undefined}
                     onClick={() => setOpen(false)}

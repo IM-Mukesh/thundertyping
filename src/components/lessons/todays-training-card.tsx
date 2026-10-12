@@ -56,7 +56,7 @@ export function TodaysTrainingCard() {
   const historicalWpm = useMemo(() => {
     const completed = Object.values(units).filter((u) => u && u.completed && u.bestWpm);
     if (completed.length === 0) return 30;
-    const sum = completed.reduce((acc, u) => acc + (u.bestWpm || 30), 0);
+    const sum = completed.reduce((acc, u) => acc + (u!.bestWpm || 30), 0);
     return Math.round(sum / completed.length);
   }, [units]);
 

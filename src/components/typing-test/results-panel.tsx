@@ -14,6 +14,9 @@ import {
 import { AdSlot } from "@/components/layout/ad-slot";
 import { ResultsGraph } from "@/components/typing-test/results-graph";
 
+import { useParams } from "next/navigation";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+
 interface ResultsPanelProps {
   state: TestState;
   isNewBest: boolean;
@@ -21,6 +24,10 @@ interface ResultsPanelProps {
 }
 
 export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps) {
+  const params = useParams();
+  const locale = typeof params?.locale === 'string' ? params.locale : 'en';
+  const dict = getDictionary(locale);
+
   const {
     correctKeystrokes,
     incorrectKeystrokes,
@@ -55,10 +62,10 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       )}
 
       <div className="grid w-full grid-cols-2 gap-5 sm:grid-cols-4">
-        <Stat label="wpm" value={netWpm} highlight />
-        <Stat label="accuracy" value={`${accuracy}%`} />
+        <Stat label={dict.test?.wpm || "wpm"} value={netWpm} highlight />
+        <Stat label={dict.test?.accuracy || "accuracy"} value={`${accuracy}%`} />
         <Stat label="raw" value={rawWpm} />
-        <Stat label="consistency" value={`${consistency}%`} />
+        <Stat label={dict.lesson?.consistency || "consistency"} value={`${consistency}%`} />
       </div>
 
       <ResultsGraph samples={wpmSamples} />
@@ -96,7 +103,7 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
           className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
         >
           <RotateCcw size={16} />
-          Restart
+          {dict.test?.restart || "Restart"}
         </button>
         <Link
           href="/lessons/practice"
