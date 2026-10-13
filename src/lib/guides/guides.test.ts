@@ -39,9 +39,9 @@ describe("Guide Content Architecture & Registry", () => {
     }
   });
 
-  it("registers exactly 50 unique, valid guides", () => {
+  it("registers exactly 55 unique, valid guides", () => {
     const guides = getAllGuides();
-    assert.equal(guides.length, 50);
+    assert.equal(guides.length, 55);
 
     const slugSet = new Set<string>();
     for (const guide of guides) {
@@ -483,10 +483,10 @@ describe("Guide Content Architecture & Registry", () => {
   });
 
   describe("F24: Catalog and Registry Integrity", () => {
-    it("verifies catalog counts match authoritative registries (9 games, 28 lessons, 50 guides)", () => {
+    it("verifies catalog counts match authoritative registries (9 games, 28 lessons, 55 guides)", () => {
       assert.equal(PLAYABLE_GAME_LIST.length, 9, "Expected exactly 9 playable games");
       assert.equal(LESSON_LIST.length, 28, "Expected exactly 28 curriculum units");
-      assert.equal(GUIDE_REGISTRY.length, 50, "Expected exactly 50 registered guides");
+      assert.equal(GUIDE_REGISTRY.length, 55, "Expected exactly 55 registered guides");
 
       const readmePath = path.resolve(process.cwd(), "README.md");
       const readmeContent = fs.readFileSync(readmePath, "utf8");
@@ -499,14 +499,14 @@ describe("Guide Content Architecture & Registry", () => {
         "README.md must reflect 28 lessons",
       );
       assert.ok(
-        readmeContent.includes("50 research-backed guides"),
-        "README.md must reflect 50 guides",
+        readmeContent.includes("55 research-backed guides"),
+        "README.md must reflect 55 guides",
       );
     });
   });
 
   describe("F25: Guide Image Validator Structural Parsing", () => {
-    it("verifies scripts/validate-guide-images.mjs parses all 50 guides without regex spillover", () => {
+    it("verifies scripts/validate-guide-images.mjs parses all 55 guides without regex spillover", () => {
       const validatorPath = path.resolve(process.cwd(), "scripts/validate-guide-images.mjs");
       const validatorCode = fs.readFileSync(validatorPath, "utf8");
 
@@ -515,7 +515,7 @@ describe("Guide Content Architecture & Registry", () => {
         "Validator must not use fragile multiline regex across guides",
       );
 
-      // Verify that running the validator finds all 50 guides
+      // Verify that running the validator finds all 55 guides
       const registryPath = path.resolve(process.cwd(), "src/lib/guides/guide-registry.ts");
       const content = fs.readFileSync(registryPath, "utf8");
       const registryStart = content.indexOf("export const GUIDE_REGISTRY");
@@ -557,7 +557,7 @@ describe("Guide Content Architecture & Registry", () => {
         }
       }
 
-      assert.equal(objects.length, 50, "Expected structural parser to extract exactly 50 guide objects");
+      assert.equal(objects.length, 55, "Expected structural parser to extract exactly 55 guide objects");
     });
   });
 });

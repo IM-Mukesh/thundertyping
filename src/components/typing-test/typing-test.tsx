@@ -39,8 +39,12 @@ import { playSound } from "@/lib/games/game-audio";
 
 export const TYPING_LANGUAGE_STORAGE_KEY = "thundertyping-typing-language";
 
-function resolveInitialTypingLanguage(initialLanguage: Locale, enabled: boolean): Locale {
+function resolveInitialTypingLanguage(initialLanguage: Locale, enabled: boolean, urlLanguage?: string | null): Locale {
   if (!enabled) return DEFAULT_LOCALE;
+
+  if (urlLanguage && isAvailableTypingLanguage(urlLanguage)) {
+    return urlLanguage;
+  }
 
   const storedLanguage = getStorageItem(TYPING_LANGUAGE_STORAGE_KEY);
   return storedLanguage && isAvailableTypingLanguage(storedLanguage)
@@ -84,6 +88,7 @@ export function TypingTest({
   const searchParams = useSearchParams();
 
   const rawUrlDuration = searchParams.get("duration");
+  const rawUrlLanguage = searchParams.get("language") || searchParams.get("lang");
   const lastAppliedUrlDurationRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -130,15 +135,15 @@ export function TypingTest({
     ? locale
     : DEFAULT_LOCALE;
   const [typingLanguage, setTypingLanguage] = useState<Locale>(() =>
-    resolveInitialTypingLanguage(initialTypingLanguage, enableTypingLanguageSelection),
+    resolveInitialTypingLanguage(initialTypingLanguage, enableTypingLanguageSelection, rawUrlLanguage),
   );
-  const [typingContent, setTypingContent] = useState<LocalizedContent | null>(
-    enableTypingLanguageSelection
-      ? typingLanguage === initialTypingLanguage
-        ? localizedContent ?? getBundledTypingContent(typingLanguage)
-        : getBundledTypingContent(typingLanguage)
-      : null,
-  );
+  const [typingContent, setTypingContent] = useState<LocalizedContent | null>(() => {
+    if (!enableTypingLanguageSelection) return null;
+    const resolvedLang = resolveInitialTypingLanguage(initialTypingLanguage, enableTypingLanguageSelection, rawUrlLanguage);
+    if (resolvedLang === DEFAULT_LOCALE) return null;
+    if (localizedContent && resolvedLang === initialTypingLanguage) return localizedContent;
+    return getBundledTypingContent(resolvedLang);
+  });
   // Diagnostic only -- never subtracted from the test duration. See
   // docs/typing-engine.md for why the clock deliberately keeps running.
   const focusLossCountRef = useRef(0);

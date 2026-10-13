@@ -91,7 +91,37 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/english-typing-test-and-practice",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-13",
+    },
+    {
+      path: "/guides/spanish-typing-test-and-practice",
+      priority: 0.6,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-13",
+    },
+    {
+      path: "/guides/german-typing-test-and-practice",
+      priority: 0.6,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-13",
+    },
+    {
+      path: "/guides/portuguese-typing-test-and-practice",
+      priority: 0.6,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-13",
+    },
+    {
+      path: "/guides/hindi-typing-test-and-practice",
+      priority: 0.6,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-13",
+    },
+    {
+      path: "/guides/chinese-typing-test-and-practice",
+      priority: 0.6,
+      changeFrequency: "monthly",
+      lastModified: "2026-10-13",
     },
     {
       path: "/guides/typing-test-duration-guide",

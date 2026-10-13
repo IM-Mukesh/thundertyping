@@ -12,7 +12,7 @@ Live: [https://herotyping.com](https://herotyping.com)
 - **9 Arcade Typing Games**: Retro arcade typing games including *Typebound: The Last Dawn*, *Type Before Death*, *Ghost Racer*, *Fruit Fury*, *Falling Words*, *Word Rain*, *Word Blaster*, *Boss Battle*, and *Combo Rush*.
 - **Structured Curriculum**: 28 interactive touch-typing lessons with visual keyboard and real-time finger mapping.
 - **Adaptive Vocabulary Practice**: 1,300 curated words across Easy, Medium, and Hard tiers with built-in speech synthesis pronunciation.
-- **Comprehensive Guides**: 50 research-backed guides covering ergonomics, layouts, typing tests, benchmarks, and accessibility.
+- **Comprehensive Guides**: 55 research-backed guides covering ergonomics, layouts, typing tests, benchmarks, and accessibility.
 - **Player Profile & Achievements**: XP progression, level milestones, daily streaks, and arcade achievements stored locally for guests, with optional cloud sync for signed-in accounts.
 - **Multi-Theme Support**: Dark, Light, Midnight, Forest, and Sunset themes built with CSS color variables and high contrast.
 - **Zero Distraction & Privacy-First**: Instant guest mode with no mandatory sign-up required (stored locally in `localStorage`). Optional authenticated account allows multi-device progress sync. Anti-distraction layout fades away while actively typing.
