@@ -16,7 +16,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const PUBLISHED = "2026-09-15";
-const UPDATED = "October 5, 2026";
+const UPDATED = "2026-10-05";
 
 const LEVELS = [
   { label: "Beginner", range: "Under 20 WPM", note: "Still locating keys; hunt-and-peck or very early touch typing." },
@@ -87,6 +87,7 @@ export default function AverageTypingSpeedPage() {
       "What counts as a good typing speed, by skill level and by context, with sourced ranges instead of one made-up number.",
     path: "/guides/average-typing-speed",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

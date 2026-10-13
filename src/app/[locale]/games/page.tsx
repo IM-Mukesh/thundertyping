@@ -7,14 +7,18 @@ import { getArt, getGameArt, getHubHeroArt } from "@/lib/games/game-art-assets";
 import { GameHubFilters } from "@/components/games/game-hub-filters";
 import { PlayerSummary } from "@/components/games/player-summary";
 import { AdSlot } from "@/components/layout/ad-slot";
-import { pageMetadata } from "@/lib/seo/metadata";
+import { localizedPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Typing Games — Free Online Typing Games",
-  description:
-    "Free typing games that build real speed and accuracy -- save the skyline in Falling Words, fight in Typebound, or race Ghost Racer's rivals. No sign-up required.",
-  path: "/games",
-});
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return localizedPageMetadata({
+    locale,
+    title: "Typing Games — Free Online Typing Games",
+    description:
+      "Free typing games that build real speed and accuracy -- save the skyline in Falling Words, fight in Typebound, or race Ghost Racer's rivals. No sign-up required.",
+    path: "/games",
+  });
+}
 
 // The page scrolls normally. It was briefly a fixed-height shell with an
 // internally-scrolling list; that hid content behind a second scrollbar and

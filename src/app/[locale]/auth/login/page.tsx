@@ -8,6 +8,7 @@ import { ArrowRight, ShieldCheck, Sparkles, CheckCircle2, AlertCircle } from "lu
 import { useAuth } from "@/lib/auth/auth-context";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { sanitizeInternalRedirect } from "@/lib/utils/redirect";
+import { trackEvent } from "@/lib/analytics";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -21,6 +22,7 @@ function LoginForm() {
 
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [completedAuth, setCompletedAuth] = useState(false);
 
   // URLSearchParams has already percent-decoded this value. Decoding again
   // turns valid values such as "100%" into a client-rendering URIError.
@@ -58,13 +60,21 @@ function LoginForm() {
   }
 
   const handleGoogleToken = async (idToken: string, nonce: string) => {
+    if (submitting || completedAuth) return;
     setSubmitting(true);
     setErrorMessage(null);
-    const { error } = await signInWithGoogleIdToken(idToken, nonce);
+    trackEvent("auth_started", { method: "google", source: "login_form" });
+    const { error, isNewUser } = await signInWithGoogleIdToken(idToken, nonce);
     setSubmitting(false);
     if (error) {
       setErrorMessage(error);
       return;
+    }
+    setCompletedAuth(true);
+    if (isNewUser) {
+      trackEvent("signup_completed", { method: "google" });
+    } else {
+      trackEvent("login_completed", { method: "google" });
     }
     router.push(nextParam);
   };

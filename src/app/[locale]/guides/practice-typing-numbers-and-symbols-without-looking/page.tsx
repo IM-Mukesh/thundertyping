@@ -204,7 +204,8 @@ export default function PracticeTypingNumbersAndSymbolsWithoutLookingPage() {
         <h2 id="anchor-and-return">The Reach-and-Return Anchor Technique</h2>
         <p>
           When you extend your finger two rows upward to strike a symbol like <code>#</code> or <code>$</code>, do not
-          let your palm follow.
+          let your palm follow. For foundational finger-to-key charts and reach angles, review our guide on{" "}
+          <Link href="/guides/how-to-type-numbers-and-symbols-without-looking">How to Type Numbers &amp; Symbols Without Looking</Link>.
         </p>
         <p>
           Use the <strong>Snap-Back Mechanism</strong>:

@@ -2,18 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { TypingTestClient } from "@/components/typing-test/typing-test-client";
-import { pageMetadata } from "@/lib/seo/metadata";
+import { localizedPageMetadata } from "@/lib/seo/metadata";
 import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Custom Text Typing Test — Practice Typing Your Own Text",
-  description:
-    "Practice typing any custom text, document, or code snippet. Paste up to 2,000 characters and practice with real-time feedback on HeroTyping. 100% private in your browser.",
-  path: "/typing-test/custom-text",
-});
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return localizedPageMetadata({
+    locale,
+    title: "Custom Text Typing Test — Practice Typing Your Own Text",
+    description:
+      "Practice typing any custom text, document, or code snippet. Paste up to 2,000 characters and practice with real-time feedback on HeroTyping. 100% private in your browser.",
+    path: "/typing-test/custom-text",
+  });
+}
 
-export default function CustomTextTypingTestPage() {
-  const appSchema = buildWebApplicationSchema();
+export default async function CustomTextTypingTestPage({ params }: { params?: Promise<{ locale: string }> }) {
+  const resolvedParams = params ? await params : undefined;
+  const locale = resolvedParams?.locale ?? "en";
+  const path = locale === "en" ? "/typing-test/custom-text" : `/${locale}/typing-test/custom-text`;
+  const appSchema = buildWebApplicationSchema({
+    path,
+    name: "Custom Text Typing Test — HeroTyping",
+    description: "Practice typing your own custom text, code snippets, or literature with real-time speed tracking.",
+  });
 
   const breadcrumbs = [
     { name: "Typing Test", path: "/" },
@@ -30,7 +41,7 @@ export default function CustomTextTypingTestPage() {
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
         {/* Breadcrumb Navigation */}
         <div className="mb-4 w-full">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={breadcrumbs} locale={locale} />
         </div>
 
         {/* Page Header (Above the fold) */}

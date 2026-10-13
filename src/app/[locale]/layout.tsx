@@ -9,7 +9,7 @@ import { AuthProvider } from "@/lib/auth/auth-context";
 import { AudioVolumeBridge } from "@/components/games/ui/audio-settings";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { SITE_NAME, SITE_URL, SITE_TAGLINE, SITE_DESCRIPTION } from "@/lib/seo/constants";
+import { SITE_NAME, SITE_URL, SITE_DESCRIPTION, IS_PREVIEW } from "@/lib/seo/constants";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/json-ld";
 import { GA_MEASUREMENT_ID } from "@/lib/analytics/constants";
 
@@ -57,6 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: title,
       description: SITE_DESCRIPTION,
     },
+    ...(IS_PREVIEW ? { robots: { index: false, follow: false } } : {}),
   };
 }
 

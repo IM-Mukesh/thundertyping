@@ -287,7 +287,8 @@ export default function HowToTypeNumbersSymbolsPage() {
           </li>
           <li>
             <strong>Day 9–10 (Real-World Alphanumeric Strings):</strong> Practice mixed strings, currency,
-            and dates on our <Link href="/guides/english-typing-test-and-practice">custom practice mode</Link>{" "}
+            and dates using our <Link href="/guides/practice-typing-numbers-and-symbols-without-looking">advanced mixed number &amp; symbol practice drills</Link>,
+            test yourself on our <Link href="/guides/english-typing-test-and-practice">custom practice mode</Link>,
             and verify your numbers on our <Link href="/guides/wpm-cpm-kph-calculator">KPH calculator</Link>.
           </li>
         </ul>

@@ -9,6 +9,7 @@ import { primeCloudGameBests, clearCloudGameBests } from "@/lib/games/game-score
 import { primeCloudLessonProgress, restoreLocalLessonProgress } from "@/lib/lessons/lesson-progress-store";
 import { primeCloudPersonalBests, clearCloudPersonalBests } from "@/lib/persistence/results-store";
 import { primeCloudXp, primeCloudAchievements, clearCloudProfile } from "@/lib/profile/player-profile";
+import { isNewAuthUser } from "@/lib/auth/auth-utils";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type PreferencesRow = Database["public"]["Tables"]["user_preferences"]["Row"];
@@ -21,7 +22,7 @@ export interface AuthContextValue {
   streak: StreakRow | null;
   isLoading: boolean;
   isGuest: boolean;
-  signInWithGoogleIdToken: (idToken: string, nonce: string) => Promise<{ error: string | null }>;
+  signInWithGoogleIdToken: (idToken: string, nonce: string) => Promise<{ error: string | null; isNewUser?: boolean }>;
   signInWithOtp: (email: string, redirectTo?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<User | null>;
@@ -174,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, refreshProfile]);
 
   const signInWithGoogleIdToken = useCallback(
-    async (idToken: string, nonce: string): Promise<{ error: string | null }> => {
+    async (idToken: string, nonce: string): Promise<{ error: string | null; isNewUser?: boolean }> => {
       try {
         // Exchanges an ID token obtained directly from Google Identity
         // Services (client-side, no redirect through Supabase's hosted
@@ -183,16 +184,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // same security guarantee as the redirect-based signInWithOAuth,
         // just without the account picker being attributed to a Supabase
         // subdomain instead of this site.
-        const { error } = await supabase.auth.signInWithIdToken({
+        const { data, error } = await supabase.auth.signInWithIdToken({
           provider: "google",
           token: idToken,
           nonce,
         });
 
-        return { error: error ? error.message : null };
+        if (error) {
+          return { error: error.message, isNewUser: false };
+        }
+
+        const isNewUser = isNewAuthUser(data.user);
+        return { error: null, isNewUser };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Failed to sign in with Google";
-        return { error: msg };
+        return { error: msg, isNewUser: false };
       }
     },
     [supabase]

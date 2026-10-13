@@ -25,13 +25,22 @@ export function buildWebSiteSchema() {
   };
 }
 
-export function buildWebApplicationSchema() {
+export function buildWebApplicationSchema(input?: {
+  path?: string;
+  name?: string;
+  description?: string;
+}) {
+  const path = input?.path ?? "";
+  const name = input?.name ?? SITE_NAME;
+  const description = input?.description ?? SITE_DESCRIPTION;
+  const url = path ? `${SITE_URL}${path.startsWith("/") ? "" : "/"}${path}` : SITE_URL;
+
   return {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: SITE_NAME,
-    url: SITE_URL,
-    description: SITE_DESCRIPTION,
+    name,
+    url,
+    description,
     applicationCategory: "UtilityApplication",
     operatingSystem: "Any",
     offers: {
@@ -47,6 +56,7 @@ interface ArticleSchemaInput {
   description: string;
   path: string;
   datePublished: string;
+  dateModified?: string;
 }
 
 export function buildArticleSchema({
@@ -54,6 +64,7 @@ export function buildArticleSchema({
   description,
   path,
   datePublished,
+  dateModified,
 }: ArticleSchemaInput) {
   return {
     "@context": "https://schema.org",
@@ -62,6 +73,7 @@ export function buildArticleSchema({
     description,
     url: `${SITE_URL}${path}`,
     datePublished,
+    dateModified: dateModified || datePublished,
     author: {
       "@type": "Organization",
       name: SITE_NAME,
@@ -79,8 +91,14 @@ export interface BreadcrumbItem {
   path: string;
 }
 
-export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
-  const trail: BreadcrumbItem[] = [{ name: "Home", path: "/" }, ...items];
+export function buildBreadcrumbSchema(items: BreadcrumbItem[], locale?: string) {
+  const isDefaultLocale = !locale || locale === "en";
+  const homePath = isDefaultLocale ? "/" : `/${locale}`;
+  const localizedItems: BreadcrumbItem[] = items.map((item) => ({
+    name: item.name,
+    path: isDefaultLocale || item.path.startsWith(`/${locale}`) ? item.path : `/${locale}${item.path}`,
+  }));
+  const trail: BreadcrumbItem[] = [{ name: "Home", path: homePath }, ...localizedItems];
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -88,7 +106,7 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
       "@type": "ListItem",
       position: i + 1,
       name: item.name,
-      item: `${SITE_URL}${item.path}`,
+      item: `${SITE_URL}${item.path === "/" ? "" : item.path}`,
     })),
   };
 }

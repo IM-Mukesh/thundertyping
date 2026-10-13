@@ -3,14 +3,18 @@ import Link from "next/link";
 import { Award, BookOpen, Keyboard, Sparkles } from "lucide-react";
 import { LessonDashboard } from "@/components/lessons/lesson-dashboard";
 import { AdSlot } from "@/components/layout/ad-slot";
-import { pageMetadata } from "@/lib/seo/metadata";
+import { localizedPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Learn to Type — Free Touch-Typing Curriculum",
-  description:
-    "Free touch-typing curriculum with 28 structured lessons across Beginner, Intermediate, and Advanced tiers. Interactive hands, visual keyboard, and real-time adaptive feedback.",
-  path: "/lessons",
-});
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return localizedPageMetadata({
+    locale,
+    title: "Learn to Type — Free Touch-Typing Curriculum",
+    description:
+      "Free touch-typing curriculum with 28 structured lessons across Beginner, Intermediate, and Advanced tiers. Interactive hands, visual keyboard, and real-time adaptive feedback.",
+    path: "/lessons",
+  });
+}
 
 export default async function LessonsHubPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

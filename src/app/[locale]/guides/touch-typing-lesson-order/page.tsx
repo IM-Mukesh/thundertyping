@@ -131,6 +131,7 @@ export default function TouchTypingLessonOrderPage() {
       "The pedagogical curriculum order for learning to touch type: why small symmetrical key pairs come first, how consolidation units work, and how HeroTyping sequences all 28 units.",
     path: "/guides/touch-typing-lesson-order",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

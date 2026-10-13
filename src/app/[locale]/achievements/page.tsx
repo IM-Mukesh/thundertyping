@@ -3,16 +3,20 @@ import Link from "next/link";
 import { AchievementsClient } from "@/components/profile/achievements-client";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
 import { LESSON_ACHIEVEMENT_LIST } from "@/lib/lessons/lesson-achievements";
-import { pageMetadata } from "@/lib/seo/metadata";
+import { localizedPageMetadata } from "@/lib/seo/metadata";
 
 const TOTAL_COUNT = ACHIEVEMENT_LIST.length + LESSON_ACHIEVEMENT_LIST.length;
 
-export const metadata: Metadata = pageMetadata({
-  title: "Achievements",
-  description:
-    "Every achievement across HeroTyping's lessons and games -- survive fifteen waves, beat your ghost at perfect accuracy, master the keyboard.",
-  path: "/achievements",
-});
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return localizedPageMetadata({
+    locale,
+    title: "Achievements",
+    description:
+      "Every achievement across HeroTyping's lessons and games -- survive fifteen waves, beat your ghost at perfect accuracy, master the keyboard.",
+    path: "/achievements",
+  });
+}
 
 export default function AchievementsPage() {
   const visibleGameAchievements = ACHIEVEMENT_LIST.filter((a) => !a.secret);

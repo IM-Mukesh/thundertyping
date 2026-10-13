@@ -3,11 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronLeft, Keyboard } from "lucide-react";
 import {
-  LESSON_DEFINITIONS,
   LESSON_LIST,
   LESSON_STAGES,
   LESSON_TIERS,
-  type LessonId,
 } from "@/lib/lessons/lesson-types";
 import { LessonClient } from "@/components/lessons/lesson-client";
 import { AdSlot } from "@/components/layout/ad-slot";
@@ -25,7 +23,12 @@ export async function generateMetadata({ params }: { params: Promise<{ lessonId:
   const { lessonId, locale } = await params;
   const { getLocalizedLesson } = await import("@/lib/server/lesson-mapper");
   const lesson = await getLocalizedLesson(locale, lessonId);
-  if (!lesson) return {};
+  if (!lesson) {
+    return {
+      title: "Lesson Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
   const title = `${lesson.name} — Typing Lesson`;
   const description = lesson.instructions[0];
   return {
@@ -69,7 +72,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
             buildLearningResourceSchema({
               name: lesson.name,
               description: lesson.instructions[0],
-              path: `/lessons/${lesson.id}`,
+              path: locale === "en" ? `/lessons/${lesson.id}` : `/${locale}/lessons/${lesson.id}`,
               educationalLevel: tierLabel,
             }),
           ),

@@ -433,6 +433,7 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
     const stub = (name: string) => (props: Record<string, unknown>) => ({ type: name, props, key: null });
     const modules: Record<string, unknown> = {
       react: {
+        useState: (init: unknown) => [init, () => {}],
         useMemo: (factory: () => unknown) => factory(),
       },
       "next/navigation": {
@@ -448,6 +449,9 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
         RotateCcw: stub("RotateCcw"),
         Sparkles: stub("Sparkles"),
         Target: stub("Target"),
+        Share2: stub("Share2"),
+        Check: stub("Check"),
+        ArrowRight: stub("ArrowRight"),
       },
       "@/lib/typing-engine/stats": {
         calculateAccuracy: () => 98,
@@ -455,6 +459,9 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
         calculateNetWpm: () => 75,
         calculateRawWpm: () => 78,
         round: (n: number) => Math.round(n),
+      },
+      "@/lib/analytics": {
+        trackEvent: () => {},
       },
       "@/components/layout/ad-slot": {
         AdSlot: stub("AdSlot"),

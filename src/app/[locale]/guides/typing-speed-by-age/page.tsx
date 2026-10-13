@@ -15,7 +15,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const PUBLISHED = "2026-10-05";
-const UPDATED = "October 5, 2026";
+const UPDATED = "2026-10-05";
 
 const GRADE_BANDS = [
   { stage: "Kindergarten", wpm: "2–5 WPM", accuracy: "Build control", note: "Learn the keyboard layout, hand position, and deliberate key presses." },
@@ -65,6 +65,7 @@ export default function TypingSpeedByAgePage() {
       "Transparent grade-level typing guidance, accuracy expectations, and fair ways to measure progress without treating age as destiny.",
     path: "/guides/typing-speed-by-age",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

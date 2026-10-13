@@ -226,8 +226,7 @@ export default function TypingPracticeForWeakKeysPage() {
 
         <h2 id="practice-workflow">Your Daily 10-Minute Workflow in HeroTyping</h2>
         <p>
-          You don&apos;t need to manually invent drill sentences every morning. HeroTyping features a dedicated,
-          adaptive practice engine designed specifically for weak-key remediation:
+          Before drilling, learn how to <Link href="/guides/how-to-find-your-weakest-typing-keys">diagnose your weakest typing keys</Link> using error logs and accuracy diagnostics. Then, use HeroTyping&apos;s adaptive practice engine for targeted remediation:
         </p>
 
         <ol>

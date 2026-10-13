@@ -91,6 +91,7 @@ export default function WhyWpmIsHighAccuracyIsLowPage() {
       "Why fast typists struggle with low accuracy, the hidden backspace speed penalty, and how to reset your motor pacing to achieve true high-accuracy speed.",
     path: "/guides/why-wpm-is-high-accuracy-is-low",
     datePublished: PUBLISHED,
+    dateModified: REVIEWED,
   });
 
   return (

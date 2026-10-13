@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
     qualities: [45, 75],
   },
 
-  
+  skipTrailingSlashRedirect: true,
 
   async headers() {
     // Supabase calls from the browser (auth session/token exchange) go

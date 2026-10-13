@@ -188,6 +188,7 @@ export default function TypingResourcesForTeachersPage() {
       "A free, no-signup touch-typing curriculum for educators: a 9-phase pedagogical progression across 28 units, classroom routines, star-based feedback, and honest benchmarks.",
     path: "/guides/typing-resources-for-teachers",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

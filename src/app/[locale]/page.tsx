@@ -19,9 +19,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const schema = buildWebApplicationSchema();
-
   const dict = getDictionary(locale);
+  const schema = buildWebApplicationSchema({
+    path: locale === "en" ? "/" : `/${locale}`,
+    name: dict.home.title,
+    description: dict.home.subtitle,
+  });
+
   const localizedContent = getBundledTypingContent(locale);
 
   if (!localizedContent) {

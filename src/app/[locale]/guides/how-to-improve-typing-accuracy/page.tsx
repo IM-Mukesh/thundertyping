@@ -207,8 +207,14 @@ export default function HowToImproveTypingAccuracyPage() {
         <p>
           Pushing speed before accuracy is solid almost always backfires: every correction costs a
           backspace, a re-type, and a broken rhythm — more total time than typing slightly slower
-          in the first place would have cost. The trade only makes sense in the other direction —
-          build accuracy first, then let speed rise from a stable, low-error baseline. See{" "}
+          in the first place would have cost. Read our deep-dive on{" "}
+          <Link href="/guides/why-wpm-is-high-accuracy-is-low">why your WPM is high but accuracy is low</Link> to understand the true backspace penalty. To learn how scores are calculated across different tests, see{" "}
+          <Link href="/guides/typing-accuracy">what typing accuracy means and benchmark score bands</Link>.
+        </p>
+        <p>
+          The trade only makes sense in the other direction —
+          build accuracy first, then let speed rise from a stable, low-error baseline. You can drill high-precision typing directly in our{" "}
+          <Link href="/practice/accuracy">dedicated accuracy practice mode</Link>, and see{" "}
           <Link href="/guides/how-to-improve-typing-speed">how to improve your typing speed</Link>{" "}
           for what changes once accuracy stops being the limiting factor.
         </p>

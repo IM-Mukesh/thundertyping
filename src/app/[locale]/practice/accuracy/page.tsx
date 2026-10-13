@@ -2,18 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { PracticeClient } from "@/components/lessons/practice-client";
-import { pageMetadata } from "@/lib/seo/metadata";
+import { localizedPageMetadata } from "@/lib/seo/metadata";
 import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
 
-export const metadata: Metadata = pageMetadata({
-  title: "Typing Accuracy Practice — Drills to Reduce Mistakes",
-  description:
-    "Improve your typing accuracy with precision-focused drills on HeroTyping. Build clean finger coordination, eliminate frequent typos, and reach 98%+ accuracy.",
-  path: "/practice/accuracy",
-});
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return localizedPageMetadata({
+    locale,
+    title: "Typing Accuracy Practice — Drills to Reduce Mistakes",
+    description:
+      "Improve your typing accuracy with precision-focused drills on HeroTyping. Build clean finger coordination, eliminate frequent typos, and reach 98%+ accuracy.",
+    path: "/practice/accuracy",
+  });
+}
 
-export default function AccuracyPracticePage() {
-  const appSchema = buildWebApplicationSchema();
+export default async function AccuracyPracticePage({ params }: { params?: Promise<{ locale: string }> }) {
+  const resolvedParams = params ? await params : undefined;
+  const locale = resolvedParams?.locale ?? "en";
+  const path = locale === "en" ? "/practice/accuracy" : `/${locale}/practice/accuracy`;
+  const appSchema = buildWebApplicationSchema({
+    path,
+    name: "Typing Accuracy Practice — HeroTyping",
+    description: "Dedicated typing accuracy drill focusing on zero-mistake typing and deliberate pacing.",
+  });
 
   const breadcrumbs = [
     { name: "Practice", path: "/lessons/practice" },
@@ -30,7 +41,7 @@ export default function AccuracyPracticePage() {
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
         {/* Breadcrumb Navigation */}
         <div className="mb-4 w-full">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={breadcrumbs} locale={locale} />
         </div>
 
         {/* Page Header (Above the fold) */}

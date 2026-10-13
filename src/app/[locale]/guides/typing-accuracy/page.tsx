@@ -15,7 +15,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const PUBLISHED = "2026-10-05";
-const UPDATED = "October 5, 2026";
+const UPDATED = "2026-10-05";
 
 const BENCHMARK_BANDS = [
   ["Below 90%", "Still building control. Use the score as a starting point, especially on a test long enough to expose repeated errors."],
@@ -63,6 +63,7 @@ export default function TypingAccuracyPage() {
       "What typing accuracy measures, how HeroTyping calculates it, why scores vary, and how to interpret practical benchmark bands.",
     path: "/guides/typing-accuracy",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -318,9 +319,14 @@ export default function TypingAccuracyPage() {
         </p>
         <p>
           The purpose of a benchmark is to make your next decision clearer. If accuracy is the
-          limiting metric, lower the pace until clean repetitions are possible and use the repeated
-          error pattern to choose practice. If accuracy is already stable but WPM is not moving,
-          compare your result with the <Link href="/guides/average-typing-speed">average-speed context</Link>
+          limiting metric, lower the pace until clean repetitions are possible. Follow our{" "}
+          <Link href="/guides/how-to-improve-typing-accuracy">step-by-step system to improve typing accuracy</Link> or drill directly in our{" "}
+          <Link href="/practice/accuracy">interactive accuracy practice mode</Link>. If you type fast but struggle with frequent typos, read{" "}
+          <Link href="/guides/why-wpm-is-high-accuracy-is-low">why your WPM is high but accuracy is low</Link> to reset your motor pacing.
+        </p>
+        <p>
+          If accuracy is already stable but WPM is not moving,
+          compare your result with the <Link href="/guides/average-typing-speed">average-speed context</Link>{" "}
           and work on fluency separately. Either way, measure progress under similar conditions.
         </p>
 

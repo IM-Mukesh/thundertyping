@@ -25,25 +25,31 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: { params: Promise<{ difficulty: string, locale: string }> }): Promise<Metadata> {
-  const { difficulty: raw } = await params;
+  const { difficulty: raw, locale } = await params;
   const difficulty = getDifficulty(raw);
-  if (!difficulty) return {};
+  if (!difficulty) {
+    return {
+      title: "Vocabulary Tier Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
   const title = `${LABEL[difficulty]} Vocabulary Typing Test`;
   const description = `Type ${VOCAB_WORDS[difficulty].length} ${LABEL[difficulty].toLowerCase()}-tier vocabulary words, each shown with a real definition, and build real vocabulary while you practice typing.`;
+  const path = locale === "en" ? `/vocabulary/${difficulty}` : `/${locale}/vocabulary/${difficulty}`;
   return {
     title,
     description,
-    alternates: { canonical: `/vocabulary/${difficulty}` },
+    alternates: { canonical: path },
     openGraph: { 
       title, 
-      description, 
-      url: `/vocabulary/${difficulty}`,
-      images: [{ url: "/opengraph-image" }]
-    },
-    twitter: { 
-      title, 
       description,
-      images: ["/opengraph-image"]
+      url: path,
+      images: [{ url: "/opengraph-image" }],
+    },
+    twitter: {
+      title,
+      description,
+      images: ["/opengraph-image"],
     },
   };
 }
@@ -51,7 +57,7 @@ export async function generateMetadata({
 export default async function VocabularyDifficultyPage({
   params,
 }: { params: Promise<{ difficulty: string, locale: string }> }) {
-  const { difficulty: raw } = await params;
+  const { difficulty: raw, locale } = await params;
   const difficulty = getDifficulty(raw);
   if (!difficulty) notFound();
 
@@ -63,6 +69,7 @@ export default async function VocabularyDifficultyPage({
             { name: "Vocabulary", path: "/vocabulary" },
             { name: `${LABEL[difficulty]} Tier`, path: `/vocabulary/${difficulty}` },
           ]}
+          locale={locale}
         />
       </div>
 

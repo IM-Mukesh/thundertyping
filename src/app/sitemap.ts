@@ -121,7 +121,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/typing-resources-for-teachers",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-25",
+      lastModified: "2026-09-28",
     },
     {
       path: "/guides/proper-typing-posture-and-ergonomics",
@@ -199,7 +199,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/touch-typing-lesson-order",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-27",
+      lastModified: "2026-09-28",
     },
     {
       path: "/guides/touch-typing-roadmap-for-beginners",
@@ -334,14 +334,27 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       lastModified: "2026-09-27",
     },
     { path: "/games", priority: 0.8, changeFrequency: "daily", lastModified: "2026-09-26" },
-    // Only genuinely playable, indexable games enter the sitemap. Upcoming / in-development
-    // games are excluded generically via PLAYABLE_GAME_LIST.
-    ...PLAYABLE_GAME_LIST.map((game) => ({
-      path: `/games/${game.id}`,
-      priority: game.id === "fruit-fury" ? 0.8 : 0.7,
-      changeFrequency: "monthly" as const,
-      lastModified: game.id === "fruit-fury" ? "2026-09-26" : "2026-09-15",
-    })),
+    // Truthful last modified dates for playable games determined from git commit history.
+    // Replaces the prior stale blanket 2026-09-15 placeholder.
+    ...PLAYABLE_GAME_LIST.map((game) => {
+      const gameLastModifiedMap: Record<string, string> = {
+        "rakshasa-war": "2026-10-05",
+        "type-before-death": "2026-10-08",
+        "ghost-racer": "2026-10-04",
+        "fruit-fury": "2026-10-04",
+        "falling-words": "2026-10-07",
+        "word-rain": "2026-10-08",
+        "word-blaster": "2026-10-08",
+        "boss-battle": "2026-10-08",
+        "combo-rush": "2026-10-08",
+      };
+      return {
+        path: `/games/${game.id}`,
+        priority: game.id === "type-before-death" || game.id === "fruit-fury" ? 0.8 : 0.7,
+        changeFrequency: "monthly" as const,
+        lastModified: gameLastModifiedMap[game.id] ?? "2026-10-04",
+      };
+    }),
     { path: "/lessons", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-22" },
     { path: "/lessons/practice", priority: 0.4, changeFrequency: "monthly", lastModified: "2026-09-24" },
     // Generated rather than hand-listed -- LESSON_LIST is the single source of
@@ -367,34 +380,97 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
   ];
 }
 
+/**
+ * Checks whether a route has genuine, fully localized UI and interactive content
+ * in es, pt-BR, and de. Currently, only the Homepage ("") and the 3D survival game
+ * ("/games/type-before-death") provide complete authentic translations across
+ * titles, descriptions, H1/H2s, story/instructions, FAQs, schemas, and UI controls.
+ * Routes with English-only articles, lesson curricula, vocabulary tiers, or drill prose
+ * are kept English-only to prevent Google duplicate content penalties and invalid hreflang claims.
+ */
+export function isLocalizedRoute(path: string): boolean {
+  if (path === "") return true; // Homepage
+  if (path === "/games/type-before-death") return true; // Fully localized 3D zombie survival game
+  return false;
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = getSitemapRoutes();
-  // Route languages are local configuration. Homepage typing languages (for
-  // example Hindi and Chinese) do not create localized URL routes or require
-  // a database/network lookup while building the sitemap.
   const includeDe = LOCALES.includes("de");
   const includeEs = LOCALES.includes("es");
   const includePt = LOCALES.includes("pt-BR");
 
-  return routes.map(({ path, priority, changeFrequency, lastModified }) => {
-    const url = `${SITE_URL}${path}`;
-    const languages: Record<string, string> = {
-      en: url,
-      "x-default": url,
-    };
+  const sitemapEntries: MetadataRoute.Sitemap = [];
 
+  for (const { path, priority, changeFrequency, lastModified } of routes) {
+    const englishUrl = `${SITE_URL}${path}`;
+
+    if (!isLocalizedRoute(path)) {
+      // English-only content (guides, about, privacy, terms).
+      // Emit single canonical English entry without foreign hreflang alternates.
+      sitemapEntries.push({
+        url: englishUrl,
+        lastModified,
+        changeFrequency,
+        priority,
+      });
+      continue;
+    }
+
+    // Genuinely localized routes:
+    // Build reciprocal hreflang mapping containing all supported locales + x-default.
+    const languages: Record<string, string> = {
+      en: englishUrl,
+      "x-default": englishUrl,
+    };
     if (includeEs) languages.es = `${SITE_URL}/es${path}`;
-    if (includePt) languages["pt-BR"] = `${SITE_URL}/pt-br${path}`;
+    if (includePt) languages["pt-BR"] = `${SITE_URL}/pt-BR${path}`;
     if (includeDe) languages.de = `${SITE_URL}/de${path}`;
 
-    return {
-      url,
+    // Google Localized Sitemaps: Each localized language version must have its own
+    // <url> entry, each containing reciprocal links to all alternates (including itself).
+    // 1. English (default prefix-less) entry
+    sitemapEntries.push({
+      url: englishUrl,
       lastModified,
       changeFrequency,
       priority,
-      alternates: {
-        languages,
-      },
-    };
-  });
+      alternates: { languages },
+    });
+
+    // 2. Spanish entry
+    if (includeEs) {
+      sitemapEntries.push({
+        url: `${SITE_URL}/es${path}`,
+        lastModified,
+        changeFrequency,
+        priority,
+        alternates: { languages },
+      });
+    }
+
+    // 3. Brazilian Portuguese entry (canonical pt-BR)
+    if (includePt) {
+      sitemapEntries.push({
+        url: `${SITE_URL}/pt-BR${path}`,
+        lastModified,
+        changeFrequency,
+        priority,
+        alternates: { languages },
+      });
+    }
+
+    // 4. German entry
+    if (includeDe) {
+      sitemapEntries.push({
+        url: `${SITE_URL}/de${path}`,
+        lastModified,
+        changeFrequency,
+        priority,
+        alternates: { languages },
+      });
+    }
+  }
+
+  return sitemapEntries;
 }

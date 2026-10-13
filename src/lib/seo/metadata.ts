@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { IS_PREVIEW } from "@/lib/seo/constants";
 
 /**
  * Truncates at the last full word within maxLength, never mid-word. A raw
@@ -11,6 +12,49 @@ export function truncateAtWord(text: string, maxLength: number): string {
   const cut = text.slice(0, maxLength);
   const lastSpace = cut.lastIndexOf(" ");
   return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd();
+}
+
+/**
+ * Helper for localized pages that need their canonical and Open Graph URLs
+ * to reflect the current route locale (/es/..., /pt-BR/..., /de/...) while
+ * keeping the default English URLs prefix-less (/...).
+ */
+export function localizedPageMetadata({
+  locale,
+  title,
+  description,
+  path,
+  robots,
+}: {
+  locale?: string;
+  title: string;
+  description: string;
+  path: string;
+  robots?: Metadata["robots"];
+}): Metadata {
+  const isLocalized = path === "" || path === "/" || path === "/games/type-before-death";
+  const canonicalPath = !locale || locale === "en" || !isLocalized ? (path === "" ? "/" : path) : `/${locale}${path}`;
+  const effectiveRobots = IS_PREVIEW
+    ? { index: false, follow: false }
+    : robots;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      images: [{ url: "/opengraph-image" }],
+    },
+    twitter: {
+      title,
+      description,
+      images: ["/opengraph-image"],
+    },
+    ...(effectiveRobots ? { robots: effectiveRobots } : {}),
+  };
 }
 
 /**
@@ -34,21 +78,10 @@ export function pageMetadata({
   path: string;
   robots?: Metadata["robots"];
 }): Metadata {
-  return {
+  return localizedPageMetadata({
     title,
     description,
-    alternates: { canonical: path },
-    openGraph: { 
-      title, 
-      description, 
-      url: path,
-      images: [{ url: "/opengraph-image" }]
-    },
-    twitter: { 
-      title, 
-      description,
-      images: ["/opengraph-image"]
-    },
-    ...(robots ? { robots } : {}),
-  };
+    path,
+    robots,
+  });
 }

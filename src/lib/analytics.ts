@@ -5,6 +5,7 @@ export { GA_MEASUREMENT_ID };
 export type AnalyticsEventName =
   | "typing_test_started"
   | "typing_test_completed"
+  | "results_action_clicked"
   | "lesson_started"
   | "lesson_completed"
   | "practice_started"
@@ -13,7 +14,11 @@ export type AnalyticsEventName =
   | "game_completed"
   | "game_event"
   | "placement_started"
-  | "placement_completed";
+  | "placement_completed"
+  | "signup_started"
+  | "signup_completed"
+  | "auth_started"
+  | "login_completed";
 
 export interface TypingTestStartedParams {
   test_mode: string;
@@ -105,9 +110,34 @@ export interface PlacementCompletedParams {
   suggested_stage: string;
 }
 
+export interface ResultsActionClickedParams {
+  action: "restart" | "weak_keys" | "accuracy" | "lessons" | "games" | "share";
+  wpm: number;
+  accuracy: number;
+  test_mode?: string;
+}
+
+export interface SignupStartedParams {
+  source: string;
+}
+
+export interface SignupCompletedParams {
+  method: string;
+}
+
+export interface AuthStartedParams {
+  method: string;
+  source: string;
+}
+
+export interface LoginCompletedParams {
+  method: string;
+}
+
 export interface AnalyticsEventParamsMap {
   typing_test_started: TypingTestStartedParams;
   typing_test_completed: TypingTestCompletedParams;
+  results_action_clicked: ResultsActionClickedParams;
   lesson_started: LessonStartedParams;
   lesson_completed: LessonCompletedParams;
   practice_started: PracticeStartedParams;
@@ -117,6 +147,10 @@ export interface AnalyticsEventParamsMap {
   game_event: GameEventParams;
   placement_started: PlacementStartedParams;
   placement_completed: PlacementCompletedParams;
+  signup_started: SignupStartedParams;
+  signup_completed: SignupCompletedParams;
+  auth_started: AuthStartedParams;
+  login_completed: LoginCompletedParams;
 }
 
 declare global {

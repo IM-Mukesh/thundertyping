@@ -7,9 +7,15 @@ import { buildBreadcrumbSchema, type BreadcrumbItem } from "@/lib/seo/json-ld";
  * together so the two can never drift out of sync with each other. Plain
  * server component -- no interactivity, so no reason for a client boundary.
  */
-export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
-  const trail: BreadcrumbItem[] = [{ name: "Home", path: "/" }, ...items];
-  const schema = buildBreadcrumbSchema(items);
+export function Breadcrumbs({ items, locale }: { items: BreadcrumbItem[]; locale?: string }) {
+  const isDefaultLocale = !locale || locale === "en";
+  const homePath = isDefaultLocale ? "/" : `/${locale}`;
+  const localizedItems: BreadcrumbItem[] = items.map((item) => ({
+    name: item.name,
+    path: isDefaultLocale || item.path.startsWith(`/${locale}`) ? item.path : `/${locale}${item.path}`,
+  }));
+  const trail: BreadcrumbItem[] = [{ name: "Home", path: homePath }, ...localizedItems];
+  const schema = buildBreadcrumbSchema(items, locale);
 
   return (
     <>

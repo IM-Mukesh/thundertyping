@@ -2,18 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { TypingTestClient } from "@/components/typing-test/typing-test-client";
-import { pageMetadata } from "@/lib/seo/metadata";
+import { localizedPageMetadata } from "@/lib/seo/metadata";
 import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
 
-export const metadata: Metadata = pageMetadata({
-  title: "1-Minute Typing Test — 60-Second WPM Speed Test",
-  description:
-    "Take a free 1-minute typing test on HeroTyping. Measure your Net WPM, raw speed, and accuracy over 60 seconds with instant, accurate keystroke scoring.",
-  path: "/typing-test/1-minute",
-});
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return localizedPageMetadata({
+    locale,
+    title: "1-Minute Typing Test — 60-Second WPM Speed Test",
+    description:
+      "Take a free 1-minute typing test on HeroTyping. Measure your Net WPM, raw speed, and accuracy over 60 seconds with instant, accurate keystroke scoring.",
+    path: "/typing-test/1-minute",
+  });
+}
 
-export default function OneMinuteTypingTestPage() {
-  const appSchema = buildWebApplicationSchema();
+export default async function OneMinuteTypingTestPage({ params }: { params?: Promise<{ locale: string }> }) {
+  const resolvedParams = params ? await params : undefined;
+  const locale = resolvedParams?.locale ?? "en";
+  const path = locale === "en" ? "/typing-test/1-minute" : `/${locale}/typing-test/1-minute`;
+  const appSchema = buildWebApplicationSchema({
+    path,
+    name: "1-Minute Typing Test — HeroTyping",
+    description: "Measure your typing speed in 60 seconds with real-time WPM and accuracy metrics.",
+  });
 
   const breadcrumbs = [
     { name: "Typing Test", path: "/" },
@@ -30,7 +41,7 @@ export default function OneMinuteTypingTestPage() {
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
         {/* Breadcrumb Navigation */}
         <div className="mb-4 w-full">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={breadcrumbs} locale={locale} />
         </div>
 
         {/* Page Header (Above the fold) */}

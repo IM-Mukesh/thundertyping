@@ -119,6 +119,7 @@ export default function HowToImproveTypingSpeedPage() {
       "A step-by-step system for typing faster: fix accuracy first, find your weak keys, drill them, and track real progress from 20 WPM to 100+.",
     path: "/guides/how-to-improve-typing-speed",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

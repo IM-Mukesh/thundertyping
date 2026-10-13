@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { RotateCcw, Sparkles, Target } from "lucide-react";
+import { Check, Gamepad2, GraduationCap, RotateCcw, Share2, Sparkles, Target } from "lucide-react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
 import {
   calculateAccuracy,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/typing-engine/stats";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { ResultsGraph } from "@/components/typing-test/results-graph";
+import { trackEvent } from "@/lib/analytics";
 
 import { useParams } from "next/navigation";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -24,6 +26,7 @@ interface ResultsPanelProps {
 }
 
 export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps) {
+  const [copied, setCopied] = useState(false);
   const params = useParams();
   const locale = typeof params?.locale === 'string' ? params.locale : 'en';
   const dict = getDictionary(locale);
@@ -42,6 +45,50 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
   const rawWpm = round(calculateRawWpm(correctKeystrokes, incorrectKeystrokes, elapsedMs));
   const accuracy = round(calculateAccuracy(correctKeystrokes, incorrectKeystrokes, charTally.missed));
   const consistency = round(calculateConsistency(wpmSamples));
+
+  const handleRestart = () => {
+    trackEvent("results_action_clicked", { action: "restart", wpm: netWpm, accuracy });
+    onRestart();
+  };
+
+  const handleShare = async () => {
+    trackEvent("results_action_clicked", { action: "share", wpm: netWpm, accuracy });
+    const shareText = `HeroTyping Speed Test: ${netWpm} WPM | ${accuracy}% Accuracy https://www.herotyping.com`;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      // Fail silently if clipboard write is blocked
+    }
+  };
+
+  // Determine smart recommended practice step
+  const recommendedAction = accuracy < 94
+    ? {
+        label: "Drill Weak Keys & Accuracy",
+        href: "/practice/weak-keys",
+        icon: Target,
+        action: "weak_keys" as const,
+        description: "Fix problem letters to boost overall consistency.",
+      }
+    : netWpm < 50
+    ? {
+        label: "Practice Touch Lessons",
+        href: "/lessons",
+        icon: GraduationCap,
+        action: "lessons" as const,
+        description: "Build clean finger muscle memory across the keyboard.",
+      }
+    : {
+        label: "Test Speed in Zombie Survival",
+        href: "/games/type-before-death",
+        icon: Gamepad2,
+        action: "games" as const,
+        description: "Push typing reflexes under arcade pressure.",
+      };
 
   return (
     <motion.div
@@ -96,21 +143,50 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
         </p>
       </div>
 
+      {/* Recommended Next Step Card */}
+      <div className="w-full rounded-xl border border-accent/20 bg-accent/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            <recommendedAction.icon size={20} />
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-accent">Recommended Next Step</div>
+            <p className="text-xs text-sub">{recommendedAction.description}</p>
+          </div>
+        </div>
+        <Link
+          href={recommendedAction.href}
+          onClick={() => trackEvent("results_action_clicked", { action: recommendedAction.action, wpm: netWpm, accuracy })}
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow-sm transition-opacity hover:opacity-90 whitespace-nowrap"
+        >
+          {recommendedAction.label}
+        </Link>
+      </div>
+
       <div className="flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
-          onClick={onRestart}
+          onClick={handleRestart}
           className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
         >
           <RotateCcw size={16} />
           {dict.test?.restart || "Restart"}
         </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          {copied ? <Check size={16} className="text-emerald-400" /> : <Share2 size={16} />}
+          {copied ? "Copied Score!" : "Share Result"}
+        </button>
         <Link
-          href="/lessons/practice"
+          href="/practice/accuracy"
+          onClick={() => trackEvent("results_action_clicked", { action: "accuracy", wpm: netWpm, accuracy })}
           className="flex min-h-[44px] items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm text-sub transition-colors hover:border-accent/50 hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
         >
           <Target size={16} />
-          Practice Weak Keys
+          Accuracy Drill
         </Link>
       </div>
 
