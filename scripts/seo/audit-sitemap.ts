@@ -1,5 +1,5 @@
-import sitemap from "../../src/app/sitemap";
-import { SITE_URL } from "../../src/lib/seo/constants";
+import sitemap from "@/app/sitemap";
+import { SITE_URL } from "@/lib/seo/constants";
 
 export interface SitemapAuditResult {
   totalUrls: number;
