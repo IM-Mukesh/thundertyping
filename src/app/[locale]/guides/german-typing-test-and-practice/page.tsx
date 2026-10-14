@@ -31,14 +31,14 @@ const BEISPIELE_DE = [
   {
     stufe: "Oberstufe & IHK-Prüfungsniveau (ab 300+ Anschläge / 60–85+ WPM)",
     hinweis: "Zahlen, Eszett (ß), Semikolons, Großschreibung und Fachwortschatz.",
-    text: "Gemäß DIN 2137 muss die Übertragungsgeschwindigkeit für kaufmännische Abschlussprüfungen mindestens 240 Anschläge pro Minute bei maximal 0,5 % Fehlerquote betragen — andernfalls gilt die Prüfungsarbeit als nicht bestanden!",
+    text: "In kaufmännischen Abschlussprüfungen (z. B. nach IHK-Leitfäden für Kaufleute für Büromanagement) wird auf standardisierten DIN-2137-Tastaturen eine Geschwindigkeit von mindestens 200 bis 250 Anschlägen pro Minute bei maximal 0,5 % Fehlerquote empfohlen, um die praktische Arbeit sicher zu bestehen.",
   },
 ];
 
 const BENCHMARKS_DE = [
   { stufe: "Tippanfänger / Zwei-Finger-Sucher", apm: "80–140 APM", wpm: "16–28 WPM", kontext: "Personen, die noch auf die Tasten schauen oder das 10-Finger-System erlernen." },
   { stufe: "Durchschnittlicher Computernutzer", apm: "150–220 APM", wpm: "30–44 WPM", kontext: "Solide Geschwindigkeit für Alltags-E-Mails, Chats und Recherchen." },
-  { stufe: "Berufliche Grundanforderung (Büro / IHK)", apm: "230–280 APM", wpm: "46–56 WPM", kontext: "Offizielle Mindestanforderung für Kaufleute für Büromanagement nach DIN 2137." },
+  { stufe: "Berufliche Grundanforderung (Büro / IHK)", apm: "230–280 APM", wpm: "46–56 WPM", kontext: "Typische Richtwerte für kaufmännische Berufe (IHK / Berufsausbildung) auf genormten DIN-2137-Tastaturen." },
   { stufe: "Geübte Schnellschreiber", apm: "300–400 APM", wpm: "60–80 WPM", kontext: "Rechtsanwaltsfachangestellte, Redakteure, Programmierer und Vielschreiber." },
   { stufe: "Profi / Wettbewerbsniveau", apm: "450–600+ APM", wpm: "90–120+ WPM", kontext: "Deutsche Meisterschaften im Tastschreiben, Parlamentsstenografen." },
 ];
@@ -47,7 +47,7 @@ const FAQ_ITEMS = [
   {
     question: "Was ist der Unterschied zwischen Anschlägen pro Minute (APM) und Wörtern pro Minute (WPM)?",
     answer:
-      "Im deutschsprachigen Raum und nach der deutschen Norm DIN 2137 wird die Tippgeschwindigkeit traditionell in 'Anschlägen pro Minute' (APM) gemessen. Jeder Tastendruck (Buchstabe, Leerzeichen, Umschalttaste oder Satzzeichen) zählt als ein Anschlag. International und bei modernen Online-Tests wie HeroTyping wird oft in 'Words per Minute' (WPM) gerechnet. Die Faustformel zur Umrechnung lautet: 5 Anschläge entsprechen 1 Wort (APM / 5 = WPM).",
+      "Im deutschsprachigen Raum wird die Tippgeschwindigkeit traditionell in 'Anschlägen pro Minute' (APM) gemessen, während die Norm DIN 2137 die ergonomische Tastaturbelegung regelt. Jeder Tastendruck (Buchstabe, Leerzeichen, Umschalttaste oder Satzzeichen) zählt als ein Anschlag. International und bei modernen Online-Tests wie HeroTyping wird oft in 'Words per Minute' (WPM) gerechnet. Die Faustformel zur Umrechnung lautet: 5 Anschläge entsprechen 1 Wort (APM / 5 = WPM).",
     plainAnswer:
       "5 Anschläge (APM) entsprechen genau 1 Wort pro Minute (WPM). 250 APM sind somit 50 WPM.",
   },
@@ -81,14 +81,16 @@ export default function GermanTypingTestPage() {
       "Umfassender Ratgeber zum Tastschreiben auf Deutsch: Zehnfingersystem auf der QWERTZ-Tastatur, Umlaute, DIN 2137 Standards und Anschläge pro Minute.",
     path: "/guides/german-typing-test-and-practice",
     datePublished: PUBLISHED,
+    inLanguage: "de",
   });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
+        lang="de"
         title="Tipptest & Zehnfingersystem (Deutsch)"
-        subtitle="Erlernen Sie das Zehnfingersystem auf der QWERTZ-Tastatur: Anschläge pro Minute (APM) nach DIN 2137, fehlerfreie Umlaute (ä, ö, ü, ß) und gezielte Übungslektionen."
+        subtitle="Erlernen Sie das Zehnfingersystem auf der QWERTZ-Tastatur: Anschläge pro Minute (APM) nach genormter Belegung (DIN 2137), fehlerfreie Umlaute (ä, ö, ü, ß) und gezielte Übungslektionen."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           { name: "Tipptest Deutsch (QWERTZ)", path: "/guides/german-typing-test-and-practice" },
@@ -179,7 +181,7 @@ export default function GermanTypingTestPage() {
           <Link href="/guides/typing-stretches-and-hand-warmups">Leitfaden für Hand-Dehnübungen</Link>.
         </p>
 
-        <h2 id="benchmarks-din">Geschwindigkeits-Benchmarks und DIN 2137</h2>
+        <h2 id="benchmarks-din">Geschwindigkeits-Benchmarks und Tastaturnormen (DIN 2137 & IHK)</h2>
         <p>
           Wie schnell tippen Menschen in Deutschland und Österreich im Vergleich? Hier ist die offizielle Einstufung:
         </p>

@@ -57,6 +57,7 @@ interface ArticleSchemaInput {
   path: string;
   datePublished: string;
   dateModified?: string;
+  inLanguage?: string;
 }
 
 export function buildArticleSchema({
@@ -65,12 +66,14 @@ export function buildArticleSchema({
   path,
   datePublished,
   dateModified,
+  inLanguage = "en",
 }: ArticleSchemaInput) {
   return {
     "@context": "https://schema.org",
     "@type": "Article",
     headline,
     description,
+    inLanguage,
     url: `${SITE_URL}${path}`,
     datePublished,
     dateModified: dateModified || datePublished,

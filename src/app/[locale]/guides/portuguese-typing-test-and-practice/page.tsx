@@ -31,7 +31,7 @@ const EXEMPLOS_PT = [
   {
     nivel: "Avançado & Concursos Públicos (65–85+ PPM / 325–425+ TPM)",
     nota: "Crase (`), aspas, números, termos jurídicos e vocabulário formal denso.",
-    texto: "Em conformidade com o edital do Tribunal de Justiça de 2025, a prova prática de digitação exige transcrição ininterrupta de 1.800 toques em 5 minutos, vedada a tolerância a erros crônicos de pontuação ou concordância verbal!",
+    texto: "Em provas práticas de concursos públicos judiciais (como os cargos de Escrevente Técnico do TJSP e cartórios), a avaliação exige cópia fidedigna com ritmo constante em teclado ABNT2, onde erros de pontuação, espaçamento e concordância acarretam desconto direto na pontuação líquida!",
   },
 ];
 
@@ -67,9 +67,9 @@ const FAQ_ITEMS = [
   {
     question: "Como é a prova de digitação do concurso do Tribunal de Justiça (TJSP)?",
     answer:
-      "A prova de digitação do cargo de Escrevente Técnico Judiciário do TJSP dura 5 minutos e exige a cópia de um texto impresso em computador com teclado ABNT2. O candidato precisa atingir nota mínima (geralmente equivalente a cerca de 60 a 70 PPM ou mais de 300 TPM líquidos), sendo que cada caractere errado, omitido ou a mais desconta preciosos décimos da nota final.",
+      "A prova prática para cargos como Escrevente Técnico Judiciário do TJSP normalmente avalia a digitação de texto em computador com teclado padrão ABNT2, exigindo atingir uma pontuação líquida mínima estipulada em edital (geralmente entre 150 e 200 TPM líquidos mínimos para aprovação, com penalização estrita por erros de pontuação, letras trocadas ou caracteres omitidos).",
     plainAnswer:
-      "Dura 5 minutos em computador, avaliando toques líquidos com penalidade estrita para cada caractere errado.",
+      "Avalia a cópia em computador com teclado ABNT2, calculando toques líquidos com penalidade estrita para cada caractere errado ou omitido.",
   },
 ];
 
@@ -80,12 +80,14 @@ export default function PortugueseTypingTestPage() {
       "Guia completo de digitação rápida no Brasil: teclado ABNT2 com cedilha (ç), acentuação, toques por minuto (TPM) e preparação para concursos públicos.",
     path: "/guides/portuguese-typing-test-and-practice",
     datePublished: PUBLISHED,
+    inLanguage: "pt-BR",
   });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
+        lang="pt-BR"
         title="Teste de Digitação e Prática (Teclado ABNT2)"
         subtitle="Aprenda a digitar com todos os dedos sem olhar para o teclado: toques por minuto (TPM), domínio da cedilha (ç), acentuação ágil e preparação para concursos."
         breadcrumbItems={[

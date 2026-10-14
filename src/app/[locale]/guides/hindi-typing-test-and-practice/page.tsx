@@ -7,9 +7,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Hindi Typing Test Online: InScript, Mangal Font & Speed Practice Guide",
+  title: "हिंदी टाइपिंग टेस्ट और अभ्यास (Hindi Typing Test Online): InScript व Mangal Font स्पीड गाइड",
   description:
-    "Master Hindi typing online: InScript keyboard layout (Mangal font), Kruti Dev comparison, virama halant rules, SSC CGL DEST and CPCT exam speed benchmarks.",
+    "हिंदी टाइपिंग टेस्ट ऑनलाइन: InScript कीबोर्ड लेआउट (मंगल फ़ॉन्ट), हलंत और मात्रा नियम, SSC CGL DEST व CPCT परीक्षा स्पीड और सटीकता अभ्यास गाइड।",
   path: "/guides/hindi-typing-test-and-practice",
 });
 
@@ -30,62 +30,64 @@ const EXAMPLES_HI = [
   {
     level: "Government Exam Benchmark (35–50+ WPM / 175–250+ CPM)",
     note: "प्रशासनिक शब्दावली, हलंत युक्त संयुक्ताक्षर (क्ष, त्र, ज्ञ, श्र), सरकारी परीक्षा मानक।",
-    text: "कर्मचारी चयन आयोग (SSC) की डाटा एंट्री दक्षता परीक्षा (DEST) के अनुसार, प्रत्येक अभ्यर्थी को निर्धारित समय सीमा के भीतर कम से कम 95% शुद्धता के साथ संपूर्ण गद्यांश का टंकण अनिवार्य रूप से पूर्ण करना होगा!",
+    text: "कर्मचारी चयन आयोग (SSC) की डाटा एंट्री दक्षता परीक्षा (DEST) और राज्य स्तरीय भर्ती परीक्षाओं के अनुसार, अभ्यर्थियों को निर्धारित समय सीमा के भीतर उच्च शुद्धता (आमतौर पर 93% से 95%+) के साथ संपूर्ण गद्यांश का टंकण पूर्ण करना होता है।",
   },
 ];
 
 const EXAM_BENCHMARKS = [
-  { exam: "SSC CGL (Tier II DEST)", speed: "27 WPM (135 CPM)", criteria: "2000 key depressions in 15 minutes, maximum 5% to 7% allowable error." },
+  { exam: "SSC CGL (Tier II DEST)", speed: "27 WPM (135 CPM)", criteria: "2000 key depressions in 15 minutes, qualifying cut-offs typically allow 5% to 7% mistakes depending on category." },
   { exam: "SSC CHSL (LDC / JSA)", speed: "30 WPM (150 CPM)", criteria: "9000 key depressions per hour (15-minute test duration) on InScript or Remington." },
   { exam: "MP CPCT (Hindi Section)", speed: "20 WPM (Qualifying)", criteria: "20 to 25 WPM scores 50%, 30+ WPM earns higher grade certification." },
   { exam: "High Court RO / ARO / Clerk", speed: "30–35 WPM (175 CPM)", criteria: "Strict evaluation: backspace often disabled, zero tolerance for incorrect matras." },
-  { exam: "State LDC / Subordinate Services", speed: "25–30 WPM (150 CPM)", criteria: "Conducted predominantly using Unicode Mangal InScript or Kruti Dev 010." },
+  { exam: "State LDC / Subordinate Services", speed: "25–30 WPM (150 CPM)", criteria: "Conducted predominantly using Unicode Mangal InScript or Kruti Dev 010 according to specific notification." },
 ];
 
 const FAQ_ITEMS = [
   {
-    question: "What is the difference between InScript and Kruti Dev layout for Hindi typing?",
+    question: "हिंदी टाइपिंग में InScript और Kruti Dev में क्या अंतर है? (InScript vs Kruti Dev)",
     answer:
-      "InScript is the official standardized keyboard layout developed by the Government of India for all Indian scripts and runs on Unicode (commonly called Mangal Font). It is logically arranged: vowels on the left hand, consonants on the right hand. Kruti Dev is a legacy non-Unicode typewriter layout that maps English QWERTY keys to Hindi glyphs. Modern central examinations (such as SSC, Railways, and central ministries) mandate InScript/Unicode, while some state judicial exams still permit Kruti Dev.",
+      "InScript भारत सरकार द्वारा विकसित मानकीकृत कीबोर्ड लेआउट है जो यूनिकोड (जैसे Mangal Font) पर आधारित है। इसमें बाएं हाथ पर स्वर (मात्राएं) और दाएं हाथ पर व्यंजन व्यवस्थित हैं। वहीं Kruti Dev एक गैर-यूनिकोड फॉन्ट लेआउट है जो अंग्रेजी QWERTY अक्षरों पर आधारित है। आधुनिक केंद्रीय परीक्षाएं (SSC, रेलवे, बैंकिंग) यूनिकोड InScript अनिवार्य करती हैं, जबकि कुछ राज्य स्तरीय अदालतें अभी भी Kruti Dev की अनुमति देती हैं।",
     plainAnswer:
-      "InScript is the official Unicode standard (vowels on left, consonants on right). Kruti Dev is a legacy typewriter font mapping.",
+      "InScript यूनिकोड मानक लेआउट है (स्वर बाएं, व्यंजन दाएं हाथ पर)। Kruti Dev पुराना टाइपराइटर फॉन्ट आधारित लेआउट है।",
   },
   {
-    question: "How do you type conjunct characters like क्ष, त्र, ज्ञ, and श्र in InScript?",
+    question: "InScript लेआउट में संयुक्त अक्षर (क्ष, त्र, ज्ञ, श्र) कैसे टाइप करें?",
     answer:
-      "In InScript layout, conjunct consonants are created using the virama/halant (the 'd' key in QWERTY): \n1. क्ष = क + ् + ष (k + d + <)\n2. त्र = त + ् + र (l + d + j)\n3. ज्ञ = ज + ् + ञ (p + d + })\n4. श्र = श + ् + र (M + d + j)\nHeroTyping natively tracks Devanagari grapheme cluster boundaries so uncommitted halants do not trigger false typing errors.",
+      "InScript लेआउट में संयुक्त अक्षर हलंत/विराम ('d' कुंजी) की सहायता से बनाए जाते हैं:\n1. क्ष = क + ् + ष (QWERTY: k + d + <)\n2. त्र = त + ् + र (QWERTY: l + d + j)\n3. ज्ञ = ज + ् + ञ (QWERTY: p + d + })\n4. श्र = श + ् + र (QWERTY: M + d + j)\nHeroTyping का टाइपिंग इंजन देवनागरी वर्ण समूहों (Grapheme clusters) को स्वाभाविक रूप से पहचानता है।",
     plainAnswer:
-      "Press the first consonant, press the halant ('d' key in InScript), then press the second consonant.",
+      "पहला व्यंजन टाइप करें, फिर हलंत ('d' कुंजी) दबाएं, और फिर दूसरा व्यंजन टाइप करें।",
   },
   {
-    question: "How is Hindi typing speed calculated in Words Per Minute (WPM)?",
+    question: "सरकारी परीक्षाओं में हिंदी टाइपिंग स्पीड (WPM) की गणना कैसे होती है?",
     answer:
-      "In standardized government exams, one word in Hindi is defined as five keystrokes (key depressions), including spaces and punctuation marks. Net WPM is calculated as Gross WPM minus error penalties. For example, if you complete 1,500 keystrokes in 10 minutes with 10 word errors: Gross WPM = (1500 / 5) / 10 = 30 WPM; Net WPM = 30 - (10 / 10) = 29 WPM.",
+      "मानकीकृत सरकारी परीक्षाओं में 5 की-डिप्रेशन (स्पेस और विराम चिह्नों सहित) को 1 शब्द माना जाता है। ग्रॉस स्पीड = (कुल की-स्ट्रोक ÷ 5) ÷ मिनट। नेट स्पीड में अशुद्धियों का दंड घटाया जाता है। उदाहरण के लिए, 10 मिनट में 1500 की-स्ट्रोक और 10 त्रुटियों पर: ग्रॉस = 30 WPM, नेट = 29 WPM।",
     plainAnswer:
-      "5 key depressions equal 1 word. Net WPM = (Keystrokes / 5 / Minutes) minus error deductions.",
+      "5 की-स्ट्रोक = 1 शब्द। नेट WPM = (कुल की-स्ट्रोक ÷ 5 ÷ मिनट) में से अशुद्धियों की कटौती।",
   },
   {
-    question: "Can I take the Hindi typing test online for free on HeroTyping?",
+    question: "क्या HeroTyping पर हिंदी टाइपिंग टेस्ट पूरी तरह निःशुल्क है?",
     answer:
-      "Yes. HeroTyping features a fully functional Hindi typing test engine with real Devanagari vocabulary, quotes, and custom text support. You can launch it directly by opening HeroTyping with the Hindi language setting or via https://www.herotyping.com/?language=hi.",
+      "हाँ, HeroTyping पर हिंदी टाइपिंग टेस्ट, अभ्यास और शब्दावली पूरी तरह निःशुल्क और बिना किसी विज्ञापन या लॉगिन की बाध्यता के उपलब्ध है। आप सीधे https://www.herotyping.com/?language=hi पर जाकर तुरंत टेस्ट शुरू कर सकते हैं।",
     plainAnswer:
-      "Yes, open HeroTyping and select Hindi, or navigate directly to herotyping.com/?language=hi.",
+      "हाँ, HeroTyping पर हिंदी टाइपिंग टेस्ट पूरी तरह मुफ्त है। आप herotyping.com/?language=hi पर सीधे अभ्यास कर सकते हैं।",
   },
 ];
 
 export default function HindiTypingTestPage() {
   const schema = buildArticleSchema({
-    headline: "Hindi Typing Test Online: InScript, Mangal Font & Speed Practice Guide",
+    headline: "हिंदी टाइपिंग टेस्ट और अभ्यास (Hindi Typing Test Online): InScript व Mangal Font स्पीड गाइड",
     description:
-      "Complete Hindi typing guide: InScript layout (Mangal font), Kruti Dev differences, virama halant rules, SSC CGL DEST and CPCT exam speed benchmarks.",
+      "हिंदी टाइपिंग टेस्ट ऑनलाइन: InScript कीबोर्ड लेआउट (मंगल फ़ॉन्ट), हलंत और मात्रा नियम, SSC CGL DEST व CPCT परीक्षा स्पीड और सटीकता अभ्यास गाइड।",
     path: "/guides/hindi-typing-test-and-practice",
     datePublished: PUBLISHED,
+    inLanguage: "hi",
   });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
+        lang="hi"
         title="Hindi Typing Test & Practice (इन्स्क्रिप्ट व मंगल फ़ॉन्ट)"
         subtitle="Master Devanagari touch typing online: InScript keyboard mechanics, Kruti Dev comparisons, virama and matra rules, and benchmarks for SSC, CPCT, and High Court exams."
         breadcrumbItems={[

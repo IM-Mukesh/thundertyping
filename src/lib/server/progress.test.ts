@@ -9,6 +9,7 @@ import {
   issueServerGameRunProof,
   issueGameRunChallenge,
   deriveDeterministicWordsForChallenge,
+  getAchievementProofSecret,
   type GameplayEvidence,
 } from "@/lib/server/game-proof";
 import { PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
@@ -659,3 +660,65 @@ describe("F10 & F23: Type Before Death Achievement Evaluation, Evidence Provenan
     assert.deepEqual(unlocked, []);
   });
 });
+
+describe("P1 Security: Server Game Proof Secret Resolution & Fail-Closed Invariants", () => {
+  const originalProofSecret = process.env.ACHIEVEMENT_PROOF_SECRET;
+  const originalSecretKey = process.env.SUPABASE_SECRET_KEY;
+  const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  it("prioritizes ACHIEVEMENT_PROOF_SECRET when configured", () => {
+    process.env.ACHIEVEMENT_PROOF_SECRET = "custom_proof_secret_12345";
+    process.env.SUPABASE_SECRET_KEY = "sb_secret_fallback_key";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "legacy_service_key";
+    try {
+      assert.equal(getAchievementProofSecret(), "custom_proof_secret_12345");
+    } finally {
+      process.env.ACHIEVEMENT_PROOF_SECRET = originalProofSecret;
+      process.env.SUPABASE_SECRET_KEY = originalSecretKey;
+      process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+    }
+  });
+
+  it("falls back to modern SUPABASE_SECRET_KEY when ACHIEVEMENT_PROOF_SECRET is unset", () => {
+    delete process.env.ACHIEVEMENT_PROOF_SECRET;
+    process.env.SUPABASE_SECRET_KEY = "sb_secret_primary_fallback";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "legacy_service_key";
+    try {
+      assert.equal(getAchievementProofSecret(), "sb_secret_primary_fallback");
+    } finally {
+      process.env.ACHIEVEMENT_PROOF_SECRET = originalProofSecret;
+      process.env.SUPABASE_SECRET_KEY = originalSecretKey;
+      process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+    }
+  });
+
+  it("falls back to legacy SUPABASE_SERVICE_ROLE_KEY when both modern keys are unset", () => {
+    delete process.env.ACHIEVEMENT_PROOF_SECRET;
+    delete process.env.SUPABASE_SECRET_KEY;
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "legacy_service_role_fallback";
+    try {
+      assert.equal(getAchievementProofSecret(), "legacy_service_role_fallback");
+    } finally {
+      process.env.ACHIEVEMENT_PROOF_SECRET = originalProofSecret;
+      process.env.SUPABASE_SECRET_KEY = originalSecretKey;
+      process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+    }
+  });
+
+  it("fails closed (throws Error) without hardcoded fallback when all secrets are unset", () => {
+    delete process.env.ACHIEVEMENT_PROOF_SECRET;
+    delete process.env.SUPABASE_SECRET_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      assert.throws(
+        () => getAchievementProofSecret(),
+        /Missing server game-proof signing secret/
+      );
+    } finally {
+      process.env.ACHIEVEMENT_PROOF_SECRET = originalProofSecret;
+      process.env.SUPABASE_SECRET_KEY = originalSecretKey;
+      process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+    }
+  });
+});
+

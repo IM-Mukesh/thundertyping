@@ -19,6 +19,8 @@ interface GuideLayoutProps {
   hasFaq?: boolean;
   hasSources?: boolean;
   currentSlug?: string;
+  lang?: string;
+  dir?: "ltr" | "rtl";
   children: ReactNode;
 }
 
@@ -42,6 +44,8 @@ export function GuideLayout({
   hasFaq,
   hasSources,
   currentSlug,
+  lang,
+  dir,
   children,
 }: GuideLayoutProps) {
   const fullToc: TocItem[] = [
@@ -59,7 +63,18 @@ export function GuideLayout({
   const categoryMeta = currentGuide ? getCategoryMeta(currentGuide.category) : undefined;
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-4 py-8 sm:px-10 sm:py-12 min-[1150px]:grid-cols-[minmax(0,800px)_1fr]">
+    <article
+      lang={lang}
+      dir={dir}
+      className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-4 py-8 sm:px-10 sm:py-12 min-[1150px]:grid-cols-[minmax(0,800px)_1fr]"
+    >
+      {lang && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(typeof document!=="undefined"){document.documentElement.lang=${JSON.stringify(lang)};}`,
+          }}
+        />
+      )}
       <div className="flex min-w-0 flex-col gap-6">
         <Breadcrumbs items={breadcrumbItems} />
         <div className="flex flex-col gap-2">
@@ -166,6 +181,6 @@ export function GuideLayout({
           </nav>
         </aside>
       )}
-    </div>
+    </article>
   );
 }

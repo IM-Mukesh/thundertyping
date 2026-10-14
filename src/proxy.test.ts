@@ -76,6 +76,26 @@ describe("Request Proxy & Locale Casing", () => {
     }
   });
 
+  it("strictly preserves query parameters (?language=hi, ?duration=60) during internal /en rewrite", async () => {
+    // 1. Root URL with ?language=hi
+    const rootReq = new NextRequest("https://www.herotyping.com/?language=hi");
+    const rootRes = await proxy(rootReq);
+    assert.notEqual(rootRes.status, 308);
+    const rootRewrite = rootRes.headers.get("x-middleware-rewrite");
+    if (rootRewrite) {
+      assert.ok(rootRewrite.includes("/en?language=hi"), `Expected /en?language=hi in rewrite, got: ${rootRewrite}`);
+    }
+
+    // 2. Subpath URL with multiple search parameters
+    const drillReq = new NextRequest("https://www.herotyping.com/typing-test/1-minute?duration=60&theme=matrix");
+    const drillRes = await proxy(drillReq);
+    assert.notEqual(drillRes.status, 308);
+    const drillRewrite = drillRes.headers.get("x-middleware-rewrite");
+    if (drillRewrite) {
+      assert.ok(drillRewrite.includes("/en/typing-test/1-minute?duration=60&theme=matrix"), `Expected params preserved, got: ${drillRewrite}`);
+    }
+  });
+
   it("passes through valid genuinely localized homepages (/pt-BR, /es, /de) without redirecting", async () => {
     for (const locale of ["pt-BR", "es", "de"]) {
       const req = new NextRequest(`https://www.herotyping.com/${locale}`);

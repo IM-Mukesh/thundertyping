@@ -66,7 +66,7 @@ const FAQ_ITEMS = [
   {
     question: "Why do my WPM results vary dramatically across different typing sites?",
     answer:
-      "Test results vary because of three factors: word pool composition, test duration, and scoring rules. Sites using only the 200 most frequent English words yield scores 15–25% higher than tests using natural literature or news articles with irregular syllable lengths. Furthermore, 15-second sprint tests always read higher than 60-second or 5-minute tests where finger fatigue and focus stamina play a role.",
+      "Test results vary because of three factors: word pool composition, test duration, and scoring rules. Sites using restricted high-frequency word pools (such as the top 200 words) frequently yield noticeably higher speed scores than tests drawing from natural literature, technical prose, or news articles with irregular syllable lengths and punctuation hurdles. Furthermore, 15-second sprint tests typically read higher than 60-second or 5-minute tests where finger fatigue and focus stamina play a role.",
     plainAnswer:
       "Differences in word pool difficulty (common 200 words vs. natural prose), test length, and whether gross or net WPM is calculated.",
   },
@@ -86,12 +86,14 @@ export default function EnglishTypingTestPage() {
       "Comprehensive guide to English typing tests: standard 5-character WPM calculation, word pool difficulty effects, punctuation reaches, and tiered practice passages.",
     path: "/guides/english-typing-test-and-practice",
     datePublished: PUBLISHED,
+    inLanguage: "en",
   });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
+        lang="en"
         title="English Typing Test & Practice"
         subtitle="The definitive guide to English typing tests: standardized 5-keystroke metrics, word frequency mechanics, punctuation hurdles, and structured practice routines."
         breadcrumbItems={[

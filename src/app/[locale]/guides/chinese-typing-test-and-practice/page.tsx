@@ -30,7 +30,7 @@ const BEISPIELE_ZH = [
   {
     level: "高级文书与公文标准 (100–140+ 字/分 目标)",
     note: "政策公文术语、数字编号、顿号、破折号及书名号，考验键盘复杂符号定位。",
-    text: "依据《全国计算机等级考试计算机基础及MS Office应用考试大纲》规定，现代文员不仅要求中文汉字录入速度达到每分钟80字以上且正确率不低于98%，更须熟练运用各类标点符号与格式排版！",
+    text: "在企事业单位办公文员评测与行业打字技能认证中，通常建议汉字录入速度达到 60–80 字/分以上且正确率不低于 98%，更须熟练运用各类标点符号与格式排版，以满足公文起草与日常行政的高效需求！",
   },
 ];
 
@@ -80,12 +80,14 @@ export default function ChineseTypingTestPage() {
       "中文打字测速全攻略：拼音输入法盲打指法、双拼与全拼对比、每分钟字数标准、候选词提速与文员岗位要求。",
     path: "/guides/chinese-typing-test-and-practice",
     datePublished: PUBLISHED,
+    inLanguage: "zh-Hans",
   });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
+        lang="zh-Hans"
         title="中文打字速度测试与拼音盲打练习"
         subtitle="掌握现代汉字极速录入技巧：拼音盲打指法分工、双拼与全拼速度差异、每分钟字数（CPM）评级标准及输入法候选词加速方法。"
         breadcrumbItems={[

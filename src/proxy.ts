@@ -94,11 +94,12 @@ async function handleProxy(request: NextRequest) {
   }
 
   // 5. Default clean English URLs (unprefixed)
-  // Rewrite to internal /en route so Next.js App Router handles it uniformly in src/app/[locale].
+  // Rewrite to internal /en route so Next.js App Router handles it uniformly in src/app/[locale],
+  // while strictly preserving searchParams and query strings (e.g. ?language=hi, ?duration=60).
+  const rewriteUrl = request.nextUrl.clone();
+  rewriteUrl.pathname = `/${DEFAULT_LOCALE}${pathname === '/' ? '' : pathname}`;
   return await updateSession(request, () =>
-    NextResponse.rewrite(
-      new URL(`/${DEFAULT_LOCALE}${pathname === '/' ? '' : pathname}`, request.url)
-    )
+    NextResponse.rewrite(rewriteUrl)
   );
 }
 

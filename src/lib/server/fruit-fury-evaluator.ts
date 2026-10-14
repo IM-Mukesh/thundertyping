@@ -136,6 +136,6 @@ export async function getFinalRunStats(runId: string, finalToken: string): Promi
 }
 
 // Block old signature
-export function evaluateFruitFuryRun(evidence: unknown, serverSeed?: string) {
+export function evaluateFruitFuryRun(_evidence?: unknown, _serverSeed?: string) {
   throw new Error("LEGACY OFFLINE EVALUATOR HAS BEEN REMOVED TO PREVENT FABRICATION ATTACKS.");
 }

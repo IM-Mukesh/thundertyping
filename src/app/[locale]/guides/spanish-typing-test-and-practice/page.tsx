@@ -60,9 +60,9 @@ const FAQ_ITEMS = [
   {
     question: "¿Qué velocidad de mecanografía exigen en las oposiciones en España y Latinoamérica?",
     answer:
-      "En España, oposiciones como Auxiliar Administrativo del Estado o Tramitación Procesal suelen requerir entre 250 y 350 pulsaciones por minuto netas (aproximadamente 50 a 70 PPM netas), con una penalización muy estricta por faltas ortográficas o caracteres omitidos. En Latinoamérica, las pruebas de ingreso al poder judicial y secretarías solicitan entre 45 y 65 PPM con un 95% mínimo de precisión.",
+      "En España, diversas convocatorias para Auxiliar Administrativo (a nivel autonómico o local) y plazas de tramitación judicial han exigido tradicionalmente baremos de entre 250 y 320 pulsaciones por minuto netas (en torno a 50–65 PPM netas), con deducciones por faltas ortográficas o fallos de puntuación según las bases específicas de cada convocatoria. En Latinoamérica, concursos para organismos judiciales y secretarías suelen fijar mínimos de entre 40 y 60 PPM con un 95% de precisión mínima requerida.",
     plainAnswer:
-      "Suelen exigir entre 250 y 350 pulsaciones por minuto (50–70 PPM) con un estándar de precisión superior al 95%.",
+      "Suelen exigir entre 250 y 320 pulsaciones por minuto (50–65 PPM) según las bases específicas de la convocatoria, con alta penalización por errores.",
   },
   {
     question: "¿Cuál es la diferencia entre el teclado de España (ISO) y el teclado latinoamericano?",
@@ -80,12 +80,14 @@ export default function SpanishTypingTestPage() {
       "Guía integral de mecanografía en español: cómo dominar la tecla Ñ, acentos con teclas muertas, signos invertidos y baremos de velocidad para oposiciones.",
     path: "/guides/spanish-typing-test-and-practice",
     datePublished: PUBLISHED,
+    inLanguage: "es",
   });
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <GuideLayout
+        lang="es"
         title="Test de Mecanografía y Práctica en Teclado Español"
         subtitle="Domina la mecanografía al tacto en español: velocidad en palabras por minuto (PPM), colocación de dedos para la letra Ñ, acentuación fluida y entrenamiento para oposiciones."
         breadcrumbItems={[

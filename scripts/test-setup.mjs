@@ -39,6 +39,9 @@ export async function resolve(specifier, context, next) {
   if (specifier === "next/server") {
     return next("next/server.js", context);
   }
+  if (specifier === "next/headers") {
+    return next("next/headers.js", context);
+  }
   if (specifier === "next/cache") {
     return { url: "data:text/javascript,export const unstable_cache = (fn) => fn;", format: "module", shortCircuit: true };
   }

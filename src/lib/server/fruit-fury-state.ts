@@ -99,6 +99,8 @@ export class FruitFuryPersistenceError extends Error {
   }
 }
 
+export const FRUIT_FURY_RUN_TTL_MS = 2 * 3600 * 1000; // 2 hours TTL for an active run
+
 export async function getActiveRunState(runId: string, providedToken: string): Promise<FruitFuryRunState> {
   const expectedHash = hashToken(providedToken);
   
@@ -106,6 +108,11 @@ export async function getActiveRunState(runId: string, providedToken: string): P
     const state = TEST_MODE_STORE.runs.get(runId);
     if (!state || state.status !== "active" || state.expected_token_hash !== expectedHash) {
       throw new Error("Invalid or replayed token");
+    }
+    const issuedAt = new Date(state.last_chunk_issued_at || state.created_at).getTime();
+    if (Date.now() - issuedAt > FRUIT_FURY_RUN_TTL_MS) {
+      state.status = "expired";
+      throw new Error("Run has expired");
     }
     return { ...state };
   }
@@ -135,7 +142,12 @@ export async function getActiveRunState(runId: string, providedToken: string): P
   }
 
   if (!data) throw new Error("Invalid or replayed token");
-  return data as unknown as FruitFuryRunState;
+  const runState = data as unknown as FruitFuryRunState;
+  const issuedAt = new Date(runState.last_chunk_issued_at || runState.created_at).getTime();
+  if (Date.now() - issuedAt > FRUIT_FURY_RUN_TTL_MS) {
+    throw new Error("Run has expired");
+  }
+  return runState;
 }
 
 export async function atomicUpdateRunState(

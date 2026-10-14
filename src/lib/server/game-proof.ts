@@ -47,12 +47,24 @@ export interface GameplayEvidence {
 
 /**
  * Server-only private cryptographic secret.
+ * Resolves the signing secret using modern Supabase / achievement keys.
+ * Fails closed if no secret is configured in environment variables.
  * This secret NEVER leaves the server process and is NEVER exposed to client bundles.
  */
-const SERVER_ACHIEVEMENT_PROOF_SECRET =
-  process.env.ACHIEVEMENT_PROOF_SECRET ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "herotyping_server_authoritative_achievement_secret_f10_2026_frozen";
+export function getAchievementProofSecret(): string {
+  const secret =
+    process.env.ACHIEVEMENT_PROOF_SECRET ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!secret) {
+    throw new Error(
+      "Missing server game-proof signing secret: neither ACHIEVEMENT_PROOF_SECRET nor SUPABASE_SECRET_KEY nor SUPABASE_SERVICE_ROLE_KEY is configured in environment variables."
+    );
+  }
+
+  return secret;
+}
 
 /**
  * In-memory registry of server-issued run challenges.
@@ -70,10 +82,11 @@ export function computeChallengeToken(
   mode: string,
   mission: number,
   issuedAt: number,
-  secret: string = SERVER_ACHIEVEMENT_PROOF_SECRET,
+  secret?: string,
 ): string {
+  const signingSecret = secret ?? getAchievementProofSecret();
   const payload = `${challengeId}:${runId}:${gameId}:${seed}:${mode}:${mission}:${issuedAt}`;
-  return createHmac("sha256", secret).update(payload).digest("hex");
+  return createHmac("sha256", signingSecret).update(payload).digest("hex");
 }
 
 /**
@@ -89,6 +102,7 @@ export function issueGameRunChallenge(
   const mode = options?.mode || "campaign";
   const mission = options?.mission ?? 0;
   const issuedAt = Date.now();
+  const secret = getAchievementProofSecret();
 
   let seed: string;
   if (mode === "daily") {
@@ -96,13 +110,13 @@ export function issueGameRunChallenge(
     seed = dailyChallengeSeed(day);
   } else {
     // Cryptographically derived seed bound to runId, server secret, and game parameters
-    seed = createHmac("sha256", SERVER_ACHIEVEMENT_PROOF_SECRET)
+    seed = createHmac("sha256", secret)
       .update(`seed:${gameId}:${runId}:${mode}:${mission}`)
       .digest("hex")
       .slice(0, 16);
   }
 
-  const token = computeChallengeToken(challengeId, runId, gameId, seed, mode, mission, issuedAt);
+  const token = computeChallengeToken(challengeId, runId, gameId, seed, mode, mission, issuedAt, secret);
 
   const challenge: GameRunChallenge = {
     challengeId,
@@ -237,8 +251,9 @@ export function computeServerProofSignature(
     wavesCleared?: number | null;
     overdrives?: number | null;
   },
-  secret: string = SERVER_ACHIEVEMENT_PROOF_SECRET,
+  secret?: string,
 ): string {
+  const signingSecret = secret ?? getAchievementProofSecret();
   const sortedEvents = [...events].sort().join(",");
   const payload = [
     gameId,
@@ -252,7 +267,7 @@ export function computeServerProofSignature(
     metrics.overdrives ?? 0,
   ].join(":");
 
-  return createHmac("sha256", secret).update(payload).digest("hex");
+  return createHmac("sha256", signingSecret).update(payload).digest("hex");
 }
 
 /**
