@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Speed Plateau: How to Diagnose Your Bottleneck & Get Faster",
+  title: "How to Break a Typing Speed Plateau",
   description:
     "Stuck at 50, 60, or 80 WPM despite daily typing? Diagnose the specific bottleneck holding your hands back and build a smarter practice routine to break through.",
   path: "/guides/how-to-break-a-typing-speed-plateau",
@@ -66,7 +66,7 @@ const DIAGNOSTIC_TABLE = [
       "Take one test on lowercase text, followed by one with full punctuation and capitals. Notice whether pauses occur primarily around symbols.",
     solution:
       "Practice the opposite-hand Shift rule and drill upper-row characters systematically in Unit 27: Code Syntax & Technical Formats.",
-    href: "/lessons/numbers-and-symbols-mastery",
+    href: "/lessons/code-syntax-and-brackets",
     linkText: "Unit 27: Code Syntax & Technical Formats",
   },
   {
@@ -580,7 +580,7 @@ export default function HowToBreakPlateauPage() {
           <li>
             <strong>Day 10 (Numbers and Symbols Review):</strong> Spend 10 to 15 minutes on text containing numbers,
             dates, or basic symbols in{" "}
-            <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link>. Practice keeping
+            <Link href="/lessons/code-syntax-and-brackets">Unit 27: Code Syntax &amp; Technical Formats</Link>. Practice keeping
             your resting hand anchored on the home row when reaching upward.
           </li>
           <li>

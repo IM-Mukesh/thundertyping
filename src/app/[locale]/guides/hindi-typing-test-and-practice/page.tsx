@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "हिंदी टाइपिंग टेस्ट और अभ्यास (Hindi Typing Test Online): InScript व Mangal Font स्पीड गाइड",
+  title: "Hindi Typing Test: हिंदी टाइपिंग टेस्ट",
   description:
     "हिंदी टाइपिंग टेस्ट ऑनलाइन: InScript कीबोर्ड लेआउट (मंगल फ़ॉन्ट), हलंत और मात्रा नियम, SSC CGL DEST व CPCT परीक्षा स्पीड और सटीकता अभ्यास गाइड।",
   path: "/guides/hindi-typing-test-and-practice",
@@ -276,7 +277,7 @@ export default function HindiTypingTestPage() {
 
         <h2 id="start-practicing">Start practicing on HeroTyping</h2>
         <p>
-          HeroTyping offers an ad-free, high-performance environment designed for serious Hindi typing practice:
+          HeroTyping offers an ad-light, high-performance environment designed for serious Hindi typing practice:
         </p>
         <ol className="list-decimal space-y-2 pl-5 text-foreground/90">
           <li>
@@ -298,6 +299,20 @@ export default function HindiTypingTestPage() {
         </ol>
 
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "Bureau of Indian Standards (IS 16350:2016) — \"Indian Language Keyboard Layout for Keyboards with English Lettering (InScript)\"",
+                    "href": "https://www.bis.gov.in/"
+          },
+          {
+                    "label": "Staff Selection Commission (SSC) — \"Typing and Data Entry Skill Test Standards for Combined Higher Secondary Level (CHSL)\"",
+                    "href": "https://ssc.nic.in/"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated: {UPDATED}.</p>
       </GuideLayout>

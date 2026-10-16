@@ -2,9 +2,37 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 import { DEFAULT_LOCALE } from '@/lib/i18n/config';
+import { LESSON_SLUG_MAP } from "@/lib/lessons/lesson-types";
 
 // The only routes that provide genuine, complete multi-language content across UI, copy, schemas, and FAQs.
 const GENUINELY_LOCALIZED_SUBPATHS = new Set(["", "/", "/games/type-before-death"]);
+
+// Permanent redirect mappings for retired games, consolidated guides, and migrated lesson slugs.
+const PERMANENT_REDIRECT_MAP: Record<string, string> = {
+  "/games/typing-grand-prix": "/games/ghost-racer",
+  "/games/typing-survivor": "/games",
+  "/guides/beat-your-personal-best-typing-speed": "/guides/how-to-improve-typing-speed",
+  "/guides/fix-burst-and-stall-typing-pace-caret": "/guides/how-to-improve-typing-consistency",
+  "/guides/typing-test-vs-typing-race": "/guides/typing-games-vs-typing-tests",
+};
+
+/**
+ * Resolves any retired, consolidated, or migrated paths to their final canonical destination.
+ * Always resolves in a single hop with zero redirect chains.
+ */
+export function resolvePermanentRedirect(path: string): string | null {
+  const clean = path.replace(/\/+$/, '') || '/';
+  if (PERMANENT_REDIRECT_MAP[clean]) {
+    return PERMANENT_REDIRECT_MAP[clean];
+  }
+  if (clean.startsWith('/lessons/')) {
+    const rawLessonId = clean.slice('/lessons/'.length);
+    if (LESSON_SLUG_MAP[rawLessonId]) {
+      return `/lessons/${LESSON_SLUG_MAP[rawLessonId]}`;
+    }
+  }
+  return null;
+}
 
 /**
  * Next.js 16 Request Proxy.
@@ -26,9 +54,18 @@ async function handleProxy(request: NextRequest) {
     return await updateSession(request);
   }
 
+  // 0. Permanent redirects (retired games, consolidated guides, migrated lesson slugs)
+  const directRedirect = resolvePermanentRedirect(pathname);
+  if (directRedirect) {
+    return await updateSession(request, () =>
+      NextResponse.redirect(new URL(`${directRedirect}${search}`, request.url), 308)
+    );
+  }
+
   // 1. If a user visits /en or /en/... redirect them directly to the canonical prefix-less English URL
   if (pathname === `/${DEFAULT_LOCALE}` || pathname.startsWith(`/${DEFAULT_LOCALE}/`)) {
-    const newPath = pathname.replace(new RegExp(`^/${DEFAULT_LOCALE}`), '') || '/';
+    const rawPath = pathname.replace(new RegExp(`^/${DEFAULT_LOCALE}`), '') || '/';
+    const newPath = resolvePermanentRedirect(rawPath) || rawPath;
     return await updateSession(request, () =>
       NextResponse.redirect(new URL(`${newPath}${search}`, request.url), 308)
     );
@@ -52,7 +89,7 @@ async function handleProxy(request: NextRequest) {
       );
     } else {
       // English-only route: single-hop redirect directly to clean unprefixed canonical URL
-      const canonicalPath = suffix || '/';
+      const canonicalPath = resolvePermanentRedirect(suffix) || suffix || '/';
       return await updateSession(request, () =>
         NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308)
       );
@@ -78,7 +115,7 @@ async function handleProxy(request: NextRequest) {
       } else {
         // English-only subpath visited under a locale prefix (e.g. /pt-BR/typing-test/1-minute):
         // Single-hop permanent redirect directly to the unprefixed canonical English URL!
-        const canonicalPath = suffix || '/';
+        const canonicalPath = resolvePermanentRedirect(suffix) || suffix || '/';
         return await updateSession(request, () =>
           NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308)
         );
@@ -88,8 +125,10 @@ async function handleProxy(request: NextRequest) {
 
   // 4. Trailing slash normalization on default English subpaths (e.g. /typing-test/1-minute/ -> /typing-test/1-minute)
   if (pathname !== '/' && pathname.endsWith('/')) {
+    const unslashed = pathname.slice(0, -1);
+    const targetPath = resolvePermanentRedirect(unslashed) || unslashed;
     return await updateSession(request, () =>
-      NextResponse.redirect(new URL(`${pathname.slice(0, -1)}${search}`, request.url), 308)
+      NextResponse.redirect(new URL(`${targetPath}${search}`, request.url), 308)
     );
   }
 

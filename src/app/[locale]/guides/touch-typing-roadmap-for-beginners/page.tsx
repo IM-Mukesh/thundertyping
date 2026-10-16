@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "A Complete Touch-Typing Roadmap for Beginners: From Zero to 60+ WPM",
+  title: "Touch-Typing Roadmap for Beginners",
   description:
     "A realistic, month-by-month roadmap for learning to touch type. Understand the 4 cognitive learning stages, milestone benchmarks, and practice schedules.",
   path: "/guides/touch-typing-roadmap-for-beginners",
@@ -59,7 +59,7 @@ const FAQ_ITEMS = [
   {
     question: "Will I get slower before I get faster?",
     answer:
-      "Yes, absolutely. If you currently hunt-and-peck with two to four fingers at 35 WPM, switching to strict 10-finger touch typing will initially drop your speed to 12–18 WPM during week one. This temporary dip is completely normal: you are replacing an inefficient visual habit with an unconscious neuromuscular map.",
+      "Yes, absolutely. If you currently hunt-and-peck with two to four fingers at 35 WPM, switching to strict 10-finger touch typing will initially drop your speed to 12–18 WPM during week one. This temporary dip is completely normal: you are replacing an inefficient visual habit with an instinctive finger muscle memory map.",
     plainAnswer:
       "Yes. Your speed will temporarily drop for the first 10 to 14 days as you rewire finger habits. By week four, your new touch typing will comfortably overtake your old speed.",
   },
@@ -79,7 +79,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function TouchTypingRoadmapForBeginnersPage() {
   const schema = buildArticleSchema({

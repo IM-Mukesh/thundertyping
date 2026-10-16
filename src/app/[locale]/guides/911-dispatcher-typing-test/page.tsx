@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "911 Dispatcher Typing Test: Requirements, CritiCall & Practice",
+  title: "911 Dispatcher Typing Test & CritiCall",
   description:
-    "Complete guide to the 911 dispatcher typing test and CritiCall examination: WPM requirements, audio transcription, data entry cross-referencing, and prep drills.",
+    "Complete guide to 911 dispatcher typing tests and CritiCall: passing WPM benchmarks, audio transcription, data entry accuracy standards, and practice tips.",
   path: "/guides/911-dispatcher-typing-test",
 });
 
 const PUBLISHED = "2026-09-26";
-const UPDATED = "2026-09-26";
+const UPDATED = "2026-10-16";
 
 const CRITICALL_STANDARDS = [
   {
@@ -78,11 +78,12 @@ const FAQ_ITEMS = [
 
 export default function DispatcherTypingTestPage() {
   const schema = buildArticleSchema({
-    headline: "911 Dispatcher Typing Test: Requirements, CritiCall & Practice",
+    headline: "911 Dispatcher Typing Test: CritiCall Benchmarks & Prep",
     description:
       "Complete guide to the 911 dispatcher typing test and CritiCall examination: WPM requirements, audio transcription, data entry cross-referencing, and prep drills.",
     path: "/guides/911-dispatcher-typing-test",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing for Programmers: Master Symbols, Vim Keys & Velocity",
+  title: "Touch Typing for Programmers & Coders",
   description:
     "How software engineers build real coding speed: programming punctuation muscle memory, curly braces and brackets, Vim modal navigation, and IDE ergonomics.",
   path: "/guides/typing-for-programmers",
@@ -269,7 +269,7 @@ export default function TypingForProgrammersPage() {
           Once your key mappings are locked in, test your execution speed on our{" "}
           <Link href="/">typing tests</Link>, practice with real code syntax snippets using our{" "}
           <Link href="/guides/custom-text-typing-test">custom text typing test</Link>, or practice technical operators and brackets directly in{" "}
-          <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link> within the{" "}
+          <Link href="/lessons/code-syntax-and-brackets">Unit 27: Code Syntax &amp; Technical Formats</Link> within the{" "}
           <Link href="/lessons">HeroTyping Curriculum</Link>.
         </p>
 

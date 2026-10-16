@@ -10,14 +10,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Touch-Typing Finger Map (Interactive Chart, Every Key)",
+  title: "Touch-Typing Finger Map & Chart",
   description:
-    "The complete finger-to-key chart for touch typing — hover or tap any key to see which finger owns it, plus home row, Shift, numbers, and why the system works.",
+    "Interactive touch-typing finger map and full keyboard chart. See exact finger assignments for every key, home row anchors, Shift keys, and numbers.",
   path: "/guides/touch-typing-finger-map",
 });
 
 const PUBLISHED = "2026-09-25";
-const UPDATED = "2026-09-25";
+const UPDATED = "2026-10-16";
 
 const FINGER_COLUMNS = [
   { finger: "Left pinky", keys: "1  Q  A  Z" },
@@ -82,11 +82,12 @@ const FAQ_ITEMS = [
 
 export default function TouchTypingFingerMapPage() {
   const schema = buildArticleSchema({
-    headline: "Touch-Typing Finger Map (Interactive Chart, Every Key)",
+    headline: "Touch-Typing Finger Map: Interactive Keyboard Chart",
     description:
       "The complete finger-to-key chart for touch typing, interactive, plus why the system works and how to practice it.",
     path: "/guides/touch-typing-finger-map",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -254,8 +255,15 @@ export default function TouchTypingFingerMapPage() {
 
         <SourceList
           sources={[
-            { label: "Wikipedia — Touch typing", href: "https://en.wikipedia.org/wiki/Touch_typing" },
-          ]}
+          {
+                    "label": "ANSI INCITS 154-1988 — \"Office Machines and Supplies - Alphanumeric Machines - Keyboard Arrangement\"",
+                    "href": "https://webstore.ansi.org/"
+          },
+          {
+                    "label": "Logan, G. D., & Crump, M. J. (2011) — \"Hierarchical control of cognitive processes: The case for skilled typewriting\" (Psychology of Learning and Motivation)",
+                    "href": "https://www.sciencedirect.com/science/article/pii/B9780123855275000012"
+          }
+]}
         />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>

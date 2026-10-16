@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Test vs Typing Practice: What's the Difference and When to Use Each",
+  title: "Typing Test vs. Typing Practice",
   description:
     "Discover the critical difference between typing tests (evaluative measurement) and typing practice (deliberate skill acquisition). Learn the optimal 80/20 training ratio.",
   path: "/guides/typing-test-vs-typing-practice",
@@ -65,7 +65,7 @@ const FAQ_ITEMS = [
     answer:
       "The biggest trap is practicing too fast. Many typists treat practice drills like mini speed tests, rushing through them and making mistakes. Practice must be conducted at a deliberately relaxed, slow tempo where 98%+ accuracy is guaranteed.",
     plainAnswer:
-      "Rushing through practice is the biggest mistake. Practice must be slow and accurate to imprint proper neuromuscular memory.",
+      "Rushing through practice is the biggest mistake. Practice must be slow and accurate to imprint proper finger muscle memory.",
   },
   {
     question: "How do I know when my practice is actually paying off in real speed?",
@@ -76,7 +76,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function TypingTestVsTypingPracticePage() {
   const schema = buildArticleSchema({

@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Proper Typing Posture & Ergonomics: Complete Desk Setup Guide",
+  title: "Proper Typing Posture & Ergonomics",
   description:
-    "Step-by-step ergonomic desk setup for pain-free typing: 90-degree elbow rule, neutral wrists, monitor height, chair alignment, and carpal tunnel prevention.",
+    "Step-by-step ergonomic desk setup for comfortable typing: neutral wrist alignment, 90-degree elbow rule, monitor distance, chair height, and warmup tips.",
   path: "/guides/proper-typing-posture-and-ergonomics",
 });
 
 const PUBLISHED = "2026-09-26";
-const UPDATED = "2026-09-26";
+const UPDATED = "2026-10-16";
 
 const POSTURE_COMPARISON = [
   {
@@ -29,13 +29,13 @@ const POSTURE_COMPARISON = [
     parameter: "Wrist Position",
     flawed: "Bent upward (extension > 15°) planted on desk",
     ergonomic: "Neutral straight line through forearm to knuckle",
-    impact: "Cuts median nerve carpal tunnel pressure by over 50%",
+    impact: "Minimizes pressure within the carpal tunnel and avoids repetitive strain",
   },
   {
     parameter: "Monitor Height",
     flawed: "Top bezel below chin level; laptop on desk",
     ergonomic: "Top third of screen at or slightly below eye line",
-    impact: "Eliminates forward-head slump (prevents 30+ lbs cervical load)",
+    impact: "Promotes neutral neck alignment and reduces cervical muscle fatigue",
   },
   {
     parameter: "Foot Placement",
@@ -84,11 +84,12 @@ const FAQ_ITEMS = [
 
 export default function ProperTypingPosturePage() {
   const schema = buildArticleSchema({
-    headline: "Proper Typing Posture & Ergonomics: Complete Desk Setup Guide",
+    headline: "Proper Typing Posture & Ergonomics: Desk Setup Guide",
     description:
-      "Step-by-step ergonomic desk setup for pain-free typing: 90-degree elbow rule, neutral wrists, monitor height, chair alignment, and carpal tunnel prevention.",
+      "Step-by-step ergonomic desk setup for comfortable typing: 90-degree elbow rule, neutral wrists, monitor height, chair alignment, and strain prevention.",
     path: "/guides/proper-typing-posture-and-ergonomics",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -305,6 +306,10 @@ export default function ProperTypingPosturePage() {
             mirror-layout mapping and radial reach strategies.
           </li>
         </ol>
+
+        <p className="rounded-xl border border-border bg-sub-alt/20 p-4 text-xs text-sub leading-relaxed">
+          <strong>Ergonomic &amp; Wellness Notice:</strong> This guide provides general computer workstation setup best practices for typing comfort and muscle strain prevention. It is not clinical medical advice, occupational therapy, or diagnosis. For physical hand conditioning, pair good posture with gentle movements from our <Link href="/guides/typing-stretches-and-hand-warmups">typing stretches and hand warmups guide</Link>. If you experience persistent wrist pain, tingling, or joint inflammation, consult a licensed physician or physical therapist.
+        </p>
 
         <FaqSection items={FAQ_ITEMS} />
 

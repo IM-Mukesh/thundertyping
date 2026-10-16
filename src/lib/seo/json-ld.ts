@@ -58,6 +58,7 @@ interface ArticleSchemaInput {
   datePublished: string;
   dateModified?: string;
   inLanguage?: string;
+  image?: string;
 }
 
 export function buildArticleSchema({
@@ -67,23 +68,37 @@ export function buildArticleSchema({
   datePublished,
   dateModified,
   inLanguage = "en",
+  image,
 }: ArticleSchemaInput) {
+  const url = `${SITE_URL}${path}`;
   return {
     "@context": "https://schema.org",
     "@type": "Article",
     headline,
     description,
     inLanguage,
-    url: `${SITE_URL}${path}`,
+    url,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    image: image ?? `${SITE_URL}/opengraph-image`,
     datePublished,
     dateModified: dateModified || datePublished,
     author: {
-      "@type": "Organization",
-      name: SITE_NAME,
+      "@type": "Person",
+      name: "Mukesh",
+      url: `${SITE_URL}/about`,
+      jobTitle: "Founder & Developer",
     },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/brand/hero-mark.png`,
+      },
     },
   };
 }
@@ -190,3 +205,30 @@ export function buildLearningResourceSchema({
     },
   };
 }
+
+export function buildDefinedTermSetSchema({
+  name,
+  description,
+  path,
+  terms,
+}: {
+  name: string;
+  description: string;
+  path: string;
+  terms: { name: string; description: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "DefinedTermSet",
+    name,
+    description,
+    url: `${SITE_URL}${path}`,
+    hasDefinedTerm: terms.map((t) => ({
+      "@type": "DefinedTerm",
+      name: t.name,
+      description: t.description,
+      inDefinedTermSet: `${SITE_URL}${path}`,
+    })),
+  };
+}
+

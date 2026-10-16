@@ -27,6 +27,32 @@ export function SiteFooter({ locale = "en" }: { locale?: string }) {
     >
       <footer className="flex flex-col items-center gap-6 px-6 py-10 sm:px-10">
           <AdSlot placementId="footer-leaderboard" format="horizontal" />
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-sub/80 text-center">
+            <span className="text-sub font-medium">Typing Tests:</span>
+            <Link href="/guides/english-typing-test-and-practice" className="transition-colors hover:text-foreground">
+              English
+            </Link>
+            <span className="text-border">·</span>
+            <Link href="/guides/spanish-typing-test-and-practice" className="transition-colors hover:text-foreground">
+              Español
+            </Link>
+            <span className="text-border">·</span>
+            <Link href="/guides/german-typing-test-and-practice" className="transition-colors hover:text-foreground">
+              Deutsch
+            </Link>
+            <span className="text-border">·</span>
+            <Link href="/guides/portuguese-typing-test-and-practice" className="transition-colors hover:text-foreground">
+              Português
+            </Link>
+            <span className="text-border">·</span>
+            <Link href="/guides/hindi-typing-test-and-practice" className="transition-colors hover:text-foreground">
+              हिन्दी
+            </Link>
+            <span className="text-border">·</span>
+            <Link href="/guides/chinese-typing-test-and-practice" className="transition-colors hover:text-foreground">
+              中文
+            </Link>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-sub sm:gap-6 text-center">
             <span>
               &copy; {new Date().getFullYear()} {SITE_NAME}

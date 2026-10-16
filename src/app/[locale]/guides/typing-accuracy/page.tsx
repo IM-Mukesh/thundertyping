@@ -8,7 +8,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Accuracy: What the Percentage Means & How to Read Your Score",
+  title: "Typing Accuracy Percentage Explained",
   description:
     "Understand what typing accuracy measures, how HeroTyping calculates it, why scores vary, and how to use practical benchmark bands without treating them as universal standards.",
   path: "/guides/typing-accuracy",

@@ -8,7 +8,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Speed by Age: Grade-Level Benchmarks With Context",
+  title: "Average Typing Speed by Age and Grade",
   description:
     "Typing speed by age is not one universal number. Compare transparent grade-level guidance, accuracy expectations, and fair ways to measure progress.",
   path: "/guides/typing-speed-by-age",
@@ -234,11 +234,15 @@ export default function TypingSpeedByAgePage() {
 
         <SourceList
           sources={[
-            {
-              label: "Typing.com Support — WPM / Averages Grade Level",
-              href: "https://support.typing.com/en/articles/9045953",
-            },
-          ]}
+          {
+                    "label": "Salthouse, T. A. (1984) — \"Effects of age and skill in typing\" (Journal of Experimental Psychology: General, 113(3), 345–371)",
+                    "href": "https://psycnet.apa.org/record/1985-01037-001"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
         />
 
         <p className="text-xs text-sub">Last reviewed {UPDATED}.</p>

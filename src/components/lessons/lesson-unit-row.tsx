@@ -193,7 +193,7 @@ export function LessonUnitRow({ locale,
 
   return (
     <Link
-      href={locale ? `/${locale}/lessons/${unit.id}` : `/lessons/${unit.id}`}
+      href={locale ? `/${locale}/lessons/${unit.slug || unit.id}` : `/lessons/${unit.slug || unit.id}`}
       className="block rounded-xl focus-visible:outline-2 focus-visible:outline-accent"
     >
       {content}

@@ -20,7 +20,7 @@ import type { GuideCategory } from "@/lib/guides/guide-types";
 import { GAME_LIST } from "@/lib/games/game-types";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Guides & Mastery Curriculum — Speed, Accuracy & Ergonomics",
+  title: "Typing Guides: Speed, Accuracy & Skill",
   description:
     "Comprehensive, practical guides to touch typing mastery: home row ergonomics, speed and accuracy protocols, WPM formulas, and specialized workflows.",
   path: "/guides",
@@ -272,7 +272,7 @@ export default function GuidesIndexPage() {
         </div>
 
         <p className="mt-5 text-[11px] text-sub">
-          All tools are free, ad-free, and run locally in your browser. &mdash; {SITE_NAME}
+          All tools are free, ad-light, and run locally in your browser. &mdash; {SITE_NAME}
         </p>
       </section>
 

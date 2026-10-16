@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "One-Handed Typing Guide: Left & Right-Handed Layouts & Techniques",
+  title: "One-Handed Typing Guide & Layouts",
   description:
     "Comprehensive guide to one-handed typing for stroke recovery, amputees, injury, or single-hand typing: Dvorak One-Handed, Half-QWERTY, and radial zone finger maps.",
   path: "/guides/one-handed-typing-guide",

@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "QWERTY vs Dvorak vs Colemak: Which Keyboard Layout Is Fastest?",
+  title: "QWERTY vs. Dvorak vs. Colemak",
   description:
-    "An honest data-driven comparison of QWERTY, Dvorak, and Colemak: home row finger travel, same-finger bigrams, learning curve, ergonomics, and real WPM limits.",
+    "Balanced data-driven comparison of QWERTY, Dvorak, and Colemak: home row efficiency, finger travel, learning curve, ergonomics, and real speed tradeoffs.",
   path: "/guides/qwerty-vs-dvorak-vs-colemak",
 });
 
 const PUBLISHED = "2026-09-26";
-const UPDATED = "2026-09-26";
+const UPDATED = "2026-10-16";
 
 const LAYOUT_COMPARISON = [
   {
@@ -96,11 +96,12 @@ const FAQ_ITEMS = [
 
 export default function QwertyVsDvorakVsColemakPage() {
   const schema = buildArticleSchema({
-    headline: "QWERTY vs Dvorak vs Colemak: Which Keyboard Layout Is Fastest?",
+    headline: "QWERTY vs Dvorak vs Colemak: Layout Comparison Guide",
     description:
-      "An honest data-driven comparison of QWERTY, Dvorak, and Colemak: home row finger travel, same-finger bigrams, learning curve, ergonomics, and real WPM limits.",
+      "Balanced data-driven comparison of QWERTY, Dvorak, and Colemak: home row efficiency, finger travel, learning curve, ergonomics, and real speed tradeoffs.",
     path: "/guides/qwerty-vs-dvorak-vs-colemak",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

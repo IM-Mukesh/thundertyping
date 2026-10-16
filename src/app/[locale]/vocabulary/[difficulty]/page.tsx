@@ -5,6 +5,7 @@ import { VOCAB_DIFFICULTIES, VOCAB_WORDS, type VocabDifficulty } from "@/lib/voc
 import { VocabularyTest } from "@/components/vocabulary/vocabulary-test";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { cn } from "@/lib/utils/cn";
+import { buildDefinedTermSetSchema } from "@/lib/seo/json-ld";
 
 const LABEL: Record<VocabDifficulty, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
 
@@ -61,8 +62,24 @@ export default async function VocabularyDifficultyPage({
   const difficulty = getDifficulty(raw);
   if (!difficulty) notFound();
 
+  const words = VOCAB_WORDS[difficulty];
+  const sampleWords = words.slice(0, 12);
+  const path = locale === "en" ? `/vocabulary/${difficulty}` : `/${locale}/vocabulary/${difficulty}`;
+
+  const schema = buildDefinedTermSetSchema({
+    name: `${LABEL[difficulty]} Vocabulary Typing Dictionary`,
+    description: `${words.length} curated ${LABEL[difficulty].toLowerCase()}-tier vocabulary words with real dictionary definitions.`,
+    path,
+    terms: sampleWords.map((item) => ({ name: item.word, description: item.definition })),
+  });
+
   return (
     <div className="flex flex-1 flex-col items-center px-4 pb-16 pt-8 sm:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+
       <div className="mb-6 w-full max-w-2xl">
         <Breadcrumbs
           items={[
@@ -78,7 +95,7 @@ export default async function VocabularyDifficultyPage({
           {LABEL[difficulty]} Vocabulary Typing Test
         </h1>
         <p className="max-w-lg text-sm leading-relaxed text-sub">
-          {VOCAB_WORDS[difficulty].length} {BLURB[difficulty]} Each round shows a real definition and part of speech —
+          {words.length} {BLURB[difficulty]} Each round shows a real definition and part of speech —
           type the word it describes, and words you get right stay out of your way next time. Want more context first?
           Try the <Link href="/lessons" className="text-accent underline underline-offset-2">typing lessons</Link>, or
           jump into a <Link href="/" className="text-accent underline underline-offset-2">plain typing speed test</Link>.
@@ -97,7 +114,7 @@ export default async function VocabularyDifficultyPage({
                   : "border-border bg-sub-alt/30 text-sub hover:border-accent hover:text-foreground",
               )}
             >
-              {LABEL[tier]} Tier
+              {LABEL[tier]} Tier ({VOCAB_WORDS[tier].length})
             </Link>
           ))}
         </div>
@@ -105,8 +122,29 @@ export default async function VocabularyDifficultyPage({
 
       <VocabularyTest difficulty={difficulty} />
 
-      {/* No ad slot here — SiteFooter (every route) already renders one
-          directly below this page's content. */}
+      {/* Server-Rendered Tier Word Sample List */}
+      <div className="mt-14 w-full max-w-3xl rounded-2xl border border-border bg-sub-alt/10 p-6 sm:p-8">
+        <div className="mb-5 flex flex-col gap-1">
+          <h2 className="font-display text-base font-bold uppercase tracking-wider text-foreground sm:text-lg">
+            Sample {LABEL[difficulty]} Tier Vocabulary &amp; Definitions
+          </h2>
+          <p className="text-xs text-sub">
+            A preview of curated words from this tier&apos;s {words.length}-word pool:
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {sampleWords.map(({ word, pos, definition }) => (
+            <div key={word} className="flex flex-col rounded-xl border border-border/70 bg-background/60 p-3.5">
+              <div className="flex items-baseline gap-2 font-semibold text-foreground">
+                <span className="font-mono text-sm text-accent">{word}</span>
+                <span className="font-mono text-[10px] text-sub">{pos}</span>
+              </div>
+              <p className="mt-1 text-xs text-sub leading-relaxed">{definition}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

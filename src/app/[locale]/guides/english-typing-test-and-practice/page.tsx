@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
@@ -8,7 +9,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "English Typing Test & Practice: What It Measures, Formulas & Drills",
+  title: "English Typing Test & Practice Guide",
   description:
     "Complete guide to English typing tests: standard 5-character WPM calculation, word pool difficulty effects, punctuation reaches, and tiered practice passages.",
   path: "/guides/english-typing-test-and-practice",
@@ -277,7 +278,63 @@ export default function EnglishTypingTestPage() {
           </li>
         </ol>
 
+        <h2 id="multilingual-typing-guides">International &amp; Multilingual Typing Guides</h2>
+        <p>
+          HeroTyping supports native international keyboard layouts and scripts. Explore our dedicated language guides:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-4">
+          <Link
+            href="/guides/spanish-typing-test-and-practice"
+            className="p-3.5 rounded-xl border border-border bg-sub-alt/20 hover:border-accent transition-colors block"
+          >
+            <div className="text-sm font-semibold text-foreground">Spanish (Español)</div>
+            <div className="text-xs text-sub mt-1">ISO Spanish layout, tilde accents (á, é, í, ó, ú), and inverted marks (¿, ¡).</div>
+          </Link>
+          <Link
+            href="/guides/german-typing-test-and-practice"
+            className="p-3.5 rounded-xl border border-border bg-sub-alt/20 hover:border-accent transition-colors block"
+          >
+            <div className="text-sm font-semibold text-foreground">German (Deutsch)</div>
+            <div className="text-xs text-sub mt-1">QWERTZ layout, umlauts (ä, ö, ü), and Eszett (ß) 10-finger placement.</div>
+          </Link>
+          <Link
+            href="/guides/portuguese-typing-test-and-practice"
+            className="p-3.5 rounded-xl border border-border bg-sub-alt/20 hover:border-accent transition-colors block"
+          >
+            <div className="text-sm font-semibold text-foreground">Portuguese (Português)</div>
+            <div className="text-xs text-sub mt-1">ABNT2 Brazilian and Portuguese layouts, dedicated ç key, and dead-key tildes.</div>
+          </Link>
+          <Link
+            href="/guides/hindi-typing-test-and-practice"
+            className="p-3.5 rounded-xl border border-border bg-sub-alt/20 hover:border-accent transition-colors block"
+          >
+            <div className="text-sm font-semibold text-foreground">Hindi (हिन्दी)</div>
+            <div className="text-xs text-sub mt-1">InScript &amp; Remington layouts, Devanagari Unicode graphemes, and halant conjuncts.</div>
+          </Link>
+          <Link
+            href="/guides/chinese-typing-test-and-practice"
+            className="p-3.5 rounded-xl border border-border bg-sub-alt/20 hover:border-accent transition-colors block sm:col-span-2"
+          >
+            <div className="text-sm font-semibold text-foreground">Chinese (中文 - 拼音)</div>
+            <div className="text-xs text-sub mt-1">Pinyin IME composition sessions, Quanpin vs. Shuangpin efficiency, and CPM speed standards.</div>
+          </Link>
+        </div>
+
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "ANSI INCITS 154-1988 — \"Office Machines and Supplies - Alphanumeric Machines - Keyboard Arrangement\" (American National Standards Institute)",
+                    "href": "https://webstore.ansi.org/"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>

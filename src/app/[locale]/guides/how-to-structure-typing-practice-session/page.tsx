@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Structure a Typing Practice Session: The 4-Phase System",
+  title: "How to Structure Typing Practice",
   description:
     "A structured, workout-style system for daily typing practice. Learn how to sequence physical warmups, precision drills, weak-key remediation, and speed tests.",
   path: "/guides/how-to-structure-typing-practice-session",
@@ -19,7 +19,7 @@ const PUBLISHED = "2026-09-27";
 
 const SESSION_PHASES = [
   {
-    phase: "Phase 1: Physical Warmup & Calibration",
+    phase: "Phase 1: Physical Warmup & Finger Readiness",
     duration: "2 Minutes",
     focus: "Tendon glides, wrist circles, and 1 slow warmup test at 50% speed.",
     heroTool: "Typing Stretches Guide & Warmup Run on Speed Test",
@@ -64,7 +64,7 @@ const FAQ_ITEMS = [
     answer:
       "If your accuracy in Phase 3 drops below 90%, cut Phase 4 (speed testing) entirely. Use those final 3 minutes for slow, deliberate metronome typing at 50% speed. Never finish a session on a flurry of frustrated mistakes; always end on a clean, rhythmic run.",
     plainAnswer:
-      "If accuracy collapses, skip the speed test and spend the remaining minutes typing slowly to end the session on a clean, confident note.",
+      "If your accuracy suddenly drops, skip the speed test and spend the remaining minutes typing slowly to end the session on a clean, confident note.",
   },
   {
     question: "Can I replace Phase 4 with an arcade typing game?",
@@ -75,7 +75,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function HowToStructureTypingPracticeSessionPage() {
   const schema = buildArticleSchema({
@@ -170,7 +179,7 @@ export default function HowToStructureTypingPracticeSessionPage() {
 
         <h2 id="phase-breakdown">Detailed Phase-by-Phase Execution</h2>
 
-        <h3>Phase 1: Warmup &amp; Calibration (2 Minutes)</h3>
+        <h3>Phase 1: Warmup &amp; Finger Readiness (2 Minutes)</h3>
         <p>
           Start with 60 seconds of gentle tendon glides and finger spreads. If your hands are cold, run them under warm
           water or rub your palms together. Then take one 60-second test on the <Link href="/">Speed Test</Link> at

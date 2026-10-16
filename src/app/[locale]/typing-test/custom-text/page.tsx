@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return localizedPageMetadata({
     locale,
-    title: "Custom Text Typing Test — Practice Typing Your Own Text",
+    title: "Custom Text Typing Test",
     description:
       "Practice typing any custom text, document, or code snippet. Paste up to 2,000 characters and practice with real-time feedback on HeroTyping. 100% private in your browser.",
     path: "/typing-test/custom-text",

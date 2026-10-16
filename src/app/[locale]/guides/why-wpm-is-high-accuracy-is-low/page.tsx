@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Why Your WPM Is High but Accuracy Is Low: The Speed-First Trap",
+  title: "Why WPM Is High but Accuracy Is Low",
   description:
     "Why fast typists struggle with low accuracy, the hidden backspace speed penalty, and how to reset your motor pacing to achieve true high-accuracy speed.",
   path: "/guides/why-wpm-is-high-accuracy-is-low",
@@ -82,7 +82,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function WhyWpmIsHighAccuracyIsLowPage() {
   const schema = buildArticleSchema({

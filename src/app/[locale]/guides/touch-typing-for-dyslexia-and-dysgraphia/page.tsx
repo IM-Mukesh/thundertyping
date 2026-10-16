@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Touch Typing for Dyslexia and Dysgraphia: Adaptive Techniques",
+  title: "Typing for Dyslexia and Dysgraphia",
   description:
-    "How touch typing unlocks fluent written expression for individuals with dyslexia, dysgraphia, and ADHD: multi-sensory muscle memory, phonics, and fonts.",
+    "Practical keyboarding strategies for dyslexia, dysgraphia, and ADHD: multi-sensory feedback, muscle memory, assistive tools, and ergonomic adjustments.",
   path: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
 });
 
 const PUBLISHED = "2026-09-26";
-const UPDATED = "2026-09-26";
+const UPDATED = "2026-10-16";
 
 const ADAPTIVE_STRATEGIES = [
   {
@@ -78,11 +78,12 @@ const FAQ_ITEMS = [
 
 export default function TouchTypingDyslexiaPage() {
   const schema = buildArticleSchema({
-    headline: "Touch Typing for Dyslexia and Dysgraphia: Adaptive Techniques",
+    headline: "Touch Typing for Dyslexia & Dysgraphia: Adaptive Guide",
     description:
-      "How touch typing unlocks fluent written expression for individuals with dyslexia, dysgraphia, and ADHD: multi-sensory muscle memory, phonics, and fonts.",
+      "Practical keyboarding strategies for dyslexia, dysgraphia, and ADHD: multi-sensory muscle memory, phonics, and fonts.",
     path: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -93,7 +94,7 @@ export default function TouchTypingDyslexiaPage() {
       />
       <GuideLayout
         title="Touch Typing for Dyslexia and Dysgraphia: Adaptive Tools &amp; Techniques"
-        subtitle="How kinesthetic muscle memory, multi-sensory feedback, and ergonomic keyboards liberate students and adults from written expression barriers."
+        subtitle="How tactile muscle memory, multi-sensory feedback, and ergonomic adjustments can support students and adults with written expression challenges."
         breadcrumbItems={[
           { name: "Guides", path: "/guides" },
           {
@@ -241,6 +242,10 @@ export default function TouchTypingDyslexiaPage() {
             fatigue sets in, motor learning ceases and frustration takes over.
           </li>
         </ol>
+
+        <p className="rounded-xl border border-border bg-sub-alt/20 p-4 text-xs text-sub leading-relaxed">
+          <strong>Educational &amp; Assistive Technology Notice:</strong> This guide discusses practical keyboarding strategies, multi-sensory feedback approaches, and assistive technology accommodations for written communication. It is designed for educational orientation and does not constitute clinical medical advice, therapy, or diagnosis of specific learning disabilities. Always consult a licensed speech-language pathologist, occupational therapist, or educational psychologist for individualized diagnostic and therapeutic plans.
+        </p>
 
         <FaqSection items={FAQ_ITEMS} />
 

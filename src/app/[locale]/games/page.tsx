@@ -7,6 +7,7 @@ import { getArt, getGameArt, getHubHeroArt } from "@/lib/games/game-art-assets";
 import { GameHubFilters } from "@/components/games/game-hub-filters";
 import { PlayerSummary } from "@/components/games/player-summary";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { localizedPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -24,7 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 // internally-scrolling list; that hid content behind a second scrollbar and
 // left nowhere to put ad slots, so it was reverted.
 
-export default function GamesHubPage() {
+export default async function GamesHubPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const hubHero = getHubHeroArt();
   // getArt takes plain strings, unlike getGameArt which is keyed to GameId.
   // Resolves public/games/hub-footer.webp when it exists.
@@ -94,6 +96,7 @@ export default function GamesHubPage() {
         </blockquote>
 
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3.5 sm:gap-6 px-4 py-6 sm:px-10 sm:py-20">
+          <Breadcrumbs items={[{ name: "Games", path: "/games" }]} locale={locale} />
           <span className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/5 px-3 py-1 font-display text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.3em] text-accent">
             <Zap size={11} aria-hidden="true" />
             Games
@@ -167,7 +170,7 @@ export default function GamesHubPage() {
                 src={ctaArt}
                 alt=""
                 fill
-                sizes="100vw"
+                sizes="(max-width: 1440px) 100vw, 1360px"
                 quality={45}
                 className="object-cover object-left opacity-70"
               />

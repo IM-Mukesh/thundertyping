@@ -14,10 +14,8 @@ import { buildLearningResourceSchema } from "@/lib/seo/json-ld";
 import { cn } from "@/lib/utils/cn";
 
 export function generateStaticParams() {
-  return LESSON_LIST.map((lesson) => ({ lessonId: lesson.id }));
+  return LESSON_LIST.map((lesson) => ({ lessonId: lesson.slug }));
 }
-
-
 
 export async function generateMetadata({ params }: { params: Promise<{ lessonId: string, locale: string }> }): Promise<Metadata> {
   const { lessonId, locale } = await params;
@@ -29,13 +27,16 @@ export async function generateMetadata({ params }: { params: Promise<{ lessonId:
       robots: { index: false, follow: false },
     };
   }
-  const title = `${lesson.name} — Typing Lesson`;
-  const description = lesson.instructions[0];
+  const { LESSON_SEO_DATA } = await import("@/lib/lessons/lesson-seo-content");
+  const seo = LESSON_SEO_DATA[lesson.slug] || LESSON_SEO_DATA[lesson.id];
+  const title = `${lesson.name} — Lesson`;
+  const description = seo?.metaDescription || lesson.instructions[0];
+  const canonicalPath = locale === "en" ? `/lessons/${lesson.slug}` : `/${locale}/lessons/${lesson.slug}`;
   return {
     title,
     description,
-    alternates: { canonical: locale === "en" ? `/lessons/${lesson.id}` : `/${locale}/lessons/${lesson.id}` },
-    openGraph: { title, description, url: locale === "en" ? `/lessons/${lesson.id}` : `/${locale}/lessons/${lesson.id}` },
+    alternates: { canonical: canonicalPath },
+    openGraph: { title, description, url: canonicalPath },
     twitter: { title, description },
   };
 }
@@ -45,6 +46,9 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
   const { getLocalizedLesson, getLocalizedLessonList } = await import("@/lib/server/lesson-mapper");
   const lesson = await getLocalizedLesson(locale, lessonId);
   if (!lesson) notFound();
+
+  const { LESSON_SEO_DATA } = await import("@/lib/lessons/lesson-seo-content");
+  const seo = LESSON_SEO_DATA[lesson.slug] || LESSON_SEO_DATA[lesson.id];
 
   const lessonList = await getLocalizedLessonList(locale);
 
@@ -71,8 +75,8 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
           __html: JSON.stringify(
             buildLearningResourceSchema({
               name: lesson.name,
-              description: lesson.instructions[0],
-              path: locale === "en" ? `/lessons/${lesson.id}` : `/${locale}/lessons/${lesson.id}`,
+              description: seo?.metaDescription || lesson.instructions[0],
+              path: locale === "en" ? `/lessons/${lesson.slug}` : `/${locale}/lessons/${lesson.slug}`,
               educationalLevel: tierLabel,
             }),
           ),
@@ -134,14 +138,75 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
               </div>
             )}
 
-            <div className="flex flex-col gap-2.5 rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
-              <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground">
-                Technique Guidance
-              </h2>
-              {lesson.instructions.map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}
-            </div>
+            {seo ? (
+              <div className="flex flex-col gap-5">
+                {/* Technique Guidance & Lesson Summary */}
+                <div className="rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground mb-2">
+                    Technique Guidance &amp; Objective
+                  </h2>
+                  <p className="mb-2 text-foreground/90">{seo.summary}</p>
+                  {lesson.instructions.map((line, i) => (
+                    <p key={i} className="text-xs text-sub/80 mt-1">{line}</p>
+                  ))}
+                </div>
+
+                {/* Finger Map & Hand Biomechanics */}
+                <div className="rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground mb-2">
+                    Finger Map &amp; Hand Biomechanics
+                  </h2>
+                  <p>{seo.fingerMap}</p>
+                </div>
+
+                {/* 3 Common Key Mistakes */}
+                <div className="rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground mb-3">
+                    3 Common Key Mistakes &amp; Fixes
+                  </h2>
+                  <ul className="flex flex-col gap-2.5">
+                    {seo.mistakes.map((mistake, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-sub">
+                        <span className="font-mono text-accent font-bold mt-0.5">{i + 1}.</span>
+                        <span>{mistake}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* 3-Step Practice Sequence */}
+                <div className="rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground mb-3">
+                    3-Step Practice Sequence
+                  </h2>
+                  <ul className="flex flex-col gap-2.5">
+                    {seo.sequence.map((step, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-sub">
+                        <span className="font-mono text-accent font-bold mt-0.5">Step {i + 1}:</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Pass Criteria & Benchmark */}
+                <div className="rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground mb-2">
+                    Pass Criteria &amp; Speed Benchmark
+                  </h2>
+                  <p>{seo.passCriteria}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5 rounded-xl border border-border/60 bg-sub-alt/10 p-5 text-sm leading-relaxed text-sub">
+                <h2 className="font-display text-xs font-bold uppercase tracking-wider text-foreground">
+                  Technique Guidance
+                </h2>
+                {lesson.instructions.map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
+              </div>
+            )}
 
             <p className="text-xs text-sub">
               Want the full finger-to-key map?{" "}
@@ -161,25 +226,25 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2">
               {previousLesson && (
-                <Link
-                  href={locale === "en" ? `/lessons/${previousLesson.id}` : `/${locale}/lessons/${previousLesson.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-sub-alt/20 p-4 text-sm text-sub transition-colors hover:border-accent hover:text-foreground"
-                >
-                  <ArrowLeft size={16} className="shrink-0 text-accent" aria-hidden="true" />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-sub">Previous Lesson</span>
-                    <span className="truncate font-semibold text-foreground">{previousLesson.name}</span>
-                  </span>
-                </Link>
-              )}
-              {nextLesson && (
-                <Link
-                  href={locale === "en" ? `/lessons/${nextLesson.id}` : `/${locale}/lessons/${nextLesson.id}`}
-                  className={cn(
-                    "flex items-center justify-between gap-3 rounded-xl border border-border bg-sub-alt/20 p-4 text-sm text-sub transition-colors hover:border-accent hover:text-foreground",
-                    !previousLesson && "sm:col-start-2",
-                  )}
-                >
+                 <Link
+                   href={locale === "en" ? `/lessons/${previousLesson.slug}` : `/${locale}/lessons/${previousLesson.slug}`}
+                   className="flex items-center gap-3 rounded-xl border border-border bg-sub-alt/20 p-4 text-sm text-sub transition-colors hover:border-accent hover:text-foreground"
+                 >
+                   <ArrowLeft size={16} className="shrink-0 text-accent" aria-hidden="true" />
+                   <span className="flex min-w-0 flex-col">
+                     <span className="font-mono text-[10px] uppercase tracking-wider text-sub">Previous Lesson</span>
+                     <span className="truncate font-semibold text-foreground">{previousLesson.name}</span>
+                   </span>
+                 </Link>
+               )}
+               {nextLesson && (
+                 <Link
+                   href={locale === "en" ? `/lessons/${nextLesson.slug}` : `/${locale}/lessons/${nextLesson.slug}`}
+                   className={cn(
+                     "flex items-center justify-between gap-3 rounded-xl border border-border bg-sub-alt/20 p-4 text-sm text-sub transition-colors hover:border-accent hover:text-foreground",
+                     !previousLesson && "sm:col-start-2",
+                   )}
+                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="font-mono text-[10px] uppercase tracking-wider text-sub">Next Lesson</span>
                     <span className="truncate font-semibold text-foreground">{nextLesson.name}</span>

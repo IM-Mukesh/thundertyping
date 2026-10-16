@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Best Keyboard Switches for Typing: Linear vs Tactile vs Clicky Compared",
+  title: "Best Keyboard Switches for Typing",
   description:
     "Detailed mechanical switch comparison for touch typing and speed: actuation force, travel distance, bottoming out, and the best switches for writers and coders.",
   path: "/guides/best-keyboard-switches-for-typing",

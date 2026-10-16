@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Touch Type: Complete Beginner's Guide (Finger Map + Plan)",
+  title: "How to Touch Type: Step-by-Step Guide",
   description:
-    "The full finger-to-key map, why touch typing works, a practice progression that builds it in order, and a realistic timeline from zero to automatic.",
+    "Learn touch typing from scratch: finger placements, home row technique, muscle memory progression, and practical drills without looking at the keyboard.",
   path: "/guides/how-to-touch-type",
 });
 
 const PUBLISHED = "2026-09-24";
-const UPDATED = "2026-09-24";
+const UPDATED = "2026-10-16";
 
 const MILESTONES = [
   { stage: "First session", detail: "Home row (A S D F / J K L ;) located by feel, using the F/J bumps, without looking." },
@@ -72,6 +72,7 @@ export default function HowToTouchTypePage() {
       "The full finger-to-key map, why touch typing works, a practice progression, and a realistic timeline from zero to automatic.",
     path: "/guides/how-to-touch-type",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

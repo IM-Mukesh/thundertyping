@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
@@ -8,7 +9,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Teste de Digitação e Prática: Guia Completo para Teclado ABNT2",
+  title: "Teste de Digitação em Português",
   description:
     "Aprenda digitação rápida em português: domine o teclado ABNT2 com cedilha (ç), acentuação (til ~, agudo, circunflexo), toques por minuto (TPM) e concursos públicos.",
   path: "/guides/portuguese-typing-test-and-practice",
@@ -264,6 +265,20 @@ export default function PortugueseTypingTestPage() {
         <FaqSection items={FAQ_ITEMS} />
 
         <p className="text-xs text-sub">Última atualização: {UPDATED}.</p>
+      
+        <SourceList
+          sources={[
+          {
+                    "label": "Associação Brasileira de Normas Técnicas (ABNT NBR 10346:1991) — \"Disposição do teclado alfanumérico para processamento de dados (ABNT2)\"",
+                    "href": "https://www.abnt.org.br/"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
+        />
+
       </GuideLayout>
     </>
   );

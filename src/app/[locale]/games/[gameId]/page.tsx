@@ -18,8 +18,21 @@ import { GameInfoPanel } from "@/components/games/game-info-panel";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { buildFaqSchema, buildGameSchema } from "@/lib/seo/json-ld";
-import { truncateAtWord } from "@/lib/seo/metadata";
 import { getTypeBeforeDeathContent } from "@/lib/games/type-before-death-i18n";
+import { GameSeoSection } from "@/components/games/game-seo-content";
+import { SITE_URL } from "@/lib/seo/constants";
+
+const GAME_META_DESCRIPTIONS: Record<string, string> = {
+  "falling-words": "Play Falling Words free online. Destroy descending words before they hit the ground in HeroTyping's fast-paced arcade typing survival game.",
+  "word-rain": "Play Word Rain free online. One life, relentless rain, and pure accuracy survival. Test how long you can last in this intense typing challenge.",
+  "word-blaster": "Play Word Blaster free online. Defend your base against incoming asteroid lanes with rapid-fire keyboard accuracy in this arcade typing game.",
+  "boss-battle": "Out-type the boss before it out-damages you. Test your keyboard speed and precision against escalating boss phases in this tactical typing game.",
+  "combo-rush": "Play Combo Rush free online. Build massive combos, extend your survival timer with high-speed accuracy, and climb the leaderboard in real time.",
+  "ghost-racer": "Race four neon rivals across a high-speed night circuit in Ghost Racer. Type accurately under pressure in HeroTyping's real-time racing game.",
+  "fruit-fury": "Slice flying fruits with swift typing and avoid the bombs. Fruit Fury trains rapid single-letter recognition in an action-packed arcade game.",
+  "rakshasa-war": "Play Typebound: The Last Dawn. Battle mythological enemies and conquer boss phases in HeroTyping's dark-fantasy typing combat arcade campaign.",
+  "type-before-death": "Play Type Before Death online. Survive waves of cinematic zombie hordes with fast, accurate typing drills. Free browser survival typing game.",
+};
 
 export function generateStaticParams() {
   return GAME_LIST.map((game) => ({ gameId: game.id }));
@@ -110,21 +123,38 @@ export async function generateMetadata({ params }: { params: Promise<{ gameId: s
         description: content.description,
         url: canonicalPath,
         type: "website",
-        images: [{ url: "/opengraph-image" }],
+        images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: content.title }],
       },
-      twitter: { title: content.socialTitle, description: content.description },
+      twitter: {
+        card: "summary_large_image",
+        title: content.socialTitle,
+        description: content.description,
+        images: [`${SITE_URL}/opengraph-image`],
+      },
     };
   }
-  const title = `${game.name} — Typing Game`;
-  const description = `${game.tagline} ${truncateAtWord(game.about[0], 120)}`;
+  const title = `${game.name} — Free Typing Game`;
+  const description =
+    GAME_META_DESCRIPTIONS[game.id] ||
+    `${game.tagline} Play ${game.name} free online on HeroTyping.`;
   // Games without localized copy canonicalize to the primary English game route
   const canonicalPath = `/games/${game.id}`;
   return {
     title,
     description,
     alternates: { canonical: canonicalPath },
-    openGraph: { title, description, url: canonicalPath },
-    twitter: { title, description },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`${SITE_URL}/opengraph-image`],
+    },
     robots: game.upcoming ? { index: false, follow: true } : undefined,
   };
 }
@@ -236,6 +266,15 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
         />
       )}
 
+      {/* Primary Page Heading (H1) placed first in DOM to guarantee correct heading hierarchy */}
+      <h1 className="sr-only">
+        {game.id === "ghost-racer"
+          ? "Ghost Racer — Neon Night Time Trial"
+          : game.id === "type-before-death"
+            ? "Type Before Death – Zombie Typing Game"
+            : `${game.name} — Free Typing Game`}
+      </h1>
+
       <div className={`flex w-full ${immersiveRacer ? "max-w-6xl" : "max-w-4xl"} items-center justify-between gap-4 pb-4`}>
         <Breadcrumbs
           items={[
@@ -253,7 +292,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
       {/* MARQUEE — the artwork at full strength, with the character standing
           in it. This is where the game gets its personality; the board below
           stays clean so falling words are never fighting a background. */}
-      {immersiveRacer ? <h1 className="sr-only">{game.id === "ghost-racer" ? "Ghost Racer — Neon Night Time Trial" : game.id === "type-before-death" ? "Type Before Death – Zombie Typing Game" : `${game.name} — ${game.tagline}`}</h1> : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
+      {immersiveRacer ? null : <div className="relative w-full max-w-4xl overflow-hidden rounded-t-2xl border border-b-0 border-border">
         <div className="absolute inset-0">
           {heroArt ? (
             <Image
@@ -291,9 +330,9 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
           )}
 
           <div className="flex min-w-0 flex-col gap-2">
-            <h1 className="font-mono text-2xl font-bold tracking-tight text-foreground arcade-glow-soft sm:text-4xl">
+            <div className="font-mono text-2xl font-bold tracking-tight text-foreground arcade-glow-soft sm:text-4xl" aria-hidden="true">
               {game.name}
-            </h1>
+            </div>
             <p className="text-sm leading-relaxed text-sub sm:text-base">{game.tagline}</p>
             <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-wider text-sub/80">
               <span className="flex items-center gap-1.5">
@@ -355,7 +394,11 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
         )}
       </div>
 
-      {game.id === "type-before-death" && <TypeBeforeDeathSeoContent locale={locale} />}
+      {game.id === "type-before-death" ? (
+        <TypeBeforeDeathSeoContent locale={locale} />
+      ) : (
+        <GameSeoSection gameId={game.id} locale={locale} />
+      )}
 
       {/* Below the cabinet, never beside or above it — an ad next to an active
           game area is both a distraction and an accidental-click risk. */}

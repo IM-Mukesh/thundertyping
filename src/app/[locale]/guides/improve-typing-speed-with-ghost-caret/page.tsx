@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Improve Your Typing Speed With a Ghost Caret That Races You in Real Time",
+  title: "Improve Typing Speed With a Ghost Caret",
   description:
     "What a pace caret (ghost caret) is, how it's different from your real cursor, and how to use it on a free typing speed test to improve faster than practicing blind.",
   path: "/guides/improve-typing-speed-with-ghost-caret",
@@ -174,7 +175,7 @@ export default function ImproveTypingSpeedWithGhostCaretPage() {
         <p>
           It&apos;s free and doesn&apos;t require an account. If you&apos;re chasing a specific number, pair this
           with <Link href="/guides/how-to-set-a-typing-speed-goal">setting a real typing speed goal</Link>; if your
-          results already feel fast-but-erratic, <Link href="/guides/fix-burst-and-stall-typing-pace-caret">a pace
+          results already feel fast-but-erratic, <Link href="/guides/how-to-improve-typing-consistency#pace-caret-routine">a pace
           caret set slightly under your average</Link> is specifically good at smoothing that out.
         </p>
 
@@ -186,6 +187,20 @@ export default function ImproveTypingSpeedWithGhostCaretPage() {
         </Callout>
 
         <FaqSection items={FAQ_ITEMS} />
+      
+        <SourceList
+          sources={[
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          },
+          {
+                    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Eye-hand span and motor buffering chunks)",
+                    "href": "https://psycnet.apa.org/record/1985-06041-001"
+          }
+]}
+        />
+
       </GuideLayout>
     </>
   );

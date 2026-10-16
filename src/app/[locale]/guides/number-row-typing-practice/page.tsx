@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Number Row Typing Practice: Learn 1–0 Without Looking at the Keyboard",
+  title: "Number Row Typing Practice (1–0)",
   description:
     "Master the top number row (1, 2, 3, 4, 5, 6, 7, 8, 9, 0) through blind touch typing. Learn anchor maintenance, two-row reach vectors, and practical number drills.",
   path: "/guides/number-row-typing-practice",
@@ -107,7 +107,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function NumberRowTypingPracticePage() {
   const schema = buildArticleSchema({
@@ -255,22 +264,22 @@ export default function NumberRowTypingPracticePage() {
         </p>
         <ul>
           <li>
-            <Link href="/lessons/building-speed">Unit 19: Number Row: 4 &amp; 7</Link> — Upward index finger reaches past R and U.
+            <Link href="/lessons/number-row-4-7">Unit 19: Number Row: 4 &amp; 7</Link> — Upward index finger reaches past R and U.
           </li>
           <li>
-            <Link href="/lessons/numbers-and-words">Unit 20: Number Row: 3 &amp; 8</Link> — Middle finger reaches past E and I.
+            <Link href="/lessons/number-row-3-8">Unit 20: Number Row: 3 &amp; 8</Link> — Middle finger reaches past E and I.
           </li>
           <li>
-            <Link href="/lessons/longer-passages">Unit 21: Number Row: 2 &amp; 9</Link> — Ring finger reaches past W and O.
+            <Link href="/lessons/number-row-2-9">Unit 21: Number Row: 2 &amp; 9</Link> — Ring finger reaches past W and O.
           </li>
           <li>
-            <Link href="/lessons/mixed-practice">Unit 22: Number Row: 1 &amp; 0</Link> — Outer pinky corner reaches past Q and P.
+            <Link href="/lessons/number-row-1-0">Unit 22: Number Row: 1 &amp; 0</Link> — Outer pinky corner reaches past Q and P.
           </li>
           <li>
-            <Link href="/lessons/intermediate-checkpoint">Unit 23: Numbers Complete: 5 &amp; 6</Link> — Center reaches completing the entire number row.
+            <Link href="/lessons/number-row-5-6">Unit 23: Numbers Complete: 5 &amp; 6</Link> — Center reaches completing the entire number row.
           </li>
           <li>
-            <Link href="/lessons/numbers-and-symbols-mastery">Unit 27: Code Syntax &amp; Technical Formats</Link> — Advanced mixed numbers, currency, and bracketed syntax.
+            <Link href="/lessons/code-syntax-and-brackets">Unit 27: Code Syntax &amp; Technical Formats</Link> — Advanced mixed numbers, currency, and bracketed syntax.
           </li>
         </ul>
 

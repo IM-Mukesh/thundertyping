@@ -52,7 +52,7 @@ describe("recommendation-engine: explainable personalized learning coach", () =>
     const curriculumRec = recs.find((r) => r.type === "continue-curriculum");
     assert.ok(curriculumRec);
     assert.ok(curriculumRec.title.includes("Continue Home Row"));
-    assert.equal(curriculumRec.href, "/lessons/home-row-left");
+    assert.equal(curriculumRec.href, "/lessons/home-row-f-j");
   });
 
   it("recommends spaced review for completed units older than 7 days", () => {
@@ -78,7 +78,7 @@ describe("recommendation-engine: explainable personalized learning coach", () =>
     const recs = generateRecommendations(ctx);
     const reviewRec = recs.find((r) => r.type === "spaced-review");
     assert.ok(reviewRec, "Should recommend spaced review for stale completed unit");
-    assert.equal(reviewRec.href, "/lessons/home-row-left");
+    assert.equal(reviewRec.href, "/lessons/home-row-f-j");
   });
 
   it("adapts recommendations according to learner goal", () => {

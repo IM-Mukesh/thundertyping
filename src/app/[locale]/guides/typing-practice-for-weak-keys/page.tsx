@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Practice for Weak Keys: How to Fix the Letters Slowing You Down",
+  title: "How to Find and Fix Weak Typing Keys",
   description:
     "A deliberate motor practice system for weak typing keys. Learn bigram anchoring, word embedding drills, and pacing protocols to fix problem letters permanently.",
   path: "/guides/typing-practice-for-weak-keys",
@@ -81,7 +81,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function TypingPracticeForWeakKeysPage() {
   const schema = buildArticleSchema({

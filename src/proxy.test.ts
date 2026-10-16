@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { NextRequest } from "next/server";
 import { proxy } from "@/proxy";
+import { LESSON_SLUG_MAP } from "@/lib/lessons/lesson-types";
 
 describe("Request Proxy & Locale Casing", () => {
   it("permanently redirects lowercase /pt-br to canonical /pt-BR (308)", async () => {
@@ -48,7 +49,7 @@ describe("Request Proxy & Locale Casing", () => {
     const deReq = new NextRequest("https://www.herotyping.com/de/lessons/home-row-left");
     const deRes = await proxy(deReq);
     assert.equal(deRes.status, 308);
-    assert.equal(deRes.headers.get("location"), "https://www.herotyping.com/lessons/home-row-left");
+    assert.equal(deRes.headers.get("location"), "https://www.herotyping.com/lessons/home-row-f-j");
   });
 
   it("normalizes trailing slash on localized homepages directly to canonical (/es/ -> /es) (308)", async () => {
@@ -109,6 +110,75 @@ describe("Request Proxy & Locale Casing", () => {
       const req = new NextRequest(`https://www.herotyping.com/${locale}/games/type-before-death`);
       const res = await proxy(req);
       assert.notEqual(res.status, 308, `/${locale}/games/type-before-death should not redirect`);
+    }
+  });
+
+  it("permanently redirects retired /games/typing-grand-prix directly to /games/ghost-racer (308)", async () => {
+    const urls = [
+      "https://www.herotyping.com/games/typing-grand-prix",
+      "https://www.herotyping.com/games/typing-grand-prix/",
+      "https://www.herotyping.com/es/games/typing-grand-prix",
+      "https://www.herotyping.com/pt-BR/games/typing-grand-prix",
+    ];
+    for (const url of urls) {
+      const req = new NextRequest(url);
+      const res = await proxy(req);
+      assert.equal(res.status, 308, `${url} must return 308 redirect`);
+      assert.equal(res.headers.get("location"), "https://www.herotyping.com/games/ghost-racer");
+    }
+  });
+
+  it("permanently redirects retired /games/typing-survivor directly to /games (308)", async () => {
+    const req = new NextRequest("https://www.herotyping.com/games/typing-survivor");
+    const res = await proxy(req);
+    assert.equal(res.status, 308);
+    assert.equal(res.headers.get("location"), "https://www.herotyping.com/games");
+  });
+
+  it("permanently redirects all 28 old lesson IDs to their new descriptive slugs in a single hop (308)", async () => {
+    for (const [oldId, newSlug] of Object.entries(LESSON_SLUG_MAP)) {
+      // 1. Direct old path
+      const req = new NextRequest(`https://www.herotyping.com/lessons/${oldId}`);
+      const res = await proxy(req);
+      assert.equal(res.status, 308, `/lessons/${oldId} must return 308`);
+      assert.equal(
+        res.headers.get("location"),
+        `https://www.herotyping.com/lessons/${newSlug}`,
+        `/lessons/${oldId} must redirect to /lessons/${newSlug}`
+      );
+
+      // 2. Trailing slash on old path
+      const slashReq = new NextRequest(`https://www.herotyping.com/lessons/${oldId}/`);
+      const slashRes = await proxy(slashReq);
+      assert.equal(slashRes.status, 308);
+      assert.equal(
+        slashRes.headers.get("location"),
+        `https://www.herotyping.com/lessons/${newSlug}`
+      );
+
+      // 3. Query string preserved
+      const queryReq = new NextRequest(`https://www.herotyping.com/lessons/${oldId}?step=2`);
+      const queryRes = await proxy(queryReq);
+      assert.equal(queryRes.status, 308);
+      assert.equal(
+        queryRes.headers.get("location"),
+        `https://www.herotyping.com/lessons/${newSlug}?step=2`
+      );
+    }
+  });
+
+  it("permanently redirects 3 consolidated guides directly to target guides in a single hop (308)", async () => {
+    const guideRedirects = [
+      ["/guides/beat-your-personal-best-typing-speed", "/guides/how-to-improve-typing-speed"],
+      ["/guides/fix-burst-and-stall-typing-pace-caret", "/guides/how-to-improve-typing-consistency"],
+      ["/guides/typing-test-vs-typing-race", "/guides/typing-games-vs-typing-tests"],
+    ];
+
+    for (const [src, target] of guideRedirects) {
+      const req = new NextRequest(`https://www.herotyping.com${src}`);
+      const res = await proxy(req);
+      assert.equal(res.status, 308, `${src} must return 308`);
+      assert.equal(res.headers.get("location"), `https://www.herotyping.com${target}`);
     }
   });
 });

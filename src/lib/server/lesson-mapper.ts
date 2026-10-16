@@ -1,5 +1,5 @@
 import { getLessons, getLessonWithSteps } from "./content";
-import { LESSON_LIST, LESSON_DEFINITIONS, type LessonDefinition, type LessonId, type LessonTier, type LessonStage } from "@/lib/lessons/lesson-types";
+import { LESSON_LIST, LESSON_SLUG_MAP, type LessonDefinition, type LessonTier, type LessonStage } from "@/lib/lessons/lesson-types";
 
 export async function getLocalizedLessonList(locale: string): Promise<LessonDefinition[]> {
   if (locale === "en") {
@@ -9,6 +9,7 @@ export async function getLocalizedLessonList(locale: string): Promise<LessonDefi
   const dbLessons = await getLessons(locale);
   return dbLessons.map(row => ({
     id: row.lesson_key,
+    slug: LESSON_SLUG_MAP[row.lesson_key] || row.lesson_key,
     tier: row.tier as LessonTier,
     stage: row.stage as LessonStage,
     order: row.order_index,
@@ -23,9 +24,8 @@ export async function getLocalizedLessonList(locale: string): Promise<LessonDefi
 
 export async function getLocalizedLesson(locale: string, lessonId: string): Promise<LessonDefinition | null> {
   if (locale === "en") {
-    return Object.prototype.hasOwnProperty.call(LESSON_DEFINITIONS, lessonId)
-      ? LESSON_DEFINITIONS[lessonId as LessonId]
-      : null;
+    const found = LESSON_LIST.find((l) => l.slug === lessonId || l.id === lessonId);
+    return found ?? null;
   }
 
   const dbData = await getLessonWithSteps(locale, lessonId);
@@ -33,6 +33,7 @@ export async function getLocalizedLesson(locale: string, lessonId: string): Prom
 
   return {
     id: dbData.lesson.lesson_key,
+    slug: LESSON_SLUG_MAP[dbData.lesson.lesson_key] || dbData.lesson.lesson_key,
     tier: dbData.lesson.tier as LessonTier,
     stage: dbData.lesson.stage as LessonStage,
     order: dbData.lesson.order_index,

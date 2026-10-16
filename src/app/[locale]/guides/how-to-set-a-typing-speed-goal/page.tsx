@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Set a Typing Speed Goal (and a Tool That Actually Gets You There)",
+  title: "How to Set a Realistic Typing Speed Goal",
   description:
     "Have a target WPM in mind but no plan for reaching it? Here's how to turn a typing speed goal into a staged training routine using HeroTyping's custom pace caret.",
   path: "/guides/how-to-set-a-typing-speed-goal",
@@ -145,13 +146,27 @@ export default function HowToSetATypingSpeedGoalPage() {
         <Callout label="Next step">
           <p>
             Once you&apos;ve genuinely hit a goal, switch the pace caret to{" "}
-            <Link href="/guides/beat-your-personal-best-typing-speed">PB mode and start racing your own best</Link>{" "}
+            <Link href="/guides/how-to-improve-typing-speed#race-your-pb">PB mode and start racing your own best</Link>{" "}
             -- or if progress stalls partway there, check whether{" "}
-            <Link href="/guides/fix-burst-and-stall-typing-pace-caret">uneven pacing</Link> is the specific cause.
+            <Link href="/guides/how-to-improve-typing-consistency#pace-caret-routine">uneven pacing</Link> is the specific cause.
           </p>
         </Callout>
 
         <FaqSection items={FAQ_ITEMS} />
+      
+        <SourceList
+          sources={[
+          {
+                    "label": "Keith, J., & Cooper, W. E. (1983) — \"Cognitive Aspects of Skilled Typewriting\" (Springer-Verlag)",
+                    "href": "https://link.springer.com/book/10.1007/978-1-4612-5573-4"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
+        />
+
       </GuideLayout>
     </>
   );

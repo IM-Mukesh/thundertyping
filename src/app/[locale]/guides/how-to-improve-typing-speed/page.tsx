@@ -10,14 +10,14 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Improve Typing Speed: The Complete Training System",
+  title: "How to Improve Typing Speed",
   description:
-    "A step-by-step system for typing faster: fix accuracy first, find your weak keys, drill them, and track real progress from 20 WPM to 100+.",
+    "A step-by-step training system to type faster: build accuracy first, eliminate weak keys, optimize finger rhythm, and track progress from 30 to 100+ WPM.",
   path: "/guides/how-to-improve-typing-speed",
 });
 
 const PUBLISHED = "2026-09-15";
-const UPDATED = "2026-09-24";
+const UPDATED = "2026-10-16";
 
 const LADDER = [
   {
@@ -110,6 +110,13 @@ const FAQ_ITEMS = [
     plainAnswer:
       "This is almost always fatigue, distraction, or unfamiliar text rather than a real skill regression — check accuracy and consistency before assuming you've lost ground.",
   },
+  {
+    question: "Does my personal best reset if I change test settings?",
+    answer:
+      "No. HeroTyping stores personal bests independently per mode, duration, and punctuation setting. Your 60-second prose PB and your 30-second PB stay intact when switching between them.",
+    plainAnswer:
+      "No. Personal bests are saved independently for each combination of test mode, duration, and text settings.",
+  },
 ];
 
 export default function HowToImproveTypingSpeedPage() {
@@ -142,6 +149,7 @@ export default function HowToImproveTypingSpeedPage() {
           { id: "ladder", label: "The WPM progression ladder" },
           { id: "how-much", label: "How much and how often" },
           { id: "habits", label: "Habits that cap your speed" },
+          { id: "race-your-pb", label: "Race your personal best" },
           { id: "put-into-practice", label: "Put it into practice" },
         ]}
         hasFaq
@@ -327,6 +335,37 @@ export default function HowToImproveTypingSpeedPage() {
           </li>
         </ul>
 
+        <h2 id="race-your-pb">Race Your Personal Best With a Pace Caret</h2>
+        <p>
+          Most speed advice tells typists to &ldquo;push harder&rdquo; or pick an arbitrary goal
+          like 80 WPM out of thin air. But racing an unearned target leads to guessing and tension.
+          Your personal best (PB) is different: it is empirical evidence you have already typed
+          that fast under exact test conditions—the only challenge is reproducing that performance.
+        </p>
+        <p>
+          In HeroTyping, open <strong>Test Settings</strong> and set <strong>Pace Caret</strong> to{" "}
+          <strong>Your PB</strong>. A second, translucent cursor appears and advances at your
+          recorded record speed for that specific mode and duration:
+        </p>
+        <ul>
+          <li>
+            <strong>If the ghost pulls ahead:</strong> Never panic-sprint to close the gap. Rushing
+            creates errors, and net WPM formulas penalize typos severely—wiping out the seconds you
+            tried to save. Settle into your clean rhythm and let your cadence recover naturally.
+          </li>
+          <li>
+            <strong>If your cursor leads the ghost:</strong> Maintain form and resist the urge to
+            rush the final words. The last 15% of a test is where complacency causes costly
+            stumbles.
+          </li>
+          <li>
+            <strong>First-week progression:</strong> On Day 1, observe your pace against the ghost
+            without pressure. On Day 3, identify which word types or reaches cause you to drop behind.
+            By Day 5–7, sustained accuracy allows you to consistently edge out the ghost for a new
+            record.
+          </li>
+        </ul>
+
         <h2 id="put-into-practice">Put it into practice</h2>
         <p>
           Start with a short test focused purely on accuracy, then check your consistency score
@@ -343,12 +382,15 @@ export default function HowToImproveTypingSpeedPage() {
 
         <SourceList
           sources={[
-            {
-              label:
-                "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
-              href: "https://userinterfaces.aalto.fi/136Mkeystrokes/",
-            },
-          ]}
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          },
+          {
+                    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+                    "href": "https://psycnet.apa.org/record/1985-06041-001"
+          }
+]}
         />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>

@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description:
       "Every achievement across HeroTyping's lessons and games -- survive fifteen waves, beat your ghost at perfect accuracy, master the keyboard.",
     path: "/achievements",
+    robots: { index: false, follow: true },
   });
 }
 

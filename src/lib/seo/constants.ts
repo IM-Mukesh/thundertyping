@@ -52,7 +52,7 @@ export const SITE_URL = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 export const SITE_TAGLINE = "Free Online Typing Speed Test";
 
 export const SITE_DESCRIPTION =
-  "Free online typing speed test. Measure your WPM and accuracy, practice with time or word-count modes, real quotes, and your own custom text — no sign-up required.";
+  "Free online typing speed test, interactive touch-typing lessons, arcade typing games, and targeted practice drills. Test your WPM and accuracy — no sign-up required.";
 
 // Overridable via NEXT_PUBLIC_SUPPORT_EMAIL; defaults to hello@herotyping.com.
 export const SUPPORT_EMAIL =

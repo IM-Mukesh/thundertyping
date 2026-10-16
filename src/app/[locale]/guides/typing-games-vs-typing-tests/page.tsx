@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Games vs Typing Tests: Which Should You Use to Get Faster?",
+  title: "Typing Games vs. Typing Tests",
   description:
     "Do typing games actually build real typing speed? Compare gamified typing vs standard speed tests: stress inoculation, reflex training, and when to use each.",
   path: "/guides/typing-games-vs-typing-tests",
@@ -74,9 +74,25 @@ const FAQ_ITEMS = [
     plainAnswer:
       "Falling Words is ideal for beginners because words fall at a steady, manageable pace, letting you focus on clean technique.",
   },
+  {
+    question: "Is a pace caret the same thing as a ghost replay?",
+    answer:
+      "Not quite. A ghost replay plays back the exact keystrokes of a previous attempt. A pace caret moves at a steady, mathematically uniform target speed (such as your personal best or a custom WPM), acting as an interactive visual pacer.",
+    plainAnswer:
+      "A ghost replay recreates a past run's exact keystrokes, whereas a pace caret moves at a uniform target speed to guide your rhythm.",
+  },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function TypingGamesVsTypingTestsPage() {
   const schema = buildArticleSchema({
@@ -104,6 +120,7 @@ export default function TypingGamesVsTypingTestsPage() {
           { id: "psychological-benefits", label: "Stress inoculation & reflexes" },
           { id: "pitfalls-of-games", label: "The pitfalls of gamified typing" },
           { id: "the-hybrid-routine", label: "The optimal hybrid routine" },
+          { id: "multiplayer-races-vs-solo-pacing", label: "Multiplayer races vs. solo pacing" },
         ]}
         hasFaq
         hasSources
@@ -225,9 +242,41 @@ export default function TypingGamesVsTypingTestsPage() {
           <li>
             <strong>Sharpen Reflexes (3 min):</strong> Finish your session with a high-energy round in{" "}
             <Link href="/games">HeroTyping Arcade Games</Link> (try Fruit Fury or Type Before Death) to cement your
-            neuromuscular reflexes with high engagement.
+            finger reflexes and key recognition with high engagement.
           </li>
         </ol>
+
+        <h2 id="multiplayer-races-vs-solo-pacing">Multiplayer Typing Races vs. Solo Pace-Caret Practice</h2>
+        <p>
+          Beyond standard tests and single-player arcade games, typists frequently encounter
+          multiplayer typing races and ghost pace-caret practice. Each serves a distinct training
+          role:
+        </p>
+        <ul>
+          <li>
+            <strong>Multiplayer Races:</strong> Racing against live opponents provides high
+            adrenaline, social engagement, and competitive urgency. However, you are matched
+            against a stranger&apos;s arbitrary speed. If your opponent types at 110 WPM while you type
+            at 50 WPM, you fall hopelessly behind and gain zero diagnostic feedback. If they type at
+            30 WPM, you coast without challenge.
+          </li>
+          <li>
+            <strong>Plain Timed Tests:</strong> Zero pressure and ideal for low-stakes warming up,
+            evaluating new layouts, or establishing baseline benchmarks. Their drawback is the
+            absence of in-flight pacing feedback—you only discover your rhythm after the timer ends.
+          </li>
+          <li>
+            <strong>Solo Pace-Caret Practice:</strong> A translucent cursor moves at your exact
+            personal best or a designated target WPM. It gives real-time visual feedback tailored
+            entirely to your current skill level, eliminating the matchmaking mismatch of public
+            lobbies while training steady, unbroken rhythm.
+          </li>
+        </ul>
+        <p>
+          <strong>The optimal balance:</strong> Use pace-caret practice for structured solo drills
+          and weak-key conditioning, timed tests for milestone benchmarks, and multiplayer races or
+          arcade games for high-stress reflex inoculation.
+        </p>
 
         <FaqSection items={FAQ_ITEMS} />
         <SourceList sources={SOURCES} />

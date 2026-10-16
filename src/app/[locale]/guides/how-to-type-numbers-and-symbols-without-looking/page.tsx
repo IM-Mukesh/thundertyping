@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Type Numbers & Symbols Without Looking at the Keyboard",
+  title: "How to Type Numbers & Symbols Blind",
   description:
-    "Step-by-step blind typing training for the top number row and shift symbols: anchor fingers, finger reach angles, passwords, and 10-day practice drills.",
+    "Learn how to type numbers and symbols on the top row without looking: finger reach angles, opposite-hand Shift timing, anchor points, and muscle memory.",
   path: "/guides/how-to-type-numbers-and-symbols-without-looking",
 });
 
 const PUBLISHED = "2026-09-26";
-const UPDATED = "2026-09-26";
+const UPDATED = "2026-10-16";
 
 const NUMBER_ROW_MAP = [
   {
@@ -102,11 +102,12 @@ const FAQ_ITEMS = [
 
 export default function HowToTypeNumbersSymbolsPage() {
   const schema = buildArticleSchema({
-    headline: "How to Type Numbers & Symbols Without Looking at the Keyboard",
+    headline: "How to Type Numbers & Symbols Without Looking Guide",
     description:
       "Step-by-step blind typing training for the top number row and shift symbols: anchor fingers, finger reach angles, passwords, and 10-day practice drills.",
     path: "/guides/how-to-type-numbers-and-symbols-without-looking",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (

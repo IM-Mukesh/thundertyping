@@ -190,11 +190,11 @@ describe("Canonical URL Safety & Localized Hreflang", () => {
 
   it("verifies exact sitemap inventory counts and per-locale distribution", async () => {
     const urls = await sitemap();
-    assert.equal(urls.length, 121, "Sitemap should emit exactly 121 <url> entries");
+    assert.equal(urls.length, 120, "Sitemap should emit exactly 120 <url> entries (117 + 3 dedicated test pages)");
 
     // Verify all URLs are unique
     const uniqueUrls = new Set(urls.map((u) => u.url));
-    assert.equal(uniqueUrls.size, 121, "All 121 sitemap URLs must be unique");
+    assert.equal(uniqueUrls.size, 120, "All 120 sitemap URLs must be unique");
 
     // Verify locale distribution
     const enUrls = urls.filter((u) => !u.url.includes("/es/") && !u.url.endsWith("/es") && !u.url.includes("/pt-BR/") && !u.url.endsWith("/pt-BR") && !u.url.includes("/de/") && !u.url.endsWith("/de"));
@@ -202,7 +202,7 @@ describe("Canonical URL Safety & Localized Hreflang", () => {
     const ptUrls = urls.filter((u) => u.url.includes("/pt-BR/") || u.url.endsWith("/pt-BR"));
     const deUrls = urls.filter((u) => u.url.includes("/de/") || u.url.endsWith("/de"));
 
-    assert.equal(enUrls.length, 115, "English entries count must be 115 (2 localized + 113 canonical guides/site)");
+    assert.equal(enUrls.length, 114, "English entries count must be 114 (2 localized + 112 canonical guides/site)");
     assert.equal(esUrls.length, 2, "Spanish entries count must be exactly 2 genuinely localized apps");
     assert.equal(ptUrls.length, 2, "Portuguese entries count must be exactly 2 genuinely localized apps");
     assert.equal(deUrls.length, 2, "German entries count must be exactly 2 genuinely localized apps");
@@ -235,7 +235,7 @@ describe("Canonical URL Safety & Localized Hreflang", () => {
   it("omits foreign hreflang alternates on English-only guides to prevent misleading crawlers", async () => {
     const urls = await sitemap();
     const guideEntries = urls.filter((u) => u.url.includes("/guides/"));
-    assert.ok(guideEntries.length >= 55, "sitemap should include all guide entries");
+    assert.ok(guideEntries.length >= 52, "sitemap should include all guide entries");
 
     for (const g of guideEntries) {
       // English-only guides should not advertise es, pt-BR, or de translations
@@ -375,6 +375,12 @@ describe("buildArticleSchema", () => {
 
     assert.equal(schema.datePublished, "2026-09-15");
     assert.equal(schema.dateModified, "2026-09-15");
+    assert.deepEqual(schema.author, {
+      "@type": "Person",
+      name: "Mukesh",
+      url: "https://www.herotyping.com/about",
+      jobTitle: "Founder & Developer",
+    });
   });
 });
 

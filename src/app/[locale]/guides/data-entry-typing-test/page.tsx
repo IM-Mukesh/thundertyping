@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Data Entry Typing Test: What It Measures & How to Train for It",
+  title: "Data Entry Typing Test & KPH Guide",
   description:
-    "What data entry typing tests actually measure, how KPH relates to WPM, commonly cited speed and accuracy benchmarks, and how to train for one.",
+    "Learn what data entry typing tests measure: WPM vs. KPH formulas, numeric entry standards, benchmark accuracy requirements, and how to practice.",
   path: "/guides/data-entry-typing-test",
 });
 
 const PUBLISHED = "2026-09-24";
-const UPDATED = "2026-09-24";
+const UPDATED = "2026-10-16";
 
 const KPH_TABLE = [
   { wpm: "20 WPM", kph: "≈ 6,000 KPH" },
@@ -58,11 +59,12 @@ const FAQ_ITEMS = [
 
 export default function DataEntryTypingTestPage() {
   const schema = buildArticleSchema({
-    headline: "Data Entry Typing Test: What It Measures & How to Train for It",
+    headline: "Data Entry Typing Test: Speed, Accuracy & KPH Guide",
     description:
       "What data entry typing tests measure, how KPH relates to WPM, and how to train for one.",
     path: "/guides/data-entry-typing-test",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -191,17 +193,20 @@ export default function DataEntryTypingTestPage() {
           <li>
             <strong>Build general typing fluency first.</strong>{" "}
             <Link href="/lessons">Structured lessons</Link> and{" "}
-            <Link href="/">a normal typing test</Link> establish your baseline WPM and accuracy on
+            <Link href="/typing-test/1-minute">a 1-minute typing test</Link> establish your baseline WPM and accuracy on
             standard text.
           </li>
           <li>
             <strong>Practice the number row deliberately.</strong> Numeric entry is a distinct
-            skill from prose typing and is worth its own dedicated practice, not just incidental
-            exposure.
+            skill from prose typing and is worth dedicated practice — see our guides on{" "}
+            <Link href="/guides/number-row-typing-practice">number row typing practice</Link> and{" "}
+            <Link href="/guides/practice-typing-numbers-and-symbols-without-looking">
+              how to practice numbers and symbols without looking
+            </Link>.
           </li>
           <li>
             <strong>Prioritize accuracy over speed.</strong> Given how error-sensitive data entry
-            work tends to be, a slower, highly accurate pace is usually more valuable than a
+            work tends to be, a steady, highly accurate pace is far more valuable than a
             faster, error-prone one — see{" "}
             <Link href="/guides/how-to-improve-typing-accuracy">how to improve typing accuracy</Link>.
           </li>
@@ -213,12 +218,30 @@ export default function DataEntryTypingTestPage() {
           </li>
         </ol>
 
+        <p className="rounded-xl border border-border bg-sub-alt/20 p-4 text-xs text-sub leading-relaxed">
+          <strong>Note on assessment scope:</strong> HeroTyping provides standardized prose speed tests, custom text mode, and number-row drills to build keyboard fluency and accuracy. We do not administer official employer-certified 10-key numeric keypad credentials or state civil service tests; always verify the exact testing environment with your hiring manager or testing agency.
+        </p>
+
         <p>
-          <Link href="/">Take a typing test</Link> to establish your current baseline before
+          <Link href="/typing-test/1-minute">Take a 1-minute typing test</Link> to establish your current baseline before
           assuming you do or don&apos;t meet a specific role&apos;s requirement.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "U.S. Bureau of Labor Statistics / O*NET OnLine — \"Data Entry Keyers (Standard Occupational Classification 43-9021.00)\"",
+                    "href": "https://www.onetonline.org/link/summary/43-9021.00"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>

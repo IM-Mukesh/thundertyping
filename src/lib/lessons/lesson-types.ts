@@ -68,6 +68,7 @@ export type LessonContentSpec =
 
 export interface LessonDefinition {
   id: LessonId;
+  slug: string;
   tier: LessonTier;
   stage: LessonStage;
   /** Position in the track -- LESSON_LIST is the source of truth for order and gating, this is only for display. */
@@ -119,13 +120,14 @@ const ALL_KEYS_AND_NUMBERS = [...NUMBERS_PAIRS_5];
 export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   "home-row-left": {
     id: "home-row-left",
+    slug: "home-row-f-j",
     tier: "beginner",
     stage: "home-row",
     order: 1,
     name: "Home Row: F & J Anchors",
     newKeys: ["f", "j"],
     instructions: [
-      "Feel the small tactile bumps on the F and J keys -- these are your home-row anchors. Your left index finger rests on F, and your right index finger rests on J.",
+      "Feel the small tactile bumps on the F and J keys; these are your home-row anchors. Your left index finger rests on F, and your right index finger rests on J.",
       "Keep both hands relaxed. Tap the spacebar with your thumb to advance between words. Return your index fingers to F and J after every stroke.",
     ],
     minAccuracy: 75,
@@ -134,6 +136,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "home-row-right": {
     id: "home-row-right",
+    slug: "home-row-d-k",
     tier: "beginner",
     stage: "home-row",
     order: 2,
@@ -149,13 +152,14 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "home-row-combined": {
     id: "home-row-combined",
+    slug: "home-row-s-l",
     tier: "beginner",
     stage: "home-row",
     order: 3,
     name: "Home Row: S & L Ring Fingers",
     newKeys: ["s", "l"],
     instructions: [
-      "Your left ring finger owns S; your right ring finger owns L. Ring fingers take patience -- focus on gentle, deliberate taps.",
+      "Your left ring finger owns S; your right ring finger owns L. Ring fingers take patience — focus on gentle, deliberate taps.",
       "Keep all other fingers hovering lightly in their home positions. Notice your hands alternating rhythmically between left and right.",
     ],
     minAccuracy: 75,
@@ -164,6 +168,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "home-row-words": {
     id: "home-row-words",
+    slug: "home-row-a-semicolon",
     tier: "beginner",
     stage: "home-row",
     order: 4,
@@ -179,6 +184,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "top-row-left": {
     id: "top-row-left",
+    slug: "home-row-g-h",
     tier: "beginner",
     stage: "home-row",
     order: 5,
@@ -194,13 +200,14 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "top-row-right": {
     id: "top-row-right",
+    slug: "home-row-mastery",
     tier: "beginner",
     stage: "home-row",
     order: 6,
     name: "Consolidation: Home Row Mastery",
     newKeys: [],
     instructions: [
-      "All ten home-row keys are now unlocked. No new keys here -- this consolidation unit reinforces smooth transitions.",
+      "All ten home-row keys are now unlocked. No new keys here — this consolidation unit reinforces smooth transitions.",
       "Practice real English words formed entirely from home row: 'all', 'fall', 'salad', 'flask', 'glad', and 'dash'.",
     ],
     minAccuracy: 82,
@@ -209,6 +216,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "top-row-combined": {
     id: "top-row-combined",
+    slug: "top-row-e-i",
     tier: "beginner",
     stage: "top-row",
     order: 7,
@@ -224,6 +232,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "top-row-words": {
     id: "top-row-words",
+    slug: "top-row-r-u",
     tier: "beginner",
     stage: "top-row",
     order: 8,
@@ -239,6 +248,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "bottom-row-left": {
     id: "bottom-row-left",
+    slug: "top-row-t-y",
     tier: "beginner",
     stage: "top-row",
     order: 9,
@@ -254,6 +264,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "bottom-row-right": {
     id: "bottom-row-right",
+    slug: "top-row-w-o",
     tier: "beginner",
     stage: "top-row",
     order: 10,
@@ -269,6 +280,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "bottom-row-combined": {
     id: "bottom-row-combined",
+    slug: "top-row-q-p",
     tier: "beginner",
     stage: "top-row",
     order: 11,
@@ -284,6 +296,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "bottom-row-words": {
     id: "bottom-row-words",
+    slug: "top-and-home-row-mastery",
     tier: "beginner",
     stage: "top-row",
     order: 12,
@@ -299,6 +312,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "numbers-low": {
     id: "numbers-low",
+    slug: "bottom-row-v-m",
     tier: "beginner",
     stage: "bottom-row",
     order: 13,
@@ -314,6 +328,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "numbers-high": {
     id: "numbers-high",
+    slug: "bottom-row-c-comma",
     tier: "beginner",
     stage: "bottom-row",
     order: 14,
@@ -329,6 +344,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "full-keyboard-words": {
     id: "full-keyboard-words",
+    slug: "bottom-row-x-period",
     tier: "beginner",
     stage: "bottom-row",
     order: 15,
@@ -344,6 +360,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "full-keyboard-punctuation": {
     id: "full-keyboard-punctuation",
+    slug: "bottom-row-z-slash",
     tier: "beginner",
     stage: "bottom-row",
     order: 16,
@@ -359,6 +376,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   graduation: {
     id: "graduation",
+    slug: "alphabet-complete-b-n",
     tier: "beginner",
     stage: "review",
     order: 17,
@@ -374,6 +392,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "everyday-sentences": {
     id: "everyday-sentences",
+    slug: "shift-key-capitalization",
     tier: "intermediate",
     stage: "intermediate-practice",
     order: 18,
@@ -389,6 +408,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "building-speed": {
     id: "building-speed",
+    slug: "number-row-4-7",
     tier: "intermediate",
     stage: "numbers",
     order: 19,
@@ -404,6 +424,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "numbers-and-words": {
     id: "numbers-and-words",
+    slug: "number-row-3-8",
     tier: "intermediate",
     stage: "numbers",
     order: 20,
@@ -419,6 +440,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "longer-passages": {
     id: "longer-passages",
+    slug: "number-row-2-9",
     tier: "intermediate",
     stage: "numbers",
     order: 21,
@@ -434,6 +456,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "mixed-practice": {
     id: "mixed-practice",
+    slug: "number-row-1-0",
     tier: "intermediate",
     stage: "numbers",
     order: 22,
@@ -449,6 +472,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "intermediate-checkpoint": {
     id: "intermediate-checkpoint",
+    slug: "number-row-5-6",
     tier: "intermediate",
     stage: "numbers",
     order: 23,
@@ -464,6 +488,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "speed-endurance": {
     id: "speed-endurance",
+    slug: "symbols-and-punctuation",
     tier: "advanced",
     stage: "advanced-practice",
     order: 24,
@@ -479,6 +504,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "precision-under-pressure": {
     id: "precision-under-pressure",
+    slug: "typing-flow-and-cadence",
     tier: "advanced",
     stage: "advanced-practice",
     order: 25,
@@ -494,6 +520,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "long-form-typing": {
     id: "long-form-typing",
+    slug: "paragraph-typing-stamina",
     tier: "advanced",
     stage: "advanced-practice",
     order: 26,
@@ -509,6 +536,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "numbers-and-symbols-mastery": {
     id: "numbers-and-symbols-mastery",
+    slug: "code-syntax-and-brackets",
     tier: "advanced",
     stage: "advanced-practice",
     order: 27,
@@ -524,6 +552,7 @@ export const LESSON_DEFINITIONS: Record<LessonId, LessonDefinition> = {
   },
   "final-challenge": {
     id: "final-challenge",
+    slug: "touch-typing-graduation",
     tier: "advanced",
     stage: "graduation",
     order: 28,
@@ -570,3 +599,65 @@ export const LESSON_LIST: LessonDefinition[] = [
   LESSON_DEFINITIONS["numbers-and-symbols-mastery"],
   LESSON_DEFINITIONS["final-challenge"],
 ];
+
+export const LESSON_SLUG_MAP: Record<LessonId, string> = {
+  "home-row-left": "home-row-f-j",
+  "home-row-right": "home-row-d-k",
+  "home-row-combined": "home-row-s-l",
+  "home-row-words": "home-row-a-semicolon",
+  "top-row-left": "home-row-g-h",
+  "top-row-right": "home-row-mastery",
+  "top-row-combined": "top-row-e-i",
+  "top-row-words": "top-row-r-u",
+  "bottom-row-left": "top-row-t-y",
+  "bottom-row-right": "top-row-w-o",
+  "bottom-row-combined": "top-row-q-p",
+  "bottom-row-words": "top-and-home-row-mastery",
+  "numbers-low": "bottom-row-v-m",
+  "numbers-high": "bottom-row-c-comma",
+  "full-keyboard-words": "bottom-row-x-period",
+  "full-keyboard-punctuation": "bottom-row-z-slash",
+  "graduation": "alphabet-complete-b-n",
+  "everyday-sentences": "shift-key-capitalization",
+  "building-speed": "number-row-4-7",
+  "numbers-and-words": "number-row-3-8",
+  "longer-passages": "number-row-2-9",
+  "mixed-practice": "number-row-1-0",
+  "intermediate-checkpoint": "number-row-5-6",
+  "speed-endurance": "symbols-and-punctuation",
+  "precision-under-pressure": "typing-flow-and-cadence",
+  "long-form-typing": "paragraph-typing-stamina",
+  "numbers-and-symbols-mastery": "code-syntax-and-brackets",
+  "final-challenge": "touch-typing-graduation",
+};
+
+export const LESSON_ID_BY_SLUG: Record<string, LessonId> = {
+  "home-row-f-j": "home-row-left",
+  "home-row-d-k": "home-row-right",
+  "home-row-s-l": "home-row-combined",
+  "home-row-a-semicolon": "home-row-words",
+  "home-row-g-h": "top-row-left",
+  "home-row-mastery": "top-row-right",
+  "top-row-e-i": "top-row-combined",
+  "top-row-r-u": "top-row-words",
+  "top-row-t-y": "bottom-row-left",
+  "top-row-w-o": "bottom-row-right",
+  "top-row-q-p": "bottom-row-combined",
+  "top-and-home-row-mastery": "bottom-row-words",
+  "bottom-row-v-m": "numbers-low",
+  "bottom-row-c-comma": "numbers-high",
+  "bottom-row-x-period": "full-keyboard-words",
+  "bottom-row-z-slash": "full-keyboard-punctuation",
+  "alphabet-complete-b-n": "graduation",
+  "shift-key-capitalization": "everyday-sentences",
+  "number-row-4-7": "building-speed",
+  "number-row-3-8": "numbers-and-words",
+  "number-row-2-9": "longer-passages",
+  "number-row-1-0": "mixed-practice",
+  "number-row-5-6": "intermediate-checkpoint",
+  "symbols-and-punctuation": "speed-endurance",
+  "typing-flow-and-cadence": "precision-under-pressure",
+  "paragraph-typing-stamina": "long-form-typing",
+  "code-syntax-and-brackets": "numbers-and-symbols-mastery",
+  "touch-typing-graduation": "final-challenge",
+};

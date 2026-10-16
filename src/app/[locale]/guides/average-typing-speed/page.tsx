@@ -9,14 +9,14 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Average Typing Speed: What Is a Good WPM?",
+  title: "Average Typing Speed: WPM Benchmarks",
   description:
-    "Average typing speed explained with honest WPM ranges by skill level and context, plus 20–120 WPM benchmarks, accuracy guidance, and a real test.",
+    "Discover average typing speed benchmarks, honest WPM ranges by skill level and profession, what counts as a good WPM, and how to measure your speed accurately.",
   path: "/guides/average-typing-speed",
 });
 
 const PUBLISHED = "2026-09-15";
-const UPDATED = "2026-10-05";
+const UPDATED = "2026-10-16";
 
 const LEVELS = [
   { label: "Beginner", range: "Under 20 WPM", note: "Still locating keys; hunt-and-peck or very early touch typing." },
@@ -188,10 +188,12 @@ export default function AverageTypingSpeedPage() {
           </tbody>
         </table>
         <p>
-          These are broad, widely-cited bands rather than results from a single controlled study
-          — typing-speed research uses inconsistent test lengths, text difficulty, and error
-          penalties, so exact figures vary by source. Use them as a rough compass, not a
-          leaderboard. Looking for specific hiring benchmarks? See{" "}
+          These figures—including the commonly cited ranges of <strong>65–75 WPM</strong> for proficient
+          touch typists and <strong>90+ WPM</strong> for advanced or competitive typists—are broad,
+          industry-observed benchmarks rather than rigid cutoffs from a single laboratory trial.
+          Real-world typing speed research uses varying test lengths, vocabulary pools, and error
+          penalties, so treat them as a practical compass rather than an absolute rule. Looking
+          for specific workplace standards? See{" "}
           <Link href="/guides/data-entry-typing-test">the data entry typing test guide</Link> or our{" "}
           <Link href="/guides/911-dispatcher-typing-test">911 dispatcher typing test guide</Link> for emergency communications standards.
         </p>
@@ -209,7 +211,7 @@ export default function AverageTypingSpeedPage() {
           {[
             ["Learning", "Under 20 WPM", "Key location and accuracy are still the main goal."],
             ["Everyday", "40–65 WPM", "A practical range for regular adult prose typing."],
-            ["Professional", "70+ WPM", "Fast sustained output, provided accuracy remains high."],
+            ["Professional", "60–90 WPM", "Cambridge typing evaluations observe that professionally trained typists typically sustain 60–90 WPM."],
           ].map(([label, range, note]) => (
             <div key={label} className="rounded-xl border border-border bg-sub-alt/20 p-4">
               <p className="font-mono text-[10px] uppercase tracking-wider text-accent">{label}</p>
@@ -221,12 +223,13 @@ export default function AverageTypingSpeedPage() {
 
         <h2 id="largest-study">What the largest typing study found</h2>
         <p>
-          In 2018, researchers from Aalto University and Cambridge published a large typing study:
-          136 million keystrokes from 168,000 volunteers typing randomized sentences online. The
-          reported average was <strong>52 WPM</strong>, and the fastest users in the study reached
-          about <strong>120 WPM</strong>. It is useful evidence, not a universal population norm:
-          participants volunteered for an online test, and the task measured transcription rather
-          than composing original prose. See the sources below for the study and methodology.
+          In 2018, researchers from Aalto University and the University of Cambridge published
+          findings from 136 million keystrokes collected from 168,000 volunteers on the
+          TypingMaster website (typingmaster.com). Typing randomized sentences in an online
+          transcription test, participants averaged approximately <strong>52 WPM</strong>. These
+          figures reflect an online volunteer sample performing transcription rather than everyday
+          composing, but they offer one of the clearest empirical snapshots of real-world typing
+          speeds available.
         </p>
 
         <h2 id="programmers">Why programmers often type &ldquo;slower&rdquo; than expected</h2>
@@ -287,10 +290,13 @@ export default function AverageTypingSpeedPage() {
 
         <h2 id="test-yourself">Test yourself</h2>
         <p>
-          Numbers on a page are easy to skim past. <Link href="/">Take a typing test</Link> under
+          Numbers on a page are easy to skim past. <Link href="/typing-test/1-minute">Take a 1-minute typing test</Link> under
           the same conditions a few times (same duration, similar text type) before comparing
           your result to any of the ranges above — a single test tells you less than a short
-          streak of them. Still building up to these ranges?{" "}
+          streak of them. You can also <Link href="/guides/wpm-cpm-kph-calculator">convert your WPM to CPM and KPH</Link> to check requirements for specific administrative roles.
+        </p>
+        <p>
+          Still building up to these ranges?{" "}
           <Link href="/lessons">Typing lessons</Link> start from the home row, and{" "}
           <Link href="/games">typing games</Link> keep practice time from feeling like a chore.
         </p>

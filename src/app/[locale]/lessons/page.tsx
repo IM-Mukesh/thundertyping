@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Award, BookOpen, Keyboard, Sparkles } from "lucide-react";
 import { LessonDashboard } from "@/components/lessons/lesson-dashboard";
 import { AdSlot } from "@/components/layout/ad-slot";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { localizedPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -11,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale,
     title: "Learn to Type — Free Touch-Typing Curriculum",
     description:
-      "Free touch-typing curriculum with 28 structured lessons across Beginner, Intermediate, and Advanced tiers. Interactive hands, visual keyboard, and real-time adaptive feedback.",
+      "Free touch-typing curriculum with 28 structured lessons across Beginner, Intermediate, and Advanced tiers. Interactive hands, keyboard, and real-time feedback.",
     path: "/lessons",
   });
 }
@@ -25,6 +26,7 @@ export default async function LessonsHubPage({ params }: { params: Promise<{ loc
     <div className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8">
       {/* Top Breadcrumb / Title Area */}
       <header className="mx-auto flex w-full max-w-6xl flex-col gap-2 pb-6">
+        <Breadcrumbs items={[{ name: "Lessons", path: "/lessons" }]} locale={locale} />
         <div className="flex items-center gap-2 font-display text-[10px] font-bold uppercase tracking-wider text-accent">
           <Sparkles size={12} aria-hidden="true" />
           Touch-Typing Academy
@@ -56,7 +58,7 @@ export default async function LessonsHubPage({ params }: { params: Promise<{ loc
               How the HeroTyping Curriculum Works
             </h2>
             <p className="text-xs sm:text-sm leading-relaxed text-sub">
-              Learning to touch-type is fundamentally about building neuromuscular automaticity. Rather than memorizing
+              Learning to touch-type is fundamentally about building finger muscle memory and automaticity. Rather than memorizing
               where keys live with your eyes, you train each finger to memorize its home-position resting anchor and
               its specific spatial reach.
             </p>

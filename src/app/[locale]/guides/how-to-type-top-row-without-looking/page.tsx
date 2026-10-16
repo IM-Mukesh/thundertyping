@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Type the Top Row Without Looking at the Keyboard",
+  title: "How to Type the Top Row Blind",
   description:
     "Master the QWERTY top row (QWERTYUIOP) without glancing at your hands. Learn upward diagonal reach vectors, finger anchoring, and muscle memory drills.",
   path: "/guides/how-to-type-top-row-without-looking",
@@ -107,7 +107,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function HowToTypeTopRowWithoutLookingPage() {
   const schema = buildArticleSchema({
@@ -253,22 +262,22 @@ export default function HowToTypeTopRowWithoutLookingPage() {
         </p>
         <ul>
           <li>
-            <Link href="/lessons/top-row-combined">Unit 7: Top Row: E &amp; I Vowels</Link> — High-frequency vowel foundation.
+            <Link href="/lessons/top-row-e-i">Unit 7: Top Row: E &amp; I Vowels</Link> — High-frequency vowel foundation.
           </li>
           <li>
-            <Link href="/lessons/top-row-words">Unit 8: Top Row: R &amp; U Index Reaches</Link> — Upward index extensions from home anchors.
+            <Link href="/lessons/top-row-r-u">Unit 8: Top Row: R &amp; U Index Reaches</Link> — Upward index extensions from home anchors.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-left">Unit 9: Top Row: T &amp; Y Upper Center</Link> — Diagonal center reaches.
+            <Link href="/lessons/top-row-t-y">Unit 9: Top Row: T &amp; Y Upper Center</Link> — Diagonal center reaches.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-right">Unit 10: Top Row: W &amp; O Ring Reaches</Link> — Ring finger extensions.
+            <Link href="/lessons/top-row-w-o">Unit 10: Top Row: W &amp; O Ring Reaches</Link> — Ring finger extensions.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-combined">Unit 11: Top Row: Q &amp; P Outer Pinkies</Link> — Outer top-deck boundaries.
+            <Link href="/lessons/top-row-q-p">Unit 11: Top Row: Q &amp; P Outer Pinkies</Link> — Outer top-deck boundaries.
           </li>
           <li>
-            <Link href="/lessons/bottom-row-words">Unit 12: Consolidation: Top &amp; Home Rows</Link> — 20 keys integrated across natural prose.
+            <Link href="/lessons/top-and-home-row-mastery">Unit 12: Consolidation: Top &amp; Home Rows</Link> — 20 keys integrated across natural prose.
           </li>
         </ul>
         <p>

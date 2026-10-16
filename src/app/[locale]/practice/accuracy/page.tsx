@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return localizedPageMetadata({
     locale,
-    title: "Typing Accuracy Practice — Drills to Reduce Mistakes",
+    title: "Typing Accuracy Practice",
     description:
       "Improve your typing accuracy with precision-focused drills on HeroTyping. Build clean finger coordination, eliminate frequent typos, and reach 98%+ accuracy.",
     path: "/practice/accuracy",

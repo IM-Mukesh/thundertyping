@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
@@ -9,14 +10,14 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Improve Typing Accuracy: A Step-by-Step System",
+  title: "How to Improve Typing Accuracy",
   description:
     "Why typing accuracy drops, a repeatable accuracy-improvement system, and practical targets by skill stage — not arbitrary universal thresholds.",
   path: "/guides/how-to-improve-typing-accuracy",
 });
 
 const PUBLISHED = "2026-09-24";
-const UPDATED = "2026-09-24";
+const UPDATED = "2026-10-16";
 
 const CAUSES = [
   {
@@ -90,6 +91,7 @@ export default function HowToImproveTypingAccuracyPage() {
       "Why typing accuracy drops, a repeatable improvement system, and practical targets by skill stage.",
     path: "/guides/how-to-improve-typing-accuracy",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -230,6 +232,20 @@ export default function HowToImproveTypingAccuracyPage() {
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+                    "href": "https://psycnet.apa.org/record/1985-06041-001"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>

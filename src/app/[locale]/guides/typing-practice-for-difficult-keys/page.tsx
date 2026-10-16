@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Practice for Difficult Keys: Awkward Reaches and Pinky Weakness",
+  title: "Practice Drills for Difficult Typing Keys",
   description:
     "Remediate the hardest keyboard reaches: Q, Z, X, P, B, and outer punctuation. Learn pinky biomechanics, anchor pivots, and targeted remedial drills.",
   path: "/guides/typing-practice-for-difficult-keys",
@@ -81,7 +81,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function TypingPracticeForDifficultKeysPage() {
   const schema = buildArticleSchema({

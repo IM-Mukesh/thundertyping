@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing Practice for Beginners: A Real Curriculum",
+  title: "Typing Practice for Beginners",
   description:
     "A structured typing practice curriculum for beginners: exercises by category, routines from 5 to 30 minutes, and what to practice at each skill stage.",
   path: "/guides/typing-practice-for-beginners",
 });
 
 const PUBLISHED = "2026-09-24";
-const UPDATED = "2026-09-24";
+const UPDATED = "2026-10-16";
 
 const ROUTINES = [
   { minutes: "5 minutes", plan: "One home-row drill, then one short accuracy-focused test. For days with no time for more." },
@@ -83,6 +84,7 @@ export default function TypingPracticeForBeginnersPage() {
       "A structured typing practice curriculum for beginners, with routines by time available and practice by skill stage.",
     path: "/guides/typing-practice-for-beginners",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -201,6 +203,20 @@ export default function TypingPracticeForBeginnersPage() {
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "Logan, G. D., & Crump, M. J. (2011) — \"Hierarchical control of cognitive processes: The case for skilled typewriting\" (Psychology of Learning and Motivation)",
+                    "href": "https://www.sciencedirect.com/science/article/pii/B9780123855275000012"
+          },
+          {
+                    "label": "Keith, J., & Cooper, W. E. (1983) — \"Cognitive Aspects of Skilled Typewriting\" (Springer-Verlag)",
+                    "href": "https://link.springer.com/book/10.1007/978-1-4612-5573-4"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>

@@ -6,13 +6,11 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export function generateStaticParams() {
-  return LESSON_LIST.map((lesson) => ({ lessonId: lesson.id }));
+  return LESSON_LIST.map((lesson) => ({ lessonId: lesson.slug }));
 }
 
 function getLesson(lessonId: string) {
-  return Object.prototype.hasOwnProperty.call(LESSON_DEFINITIONS, lessonId)
-    ? LESSON_DEFINITIONS[lessonId as LessonId]
-    : null;
+  return LESSON_LIST.find((l) => l.slug === lessonId || l.id === lessonId) || null;
 }
 
 export default async function Image({ params }: { params: Promise<{ lessonId: string }> }) {

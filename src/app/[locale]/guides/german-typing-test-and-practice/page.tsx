@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
@@ -8,7 +9,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Tipptest & Zehnfingersystem: Tippgeschwindigkeit Online Üben (QWERTZ)",
+  title: "Tipptest & 10-Finger-System Online",
   description:
     "Tipptest auf Deutsch online: Zehnfingersystem lernen, QWERTZ-Tastatur mit Umlauten (ä, ö, ü, ß), Anschläge pro Minute (APM) und DIN 2137 Prüfungsstandards.",
   path: "/guides/german-typing-test-and-practice",
@@ -256,6 +257,20 @@ export default function GermanTypingTestPage() {
         <FaqSection items={FAQ_ITEMS} />
 
         <p className="text-xs text-sub">Zuletzt aktualisiert: {UPDATED}.</p>
+      
+        <SourceList
+          sources={[
+          {
+                    "label": "Deutsches Institut für Normung (DIN 2137-1:2018-12) — \"Keyboards for administrative and data processing text input\" (DIN Standards)",
+                    "href": "https://www.din.de/"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
+        />
+
       </GuideLayout>
     </>
   );

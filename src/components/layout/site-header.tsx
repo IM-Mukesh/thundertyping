@@ -57,19 +57,20 @@ export function SiteHeader({ locale = "en" }: { locale?: string }) {
   const toggleMobileNav = useCallback(() => setMobileNavOpen((prev) => !prev), []);
   const dict = getDictionary(locale);
 
+  const homeHref = !locale || locale === "en" ? "/" : `/${locale}`;
   const localizedNav = [
-    { href: `/${locale}/lessons`, label: dict.nav.lessons, icon: GraduationCap },
-    { href: `/${locale}/games`, label: dict.nav.games, icon: Gamepad2 },
-    { href: `/${locale}/profile`, label: "Profile", icon: User }, // Note: Profile wasn't added to dict, let's keep it English for now
+    { href: "/lessons", label: dict.nav.lessons, icon: GraduationCap },
+    { href: "/games", label: dict.nav.games, icon: Gamepad2 },
+    { href: "/profile", label: "Profile", icon: User },
   ];
 
   return (
     <>
       <header className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-8 sm:py-4">
         <Link
-          href={`/${locale}`}
+          href={homeHref}
           onClick={() => {
-            if (pathname === `/${locale}` || pathname === "/") emitTestReset();
+            if (pathname === homeHref || pathname === "/") emitTestReset();
           }}
           className="flex shrink-0 items-center gap-2"
         >

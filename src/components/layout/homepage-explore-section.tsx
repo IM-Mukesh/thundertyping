@@ -2,13 +2,12 @@
 
 import { useIsTestRunning } from "@/lib/typing-engine/test-status-store";
 import { HomepageFeatureNav } from "@/components/layout/homepage-feature-nav";
+import { HomepageSeoContent } from "@/components/layout/homepage-seo-content";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * Wraps the feature navigation (Lessons, Games, Vocabulary, Guides) below the
- * typing test. The longer "Why HeroTyping?" pitch that used to live here
- * moved to /about -- it's still indexable and linked from the footer, it
- * just no longer competes with the test for space on every single visit.
+ * Wraps the feature navigation (Lessons, Games, Vocabulary, Guides) and
+ * crawlable semantic sections below the typing test.
  *
  * - While typing (isRunning): Smoothly fades to opacity-0 without collapsing
  *   height, eliminating visual distraction while guaranteeing zero layout shift.
@@ -23,11 +22,12 @@ export function HomepageExploreSection() {
       aria-hidden={isRunning || undefined}
       inert={isRunning ? true : undefined}
       className={cn(
-        "flex w-full flex-col items-center gap-3 transition-opacity duration-300 ease-in-out",
+        "flex w-full flex-col items-center gap-6 transition-opacity duration-300 ease-in-out",
         isRunning ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
       <HomepageFeatureNav />
+      <HomepageSeoContent />
     </div>
   );
 }

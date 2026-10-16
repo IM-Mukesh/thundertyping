@@ -46,7 +46,27 @@ export default function AboutPage() {
         <Link href="/privacy">Privacy Policy</Link> for details.
       </p>
 
-      <h2>Contact & Feedback</h2>
+      <h2 id="editorial-policy">Editorial Policy &amp; Sourcing Standards</h2>
+      <p>
+        HeroTyping is founded and developed by Mukesh. We believe typing instruction should be transparent,
+        evidence-based, and free of commercial exaggeration or fabricated credentials.
+      </p>
+      <ul>
+        <li>
+          <strong>Academic &amp; Telemetry Sourcing:</strong> When we cite typing speeds and distributions, we rely on large-scale keystroke research (such as the 136-million keystroke Aalto/Cambridge study by Dhakal et al., 2018) and ergonomic standards (OSHA computer workstation guidelines) rather than marketing claims.
+        </li>
+        <li>
+          <strong>Standardized Testing Standards:</strong> Hiring benchmarks for data entry and emergency services cite published exam criteria (such as CritiCall for 911 dispatchers and SSC CGL/CHSL DEST guidelines for government data entry).
+        </li>
+        <li>
+          <strong>Continuous Updates:</strong> Our guides, curricula, and calculators are actively reviewed and updated as browser APIs, typing telemetry, and exam patterns evolve. Each guide displays transparent publication and modification dates.
+        </li>
+        <li>
+          <strong>Independence:</strong> HeroTyping does not accept paid product placements or sponsored gear reviews. Hardware guides (such as keyboard switches) are written solely to help typists understand actuation force, travel distance, and fatigue.
+        </li>
+      </ul>
+
+      <h2>Contact &amp; Feedback</h2>
       <p>
         Have questions, curriculum feedback, bug reports, or classroom inquiries? You can reach the
         team directly at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.

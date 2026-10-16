@@ -7,7 +7,7 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     name: "Typing Basics",
     slug: "typing-basics",
     path: "/guides/typing-basics",
-    title: "Typing Basics — Finger Placement, Home Row & Posture",
+    title: "Typing Basics: Placement & Posture",
     description:
       "Master touch typing from the ground up: proper home row finger placement, blind typing without looking, ergonomic posture, and foundational muscle memory.",
     shortDescription: "Home row placement, blind typing technique, and ergonomic posture foundations.",
@@ -21,7 +21,7 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     name: "Typing Practice",
     slug: "typing-practice",
     path: "/guides/typing-practice",
-    title: "Typing Practice — Targeted Drills, Routines & Warmups",
+    title: "Typing Practice: Drills & Warmups",
     description:
       "Deliberate practice frameworks, physical hand warmups, classroom curricula, and structured drills designed to build automaticity without burning out.",
     shortDescription: "Daily practice routines, physical stretches, and structured drills.",
@@ -35,7 +35,7 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     name: "Improve Your Typing",
     slug: "improve-your-typing",
     path: "/guides/improve-your-typing",
-    title: "Improve Your Typing — Speed, Accuracy & Plateau Breaking",
+    title: "Improve Typing Speed & Accuracy",
     description:
       "Diagnostic speed protocols, motor learning frameworks, accuracy stabilization, and proven methods to push past performance plateaus from 40 to 100+ WPM.",
     shortDescription: "Speed progression, accuracy stabilization, and plateau diagnostics.",
@@ -49,7 +49,7 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     name: "Typing Tests & Tools",
     slug: "typing-tests-tools",
     path: "/guides/typing-tests-tools",
-    title: "Typing Tests & Tools — Metrics, Formulas & Calculators",
+    title: "Typing Tests & WPM Calculators",
     description:
       "Measurement formulas (Gross vs. Net WPM, CPM, KPH), interactive live converters, test duration science, and professional data-entry standards.",
     shortDescription: "Measurement formulas, live converters, and test duration guides.",
@@ -63,13 +63,13 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     name: "Keyboard Skills",
     slug: "keyboard-skills",
     path: "/guides/keyboard-skills",
-    title: "Keyboard Skills — Number Row, Layouts & Hardware",
+    title: "Keyboard Skills: Numbers & Layouts",
     description:
       "Advanced finger independence, mastering top-row numbers and punctuation blind, mechanical switch selection, and alternative layout comparisons.",
     shortDescription: "Blind number typing, mechanical switch selection, and layout comparisons.",
     recommendedOrderDescription:
       "Master blind top-row number reaching, compare QWERTY vs. Dvorak vs. Colemak, and optimize your mechanical switches.",
-    productRoute: "/lessons/building-speed",
+    productRoute: "/lessons/number-row-4-7",
     productLabel: "Practice Number Row",
   },
   "typing-work-study": {
@@ -77,7 +77,7 @@ export const GUIDE_CATEGORIES: Record<GuideCategory, GuideCategoryMeta> = {
     name: "Typing for Work & Study",
     slug: "typing-work-study",
     path: "/guides/typing-work-study",
-    title: "Typing for Work & Study — Coding, Dispatch, Accessibility & Careers",
+    title: "Typing for Work, Code & Study",
     description:
       "Specialized typing workflows for software engineers, 911 dispatchers (CritiCall), one-handed typists, and neurodivergent learners (dyslexia & dysgraphia).",
     shortDescription: "Coding syntax, emergency dispatch tests, and accessible typing methods.",
@@ -93,7 +93,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-touch-type",
     href: "/guides/how-to-touch-type",
-    title: "How to Touch Type",
+    title: "How to Touch Type: Step-by-Step Guide",
     description:
       "The complete finger-to-key map, home row anchor principles, a practice progression that doesn't skip steps, and a realistic timeline from zero to automaticity.",
     category: "typing-basics",
@@ -120,7 +120,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "touch-typing-finger-map",
     href: "/guides/touch-typing-finger-map",
-    title: "Touch-Typing Finger Map",
+    title: "Touch-Typing Finger Map & Chart",
     description:
       "An interactive, hover-or-tap chart of every key and the finger that owns it, plus Shift key rules, reach vectors, and the top number row.",
     category: "typing-basics",
@@ -147,7 +147,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-type-without-looking-at-the-keyboard",
     href: "/guides/how-to-type-without-looking-at-the-keyboard",
-    title: "How to Type Without Looking at the Keyboard",
+    title: "How to Type Without Looking at Keyboard",
     description:
       "A day-by-day protocol for breaking the glance habit — tactical error handling, tactile homing bump techniques, and muscle memory reinforcement.",
     category: "typing-basics",
@@ -219,7 +219,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-stretches-and-hand-warmups",
     href: "/guides/typing-stretches-and-hand-warmups",
-    title: "8 Essential Typing Stretches & Hand Warmups",
+    title: "Typing Stretches & Hand Warmups for RSI",
     description:
       "Physical therapist-recommended tendon glides, prayer stretches, and mobility exercises to relieve wrist stiffness, warm up tendons, and prevent RSI.",
     category: "typing-practice",
@@ -245,7 +245,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "english-typing-test-and-practice",
     href: "/guides/english-typing-test-and-practice",
-    title: "English Typing Test & Practice",
+    title: "English Typing Test & Practice Guide",
     description:
       "What English typing tests measure, why word frequency pools alter test scores, and how to practice natural prose, literature, and news passages.",
     category: "typing-practice",
@@ -267,7 +267,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "spanish-typing-test-and-practice",
     href: "/guides/spanish-typing-test-and-practice",
-    title: "Spanish Typing Test & Practice",
+    title: "Test de Mecanografía en Español",
     description:
       "Master touch typing in Spanish: how to type the Ñ key, handle dead-key accents (á, é, í, ó, ú), inverted punctuation (¡, ¿), and prepare for administrative civil exams.",
     category: "typing-practice",
@@ -289,7 +289,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "german-typing-test-and-practice",
     href: "/guides/german-typing-test-and-practice",
-    title: "German Typing Test & 10-Finger System",
+    title: "Tipptest & 10-Finger-System Online",
     description:
       "Learn touch typing on the German QWERTZ keyboard: home row ASDF JKLÖ, umlauts (ä, ö, ü, ß), DIN 2137 keystrokes-per-minute standards, and office exam criteria.",
     category: "typing-practice",
@@ -311,7 +311,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "portuguese-typing-test-and-practice",
     href: "/guides/portuguese-typing-test-and-practice",
-    title: "Portuguese Typing Test & Practice",
+    title: "Teste de Digitação em Português",
     description:
       "Speed typing on the Brazilian ABNT2 keyboard: home row with cedilla (ç), acute, circumflex and tilde accents, keystrokes per minute (TPM), and court exam preparation.",
     category: "typing-practice",
@@ -333,7 +333,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "hindi-typing-test-and-practice",
     href: "/guides/hindi-typing-test-and-practice",
-    title: "Hindi Typing Test & Practice",
+    title: "Hindi Typing Test: हिंदी टाइपिंग टेस्ट",
     description:
       "Complete guide to Devanagari touch typing: InScript layout rules, Kruti Dev comparisons, virama halant conjuncts, and SSC CGL DEST and CPCT exam benchmarks.",
     category: "typing-practice",
@@ -355,7 +355,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "chinese-typing-test-and-practice",
     href: "/guides/chinese-typing-test-and-practice",
-    title: "Chinese Typing Speed Test & Pinyin Practice",
+    title: "Chinese Typing Test: 中文打字测试与练习",
     description:
       "Master Chinese character typing: touch typing finger division, Quanpin vs Shuangpin comparison, Characters Per Minute (CPM / 字分) standards, and candidate bar speed tips.",
     category: "typing-practice",
@@ -377,7 +377,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-resources-for-teachers",
     href: "/guides/typing-resources-for-teachers",
-    title: "Free Typing Resources for Teachers",
+    title: "Typing Resources for Teachers",
     description:
       "A 9-stage classroom framework across 28 structured units, pacing options from bell-ringers to lab blocks, and objective formative assessment.",
     category: "typing-practice",
@@ -402,7 +402,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-improve-typing-speed",
     href: "/guides/how-to-improve-typing-speed",
-    title: "How to Improve Your Typing Speed",
+    title: "How to Improve Typing Speed",
     description:
       "A complete training system: fix accuracy first, isolate weak keys, drill letter transitions, and climb steadily from 30 WPM to 100+.",
     category: "improve-your-typing",
@@ -456,7 +456,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-accuracy",
     href: "/guides/typing-accuracy",
-    title: "Typing Accuracy: What the Percentage Means",
+    title: "Typing Accuracy Percentage Explained",
     description:
       "Understand the accuracy percentage, HeroTyping's correct/incorrect/missed formula, practical benchmark bands, and how to read speed beside quality.",
     category: "improve-your-typing",
@@ -492,7 +492,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "how-to-improve-typing-speed",
       "how-to-find-your-weakest-typing-keys",
       "qwerty-vs-dvorak-vs-colemak",
-      "fix-burst-and-stall-typing-pace-caret",
+      "how-to-improve-typing-consistency",
     ],
     relatedProductRoute: "/games",
     relatedProductLabel: "Break Plateaus with Speed Games",
@@ -506,7 +506,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "average-typing-speed",
     href: "/guides/average-typing-speed",
-    title: "Average Typing Speed: What Is a Good WPM?",
+    title: "Average Typing Speed: WPM Benchmarks",
     description:
       "Honest WPM benchmarks by skill level and context, with age and job context, accuracy caveats, and a real typing test.",
     category: "improve-your-typing",
@@ -531,7 +531,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-speed-by-age",
     href: "/guides/typing-speed-by-age",
-    title: "Typing Speed by Age: Grade-Level Benchmarks With Context",
+    title: "Average Typing Speed by Age and Grade",
     description:
       "Transparent grade-level typing guidance, accuracy expectations, and fair ways to measure progress without treating age as destiny.",
     category: "improve-your-typing",
@@ -556,7 +556,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "net-wpm-vs-gross-wpm",
     href: "/guides/net-wpm-vs-gross-wpm",
-    title: "How Is WPM Calculated?",
+    title: "How Is WPM Calculated? Net vs. Gross",
     description:
       "The exact five-character formula, Gross WPM vs. Net WPM, error penalties, and why two typing testing platforms can score the identical run differently.",
     category: "typing-tests-tools",
@@ -570,7 +570,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "average-typing-speed",
       "typing-accuracy",
       "why-wpm-is-high-accuracy-is-low",
-      "beat-your-personal-best-typing-speed",
+      "how-to-improve-typing-speed",
     ],
     relatedProductRoute: "/",
     relatedProductLabel: "Test with Standard Parity Scoring",
@@ -584,7 +584,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "wpm-cpm-kph-calculator",
     href: "/guides/wpm-cpm-kph-calculator",
-    title: "WPM, CPM & KPH Calculator",
+    title: "WPM, CPM & KPH Calculator & Formulas",
     description:
       "Interactive live conversion calculator between Words Per Minute, Characters Per Minute, and Keystrokes Per Hour — with mathematical formulas demonstrated.",
     category: "typing-tests-tools",
@@ -606,7 +606,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-test-duration-guide",
     href: "/guides/typing-test-duration-guide",
-    title: "Which Typing Test Duration Should You Use?",
+    title: "Typing Test Duration Guide",
     description:
       "How 15-second burst tests, 60-second industry standards, and 5-minute endurance exams measure completely different neurological and muscular capacities.",
     category: "typing-tests-tools",
@@ -632,7 +632,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "data-entry-typing-test",
     href: "/guides/data-entry-typing-test",
-    title: "Data Entry Typing Test",
+    title: "Data Entry Typing Test & KPH Guide",
     description:
       "What employment data entry tests evaluate, how KPH relates to Net WPM, 10-key numeric keypad benchmarks, and practical pre-interview preparation.",
     category: "typing-tests-tools",
@@ -646,7 +646,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "wpm-cpm-kph-calculator",
       "number-row-typing-practice",
     ],
-    relatedProductRoute: "/lessons/building-speed",
+    relatedProductRoute: "/lessons/number-row-4-7",
     relatedProductLabel: "Practice Number Entry Drills",
     publishedAt: "2026-09-14",
     updatedAt: "2026-09-24",
@@ -670,7 +670,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "practice-typing-numbers-and-symbols-without-looking",
       "typing-for-programmers",
     ],
-    relatedProductRoute: "/lessons/building-speed",
+    relatedProductRoute: "/lessons/number-row-4-7",
     relatedProductLabel: "Practice Number Lessons",
     heroImage: "/guides/keyboard-skills/how-to-type-numbers-and-symbols-without-looking/how-to-type-numbers-and-symbols-without-looking.webp",
     articleImages: [
@@ -736,7 +736,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-for-programmers",
     href: "/guides/typing-for-programmers",
-    title: "Typing for Programmers",
+    title: "Touch Typing for Programmers & Coders",
     description:
       "Master brackets, braces, and logic operators blind, configure Caps Lock to Ctrl/Escape, understand Vim navigation, and eliminate syntax typing friction.",
     category: "typing-work-study",
@@ -750,7 +750,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "practice-typing-numbers-and-symbols-without-looking",
       "best-keyboard-switches-for-typing",
     ],
-    relatedProductRoute: "/lessons/numbers-and-symbols-mastery",
+    relatedProductRoute: "/lessons/code-syntax-and-brackets",
     relatedProductLabel: "Drill Symbol & Syntax Mastery",
     heroImage: "/guides/typing-work-study/typing-for-programmers/typing-for-programmers.webp",
     articleImages: [
@@ -762,7 +762,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "911-dispatcher-typing-test",
     href: "/guides/911-dispatcher-typing-test",
-    title: "911 Dispatcher Typing Test & CritiCall Prep",
+    title: "911 Dispatcher Typing Test & CritiCall",
     description:
       "Passing benchmarks, audio-to-CAD transcription, alphanumeric rapid entry, and how to train for emergency communication public safety examinations.",
     category: "typing-work-study",
@@ -776,7 +776,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "average-typing-speed",
       "typing-test-duration-guide",
     ],
-    relatedProductRoute: "/lessons/precision-under-pressure",
+    relatedProductRoute: "/lessons/typing-flow-and-cadence",
     relatedProductLabel: "Practice High-Pressure Drills",
     heroImage: "/guides/typing-work-study/911-dispatcher-typing-test/911-dispatcher-typing-test.webp",
     articleImages: [
@@ -814,7 +814,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "one-handed-typing-guide",
     href: "/guides/one-handed-typing-guide",
-    title: "One-Handed Typing Guide",
+    title: "One-Handed Typing Guide & Layouts",
     description:
       "Adaptive layouts, Half-QWERTY mirror typing principles, and radial touch zones for stroke recovery, amputees, and unilateral hand injury.",
     category: "typing-work-study",
@@ -875,7 +875,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-practice-for-weak-keys",
     href: "/guides/typing-practice-for-weak-keys",
-    title: "Typing Practice for Weak Keys: How to Fix the Keys Slowing You Down",
+    title: "How to Find and Fix Weak Typing Keys",
     description:
       "How to fix identified weak keys through progressive overload: moving from isolated keys to anchor bigrams, embedded vocabulary, and full-speed prose.",
     category: "typing-practice",
@@ -906,7 +906,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "touch-typing-lesson-order",
     href: "/guides/touch-typing-lesson-order",
-    title: "Touch Typing Lesson Order: What to Learn First and Next",
+    title: "Touch Typing Lesson Order & Sequence",
     description:
       "The biomechanical and cognitive rationale behind keyboard curriculum sequencing: why home-row anchors precede vertical reaches, and when to introduce numbers.",
     category: "typing-basics",
@@ -937,7 +937,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "touch-typing-roadmap-for-beginners",
     href: "/guides/touch-typing-roadmap-for-beginners",
-    title: "A Complete Touch-Typing Roadmap for Beginners",
+    title: "Touch-Typing Roadmap for Beginners",
     description:
       "A complete milestone journey from zero touch-typing experience to 60+ WPM: weekly training schedules, cognitive plateaus, and measuring real progress.",
     category: "typing-basics",
@@ -968,7 +968,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "home-row-typing-practice",
     href: "/guides/home-row-typing-practice",
-    title: "Home Row Typing Practice: ASDF JKL; Exercises for Beginners",
+    title: "Home Row Typing Practice & ASDF Drills",
     description:
       "Master the foundation of touch typing: tactile F/J nubs, resting hand position, finger independence drills, and transitioning from letters to real words.",
     category: "typing-basics",
@@ -982,7 +982,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "how-to-type-without-looking-at-the-keyboard",
       "bottom-row-typing-practice",
     ],
-    relatedProductRoute: "/lessons/home-row-left",
+    relatedProductRoute: "/lessons/home-row-f-j",
     relatedProductLabel: "Practice Home Row Lesson 1",
     heroImage: "/guides/typing-basics/home-row-typing-practice/home-row-asdf-jkl-guide.webp",
 
@@ -999,7 +999,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-type-top-row-without-looking",
     href: "/guides/how-to-type-top-row-without-looking",
-    title: "How to Type the Top Row Without Looking at the Keyboard",
+    title: "How to Type the Top Row Blind",
     description:
       "Reach mechanics for QWERTYUIOP: upward diagonal vectors, keeping home-row anchors steady, avoiding wrist lifting, and common top-row error traps.",
     category: "keyboard-skills",
@@ -1013,7 +1013,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "number-row-typing-practice",
       "touch-typing-finger-map",
     ],
-    relatedProductRoute: "/lessons/top-row-combined",
+    relatedProductRoute: "/lessons/top-row-e-i",
     relatedProductLabel: "Drill Top-Row Lessons",
     heroImage: "/guides/keyboard-skills/how-to-type-top-row-without-looking/top-row-reach-vectors.webp",
 
@@ -1030,7 +1030,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "bottom-row-typing-practice",
     href: "/guides/bottom-row-typing-practice",
-    title: "Bottom Row Typing Practice: Z X C V B N M",
+    title: "Bottom Row Typing Practice (ZXCVBNM)",
     description:
       "Overcoming the hardest row: finger flexion curls, wrist clearance, the B and N reach divide, and building automaticity for bottom-row letter combinations.",
     category: "keyboard-skills",
@@ -1044,7 +1044,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "home-row-typing-practice",
       "touch-typing-finger-map",
     ],
-    relatedProductRoute: "/lessons/numbers-low",
+    relatedProductRoute: "/lessons/bottom-row-v-m",
     relatedProductLabel: "Drill Bottom-Row Lessons",
     heroImage: "/guides/keyboard-skills/bottom-row-typing-practice/bottom-row-flexion-mechanics.webp",
 
@@ -1061,7 +1061,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "number-row-typing-practice",
     href: "/guides/number-row-typing-practice",
-    title: "Number Row Typing Practice: Learn 1–0 Without Looking",
+    title: "Number Row Typing Practice (1–0)",
     description:
       "Conquer the top number row (1–0) without looking down: two-row reach distance, anchor fingers, digit splits between 5 and 6, and real-world number drills.",
     category: "keyboard-skills",
@@ -1075,7 +1075,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "how-to-type-top-row-without-looking",
       "data-entry-typing-test",
     ],
-    relatedProductRoute: "/lessons/building-speed",
+    relatedProductRoute: "/lessons/number-row-4-7",
     relatedProductLabel: "Practice Number Row Lessons",
     heroImage: "/guides/keyboard-skills/number-row-typing-practice/number-row-reaches-guide.webp",
 
@@ -1092,7 +1092,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "punctuation-typing-practice",
     href: "/guides/punctuation-typing-practice",
-    title: "Punctuation Typing Practice: A Complete Guide for Beginners",
+    title: "Punctuation Typing Practice & Drills",
     description:
       "Master sentence punctuation without losing speed: opposite-hand Shift synchronization, semicolon home positioning, apostrophes, quotation marks, and commas.",
     category: "keyboard-skills",
@@ -1106,7 +1106,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "practice-typing-numbers-and-symbols-without-looking",
       "custom-text-typing-test",
     ],
-    relatedProductRoute: "/lessons/everyday-sentences",
+    relatedProductRoute: "/lessons/shift-key-capitalization",
     relatedProductLabel: "Practice Shift & Punctuation",
     heroImage: "/guides/keyboard-skills/punctuation-typing-practice/punctuation-shift-coordination.webp",
 
@@ -1123,7 +1123,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-use-typing-test-results-to-improve",
     href: "/guides/how-to-use-typing-test-results-to-improve",
-    title: "How to Use Your Typing Test Results to Improve",
+    title: "How to Use Typing Test Results to Improve",
     description:
       "Convert raw WPM and accuracy numbers into actionable training data: the 4-step diagnostic loop, spotting speed-accuracy trade-offs, and choosing drills.",
     category: "typing-tests-tools",
@@ -1154,7 +1154,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "why-wpm-is-high-accuracy-is-low",
     href: "/guides/why-wpm-is-high-accuracy-is-low",
-    title: "Why Your WPM Is High but Your Accuracy Is Low",
+    title: "Why WPM Is High but Accuracy Is Low",
     description:
       "Why raw speed and accuracy can diverge, how corrections affect a test, and practical ways to adjust your pace without a universal accuracy cutoff.",
     category: "improve-your-typing",
@@ -1185,7 +1185,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-improve-typing-consistency",
     href: "/guides/how-to-improve-typing-consistency",
-    title: "How to Improve Typing Consistency, Not Just Peak WPM",
+    title: "How to Improve Typing Consistency",
     description:
       "Why burst-and-stall typing yields lower net output than steady pacing: inter-key interval variance, look-ahead buffering, and developing a metronomic rhythm.",
     category: "improve-your-typing",
@@ -1198,7 +1198,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "how-to-improve-typing-speed",
       "why-wpm-is-high-accuracy-is-low",
       "how-to-use-typing-test-results-to-improve",
-      "fix-burst-and-stall-typing-pace-caret",
+      "typing-accuracy",
     ],
     relatedProductRoute: "/",
     relatedProductLabel: "Measure Consistency in Test",
@@ -1217,7 +1217,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "improve-typing-speed-with-ghost-caret",
     href: "/guides/improve-typing-speed-with-ghost-caret",
-    title: "Improve Your Typing Speed With a Ghost Caret",
+    title: "Improve Typing Speed With a Ghost Caret",
     description:
       "What a pace caret (ghost caret) is, how it's different from your real cursor, and how to use it on a free typing speed test to improve faster than practicing blind.",
     category: "improve-your-typing",
@@ -1227,8 +1227,8 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     featured: true,
     recommendedSequenceOrder: 8,
     relatedGuides: [
-      "beat-your-personal-best-typing-speed",
-      "fix-burst-and-stall-typing-pace-caret",
+      "how-to-improve-typing-speed",
+      "how-to-improve-typing-consistency",
       "how-to-set-a-typing-speed-goal",
     ],
     relatedProductRoute: "/",
@@ -1240,59 +1240,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     updatedAt: "2026-10-02",
   },
   {
-    slug: "beat-your-personal-best-typing-speed",
-    href: "/guides/beat-your-personal-best-typing-speed",
-    title: "Beat Your Personal Best Typing Speed",
-    description:
-      "How to actually beat your typing speed PB instead of hoping it happens: a step-by-step method using HeroTyping's pace caret to race your own best score.",
-    category: "improve-your-typing",
-    primaryTopic: "Personal Best Training",
-    intent: "practical",
-    readingTimeMinutes: 6,
-    featured: false,
-    recommendedSequenceOrder: 9,
-    relatedGuides: [
-      "improve-typing-speed-with-ghost-caret",
-      "net-wpm-vs-gross-wpm",
-      "how-to-set-a-typing-speed-goal",
-    ],
-    relatedProductRoute: "/",
-    relatedProductLabel: "Race Your Personal Best",
-    heroImage: "/guides/improve-your-typing/beat-your-personal-best-typing-speed/race-your-pb-hero.webp",
-    articleImages: ["/guides/improve-your-typing/beat-your-personal-best-typing-speed/race-your-pb-hero.webp"],
-    expectedHeroImage: "/guides/improve-your-typing/beat-your-personal-best-typing-speed/race-your-pb-hero.webp",
-    publishedAt: "2026-10-02",
-    updatedAt: "2026-10-02",
-  },
-  {
-    slug: "fix-burst-and-stall-typing-pace-caret",
-    href: "/guides/fix-burst-and-stall-typing-pace-caret",
-    title: "Why Your Typing Speed Stalls (and How to Fix It)",
-    description:
-      "Stuck at the same WPM for weeks? Burst-and-stall typing is usually the cause. Here's the math behind why it plateaus speed, and a pace-caret routine that fixes it.",
-    category: "improve-your-typing",
-    primaryTopic: "Pacing-Driven Plateau Fix",
-    intent: "practical",
-    readingTimeMinutes: 7,
-    featured: false,
-    recommendedSequenceOrder: 10,
-    relatedGuides: [
-      "how-to-break-a-typing-speed-plateau",
-      "how-to-improve-typing-consistency",
-      "improve-typing-speed-with-ghost-caret",
-    ],
-    relatedProductRoute: "/",
-    relatedProductLabel: "Practice With a Pace Target",
-    heroImage: "/guides/improve-your-typing/fix-burst-and-stall-typing-pace-caret/burst-and-stall-waveform.webp",
-    articleImages: ["/guides/improve-your-typing/fix-burst-and-stall-typing-pace-caret/burst-and-stall-waveform.webp"],
-    expectedHeroImage: "/guides/improve-your-typing/fix-burst-and-stall-typing-pace-caret/burst-and-stall-waveform.webp",
-    publishedAt: "2026-10-02",
-    updatedAt: "2026-10-02",
-  },
-  {
     slug: "how-to-set-a-typing-speed-goal",
     href: "/guides/how-to-set-a-typing-speed-goal",
-    title: "How to Set a Typing Speed Goal",
+    title: "How to Set a Realistic Typing Speed Goal",
     description:
       "Have a target WPM in mind but no plan for reaching it? Here's how to turn a typing speed goal into a staged training routine using HeroTyping's custom pace caret.",
     category: "improve-your-typing",
@@ -1303,8 +1253,8 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     recommendedSequenceOrder: 11,
     relatedGuides: [
       "average-typing-speed",
-      "beat-your-personal-best-typing-speed",
-      "fix-burst-and-stall-typing-pace-caret",
+      "how-to-improve-typing-speed",
+      "how-to-improve-typing-consistency",
     ],
     relatedProductRoute: "/",
     relatedProductLabel: "Set a Custom Pace Target",
@@ -1315,34 +1265,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
     updatedAt: "2026-10-02",
   },
   {
-    slug: "typing-test-vs-typing-race",
-    href: "/guides/typing-test-vs-typing-race",
-    title: "Typing Test vs. Typing Race",
-    description:
-      "Multiplayer typing races, plain timed tests, and pace-caret practice compared honestly -- what each is actually good for, and which builds real typing speed fastest.",
-    category: "improve-your-typing",
-    primaryTopic: "Practice Method Comparison",
-    intent: "informational",
-    readingTimeMinutes: 7,
-    featured: false,
-    recommendedSequenceOrder: 12,
-    relatedGuides: [
-      "improve-typing-speed-with-ghost-caret",
-      "fix-burst-and-stall-typing-pace-caret",
-      "typing-games-vs-typing-tests",
-    ],
-    relatedProductRoute: "/",
-    relatedProductLabel: "Try HeroTyping Free",
-    heroImage: "/guides/improve-your-typing/typing-test-vs-typing-race/three-practice-methods-hero.webp",
-    articleImages: ["/guides/improve-your-typing/typing-test-vs-typing-race/three-practice-methods-hero.webp"],
-    expectedHeroImage: "/guides/improve-your-typing/typing-test-vs-typing-race/three-practice-methods-hero.webp",
-    publishedAt: "2026-10-02",
-    updatedAt: "2026-10-02",
-  },
-  {
     slug: "how-many-minutes-a-day-to-practice-typing",
     href: "/guides/how-many-minutes-a-day-to-practice-typing",
-    title: "How Many Minutes a Day Should You Practice Typing?",
+    title: "How Many Minutes a Day to Practice Typing",
     description:
       "The motor learning science of practice duration: why 15 minutes of daily distributed training outperforms weekend marathon cramming by over 200%.",
     category: "typing-practice",
@@ -1373,7 +1298,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "how-to-structure-typing-practice-session",
     href: "/guides/how-to-structure-typing-practice-session",
-    title: "How to Structure a Typing Practice Session",
+    title: "How to Structure Typing Practice",
     description:
       "A 4-phase training architecture for typing sessions: physical tendon warmup, precision anchoring, targeted weak-key remediation, and timed benchmark testing.",
     category: "typing-practice",
@@ -1404,7 +1329,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "custom-text-typing-test",
     href: "/guides/custom-text-typing-test",
-    title: "Custom Text Typing Test: Practice With Your Own Text",
+    title: "How to Practice Typing With Your Own Text",
     description:
       "How to train on domain-specific vocabulary: pasting coding files, legal briefs, medical terminology, and speech transcripts into custom typing practice.",
     category: "typing-tests-tools",
@@ -1435,7 +1360,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-test-vs-typing-practice",
     href: "/guides/typing-test-vs-typing-practice",
-    title: "Typing Test vs Typing Practice: What's the Difference?",
+    title: "Typing Test vs. Typing Practice",
     description:
       "Why repeatedly taking tests is not practicing: understanding evaluation versus skill acquisition, avoiding test burnout, and the 80/20 training rule.",
     category: "typing-practice",
@@ -1466,7 +1391,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-games-vs-typing-tests",
     href: "/guides/typing-games-vs-typing-tests",
-    title: "Typing Games vs Typing Tests: Which Should You Use?",
+    title: "Typing Games vs. Typing Tests",
     description:
       "The role of arcade typing in building reflexes: stress inoculation, reaction velocity, maintaining combos under pressure, and when to use formal tests.",
     category: "typing-practice",
@@ -1479,7 +1404,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "typing-test-vs-typing-practice",
       "vocabulary-typing-practice",
       "typing-test-duration-guide",
-      "typing-test-vs-typing-race",
+      "typing-practice-for-beginners",
     ],
     relatedProductRoute: "/games",
     relatedProductLabel: `Explore ${GAME_LIST.length} Arcade Typing Games`,
@@ -1498,7 +1423,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "vocabulary-typing-practice",
     href: "/guides/vocabulary-typing-practice",
-    title: "Vocabulary Typing Practice: Learn Words While You Type",
+    title: "Vocabulary Typing Practice & Tests",
     description:
       "Dual-benefit practice: how typing literature and vocabulary with definitions and speech pronunciation builds orthographic spelling automaticity.",
     category: "typing-practice",
@@ -1529,7 +1454,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "practice-typing-numbers-and-symbols-without-looking",
     href: "/guides/practice-typing-numbers-and-symbols-without-looking",
-    title: "How to Practice Typing Numbers and Symbols Without Looking",
+    title: "Practice Typing Numbers & Symbols Blind",
     description:
       "Master real-world alphanumeric sequences: currency figures, dates, formulas, and code syntax without glancing down, using dual Shift keys and anchor fingers.",
     category: "keyboard-skills",
@@ -1543,7 +1468,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
       "punctuation-typing-practice",
       "number-row-typing-practice",
     ],
-    relatedProductRoute: "/lessons/numbers-and-symbols-mastery",
+    relatedProductRoute: "/lessons/code-syntax-and-brackets",
     relatedProductLabel: "Master Number & Symbol Drills",
     heroImage: "/guides/keyboard-skills/practice-typing-numbers-and-symbols-without-looking/mixed-numeric-symbol-patterns.webp",
 
@@ -1560,7 +1485,7 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "typing-practice-for-difficult-keys",
     href: "/guides/typing-practice-for-difficult-keys",
-    title: "Typing Practice for Difficult Keyboard Keys and Finger Reaches",
+    title: "Practice Drills for Difficult Typing Keys",
     description:
       "Biomechanical remediation for awkward keys: Q, Z, X, P, semicolon, and brackets — pinky independence, avoiding wrist twist, and targeted transition drills.",
     category: "keyboard-skills",

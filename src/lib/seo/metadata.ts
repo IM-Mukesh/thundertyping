@@ -25,18 +25,22 @@ export function localizedPageMetadata({
   description,
   path,
   robots,
+  image,
 }: {
   locale?: string;
   title: string;
   description: string;
   path: string;
   robots?: Metadata["robots"];
+  image?: string;
 }): Metadata {
   const isLocalized = path === "" || path === "/" || path === "/games/type-before-death";
   const canonicalPath = !locale || locale === "en" || !isLocalized ? (path === "" ? "/" : path) : `/${locale}${path}`;
   const effectiveRobots = IS_PREVIEW
     ? { index: false, follow: false }
     : robots;
+
+  const ogImageUrl = image || "/opengraph-image";
 
   return {
     title,
@@ -46,12 +50,12 @@ export function localizedPageMetadata({
       title,
       description,
       url: canonicalPath,
-      images: [{ url: "/opengraph-image" }],
+      images: [{ url: ogImageUrl }],
     },
     twitter: {
       title,
       description,
-      images: ["/opengraph-image"],
+      images: [ogImageUrl],
     },
     ...(effectiveRobots ? { robots: effectiveRobots } : {}),
   };
@@ -72,16 +76,19 @@ export function pageMetadata({
   description,
   path,
   robots,
+  image,
 }: {
   title: string;
   description: string;
   path: string;
   robots?: Metadata["robots"];
+  image?: string;
 }): Metadata {
   return localizedPageMetadata({
     title,
     description,
     path,
     robots,
+    image,
   });
 }

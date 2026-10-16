@@ -49,7 +49,7 @@ describe("getTodaysTraining", () => {
     const actions = getTodaysTraining(baseInput());
     const lessonAction = actions.find((a) => a.type === "continue-lesson");
     assert.ok(lessonAction);
-    assert.equal(lessonAction!.href, `/lessons/${LESSON_LIST[0].id}`);
+    assert.equal(lessonAction!.href, `/lessons/${LESSON_LIST[0].slug}`);
   });
 
   it("a weak key with enough data is recommended first", () => {
@@ -78,7 +78,7 @@ describe("getTodaysTraining", () => {
     };
     const actions = getTodaysTraining(baseInput({ units }));
     const lessonAction = actions.find((a) => a.type === "continue-lesson");
-    assert.equal(lessonAction!.href, `/lessons/${LESSON_LIST[0].id}`);
+    assert.equal(lessonAction!.href, `/lessons/${LESSON_LIST[0].slug}`);
     assert.equal(lessonAction!.label, "Continue lesson");
   });
 
@@ -96,7 +96,7 @@ describe("getTodaysTraining", () => {
     };
     const actions = getTodaysTraining(baseInput({ units }));
     const lessonAction = actions.find((a) => a.type === "continue-lesson");
-    assert.equal(lessonAction!.href, `/lessons/${LESSON_LIST[1].id}`);
+    assert.equal(lessonAction!.href, `/lessons/${LESSON_LIST[1].slug}`);
   });
 
   it("recommends vocabulary review when a tier isn't fully mastered", () => {

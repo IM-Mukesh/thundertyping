@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "8 Essential Typing Stretches & Hand Warmups for RSI & Wrist Pain",
+  title: "Typing Stretches & Hand Warmups for RSI",
   description:
     "Gentle typing warmups and tendon glides to help relieve wrist stiffness, support hand mobility, and encourage comfortable, relaxed typing.",
   path: "/guides/typing-stretches-and-hand-warmups",
@@ -80,7 +80,7 @@ const STRETCHES = [
 const ROUTINE_COMPARISON = [
   {
     phase: "Pre-Typing Warmup (3 Mins)",
-    purpose: "Raise tissue temperature, lubricate joints, wake neuromuscular pathways",
+    purpose: "Raise tissue temperature, lubricate joints, warm up finger tendons and motor reflexes",
     exercises: "Active Finger Splay, Gentle Wrist Circles, Dynamic Tendon Glides (Moves 3 & 7)",
     tempo: "Continuous, rhythmic motion without static holds",
   },

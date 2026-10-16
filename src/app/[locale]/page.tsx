@@ -3,17 +3,36 @@ import { TypingTestClient } from "@/components/typing-test/typing-test-client";
 import { PageIntro } from "@/components/layout/page-intro";
 import { AdRail } from "@/components/layout/ad-rail";
 import { HomepageExploreSection } from "@/components/layout/homepage-explore-section";
-import { buildWebApplicationSchema } from "@/lib/seo/json-ld";
-import { SITE_URL } from "@/lib/seo/constants";
+import { buildWebApplicationSchema, buildFaqSchema } from "@/lib/seo/json-ld";
+import { HOMEPAGE_FAQ_ITEMS } from "@/components/layout/homepage-seo-content";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo/constants";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getBundledTypingContent } from "@/lib/typing-engine/typing-content";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
+  const dict = getDictionary(locale);
   const canonicalUrl = locale === "en" ? SITE_URL : `${SITE_URL}/${locale}`;
+  const title = `${SITE_NAME} — ${dict.home.title}`;
   return {
+    title,
+    description: SITE_DESCRIPTION,
     alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description: SITE_DESCRIPTION,
+      url: canonicalUrl,
+      siteName: SITE_NAME,
+      type: "website",
+      images: [{ url: "/opengraph-image" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: SITE_DESCRIPTION,
+      images: ["/opengraph-image"],
+    },
   };
 }
 
@@ -25,6 +44,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     name: dict.home.title,
     description: dict.home.subtitle,
   });
+  const faqSchema = buildFaqSchema(HOMEPAGE_FAQ_ITEMS);
 
   const localizedContent = getBundledTypingContent(locale);
 
@@ -46,6 +66,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
       <div className="flex w-full flex-col items-center">

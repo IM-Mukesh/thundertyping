@@ -22,6 +22,7 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { useLessonProgressStore } from "@/lib/lessons/lesson-progress-store";
+import { LESSON_SLUG_MAP } from "@/lib/lessons/lesson-types";
 import { cn } from "@/lib/utils/cn";
 
 interface LessonPlacementModalProps {
@@ -357,7 +358,7 @@ function PlacementOptionCard({
 }) {
   return (
     <Link
-      href={`/lessons/${option.lessonId}`}
+      href={`/lessons/${LESSON_SLUG_MAP[option.lessonId] || option.lessonId}`}
       onClick={() => {
         useLessonProgressStore.getState().unlockUpToLesson(option.lessonId);
         onSelect();

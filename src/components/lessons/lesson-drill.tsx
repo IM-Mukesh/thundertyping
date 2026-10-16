@@ -249,7 +249,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       setAttempt((a) => a + 1);
       setResult(null);
     } else if (nextUnit) {
-      router.push(`/lessons/${nextUnit.id}`);
+      router.push(`/lessons/${nextUnit.slug || nextUnit.id}`);
     } else {
       router.push("/lessons");
     }
@@ -292,7 +292,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
         <div className="flex flex-col gap-3 sm:flex-row pt-2">
           {previousUnit && (
             <Link
-              href={`/lessons/${previousUnit.id}`}
+              href={`/lessons/${previousUnit.slug || previousUnit.id}`}
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-6 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-md"
             >
               Go to {previousUnit.name}

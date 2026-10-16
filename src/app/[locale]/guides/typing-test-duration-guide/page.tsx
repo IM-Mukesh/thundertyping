@@ -2,20 +2,21 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Which Typing Test Duration Should You Use? (15s–10min Compared)",
+  title: "Typing Test Duration Guide",
   description:
-    "How 15-second, 30-second, 1-, 2-, 5-, and 10-minute typing tests differ, and which one actually fits your goal — practice, measurement, or exam prep.",
+    "How 15-second, 30-second, 1-, 2-, 5-, and 10-minute typing tests differ, and which duration fits daily practice, speed measurement, or exam prep.",
   path: "/guides/typing-test-duration-guide",
 });
 
 const PUBLISHED = "2026-09-24";
-const UPDATED = "2026-09-24";
+const UPDATED = "2026-10-16";
 
 const DURATIONS = [
   {
@@ -88,6 +89,7 @@ export default function TypingTestDurationGuidePage() {
       "How different typing test durations differ, and which one fits your goal.",
     path: "/guides/typing-test-duration-guide",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -200,6 +202,20 @@ export default function TypingTestDurationGuidePage() {
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          },
+          {
+                    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Fatigue curves in transcription typing)",
+                    "href": "https://psycnet.apa.org/record/1985-06041-001"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>

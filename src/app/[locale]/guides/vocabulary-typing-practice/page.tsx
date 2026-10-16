@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Vocabulary Typing Practice: Learn New Words and Build Speed Simultaneously",
+  title: "Vocabulary Typing Practice & Tests",
   description:
     "Combine touch typing practice with English vocabulary expansion. Explore orthographic mapping, pronunciation audio, and HeroTyping's 1,300-word vocabulary engine.",
   path: "/guides/vocabulary-typing-practice",
@@ -69,7 +69,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function VocabularyTypingPracticePage() {
   const schema = buildArticleSchema({

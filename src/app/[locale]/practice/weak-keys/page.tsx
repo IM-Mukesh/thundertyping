@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return localizedPageMetadata({
     locale,
-    title: "Weak Keys Typing Practice — Targeted Keyboard Drills",
+    title: "Weak Keys Typing Practice",
     description:
       "Target your most error-prone keyboard keys with adaptive typing drills on HeroTyping. Isolate difficult finger reaches and rebuild muscle memory with real-time feedback.",
     path: "/practice/weak-keys",

@@ -9,7 +9,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Free Typing Resources for Teachers: Classroom Curriculum & Lesson Plans",
+  title: "Typing Resources for Teachers",
   description:
     "A free, no-signup touch-typing curriculum for educators: a 9-phase pedagogical progression across 28 units, classroom routines, star-based feedback, and honest benchmarks.",
   path: "/guides/typing-resources-for-teachers",

@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Practice Typing With Your Own Text & Code: Custom Test Guide",
+  title: "How to Practice Typing With Your Own Text",
   description:
     "Learn how to practice typing your own custom text, code snippets, legal briefs, and study material. Formatting tips, workflow advice, and tool setup.",
   path: "/guides/custom-text-typing-test",
@@ -43,10 +43,18 @@ const USE_CASE_BENCHMARKS = [
 const FAQ_ITEMS = [
   {
     question: "How do I load my own text into HeroTyping?",
-    answer:
-      "Visit the dedicated Custom Text Typing Test (/typing-test/custom-text) or click 'Custom' on the homepage toolbar. A modal window will appear. Paste or type your desired text (up to 2,000 characters) into the box and click 'Apply Text'. The speed test will immediately load your custom content with live WPM and accuracy tracking.",
+    answer: (
+      <>
+        Visit the dedicated{" "}
+        <Link href="/typing-test/custom-text">Custom Text Typing Test</Link> or
+        click &ldquo;Custom&rdquo; on the homepage toolbar. A modal window will
+        appear. Paste or type your desired text (up to 2,000 characters) into the
+        box and click &ldquo;Apply Text&rdquo;. The speed test will immediately
+        load your custom content with live WPM and accuracy tracking.
+      </>
+    ),
     plainAnswer:
-      "Open the Custom Text Typing Test (/typing-test/custom-text) or click 'Custom' on the homepage toolbar, paste your text (up to 2,000 characters), and click 'Apply Text'.",
+      "Open the Custom Text Typing Test on HeroTyping or click 'Custom' on the homepage toolbar, paste your text (up to 2,000 characters), and click 'Apply Text'.",
   },
   {
     question: "Does HeroTyping calculate Net WPM and accuracy accurately for custom text?",
@@ -71,7 +79,16 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function CustomTextTypingTestPage() {
   const schema = buildArticleSchema({

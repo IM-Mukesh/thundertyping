@@ -10,7 +10,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "WPM, CPM & KPH Calculator (With Formulas Explained)",
+  title: "WPM, CPM & KPH Calculator & Formulas",
   description:
     "Calculate WPM, CPM and KPH from a typing test, or convert freely between all three. Every formula shown, worked examples included, no sign-up.",
   path: "/guides/wpm-cpm-kph-calculator",
@@ -260,11 +260,15 @@ export default function WpmCpmKphCalculatorPage() {
 
         <SourceList
           sources={[
-            {
-              label: "Words per minute — Wikipedia (standardized 5-character word convention)",
-              href: "https://en.wikipedia.org/wiki/Words_per_minute",
-            },
-          ]}
+          {
+                    "label": "International Typewriting Contest Rules — \"Standard Word Length Formula (5 keystrokes = 1 standard word)\"",
+                    "href": "https://www.intersteno.org/"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
         />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>

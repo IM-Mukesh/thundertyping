@@ -23,14 +23,29 @@ export interface GameComponentProps {
   art?: Record<string, string | null>;
 }
 
+function GameSkeleton() {
+  return (
+    <div
+      role="region"
+      aria-label="Typing game arena"
+      className="flex h-[480px] w-full max-w-3xl flex-col items-center justify-center rounded-2xl border border-accent/20 bg-sub-alt/10 p-8"
+    >
+      <div className="w-full max-w-lg space-y-4 animate-pulse">
+        <div className="flex justify-between items-center">
+          <div className="h-4 w-24 rounded bg-sub-alt/40" />
+          <div className="h-4 w-16 rounded bg-sub-alt/40" />
+        </div>
+        <div className="h-48 w-full rounded-2xl bg-sub-alt/25 border border-border/40" />
+        <div className="h-10 w-full rounded-xl bg-sub-alt/30" />
+      </div>
+    </div>
+  );
+}
+
 function lazyGame(load: () => Promise<{ default: ComponentType<GameComponentProps> }>) {
   return dynamic(load, {
     ssr: false,
-    loading: () => (
-      <div className="flex h-[480px] w-full max-w-3xl items-center justify-center text-sub">
-        Loading game…
-      </div>
-    ),
+    loading: () => <GameSkeleton />,
   });
 }
 

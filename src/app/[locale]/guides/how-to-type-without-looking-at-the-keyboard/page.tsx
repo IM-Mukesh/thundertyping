@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Type Without Looking at the Keyboard (Day-by-Day Plan)",
+  title: "How to Type Without Looking at Keyboard",
   description:
     "A concrete, day-by-day plan for breaking the habit of looking down while typing — exactly what to practice each day, not just \"practice more.\"",
   path: "/guides/how-to-type-without-looking-at-the-keyboard",
@@ -193,6 +194,20 @@ export default function HowToTypeWithoutLookingPage() {
         </p>
 
         <FaqSection items={FAQ_ITEMS} />
+
+        
+        <SourceList
+          sources={[
+          {
+                    "label": "Logan, G. D., & Crump, M. J. (2011) — \"Hierarchical control of cognitive processes: The case for skilled typewriting\" (Psychology of Learning and Motivation, 54, 1–27)",
+                    "href": "https://www.sciencedirect.com/science/article/pii/B9780123855275000012"
+          },
+          {
+                    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin)",
+                    "href": "https://psycnet.apa.org/record/1985-06041-001"
+          }
+]}
+        />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>
       </GuideLayout>

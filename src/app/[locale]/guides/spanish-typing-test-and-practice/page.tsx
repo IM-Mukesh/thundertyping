@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
@@ -8,7 +9,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Test de Mecanografía y Práctica en Teclado Español: Guía de Velocidad y Acentos",
+  title: "Test de Mecanografía en Español",
   description:
     "Aprende mecanografía en español: domina la tecla Ñ, acentos con teclas muertas, signos invertidos (¡, ¿), cálculo de palabras por minuto (PPM) y preparación para oposiciones.",
   path: "/guides/spanish-typing-test-and-practice",
@@ -265,6 +266,20 @@ export default function SpanishTypingTestPage() {
         <FaqSection items={FAQ_ITEMS} />
 
         <p className="text-xs text-sub">Última actualización: {UPDATED}.</p>
+      
+        <SourceList
+          sources={[
+          {
+                    "label": "Asociación Española de Normalización (UNE 157001) — \"Disposición de teclados en español para tecnologías de la información\"",
+                    "href": "https://www.une.org/"
+          },
+          {
+                    "label": "Real Academia Española (RAE) — \"Frecuencia léxica del español en el Corpus de Referencia del Español Actual (CREA)\"",
+                    "href": "https://www.rae.es/recursos/banco-de-datos/crea"
+          }
+]}
+        />
+
       </GuideLayout>
     </>
   );

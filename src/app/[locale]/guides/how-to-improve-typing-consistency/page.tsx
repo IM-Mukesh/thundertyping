@@ -9,7 +9,7 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How to Improve Typing Consistency: Eliminating Burst-and-Stall Patterns",
+  title: "How to Improve Typing Consistency",
   description:
     "Learn how to measure and improve typing consistency. Discover the look-ahead buffer, metronome cadence drills, and how to eliminate burst-and-stall variance.",
   path: "/guides/how-to-improve-typing-consistency",
@@ -73,9 +73,25 @@ const FAQ_ITEMS = [
     plainAnswer:
       "Yes. Instrumental music with a steady, rhythmic beat (around 100 to 130 BPM) helps entrain your motor system into a uniform typing cadence.",
   },
+  {
+    question: "What percentage below my average should I set the pace caret to?",
+    answer:
+      "Setting the pace caret 5% to 10% below your current average speed is optimal. This provides enough breathing room to type completely continuously without freezing on difficult words.",
+    plainAnswer:
+      "Set the pace caret 5% to 10% below your current average to eliminate dead stops before gradually raising the speed.",
+  },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function HowToImproveTypingConsistencyPage() {
   const schema = buildArticleSchema({
@@ -104,6 +120,7 @@ export default function HowToImproveTypingConsistencyPage() {
           { id: "consistency-tiers-table", label: "The consistency benchmarks" },
           { id: "the-look-ahead-buffer", label: "The visual look-ahead buffer" },
           { id: "metronome-training", label: "Cadence and metronome drills" },
+          { id: "pace-caret-routine", label: "The pace caret routine" },
         ]}
         hasFaq
         hasSources
@@ -277,6 +294,42 @@ export default function HowToImproveTypingConsistencyPage() {
         <p>
           This drill strips away the instinct to sprint and locks in a steady, hypnotic cadence that easily breaks
           speed plateaus.
+        </p>
+
+        <h2 id="pace-caret-routine">The Pace Caret Routine: Target Under Your Average</h2>
+        <p>
+          The most effective way to eliminate burst-and-stall variance is counterintuitive: set a
+          pace caret <strong>5% to 10% below your current average speed</strong>, rather than above it.
+        </p>
+        <p>
+          The objective of this routine is not to set a speed record—it is to eliminate every
+          dead stop. By setting the target slightly below your typical pace, your mental focus
+          shifts from &ldquo;type as fast as possible&rdquo; to &ldquo;never let the ghost catch
+          me.&rdquo; This creates a relaxed, continuous motor flow where you never freeze.
+        </p>
+        <ol>
+          <li>
+            <strong>Find your average:</strong> Take a standard 60-second test on HeroTyping with
+            the pace caret disabled to establish your true baseline net WPM.
+          </li>
+          <li>
+            <strong>Set a custom ghost target:</strong> In Test Settings, select <strong>Custom
+            WPM</strong> and configure it 5% to 10% below your baseline.
+          </li>
+          <li>
+            <strong>Run daily cadence sessions:</strong> Practice 10 minutes daily at this steady
+            target. Focus purely on uninterrupted flow. If you never pause, your hands will easily
+            stay ahead of the ghost without any frantic sprinting.
+          </li>
+          <li>
+            <strong>Raise the threshold gradually:</strong> Once you complete three consecutive
+            sessions where the ghost never catches you, raise the target by 2–3 WPM.
+          </li>
+        </ol>
+        <p>
+          When following this routine, monitor your consistency percentage before your WPM. Your
+          consistency score will climb first—often reaching 85%+ within a week—and higher net WPM
+          will follow naturally once non-stop cadence becomes second nature.
         </p>
 
         <FaqSection items={FAQ_ITEMS} />

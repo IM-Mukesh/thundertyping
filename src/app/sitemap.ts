@@ -18,8 +18,11 @@ export interface SitemapRouteEntry {
 // crawl. Bump a route's date only when you actually change that page.
 export function getSitemapRoutes(): SitemapRouteEntry[] {
   return [
-    { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-09-26" },
+    { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-10-16" },
     { path: "/typing-test/1-minute", priority: 0.9, changeFrequency: "daily", lastModified: "2026-10-07" },
+    { path: "/typing-test/30-seconds", priority: 0.85, changeFrequency: "daily", lastModified: "2026-10-16" },
+    { path: "/typing-test/3-minute", priority: 0.85, changeFrequency: "daily", lastModified: "2026-10-16" },
+    { path: "/typing-test/5-minute", priority: 0.85, changeFrequency: "daily", lastModified: "2026-10-16" },
     { path: "/typing-test/custom-text", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-07" },
     { path: "/practice/weak-keys", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-07" },
     { path: "/practice/accuracy", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-07" },
@@ -37,13 +40,13 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/how-to-improve-typing-speed",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/average-typing-speed",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-10-05",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/typing-speed-by-age",
@@ -55,7 +58,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/how-to-touch-type",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/net-wpm-vs-gross-wpm",
@@ -73,13 +76,13 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/typing-practice-for-beginners",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/how-to-improve-typing-accuracy",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/typing-accuracy",
@@ -127,13 +130,13 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/typing-test-duration-guide",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/data-entry-typing-test",
       priority: 0.6,
       changeFrequency: "monthly",
-      lastModified: "2026-09-24",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/wpm-cpm-kph-calculator",
@@ -145,7 +148,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/touch-typing-finger-map",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-25",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/typing-resources-for-teachers",
@@ -157,7 +160,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/proper-typing-posture-and-ergonomics",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-26",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/typing-stretches-and-hand-warmups",
@@ -175,7 +178,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/qwerty-vs-dvorak-vs-colemak",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-26",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/best-keyboard-switches-for-typing",
@@ -187,13 +190,13 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/911-dispatcher-typing-test",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-26",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-26",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/typing-for-programmers",
@@ -211,7 +214,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/how-to-type-numbers-and-symbols-without-looking",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-26",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/how-to-find-your-weakest-typing-keys",
@@ -241,7 +244,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/home-row-typing-practice",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-27",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/how-to-type-top-row-without-looking",
@@ -253,7 +256,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/bottom-row-typing-practice",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-27",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/number-row-typing-practice",
@@ -265,7 +268,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/punctuation-typing-practice",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-27",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/how-to-use-typing-test-results-to-improve",
@@ -292,25 +295,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       lastModified: "2026-10-02",
     },
     {
-      path: "/guides/beat-your-personal-best-typing-speed",
-      priority: 0.7,
-      changeFrequency: "monthly",
-      lastModified: "2026-10-02",
-    },
-    {
-      path: "/guides/fix-burst-and-stall-typing-pace-caret",
-      priority: 0.7,
-      changeFrequency: "monthly",
-      lastModified: "2026-10-02",
-    },
-    {
       path: "/guides/how-to-set-a-typing-speed-goal",
-      priority: 0.7,
-      changeFrequency: "monthly",
-      lastModified: "2026-10-02",
-    },
-    {
-      path: "/guides/typing-test-vs-typing-race",
       priority: 0.7,
       changeFrequency: "monthly",
       lastModified: "2026-10-02",
@@ -331,7 +316,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       path: "/guides/custom-text-typing-test",
       priority: 0.7,
       changeFrequency: "monthly",
-      lastModified: "2026-09-27",
+      lastModified: "2026-10-16",
     },
     {
       path: "/guides/typing-test-vs-typing-practice",
@@ -363,7 +348,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       changeFrequency: "monthly",
       lastModified: "2026-09-27",
     },
-    { path: "/games", priority: 0.8, changeFrequency: "daily", lastModified: "2026-09-26" },
+    { path: "/games", priority: 0.8, changeFrequency: "daily", lastModified: "2026-10-16" },
     // Truthful last modified dates for playable games determined from git commit history.
     // Replaces the prior stale blanket 2026-09-15 placeholder.
     ...PLAYABLE_GAME_LIST.map((game) => {
@@ -385,8 +370,8 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
         lastModified: gameLastModifiedMap[game.id] ?? "2026-10-04",
       };
     }),
-    { path: "/lessons", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-09-22" },
-    { path: "/lessons/practice", priority: 0.4, changeFrequency: "monthly", lastModified: "2026-09-24" },
+    { path: "/lessons", priority: 0.8, changeFrequency: "monthly", lastModified: "2026-10-16" },
+    { path: "/lessons/practice", priority: 0.4, changeFrequency: "monthly", lastModified: "2026-10-16" },
     // Generated rather than hand-listed -- LESSON_LIST is the single source of
     // truth for the curriculum, so this can never drift the way the
     // hand-maintained games list once did. If an individual lesson's content
@@ -394,7 +379,7 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
     // so its own date can move independently, instead of bumping this whole
     // block.
     ...LESSON_LIST.map((lesson) => ({
-      path: `/lessons/${lesson.id}`,
+      path: `/lessons/${lesson.slug}`,
       priority: 0.6,
       changeFrequency: "monthly" as const,
       lastModified: "2026-09-22",
@@ -406,7 +391,6 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
       changeFrequency: "monthly" as const,
       lastModified: "2026-09-23",
     })),
-    { path: "/achievements", priority: 0.5, changeFrequency: "monthly", lastModified: "2026-09-24" },
   ];
 }
 

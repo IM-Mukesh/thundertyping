@@ -10,7 +10,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "How Is WPM Calculated? Formula, Net vs. Gross, Worked Examples",
+  title: "How Is WPM Calculated? Net vs. Gross",
   description:
     "The exact WPM formula, worked examples for 30-second, 1-, 2-, and 5-minute tests, and why two typing sites can score the identical run differently.",
   path: "/guides/net-wpm-vs-gross-wpm",
@@ -252,11 +252,15 @@ export default function NetVsGrossWpmPage() {
 
         <SourceList
           sources={[
-            {
-              label: "Typing.com — How WPM and accuracy are calculated",
-              href: "https://support.typing.com/en/articles/9048321",
-            },
-          ]}
+          {
+                    "label": "National Business Education Association (NBEA) — \"Typewriting and Keyboard Grading Standards and Net Speed Computation Rules\"",
+                    "href": "https://nbea.org/"
+          },
+          {
+                    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+                    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+          }
+]}
         />
 
         <p className="text-xs text-sub">Last updated {UPDATED}.</p>

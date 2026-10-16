@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GuideLayout } from "@/components/content/guide-layout";
+import { SourceList } from "@/components/content/source-list";
 import { Callout } from "@/components/content/callout";
 import { FaqSection } from "@/components/content/faq-section";
 import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "中文打字速度测试与拼音盲打练习指南 (CPM 字/分)",
+  title: "Chinese Typing Test: 中文打字测试与练习",
   description:
     "全面解析中文打字测速：拼音输入法盲打标准指法、全拼与双拼对比、每分钟字数标准（CPM 字/分）、候选词提速技巧与办公室文员考试要求。",
   path: "/guides/chinese-typing-test-and-practice",
@@ -101,6 +102,9 @@ export default function ChineseTypingTestPage() {
           { id: "candidate-tips", label: "选词与上屏提速技巧" },
           { id: "speed-standards", label: "打字速度分级标准" },
           { id: "practice-articles", label: "分级实战练习文本" },
+          { id: "ime-mechanics", label: "IME 架构与候选词机制" },
+          { id: "input-methods-comparison", label: "全拼/双拼/五笔方案对比" },
+          { id: "fullwidth-punctuation", label: "全角标点符号输入规范" },
           { id: "online-test", label: "如何在 HeroTyping 测速" },
         ]}
         hasFaq
@@ -253,6 +257,129 @@ export default function ChineseTypingTestPage() {
           ))}
         </div>
 
+        <h2 id="ime-mechanics">Input Method Editor (IME) 架构与候选词机制</h2>
+        <p>
+          在中文打字中，按键输入并不直接对应屏幕文字，而是通过输入法引擎（Input Method Editor，简称 IME）进行转换。这一过程包含三个阶段：
+        </p>
+        <ul className="list-disc space-y-2 pl-5 text-foreground/90">
+          <li>
+            <strong>字母缓冲捕获 (Composition Buffer):</strong> 当您敲击字母如 <code>z-h-o-n-g</code> 时，键盘事件首先被 IME 拦截并保存在预编辑缓冲区中，屏幕上显示带下划线的拼音字母。在此阶段，打字软件不应将未完成的拼音误判为拼写错误。
+          </li>
+          <li>
+            <strong>词频模型预测 (Candidate Generation):</strong> 现代输入法内置庞大的 n-gram 语言模型与云端词库，根据上下文语境动态推导最可能的汉字或词组，并将其置于候选栏第一位（首选词）。
+          </li>
+          <li>
+            <strong>上屏确认提交 (Commit Session):</strong> 敲击空格键或标点符号时，选定的汉字字符被正式提交给操作系统，并触发 <code>compositionend</code> 事件。只有此时，打字测速引擎才会精确比对 Unicode 汉字字符与目标段落的吻合度。
+          </li>
+        </ul>
+
+        <h2 id="input-methods-comparison">全拼、双拼与五笔字型方案深度对比</h2>
+        <p>
+          选择适合自己的输入法方案是突破中文打字速度上限的关键。以下是三大主流中文录入方案的综合对比：
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse border border-border">
+            <thead>
+              <tr className="bg-sub-alt/40 border-b border-border">
+                <th className="p-3 font-semibold text-foreground">输入法类型</th>
+                <th className="p-3 font-semibold text-foreground">平均击键/字</th>
+                <th className="p-3 font-semibold text-foreground">学习难度</th>
+                <th className="p-3 font-semibold text-foreground">极限速度潜力</th>
+                <th className="p-3 font-semibold text-foreground">最适应用人群</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y border-border text-xs">
+              <tr className="hover:bg-sub-alt/20">
+                <td className="p-3 font-medium text-foreground">全拼 (Quanpin)</td>
+                <td className="p-3 text-foreground/85">3.2 – 4.5 键</td>
+                <td className="p-3 text-emerald-400">极低 (掌握拼音即用)</td>
+                <td className="p-3 text-foreground/85">80 – 110 字/分</td>
+                <td className="p-3 text-foreground/85">日常办公、聊天、学生与入门者</td>
+              </tr>
+              <tr className="hover:bg-sub-alt/20">
+                <td className="p-3 font-medium text-foreground">双拼 (Shuangpin)</td>
+                <td className="p-3 text-foreground/85">固定 2.0 键</td>
+                <td className="p-3 text-amber-400">中等 (需记忆键位图 3–5 天)</td>
+                <td className="p-3 text-emerald-400">120 – 160+ 字/分</td>
+                <td className="p-3 text-foreground/85">程序员、文案策划、追求高效率白领</td>
+              </tr>
+              <tr className="hover:bg-sub-alt/20">
+                <td className="p-3 font-medium text-foreground">五笔字型 (Wubi)</td>
+                <td className="p-3 text-foreground/85">1.8 – 2.5 键 (无重码)</td>
+                <td className="p-3 text-rose-400">极高 (需熟背字根表与拆字规则)</td>
+                <td className="p-3 text-emerald-400">140 – 180+ 字/分</td>
+                <td className="p-3 text-foreground/85">专业速记员、法院文书、档案录入人员</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="fullwidth-punctuation">全角标点符号输入规范与指法技巧</h2>
+        <p>
+          中文排版采用“全角字符”，即标点符号占用一个完整汉字宽度。在专业文员打字评测中，标点符号录入错误或混用半角英文标点属于严重扣分项。以下为核心符号键位映射：
+        </p>
+        <ul className="list-disc space-y-2 pl-5 text-foreground/90">
+          <li>
+            <strong>顿号（、）：</strong> 按键盘回车键上方的反斜杠键 <code>\</code>。左手小指或右手小指迅速点击，无需按 Shift。
+          </li>
+          <li>
+            <strong>书名号（《 》）：</strong> 左手小指按住左 Shift，右手无名指与中指分别点击 <code>&lt;</code> (逗号键) 与 <code>&gt;</code> (句号键)。
+          </li>
+          <li>
+            <strong>省略号（……）：</strong> 左手小指按住 Shift，右手食指向上伸展敲击主键盘数字键 <code>6</code>（即 <code>Shift + 6</code>），输入法会自动转换为标准六点省略号。
+          </li>
+          <li>
+            <strong>破折号（——）：</strong> 按住 Shift 并点击减号键 <code>-</code>（即 <code>Shift + -</code>），连续输入两次即可生成标准中文双字宽破折号。
+          </li>
+        </ul>
+
+        <h2 id="hsk-and-international-standards">HSK 国际中文能力与国际汉字录入测评标准</h2>
+        <p>
+          对于学习中文作为第二语言（Chinese as a Second Language, CSL）的学习者与国际从业者，中文打字是 HSK 考试机考与商务汉语应用的重要基本功：
+        </p>
+        <ul className="list-disc space-y-2 pl-5 text-foreground/90">
+          <li>
+            <strong>HSK 3–4 级机考要求 (HSK 3–4 Computer-Based Test):</strong> 建议录入速度达到 25–40 CPM (Characters Per Minute)，能够准确拼写 600–1200 个常用核心词汇，正确使用全角逗号与句号。
+          </li>
+          <li>
+            <strong>HSK 5–6 级与商务汉语 (Advanced Business Chinese):</strong> 建议录入速度稳定在 50–70 CPM 以上，能够连词成句快速输入学术论文论点、商务合同与电子邮件，正确率维持在 96% 以上。
+          </li>
+          <li>
+            <strong>跨国企业双语工作流 (Bilingual Workflow in Global Tech):</strong> 在使用 Slack、Notion、GitHub 等现代协同工具时，掌握中英文无缝切换热键（如单击 <code>Shift</code> 或 <code>Caps Lock</code> 切换中英文模式）可大幅避免输入法死锁与标点格式错乱。
+          </li>
+        </ul>
+
+        <h2 id="ime-ecosystem">主流输入法引擎选择与优化配置建议</h2>
+        <p>
+          现代电脑与移动端有数款成熟优秀的输入法可供选择：
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-xl border border-border bg-sub-alt/20">
+            <h3 className="text-sm font-semibold text-foreground">微软拼音 (Microsoft Pinyin)</h3>
+            <p className="mt-1 text-xs text-sub leading-relaxed">
+              Windows 10/11 原生内置，极简无广告弹窗，资源占用极低。支持动态长句预测、U 模式笔画输入（遇生僻字可按 u + 笔画）与 V 模式计算器。
+            </p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-sub-alt/20">
+            <h3 className="text-sm font-semibold text-foreground">搜狗拼音 / 百度输入法 (Sogou / Baidu)</h3>
+            <p className="mt-1 text-xs text-sub leading-relaxed">
+              行业最大的互联网云词库，热词与网络新词同步最快。适合自媒体创作者与高频流行语交流，建议在设置中关闭联想广告推荐以保持纯净。
+            </p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-sub-alt/20">
+            <h3 className="text-sm font-semibold text-foreground">Rime 中州韵输入法引擎 (Rime Input Engine)</h3>
+            <p className="mt-1 text-xs text-sub leading-relaxed">
+              开源、隐私保护最强、极客与程序员首选。支持纯本地配置、小鹤双拼、地球拼音（带声调）与自定义词库，完全不上传任何键盘输入数据。
+            </p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-sub-alt/20">
+            <h3 className="text-sm font-semibold text-foreground">macOS 原生简体拼音 (Apple Native Pinyin)</h3>
+            <p className="mt-1 text-xs text-sub leading-relaxed">
+              系统深度集成，支持触控板手写轨迹与多设备 iCloud 词库同步。在 Safari 与原生应用中反应极其平滑，排版字符兼容性极佳。
+            </p>
+          </div>
+        </div>
+
         <h2 id="online-test">如何在 HeroTyping 上进行中文打字测速</h2>
         <p>
           HeroTyping 提供专业纯净的中文打字练习环境：
@@ -279,6 +406,20 @@ export default function ChineseTypingTestPage() {
         <FaqSection items={FAQ_ITEMS} />
 
         <p className="text-xs text-sub">最后更新时间：{UPDATED}。</p>
+      
+        <SourceList
+          sources={[
+          {
+                    "label": "National Standard of the People's Republic of China (GB/T 18030-2022) — \"Information technology — Chinese coded character set\"",
+                    "href": "https://openstd.samr.gov.cn/"
+          },
+          {
+                    "label": "Ministry of Education of the People's Republic of China / State Language Commission — \"General Standard Chinese Character Table\"",
+                    "href": "http://www.moe.gov.cn/"
+          }
+]}
+        />
+
       </GuideLayout>
     </>
   );

@@ -9,13 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Home Row Typing Practice: ASDF JKL; Exercises for Beginners",
+  title: "Home Row Typing Practice & ASDF Drills",
   description:
     "Master the home row keys with ASDF and JKL; finger placement drills. Learn tactile anchoring, thumb spacebar mechanics, and micro-movement exercises.",
   path: "/guides/home-row-typing-practice",
 });
 
 const PUBLISHED = "2026-09-27";
+const UPDATED = "2026-10-16";
 
 const FINGER_ASSIGNMENTS = [
   {
@@ -99,15 +100,25 @@ const FAQ_ITEMS = [
   },
 ];
 
-const SOURCES: never[] = [];
+const SOURCES = [
+  {
+    "label": "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
+    "href": "https://userinterfaces.aalto.fi/136Mkeystrokes/"
+  },
+  {
+    "label": "Salthouse, T. A. (1984) — \"Perceptual, cognitive, and motoric aspects of transcription typing\" (Psychological Bulletin, 96(3), 345–371)",
+    "href": "https://psycnet.apa.org/record/1985-06041-001"
+  }
+];
 
 export default function HomeRowTypingPracticePage() {
   const schema = buildArticleSchema({
-    headline: "Home Row Typing Practice: ASDF JKL; Exercises for Beginners",
+    headline: "Home Row Typing Practice: ASDF JKL; Drills for Beginners",
     description:
       "Master the home row keys with ASDF and JKL; finger placement drills. Learn tactile anchoring, thumb spacebar mechanics, and micro-movement exercises.",
     path: "/guides/home-row-typing-practice",
     datePublished: PUBLISHED,
+    dateModified: UPDATED,
   });
 
   return (
@@ -257,7 +268,7 @@ export default function HomeRowTypingPracticePage() {
 
         <p>
           Once you feel comfortable with hand anchoring, jump into the interactive lesson engine: start with{" "}
-          <Link href="/lessons/home-row-left">Unit 1: Home Row: F &amp; J Anchors</Link> and progress through Units 2 to 5
+          <Link href="/lessons/home-row-f-j">Unit 1: Home Row: F &amp; J Anchors</Link> and progress through Units 2 to 5
           and the Unit 6 Consolidation in <Link href="/lessons">HeroTyping Lessons</Link>, or expand your finger reaches
           with our guides on <Link href="/guides/how-to-type-top-row-without-looking">top row reaches</Link> and{" "}
           <Link href="/guides/bottom-row-typing-practice">bottom row typing practice</Link>.

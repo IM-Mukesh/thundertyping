@@ -90,7 +90,7 @@ function findLessonAction(units: LessonProgressState["units"]): TrainingAction |
     label: isResume ? "Continue lesson" : "Start next lesson",
     detail: target.name,
     estimatedMinutes: estimateMinutes(target.content.wordCount),
-    href: `/lessons/${target.id}`,
+    href: `/lessons/${target.slug || target.id}`,
   };
 }
 

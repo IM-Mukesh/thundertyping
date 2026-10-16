@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Clock, Sparkles } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import type { BreadcrumbItem } from "@/lib/seo/json-ld";
 import { getGuideBySlug, getRelatedGuides, getCategoryMeta } from "@/lib/guides/guide-registry";
+import { AuthorBox } from "./author-box";
 
 export interface TocItem {
   id: string;
@@ -95,6 +96,11 @@ export function GuideLayout({
         >
           {children}
         </div>
+
+        <AuthorBox
+          publishedDate={currentGuide?.publishedAt}
+          lastUpdated={currentGuide?.updatedAt}
+        />
 
         {/* Practice / Interactive Tool CTA */}
         {currentGuide && (

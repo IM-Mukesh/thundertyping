@@ -29,7 +29,7 @@ describe("product-led SEO landing pages", () => {
     {
       route: "/typing-test/custom-text",
       file: "src/app/[locale]/typing-test/custom-text/page.tsx",
-      expectedTitle: "Custom Text Typing Test — Practice Typing Your Own Text",
+      expectedTitle: "Custom Text Typing Test",
       expectedH1: "Custom Text Typing Test",
       expectedCanonical: "/typing-test/custom-text",
       expectedPriority: 0.8,
@@ -47,7 +47,7 @@ describe("product-led SEO landing pages", () => {
     {
       route: "/practice/weak-keys",
       file: "src/app/[locale]/practice/weak-keys/page.tsx",
-      expectedTitle: "Weak Keys Typing Practice — Targeted Keyboard Drills",
+      expectedTitle: "Weak Keys Typing Practice",
       expectedH1: "Weak Keys Typing Practice",
       expectedCanonical: "/practice/weak-keys",
       expectedPriority: 0.8,
@@ -66,7 +66,7 @@ describe("product-led SEO landing pages", () => {
     {
       route: "/practice/accuracy",
       file: "src/app/[locale]/practice/accuracy/page.tsx",
-      expectedTitle: "Typing Accuracy Practice — Drills to Reduce Mistakes",
+      expectedTitle: "Typing Accuracy Practice",
       expectedH1: "Typing Accuracy Practice",
       expectedCanonical: "/practice/accuracy",
       expectedPriority: 0.8,

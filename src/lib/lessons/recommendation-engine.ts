@@ -109,7 +109,7 @@ export function generateRecommendations(context: RecommendationContext): Persona
       detail: isResume ? `Resume at Step ${stepNumber} of ${targetUnit.subLessonCount}` : targetUnit.instructions[0],
       rationale: `Advance your structured touch typing track in the ${targetUnit.tier.toUpperCase()} tier.`,
       estimatedMinutes: computePacedMinutes(targetUnit.content.wordCount * 1.5, userWpm),
-      href: `/lessons/${targetUnit.id}`,
+      href: `/lessons/${targetUnit.slug || targetUnit.id}`,
       badge: isResume ? "In Progress" : "Next Up",
     });
   }
@@ -133,7 +133,7 @@ export function generateRecommendations(context: RecommendationContext): Persona
       detail: "Refresh motor pathways on previously mastered keys",
       rationale: `It has been over 7 days since you completed ${reviewTarget.name}. A quick review preserves automaticity.`,
       estimatedMinutes: 2,
-      href: `/lessons/${reviewTarget.id}`,
+      href: `/lessons/${reviewTarget.slug || reviewTarget.id}`,
       badge: "Memory Refresh",
     });
   }

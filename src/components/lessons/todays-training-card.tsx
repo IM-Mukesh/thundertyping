@@ -106,7 +106,7 @@ export function TodaysTrainingCard() {
         </div>
 
         <Link
-          href={`/lessons/${LESSON_LIST[0].id}`}
+          href={`/lessons/${LESSON_LIST[0].slug}`}
           className="flex h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-sm"
         >
           Start first lesson

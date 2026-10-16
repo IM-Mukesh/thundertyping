@@ -39,9 +39,9 @@ describe("Guide Content Architecture & Registry", () => {
     }
   });
 
-  it("registers exactly 55 unique, valid guides", () => {
+  it("registers exactly 52 unique, valid guides", () => {
     const guides = getAllGuides();
-    assert.equal(guides.length, 55);
+    assert.equal(guides.length, 52);
 
     const slugSet = new Set<string>();
     for (const guide of guides) {
@@ -218,7 +218,11 @@ describe("Guide Content Architecture & Registry", () => {
 
   describe("F19: Guide-to-Lesson Semantic Handoffs", () => {
     it("verifies all guide lesson links reference valid lesson IDs in LESSON_LIST", () => {
-      const validLessonIds = new Set<string>(LESSON_LIST.map((l) => l.id));
+      const validLessonIds = new Set<string>();
+      for (const l of LESSON_LIST) {
+        validLessonIds.add(l.id);
+        validLessonIds.add(l.slug);
+      }
       validLessonIds.add("practice"); // /lessons/practice is the Practice Lab
       const guidesDir = path.resolve(process.cwd(), "src/app/[locale]/guides");
       const guideFiles = fs
@@ -241,7 +245,11 @@ describe("Guide Content Architecture & Registry", () => {
     });
 
     it("verifies semantic invariant: Guide CTA Intent == Destination Lesson Meaning == Generated Exercise Meaning", () => {
-      const lessonMap = new Map<string, (typeof LESSON_LIST)[number]>(LESSON_LIST.map((l) => [l.id, l]));
+      const lessonMap = new Map<string, (typeof LESSON_LIST)[number]>();
+      for (const l of LESSON_LIST) {
+        lessonMap.set(l.id, l);
+        lessonMap.set(l.slug, l);
+      }
 
       interface SemanticMappingRule {
         guideFile: string;
@@ -409,13 +417,13 @@ describe("Guide Content Architecture & Registry", () => {
         const guideText = fs.readFileSync(fullPath, "utf8");
 
         for (const link of rule.links) {
-          assert.ok(
-            guideText.includes(`/lessons/${link.lessonId}`),
-            `Guide ${rule.guideFile} expected to link to /lessons/${link.lessonId}`,
-          );
-
           const unit = lessonMap.get(link.lessonId);
           assert.ok(unit, `Lesson ${link.lessonId} not found in LESSON_LIST`);
+
+          assert.ok(
+            guideText.includes(`/lessons/${link.lessonId}`) || guideText.includes(`/lessons/${unit.slug}`),
+            `Guide ${rule.guideFile} expected to link to /lessons/${unit.slug}`,
+          );
 
           assert.equal(
             unit.stage,
@@ -446,7 +454,11 @@ describe("Guide Content Architecture & Registry", () => {
     });
 
     it("verifies all GUIDE_REGISTRY relatedProductRoute handoffs match destination lesson semantics", () => {
-      const lessonMap = new Map<string, (typeof LESSON_LIST)[number]>(LESSON_LIST.map((l) => [l.id, l]));
+      const lessonMap = new Map<string, (typeof LESSON_LIST)[number]>();
+      for (const l of LESSON_LIST) {
+        lessonMap.set(l.id, l);
+        lessonMap.set(l.slug, l);
+      }
 
       for (const guide of GUIDE_REGISTRY) {
         if (!guide.relatedProductRoute || !guide.relatedProductRoute.startsWith("/lessons/")) {
@@ -483,10 +495,10 @@ describe("Guide Content Architecture & Registry", () => {
   });
 
   describe("F24: Catalog and Registry Integrity", () => {
-    it("verifies catalog counts match authoritative registries (9 games, 28 lessons, 55 guides)", () => {
+    it("verifies catalog counts match authoritative registries (9 games, 28 lessons, 52 guides)", () => {
       assert.equal(PLAYABLE_GAME_LIST.length, 9, "Expected exactly 9 playable games");
       assert.equal(LESSON_LIST.length, 28, "Expected exactly 28 curriculum units");
-      assert.equal(GUIDE_REGISTRY.length, 55, "Expected exactly 55 registered guides");
+      assert.equal(GUIDE_REGISTRY.length, 52, "Expected exactly 52 registered guides");
 
       const readmePath = path.resolve(process.cwd(), "README.md");
       const readmeContent = fs.readFileSync(readmePath, "utf8");
@@ -499,8 +511,8 @@ describe("Guide Content Architecture & Registry", () => {
         "README.md must reflect 28 lessons",
       );
       assert.ok(
-        readmeContent.includes("55 research-backed guides"),
-        "README.md must reflect 55 guides",
+        readmeContent.includes("52 research-backed guides"),
+        "README.md must reflect 52 guides",
       );
     });
   });
@@ -557,7 +569,7 @@ describe("Guide Content Architecture & Registry", () => {
         }
       }
 
-      assert.equal(objects.length, 55, "Expected structural parser to extract exactly 55 guide objects");
+      assert.equal(objects.length, 52, "Expected structural parser to extract exactly 52 guide objects");
     });
   });
 });
