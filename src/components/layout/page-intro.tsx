@@ -36,18 +36,12 @@ export function PageIntro({ dict }: { dict: { title: string; subtitle: string; g
         hidden ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
-        {/* Hidden on phones, not deleted.
-            A phone screen is mostly keyboard once typing starts, and this
-            block pushed the words down into what little was left. But the h1
-            is the page's main ranking signal and organic search is the point
-            of the site, so it stays in the HTML and stays available to screen
-            readers -- `sr-only` costs no layout space, while `display: none`
-            would cost the SEO. It returns as a normal heading from sm: up. */}
-        <div className="sr-only flex flex-col items-center gap-3 text-center sm:not-sr-only">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        {/* Visible on mobile and desktop while idle; fades away cleanly when typing starts */}
+        <div className="flex flex-col items-center gap-1.5 text-center sm:gap-3">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {dict.title}
           </h1>
-          <p className="text-sm text-sub sm:text-base">
+          <p className="text-xs text-sub sm:text-base">
             {dict.subtitle}{" "}
             {isGuest && `${dict.guestNote} `}
             <Link

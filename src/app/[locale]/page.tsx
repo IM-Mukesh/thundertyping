@@ -14,13 +14,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const dict = getDictionary(locale);
   const canonicalUrl = locale === "en" ? SITE_URL : `${SITE_URL}/${locale}`;
-  const title = `${SITE_NAME} — ${dict.home.title}`;
+  const homeTitle =
+    locale === "en"
+      ? `Free Typing Speed Test & Practice Online | ${SITE_NAME}`
+      : `${dict.home.title} | ${SITE_NAME}`;
   return {
-    title,
+    title: { absolute: homeTitle },
     description: SITE_DESCRIPTION,
     alternates: { canonical: canonicalUrl },
     openGraph: {
-      title,
+      title: homeTitle,
       description: SITE_DESCRIPTION,
       url: canonicalUrl,
       siteName: SITE_NAME,
@@ -29,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: homeTitle,
       description: SITE_DESCRIPTION,
       images: ["/opengraph-image"],
     },
