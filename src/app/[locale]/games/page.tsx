@@ -58,6 +58,7 @@ export default async function GamesHubPage({ params }: { params: Promise<{ local
               alt=""
               fill
               priority
+              fetchPriority="high"
               sizes="100vw"
               // Decorative: 70% opacity under two gradient overlays, so the
               // artefacts are invisible and this stops being the heaviest
@@ -103,7 +104,7 @@ export default async function GamesHubPage({ params }: { params: Promise<{ local
           </span>
 
           <h1 className="max-w-3xl font-display text-3xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-            A universe of
+            A universe of{" "}
             <br />
             <span className="text-accent text-glow">typing games</span>
           </h1>

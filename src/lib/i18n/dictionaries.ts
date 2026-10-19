@@ -12,6 +12,7 @@ export const uiDictionaries = {
     home: {
       title: "Free Online Typing Speed Test",
       subtitle: "Measure your words per minute and accuracy.",
+      description: "Test and improve your typing speed with free 1-minute to 5-minute WPM tests, structured touch-typing lessons, and arcade games. No sign-up required.",
       guestNote: "No sign-up required.",
       wantToTypeFaster: "Want to type faster?",
     },
@@ -50,6 +51,7 @@ export const uiDictionaries = {
     home: {
       title: "Prueba de Velocidad de Escritura Gratis",
       subtitle: "Mide tus palabras por minuto y precisión.",
+      description: "Pon a prueba y mejora tu velocidad de mecanografía con tests de PPM gratis de 1 a 5 minutos, lecciones guiadas y juegos arcade. Sin registro previo.",
       guestNote: "No es necesario registrarse.",
       wantToTypeFaster: "¿Quieres escribir más rápido?",
     },
@@ -88,6 +90,7 @@ export const uiDictionaries = {
     home: {
       title: "Teste de Velocidade de Digitação Grátis",
       subtitle: "Meça suas palavras por minuto e precisão.",
+      description: "Teste e melhore sua velocidade de digitação com testes gratuitos de 1 a 5 minutos, lições estruturadas e jogos arcade. Sem necessidade de cadastro.",
       guestNote: "Não é necessário cadastro.",
       wantToTypeFaster: "Quer digitar mais rápido?",
     },
@@ -126,6 +129,7 @@ export const uiDictionaries = {
     home: {
       title: "Kostenloser Online-Tipptest",
       subtitle: "Messen Sie Ihre Wörter pro Minute und Genauigkeit.",
+      description: "Testen und verbessern Sie Ihre Tippgeschwindigkeit mit kostenlosen 1- bis 5-Minuten-WPM-Tests, strukturierten Lektionen und Arcade-Spielen. Ohne Anmeldung.",
       guestNote: "Keine Anmeldung erforderlich.",
       wantToTypeFaster: "Möchten Sie schneller tippen?",
     },

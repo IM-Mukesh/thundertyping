@@ -1,10 +1,22 @@
 "use client";
 
-/** The race owns timing/results; the chase-camera scene is presentation only. */
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { GameComponentProps } from "@/components/games/game-client";
-import { GhostRacerScene } from "@/components/games/racer/ghost-racer-scene";
 import { GhostRaceInterface, type GhostRacePhase as Phase, type GhostRaceResult } from "@/components/games/racer/ghost-race-interface";
+
+const GhostRacerScene = dynamic(
+  () => import("@/components/games/racer/ghost-racer-scene").then((m) => m.GhostRacerScene),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden="true"
+        className="pointer-events-none h-full w-full overflow-hidden bg-[#080d20]"
+      />
+    ),
+  },
+);
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { useRacerMotion } from "@/lib/games/racer/use-racer-motion";
 import { sound } from "@/lib/audio/game-sounds";
@@ -103,7 +115,6 @@ function GhostRace({ ownerId }: GameComponentProps & { ownerId: string | null })
   }, [ownerId, textKey, text.length]);
 
   useEffect(() => {
-    preload([MUSIC.menu, MUSIC.race]);
     return () => stopMusic();
   }, []);
 
@@ -250,6 +261,7 @@ function GhostRace({ ownerId }: GameComponentProps & { ownerId: string | null })
     errorsRef.current = 0;
     recordGameStart("ghost-racer", nextCourse.textKey);
     resumeAudio();
+    if (soundEnabled) preload([MUSIC.race]);
     setTyped("");
     setErrors(0);
     setElapsed(0);
@@ -258,7 +270,7 @@ function GhostRace({ ownerId }: GameComponentProps & { ownerId: string | null })
     setCountdown(3);
     transition("countdown");
     containerRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
-  }, [difficulty, transition, containerRef]);
+  }, [difficulty, transition, containerRef, soundEnabled]);
 
   const changeDifficulty = (nextDifficulty: GhostDifficulty) => {
     if (phaseRef.current !== "idle") return;

@@ -61,18 +61,18 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
   // Overall journey metrics
   const completedCount = useMemo(() => {
     return lessonList.filter((l) => units[l.id]?.completed).length;
-  }, [units]);
+  }, [units, lessonList]);
 
   const inProgressUnit = useMemo(() => {
     return lessonList.find((l) => {
       const p = units[l.id];
       return p && !p.completed && p.currentStep > 0;
     });
-  }, [units]);
+  }, [units, lessonList]);
 
   const nextRecommendedUnit = useMemo(() => {
     return inProgressUnit ?? lessonList.find((l) => !units[l.id]?.completed) ?? lessonList[0];
-  }, [inProgressUnit, units]);
+  }, [inProgressUnit, units, lessonList]);
 
   const isNewUser = completedCount === 0 && !inProgressUnit;
   const journeyProgressPct = Math.round((completedCount / lessonList.length) * 100);
@@ -131,7 +131,7 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
         isCompleted: isStageCompleted,
       };
     });
-  }, [units, nextRecommendedUnit]);
+  }, [units, nextRecommendedUnit, lessonList]);
 
   function handleExport() {
     const json = exportProgress();

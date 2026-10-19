@@ -88,6 +88,7 @@ export function FallingWordsVisualLayer({
           deviceMemory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
           saveData: (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData,
           coarsePointer: typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches,
+          isMobile: typeof window !== "undefined" && (window.innerWidth < 768 || (navigator.maxTouchPoints != null && navigator.maxTouchPoints > 0)),
         },
       }, fallbackCanvas);
       loop = new FallingWordsSceneLoop(renderer, {

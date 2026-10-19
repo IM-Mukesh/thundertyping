@@ -229,7 +229,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
             src={heroArt}
             alt=""
             fill
-            priority
+            preload
             // Deliberately identical to the marquee's sizes and quality
             // below, because both render the same file. Matching them makes
             // the two <Image>s resolve to one optimizer URL, so this backdrop
@@ -300,6 +300,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
               alt=""
               fill
               priority
+              fetchPriority="high"
               sizes="(max-width: 896px) 100vw, 896px"
               className="object-cover"
             />
@@ -429,6 +430,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameId: s
                       src={art}
                       alt=""
                       fill
+                      loading="lazy"
                       sizes="(max-width: 640px) 50vw, 20vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />

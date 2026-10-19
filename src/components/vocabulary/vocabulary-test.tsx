@@ -99,7 +99,7 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
     const wpm = round(calculateNetWpm(state.correctKeystrokes, state.elapsedMs));
     const result = recordVocabSession(locale, difficulty, state.results, wpm, accuracy);
     setOutcome({ newlyMastered: result.newlyMastered, isNewBest: result.isNewBest });
-  }, [state.status, state.results, state.correctKeystrokes, state.incorrectKeystrokes, state.elapsedMs, difficulty]);
+  }, [state.status, state.results, state.correctKeystrokes, state.incorrectKeystrokes, state.elapsedMs, difficulty, locale]);
 
   const current = state.words[state.index];
   const isRunning = state.status === "running";

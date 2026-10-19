@@ -54,6 +54,22 @@ function SkyfallSession({ definition, owner, generation }: GameComponentProps & 
   const best = useGameBest(definition.id);
   const soundEnabled = useSettingsStore(s => s.soundEnabled);
   const toggleSound = useSettingsStore(s => s.toggleSound);
+  const [idleSceneReady, setIdleSceneReady] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const activate = () => setIdleSceneReady(true);
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(activate, { timeout: 2500 });
+      return () => {
+        if (typeof window.cancelIdleCallback === "function") {
+          window.cancelIdleCallback(handle);
+        }
+      };
+    }
+    const timer = setTimeout(activate, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+  const sceneReady = idleSceneReady || state.status !== "idle";
   const enabledRef = useRef(soundEnabled);
   useLayoutEffect(() => { enabledRef.current = soundEnabled; if (!soundEnabled) audio.stop(); }, [audio, soundEnabled]);
   const systemReduced = useSyncExternalStore(subscribeMotion, motionSnapshot, () => false);
@@ -154,6 +170,7 @@ function SkyfallSession({ definition, owner, generation }: GameComponentProps & 
 
   const begin = (mode: SkyfallMode) => {
     if (!ownsRun()) return;
+    setIdleSceneReady(true);
     audio.stop(); recorded.current = false; setNewBest(false);
     const width = rootRef.current?.getBoundingClientRect().width || window.innerWidth;
     const lanes = width < 360 ? 2 : width < 640 ? 3 : width < 960 ? 4 : 6;
@@ -258,5 +275,5 @@ function SkyfallSession({ definition, owner, generation }: GameComponentProps & 
 
   return <SkyfallInterface state={state} progress={progress} best={best} newBest={newBest} renderMode={renderMode} reducedMotion={reducedMotion} soundEnabled={soundEnabled} storageOk={storageOk} focused={focused} announcement={announcement} rootRef={rootRef} inputRef={inputRef} overlayRef={overlayRef}
     onStart={begin} onPause={pause} onResume={resume} onMenu={menu} onFinishPractice={finishPractice} onFocus={focusInput} onFocused={setFocused} onSound={onSound} onPreferences={preferences} onInputKey={onInputKey} onInputChange={onInputChange} onBeforeInput={onBeforeInput} onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} onInputBlur={() => cancelInput()} onTouchKey={typeKey}
-    scene={<SkyfallSceneBoundary onFallback={() => setRenderMode("static")}><Scene state={preview} laneCount={preview.laneCount} quality={progress.quality} reducedMotion={reducedMotion} onMode={setRenderMode} /></SkyfallSceneBoundary>} />;
+    scene={<SkyfallSceneBoundary onFallback={() => setRenderMode("static")}>{sceneReady ? <Scene state={preview} laneCount={preview.laneCount} quality={progress.quality} reducedMotion={reducedMotion} onMode={setRenderMode} /> : null}</SkyfallSceneBoundary>} />;
 }

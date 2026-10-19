@@ -725,7 +725,7 @@ export class FallingWordsSceneLoop {
     this.dirty=true; this.request();
   }
   private animated():boolean {
-    return !this.reducedMotion&&this.renderer.mode!=="static"&&(this.state?.status==="running"||this.state?.status==="idle");
+    return !this.reducedMotion&&this.renderer.mode!=="static"&&(this.state?.status==="running"||(this.state?.status==="idle"&&this.renderer.budget.idleFps>0));
   }
   private request():void {
     if(this.disposed||!this.visible||!this.state||this.frameId!==null||(!this.dirty&&!this.animated())) return;

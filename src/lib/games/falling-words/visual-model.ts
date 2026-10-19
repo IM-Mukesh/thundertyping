@@ -51,6 +51,7 @@ export interface VisualDeviceHints {
   readonly deviceMemory?: number;
   readonly saveData?: boolean;
   readonly coarsePointer?: boolean;
+  readonly isMobile?: boolean;
 }
 
 export interface VisualBudget {
@@ -138,7 +139,7 @@ export function resolveVisualQuality(
   if (quality !== "auto") return quality;
   const limitedCores = (hints.hardwareConcurrency ?? 0) > 0 && (hints.hardwareConcurrency ?? 0) <= 4;
   const limitedMemory = (hints.deviceMemory ?? 0) > 0 && (hints.deviceMemory ?? 0) <= 4;
-  return hints.saveData || hints.coarsePointer || limitedCores || limitedMemory ? "low" : "high";
+  return hints.saveData || hints.coarsePointer || hints.isMobile || limitedCores || limitedMemory ? "low" : "high";
 }
 
 export function visualBudget(quality: ResolvedVisualQuality, reducedMotion: boolean): VisualBudget {
@@ -151,7 +152,7 @@ export function visualBudget(quality: ResolvedVisualQuality, reducedMotion: bool
     particlesPerBurst: reducedMotion ? 0 : quality === "low" ? 3 : 10,
     geometryVertices: quality === "low" ? 6_000 : MAX_SCENE_VERTICES,
     towers: quality === "low" ? 10 : 20,
-    idleFps: reducedMotion ? 0 : 8,
+    idleFps: reducedMotion || quality === "low" ? 0 : 8,
   };
 }
 

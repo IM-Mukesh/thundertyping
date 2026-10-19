@@ -18,13 +18,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale === "en"
       ? `Free Typing Speed Test & Practice Online | ${SITE_NAME}`
       : `${dict.home.title} | ${SITE_NAME}`;
+  const homeDescription = dict.home.description || SITE_DESCRIPTION;
   return {
     title: { absolute: homeTitle },
-    description: SITE_DESCRIPTION,
+    description: homeDescription,
     alternates: { canonical: canonicalUrl },
     openGraph: {
       title: homeTitle,
-      description: SITE_DESCRIPTION,
+      description: homeDescription,
       url: canonicalUrl,
       siteName: SITE_NAME,
       type: "website",
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     twitter: {
       card: "summary_large_image",
       title: homeTitle,
-      description: SITE_DESCRIPTION,
+      description: homeDescription,
       images: ["/opengraph-image"],
     },
   };
@@ -42,10 +43,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const dict = getDictionary(locale);
+  const homeDescription = dict.home.description || SITE_DESCRIPTION;
   const schema = buildWebApplicationSchema({
     path: locale === "en" ? "/" : `/${locale}`,
     name: dict.home.title,
-    description: dict.home.subtitle,
+    description: homeDescription,
   });
   const faqSchema = buildFaqSchema(HOMEPAGE_FAQ_ITEMS);
 

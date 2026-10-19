@@ -52,7 +52,7 @@ export default async function VocabularyHubPage({ params }: { params?: Promise<{
         </span>
 
         <h1 className="font-display text-3xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-5xl">
-          Type your way to
+          Type your way to{" "}
           <br />
           <span className="text-accent text-glow">a bigger vocabulary</span>
         </h1>

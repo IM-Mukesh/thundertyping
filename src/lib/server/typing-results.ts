@@ -17,9 +17,6 @@ import {
   // updateSettlementReceipt,
   // assertTypingPayloadMatch,
 } from "@/lib/server/settlement";
-import type { Database } from "@/lib/supabase/database.types";
-
-type TypingResultInsert = Database["public"]["Tables"]["typing_results"]["Insert"];
 
 async function getSupabaseForRead() {
   try {
