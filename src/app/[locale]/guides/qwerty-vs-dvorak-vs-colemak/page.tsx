@@ -9,9 +9,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "QWERTY vs. Dvorak vs. Colemak",
+  title: "QWERTY vs Dvorak vs Colemak: Fastest Layout",
   description:
-    "Balanced data-driven comparison of QWERTY, Dvorak, and Colemak: home row efficiency, finger travel, learning curve, ergonomics, and real speed tradeoffs.",
+    "Data-driven comparison of QWERTY, Dvorak, and Colemak: finger travel distance, home-row efficiency, typing speed tradeoffs, ergonomics, and learning curve.",
   path: "/guides/qwerty-vs-dvorak-vs-colemak",
 });
 

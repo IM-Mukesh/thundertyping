@@ -9,14 +9,14 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Average Typing Speed: WPM Benchmarks",
+  title: "Average Typing Speed: What is a Good WPM?",
   description:
-    "Discover average typing speed benchmarks, honest WPM ranges by skill level and profession, what counts as a good WPM, and how to measure your speed accurately.",
+    "Explore average typing speed benchmarks (52 WPM study mean), workplace expectations across common roles, and why accuracy matters more than raw speed.",
   path: "/guides/average-typing-speed",
 });
 
 const PUBLISHED = "2026-09-15";
-const UPDATED = "2026-10-16";
+const UPDATED = "2026-10-20";
 
 const LEVELS = [
   { label: "Beginner", range: "Under 20 WPM", note: "Still locating keys; hunt-and-peck or very early touch typing." },
@@ -53,9 +53,9 @@ const FAQ_ITEMS = [
   {
     question: "What is a good typing speed overall?",
     answer:
-      "For everyday use, 40–65 WPM is a comfortable, widely-typical range for adults who type regularly. The largest keystroke study to date (168,000 volunteers, 136 million keystrokes) found an average of 52 WPM — a genuinely useful reference point, though real-world \"good\" still depends heavily on what you're comparing it to.",
+      "For everyday writing, 40–65 WPM is a comfortable, typical range for adults who type regularly. An extensive study by Dhakal et al. (ACM CHI 2018) of 168,000 online volunteers found an observed sample mean of 52 WPM in a sentence-copying task. While motivated online test-takers often type slightly faster than the general population, it serves as a reliable benchmark. What counts as 'good' ultimately depends on your specific role and accuracy.",
     plainAnswer:
-      "For everyday use, 40–65 WPM is typical. The largest keystroke study to date found an average of 52 WPM across 168,000 volunteers.",
+      "For everyday writing, 40–65 WPM is typical. The 2018 Dhakal et al. keystroke study found an observed mean of 52 WPM across 168,000 online test-takers.",
   },
   {
     question: "Does a good typing speed include accuracy?",
@@ -120,11 +120,12 @@ export default function AverageTypingSpeedPage() {
       >
         <Callout label="Quick answer">
           <p>
-            For general adult typing, <strong>40–65 WPM</strong> is a useful orientation range, and a
-            large 2018 keystroke study measured an average of <strong>52 WPM</strong> across 168,000
-            volunteers. Above 70 WPM is genuinely fast; above 100 WPM is elite. But the single
-            number matters less than accuracy alongside it — a fast, error-prone typist is
-            usually slower in practice than an accurate, moderate one.
+            For regular adult typing, <strong>40–65 WPM</strong> is a practical orientation range. The
+            largest empirical keystroke study (Dhakal et al., 2018) recorded a sample mean of <strong>52 WPM</strong> across
+            168,000 online test-takers performing sentence transcription, though broader general-population averages
+            often sit closer to 35–45 WPM. Above 70 WPM is genuinely fast for continuous typing; above 100 WPM
+            is competitive. Crucially, speed without accuracy is counterproductive — a steady 50 WPM typist at 98% accuracy
+            outproduces an erratic 70 WPM typist who has to fix constant mistakes.
           </p>
         </Callout>
 
@@ -188,14 +189,13 @@ export default function AverageTypingSpeedPage() {
           </tbody>
         </table>
         <p>
-          These figures—including the commonly cited ranges of <strong>65–75 WPM</strong> for proficient
-          touch typists and <strong>90+ WPM</strong> for advanced or competitive typists—are broad,
-          industry-observed benchmarks rather than rigid cutoffs from a single laboratory trial.
-          Real-world typing speed research uses varying test lengths, vocabulary pools, and error
-          penalties, so treat them as a practical compass rather than an absolute rule. Looking
-          for specific workplace standards? See{" "}
+          These figures—including the commonly cited ranges of <strong>40–55 WPM</strong> for general
+          office work, <strong>60–80 WPM</strong> for specialized data entry or medical transcription, and{" "}
+          <strong>90+ WPM</strong> for advanced or competitive typists—are practical industry orientation
+          benchmarks, not universal hiring guarantees. Employment requirements vary substantially by
+          organization, assessment platform, and error penalties. For detailed role requirements, see{" "}
           <Link href="/guides/data-entry-typing-test">the data entry typing test guide</Link> or our{" "}
-          <Link href="/guides/911-dispatcher-typing-test">911 dispatcher typing test guide</Link> for emergency communications standards.
+          <Link href="/guides/911-dispatcher-typing-test">911 dispatcher typing test guide</Link>.
         </p>
 
         <h2 id="by-age">By age and learning stage</h2>
@@ -221,16 +221,45 @@ export default function AverageTypingSpeedPage() {
           ))}
         </div>
 
-        <h2 id="largest-study">What the largest typing study found</h2>
+        <h2 id="largest-study">What the largest typing study found (and its limitations)</h2>
         <p>
-          In 2018, researchers from Aalto University and the University of Cambridge published
-          findings from 136 million keystrokes collected from 168,000 volunteers on the
-          TypingMaster website (typingmaster.com). Typing randomized sentences in an online
-          transcription test, participants averaged approximately <strong>52 WPM</strong>. These
-          figures reflect an online volunteer sample performing transcription rather than everyday
-          composing, but they offer one of the clearest empirical snapshots of real-world typing
-          speeds available.
+          In 2018, researchers Vivek Dhakal, Anna Feit, Per Ola Kristensson, and Antti Oulasvirta
+          (Aalto University and the University of Cambridge) published{" "}
+          <em>Observations on Typing from 136 Million Keystrokes on a Website</em> at the ACM CHI Conference.
+          Analyzing keystroke logs from 168,000 unconstrained volunteers across more than 200 countries
+          on TypingMaster (typingmaster.com), the researchers observed a sample mean speed of{" "}
+          <strong>51.6 WPM</strong> (commonly rounded to ~52 WPM) with an average uncorrected error rate of 1.5%.
         </p>
+        <p>
+          While this provides one of the largest empirical datasets on keyboard dynamics, interpreting
+          the findings requires understanding the study&apos;s methodology and population constraints:
+        </p>
+        <ul className="space-y-2 text-sm leading-relaxed text-sub">
+          <li>
+            <strong className="text-foreground">Volunteer Self-Selection:</strong> Participants voluntarily took an online test.
+            Self-selected online test-takers skew toward individuals with higher computer usage, keyboard familiarity,
+            and personal interest in testing their speed. Casual general-population typing averages across all computer
+            users are widely estimated closer to 35–45 WPM.
+          </li>
+          <li>
+            <strong className="text-foreground">Task Type (Sentence Transcription):</strong> The test measured sentence
+            copying from screen prompts. This is a transcription task, which differs substantially from spontaneous
+            composition (drafting emails or essays), technical coding, or numeric entry where planning and cognitive pauses
+            dominate total time.
+          </li>
+          <li>
+            <strong className="text-foreground">Study Cohort Percentiles:</strong> Within this online volunteer group,
+            the median (50th percentile) was approximately 52 WPM, the 75th percentile was approximately 65 WPM, and the 95th
+            percentile reached approximately 90+ WPM. These percentiles describe this specific testing sample rather than
+            a universal global census.
+          </li>
+          <li>
+            <strong className="text-foreground">Rollover &amp; Technique:</strong> The study found that rollover typing
+            (initiating a keystroke before releasing the previous key) was the strongest mechanical factor in high speed.
+            Interestingly, strict 10-finger touch typing was not required to achieve fast speeds—many participants achieved
+            60–80+ WPM using adaptive 6-to-8 finger techniques with consistent key mapping.
+          </li>
+        </ul>
 
         <h2 id="programmers">Why programmers often type &ldquo;slower&rdquo; than expected</h2>
         <p>
@@ -306,15 +335,20 @@ export default function AverageTypingSpeedPage() {
         <SourceList
           sources={[
             {
-            label:
-              "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (Aalto University / CHI 2018)",
-            href: "https://userinterfaces.aalto.fi/136Mkeystrokes/",
-          },
-          {
-            label: "University of Cambridge — What makes a faster typist? (summary of the 136-million-keystroke study)",
-            href: "https://www.cam.ac.uk/research/news/what-makes-a-faster-typist",
-          },
-        ]}
+              label:
+                "Dhakal, Feit, Kristensson & Oulasvirta — \"Observations on Typing from 136 Million Keystrokes on a Website\" (ACM CHI 2018, DOI: 10.1145/3173574.3174220)",
+              href: "https://doi.org/10.1145/3173574.3174220",
+            },
+            {
+              label:
+                "Aalto University User Interfaces Group — 136 Million Keystrokes Project Overview & Publication Page",
+              href: "https://userinterfaces.aalto.fi/136Mkeystrokes/",
+            },
+            {
+              label: "University of Cambridge — What makes a faster typist? (Research news summary of the 136M study)",
+              href: "https://www.cam.ac.uk/research/news/what-makes-a-faster-typist",
+            },
+          ]}
         />
 
         <p className="text-xs text-sub">Last reviewed {UPDATED}.</p>

@@ -9,9 +9,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "One-Handed Typing Guide & Layouts",
+  title: "One-Handed Typing: How to Type with One Hand",
   description:
-    "Comprehensive guide to one-handed typing for stroke recovery, amputees, injury, or single-hand typing: Dvorak One-Handed, Half-QWERTY, and radial zone finger maps.",
+    "Comprehensive guide to one-handed typing: how to type with one hand using Dvorak Single-Hand, Half-QWERTY, radial stretch zones, shortcuts, and key maps.",
   path: "/guides/one-handed-typing-guide",
 });
 

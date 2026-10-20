@@ -9,14 +9,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "911 Dispatcher Typing Test & CritiCall",
+  title: "911 Dispatcher Typing Test (CritiCall)",
   description:
-    "Complete guide to 911 dispatcher typing tests and CritiCall: passing WPM benchmarks, audio transcription, data entry accuracy standards, and practice tips.",
+    "Explore 911 dispatcher typing requirements and CritiCall test modules: typical 35–45 Net WPM agency cutoffs, audio transcription, and accuracy standards.",
   path: "/guides/911-dispatcher-typing-test",
 });
 
 const PUBLISHED = "2026-09-26";
-const UPDATED = "2026-10-16";
+const UPDATED = "2026-10-20";
 
 const CRITICALL_STANDARDS = [
   {
@@ -203,6 +203,9 @@ export default function DispatcherTypingTestPage() {
         </ol>
 
         <h2 id="passing-standards">Agency passing standards table</h2>
+        <p className="text-xs text-sub mb-3">
+          Note: Passing requirements represent common pre-screening cutoffs licensed through testing providers like Biddle Consulting Group. Each jurisdiction sets its own minimum passing scores; meeting these thresholds qualifies an applicant to proceed to oral boards and background evaluations, but does not guarantee job placement.
+        </p>
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">

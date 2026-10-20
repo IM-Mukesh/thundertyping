@@ -10,7 +10,7 @@ export const HOMEPAGE_FAQ_ITEMS = [
   {
     question: "What is a good typing speed for adults?",
     answer:
-      "In an empirical keystroke study by Dhakal et al. (ACM CHI 2018) analyzing 168,000 volunteers on TypingMaster, the average transcription typing speed was approximately 52 WPM. Speeds between 40 and 55 WPM are typical for regular office work. Speeds between 65 and 80 WPM qualify for high-productivity technical, editorial, and administrative roles, while 90+ WPM places you in the top 5% of typists in that study.",
+      "In a large-scale keystroke study by Dhakal et al. (ACM CHI 2018) examining 168,000 online test-takers, the observed mean sentence-copying speed was approximately 52 WPM. General office roles typically function comfortably around 40–55 WPM, while specialized data-entry or transcription roles often request 65–80+ WPM with 95–98%+ accuracy. In that online study cohort, 90+ WPM represented the top 5% of participants.",
   },
   {
     question: "How does HeroTyping calculate words per minute?",
@@ -137,7 +137,7 @@ export function HomepageSeoContent() {
           </h2>
         </div>
         <p className="text-xs leading-relaxed text-sub sm:text-sm">
-          In an empirical keystroke study by Dhakal et al. (Aalto University / University of Cambridge, published at ACM CHI 2018) examining 136 million keystrokes from 168,000 volunteers on TypingMaster (typingmaster.com), the mean transcription typing speed was approximately <strong>52 WPM</strong>. HeroTyping captures key events client-side using high-resolution <code>window.performance.now()</code> timestamps and local React state updates, calculating Net WPM, Raw WPM, Accuracy, and Cadence Consistency without network roundtrips during active typing.
+          In an empirical keystroke study by Dhakal et al. (Aalto University / University of Cambridge, ACM CHI 2018) analyzing 136 million keystrokes from 168,000 online volunteers on TypingMaster, the observed sample mean for sentence transcription was approximately <strong>52 WPM</strong>. While motivated online test-takers generally type faster than the broader population baseline (~35–40 WPM), this dataset provides one of the clearest empirical benchmarks available. HeroTyping captures key events client-side using high-resolution <code>window.performance.now()</code> timestamps and local React state updates, calculating Net WPM, Raw WPM, Accuracy, and Cadence Consistency without network roundtrips during active typing.
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-xs">
           <Link

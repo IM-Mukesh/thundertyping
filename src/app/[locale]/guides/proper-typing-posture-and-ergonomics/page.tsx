@@ -9,9 +9,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Proper Typing Posture & Ergonomics",
+  title: "Proper Typing Posture & Hand Position",
   description:
-    "Step-by-step ergonomic desk setup for comfortable typing: neutral wrist alignment, 90-degree elbow rule, monitor distance, chair height, and warmup tips.",
+    "Step-by-step ergonomic desk setup: neutral wrist alignment, 90-degree elbow rule, hand position, chair height, and practical workstation tips for typing comfort.",
   path: "/guides/proper-typing-posture-and-ergonomics",
 });
 

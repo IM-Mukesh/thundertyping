@@ -10,9 +10,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Touch-Typing Finger Map & Chart",
+  title: "Touch-Typing Finger Map & Diagram",
   description:
-    "Interactive touch-typing finger map and full keyboard chart. See exact finger assignments for every key, home row anchors, Shift keys, and numbers.",
+    "Interactive touch-typing finger map and full keyboard diagram. See exact finger assignments for every key, home row anchors, Shift keys, and numbers.",
   path: "/guides/touch-typing-finger-map",
 });
 

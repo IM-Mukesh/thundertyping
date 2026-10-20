@@ -8,14 +8,14 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Data Entry Typing Test & KPH Guide",
+  title: "Data Entry Typing Test (WPM & KPH)",
   description:
-    "Learn what data entry typing tests measure: WPM vs. KPH formulas, numeric entry standards, benchmark accuracy requirements, and how to practice.",
+    "Understand data entry typing test formats, KPH vs WPM conversion formulas, 10-key numeric benchmarks (98%+ accuracy), and how employer standards vary.",
   path: "/guides/data-entry-typing-test",
 });
 
 const PUBLISHED = "2026-09-24";
-const UPDATED = "2026-10-16";
+const UPDATED = "2026-10-20";
 
 const KPH_TABLE = [
   { wpm: "20 WPM", kph: "≈ 6,000 KPH" },
@@ -177,16 +177,33 @@ export default function DataEntryTypingTestPage() {
           source data) than continuous prose typing does.
         </p>
 
-        <h2 id="benchmarks">Commonly cited benchmarks</h2>
+        <h2 id="benchmarks">Commonly cited benchmarks &amp; assessment expectations</h2>
         <p>
-          These are widely-repeated ranges across employer and training resources, not a single
-          authoritative standard — actual requirements vary by role and organization.
+          Data entry requirements differ markedly across employers, industries, and testing platforms
+          (such as Kenexa Prove It!, Criteria Corp, or civil service evaluations). The figures below
+          represent commonly observed job-posting screening baselines rather than a single universal standard:
         </p>
-        <ul>
-          <li>Entry-level data entry: often 40–60 WPM (12,000–18,000 KPH), 95%+ accuracy</li>
-          <li>Experienced data entry: often 60–80 WPM (18,000–24,000 KPH), 97–99% accuracy</li>
-          <li>Government and administrative exams: frequently lower WPM thresholds than private-sector roles, but stricter accuracy cutoffs</li>
+        <ul className="space-y-2 text-sm leading-relaxed text-sub">
+          <li>
+            <strong className="text-foreground">Alphanumeric Prose Entry:</strong> Entry-level postings typically seek
+            <strong> 45–55 WPM</strong> (approx. 13,500–16,500 KPH) with an initial screening accuracy of <strong>95%+</strong>.
+            Senior or high-volume administrative roles often look for <strong>60–75+ WPM</strong> with <strong>98%+</strong> accuracy.
+          </li>
+          <li>
+            <strong className="text-foreground">10-Key Numeric Keypad Entry:</strong> For financial, medical billing, or
+            warehouse inventory roles, employers test the dedicated numeric keypad. Standard industry benchmarks range from
+            <strong> 8,000 to 10,000+ KPH</strong> (keystrokes per hour), with high-accuracy cutoffs commonly set at <strong>98% to 99%</strong>.
+          </li>
+          <li>
+            <strong className="text-foreground">Government &amp; Agency Exams:</strong> Civil service data-entry tests
+            often enforce strict pass/fail deduction formulas where each uncorrected typo or transposed digit deducts heavily
+            from the final score, weighting precision far higher than raw speed.
+          </li>
         </ul>
+        <p className="mt-3 text-sm text-sub">
+          Meeting these speed benchmarks qualifies candidates for initial screening, but hiring decisions depend equally
+          on attention to detail, spreadsheet fluency, and familiarity with domain-specific software.
+        </p>
 
         <h2 id="how-to-train">How to train for a data entry typing test</h2>
         <ol>

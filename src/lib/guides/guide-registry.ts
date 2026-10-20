@@ -120,9 +120,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "touch-typing-finger-map",
     href: "/guides/touch-typing-finger-map",
-    title: "Touch-Typing Finger Map & Chart",
+    title: "Touch-Typing Finger Map & Diagram",
     description:
-      "An interactive, hover-or-tap chart of every key and the finger that owns it, plus Shift key rules, reach vectors, and the top number row.",
+      "Interactive touch-typing finger map and full keyboard diagram. See exact finger assignments for every key, home row anchors, Shift keys, and numbers.",
     category: "typing-basics",
     primaryTopic: "Finger Placement & Keyboard Anatomy",
     intent: "tool",
@@ -169,9 +169,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "proper-typing-posture-and-ergonomics",
     href: "/guides/proper-typing-posture-and-ergonomics",
-    title: "Proper Typing Posture & Ergonomics",
+    title: "Proper Typing Posture & Hand Position",
     description:
-      "A complete desk setup guide: 90-degree elbow angles, neutral wrists, monitor eye line distance, and preventing carpal tunnel and repetitive strain injury.",
+      "Step-by-step ergonomic desk setup: neutral wrist alignment, 90-degree elbow rule, hand position, chair height, and practical workstation tips for typing comfort.",
     category: "typing-basics",
     primaryTopic: "Ergonomics & Desk Setup",
     intent: "informational",
@@ -506,9 +506,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "average-typing-speed",
     href: "/guides/average-typing-speed",
-    title: "Average Typing Speed: WPM Benchmarks",
+    title: "Average Typing Speed: What is a Good WPM?",
     description:
-      "Honest WPM benchmarks by skill level and context, with age and job context, accuracy caveats, and a real typing test.",
+      "Explore average typing speed benchmarks (52 WPM study mean), workplace expectations across common roles, and why accuracy matters more than raw speed.",
     category: "improve-your-typing",
     primaryTopic: "Typing Benchmarks & Standards",
     intent: "benchmark",
@@ -584,9 +584,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "wpm-cpm-kph-calculator",
     href: "/guides/wpm-cpm-kph-calculator",
-    title: "WPM, CPM & KPH Calculator & Formulas",
+    title: "WPM to KPH Calculator & Speed Formulas",
     description:
-      "Interactive live conversion calculator between Words Per Minute, Characters Per Minute, and Keystrokes Per Hour — with mathematical formulas demonstrated.",
+      "Calculate WPM, CPM, and KPH from any typing test or convert between units. Exact conversion formulas, worked examples, and instant interactive calculator.",
     category: "typing-tests-tools",
     primaryTopic: "Live Conversion Calculator",
     intent: "tool",
@@ -632,9 +632,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "data-entry-typing-test",
     href: "/guides/data-entry-typing-test",
-    title: "Data Entry Typing Test & KPH Guide",
+    title: "Data Entry Typing Test (WPM & KPH)",
     description:
-      "What employment data entry tests evaluate, how KPH relates to Net WPM, 10-key numeric keypad benchmarks, and practical pre-interview preparation.",
+      "Understand data entry typing test formats, KPH vs WPM conversion formulas, 10-key numeric benchmarks (98%+ accuracy), and how employer standards vary.",
     category: "typing-tests-tools",
     primaryTopic: "Data Entry & Employment Testing",
     intent: "career",
@@ -682,9 +682,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "qwerty-vs-dvorak-vs-colemak",
     href: "/guides/qwerty-vs-dvorak-vs-colemak",
-    title: "QWERTY vs. Dvorak vs. Colemak",
+    title: "QWERTY vs Dvorak vs Colemak: Fastest Layout",
     description:
-      "Finger travel distance, same-finger bigram penalties, home row dwell time, and real data on which keyboard layout is actually fastest or most ergonomic.",
+      "Data-driven comparison of QWERTY, Dvorak, and Colemak: finger travel distance, home-row efficiency, typing speed tradeoffs, ergonomics, and learning curve.",
     category: "keyboard-skills",
     primaryTopic: "Alternative Keyboard Layouts",
     intent: "informational",
@@ -762,9 +762,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "911-dispatcher-typing-test",
     href: "/guides/911-dispatcher-typing-test",
-    title: "911 Dispatcher Typing Test & CritiCall",
+    title: "911 Dispatcher Typing Test (CritiCall)",
     description:
-      "Passing benchmarks, audio-to-CAD transcription, alphanumeric rapid entry, and how to train for emergency communication public safety examinations.",
+      "Explore 911 dispatcher typing requirements and CritiCall test modules: typical 35–45 Net WPM agency cutoffs, audio transcription, and accuracy standards.",
     category: "typing-work-study",
     primaryTopic: "Emergency Dispatch & CritiCall Prep",
     intent: "career",
@@ -788,9 +788,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "touch-typing-for-dyslexia-and-dysgraphia",
     href: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
-    title: "Typing for Dyslexia and Dysgraphia",
+    title: "Touch Typing for Dyslexia & Dysgraphia",
     description:
-      "How multisensory touch typing and finger motor memory liberate neurodivergent learners from handwriting fatigue, spelling blocks, and cognitive overload.",
+      "Practical touch typing strategies for dyslexia, dysgraphia, and ADHD: physical muscle memory, tactile switches, dyslexia-friendly fonts, and low-stress routines.",
     category: "typing-work-study",
     primaryTopic: "Neurodiversity & Accessibility",
     intent: "informational",
@@ -814,9 +814,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "one-handed-typing-guide",
     href: "/guides/one-handed-typing-guide",
-    title: "One-Handed Typing Guide & Layouts",
+    title: "One-Handed Typing: How to Type with One Hand",
     description:
-      "Adaptive layouts, Half-QWERTY mirror typing principles, and radial touch zones for stroke recovery, amputees, and unilateral hand injury.",
+      "Comprehensive guide to one-handed typing: how to type with one hand using Dvorak Single-Hand, Half-QWERTY, radial stretch zones, shortcuts, and key maps.",
     category: "typing-work-study",
     primaryTopic: "One-Handed Adaptive Typing",
     intent: "practical",
@@ -1092,9 +1092,9 @@ export const GUIDE_REGISTRY: GuideEntry[] = [
   {
     slug: "punctuation-typing-practice",
     href: "/guides/punctuation-typing-practice",
-    title: "Punctuation Typing Practice & Drills",
+    title: "Punctuation Typing Practice & Symbol Drills",
     description:
-      "Master sentence punctuation without losing speed: opposite-hand Shift synchronization, semicolon home positioning, apostrophes, quotation marks, and commas.",
+      "Master keyboard punctuation marks, symbols, and opposite-hand Shift timing. Practice commas, quotes, periods, brackets, and symbol drills without looking.",
     category: "keyboard-skills",
     primaryTopic: "Punctuation & Shift Coordination",
     intent: "practical",

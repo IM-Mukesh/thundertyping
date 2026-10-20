@@ -9,9 +9,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Punctuation Typing Practice & Drills",
+  title: "Punctuation Typing Practice & Symbol Drills",
   description:
-    "Master keyboard punctuation marks, symbols, and opposite-hand Shift timing without breaking rhythm. Practice commas, quotes, periods, and questions.",
+    "Master keyboard punctuation marks, symbols, and opposite-hand Shift timing. Practice commas, quotes, periods, brackets, and symbol drills without looking.",
   path: "/guides/punctuation-typing-practice",
 });
 

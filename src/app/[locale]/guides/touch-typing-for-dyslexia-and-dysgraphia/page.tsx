@@ -9,9 +9,9 @@ import { buildArticleSchema } from "@/lib/seo/json-ld";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Typing for Dyslexia and Dysgraphia",
+  title: "Touch Typing for Dyslexia & Dysgraphia",
   description:
-    "Practical keyboarding strategies for dyslexia, dysgraphia, and ADHD: multi-sensory feedback, muscle memory, assistive tools, and ergonomic adjustments.",
+    "Practical touch typing strategies for dyslexia, dysgraphia, and ADHD: physical muscle memory, tactile switches, dyslexia-friendly fonts, and low-stress routines.",
   path: "/guides/touch-typing-for-dyslexia-and-dysgraphia",
 });
 

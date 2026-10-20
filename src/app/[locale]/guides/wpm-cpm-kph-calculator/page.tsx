@@ -10,9 +10,9 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/constants";
 
 export const metadata: Metadata = pageMetadata({
-  title: "WPM, CPM & KPH Calculator & Formulas",
+  title: "WPM to KPH Calculator & Speed Formulas",
   description:
-    "Calculate WPM, CPM and KPH from a typing test, or convert freely between all three. Every formula shown, worked examples included, no sign-up.",
+    "Calculate WPM, CPM, and KPH from any typing test or convert between units. Exact conversion formulas, worked examples, and instant interactive calculator.",
   path: "/guides/wpm-cpm-kph-calculator",
 });
 

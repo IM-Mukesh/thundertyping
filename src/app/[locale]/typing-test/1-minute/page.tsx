@@ -258,9 +258,9 @@ export default async function OneMinuteTypingTestPage({ params }: { params?: Pro
                   What is an average typing speed on a 1-minute test?
                 </h3>
                 <p className="mt-1 text-xs sm:text-sm leading-relaxed text-sub">
-                  The global average typing speed for casual keyboard users is approximately 38 to 42 WPM.
-                  Proficient touch typists typically average 55 to 70 WPM, while advanced transcriptionists and
-                  competitive typists regularly exceed 80 to 100+ WPM with high accuracy.
+                  For casual adult keyboard users, typical everyday typing speeds generally range between 38 and 42 WPM.
+                  Proficient touch typists who practice regularly often reach 55 to 70 WPM, while experienced transcriptionists and
+                  competitive typists can exceed 80 to 100+ WPM with high accuracy.
                 </p>
               </div>
               <div className="py-4">
