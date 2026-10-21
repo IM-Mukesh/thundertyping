@@ -48,7 +48,9 @@ function normalizeProgress(value: Partial<DeathProgress>): DeathProgress {
     : [];
   const quality = value.quality === "low" || value.quality === "high" ? value.quality : "auto";
   const reducedMotion = typeof value.reducedMotion === "boolean" ? value.reducedMotion : false;
-  const weapon: DeathWeaponId = typeof value.weapon === "string" && Object.hasOwn(DEATH_WEAPON_REGISTRY, value.weapon) ? value.weapon as DeathWeaponId : "pistol";
+  const unlockedMission = completed.reduce((highest, mission) => mission <= highest + 1 ? Math.max(highest, mission) : highest, -1) + 1;
+  const requestedWeapon = typeof value.weapon === "string" && Object.hasOwn(DEATH_WEAPON_REGISTRY, value.weapon) ? value.weapon as DeathWeaponId : "pistol";
+  const weapon: DeathWeaponId = DEATH_WEAPON_REGISTRY[requestedWeapon].unlockMission <= unlockedMission ? requestedWeapon : "pistol";
   const survivor: DeathSurvivorId = typeof value.survivor === "string" && Object.hasOwn(DEATH_SURVIVOR_REGISTRY, value.survivor) ? value.survivor as DeathSurvivorId : "soldier";
   return {
     version: 1,

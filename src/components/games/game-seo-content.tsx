@@ -49,11 +49,11 @@ export const GAME_SEO_DATA: Partial<Record<GameId, GameSeoContentData>> = {
   },
   "combo-rush": {
     "name": "Combo Rush",
-    "headline": "Building Infinite Multipliers in Combo Rush",
-    "overview": "Combo Rush is an adrenaline-fueled score-attack game where accuracy and sustained cadence reign supreme. The game features a depleting combo timer that replenishes with every correct keystroke and word completion, rewarding fluid, uninterrupted typing flow.",
-    "mechanics": "Every correct character increments your active combo multiplier, escalating your score exponentially from 2x to 10x and beyond. Hitting an incorrect key or letting the combo meter drain completely resets your multiplier back to zero. High-difficulty words grant bonus time extensions and activate frenzy scoring windows. Perfect streaks activate fever mode, dramatically multiplying points earned while testing your peak burst typing velocity.",
+    "headline": "Igniting Overdrive in Combo Rush",
+    "overview": "Combo Rush is an adrenaline-fueled score-attack game where clean cadence keeps a shrinking survival clock alive. Every completed word buys back time, raises the Rush tier, and pushes the player toward a short Overdrive window.",
+    "mechanics": "The clock drains continuously and accelerates as more words are cleared. Clean words build a combo multiplier up to 1.6x for score and time refunds; one wrong letter resets the streak, while Space skips the current word for a fixed time cost. Five clean clears fill Overdrive, which halves clock drain and boosts clear score by 1.5x for six seconds before the meter must be rebuilt.",
     "skillsTrained": "Combo Rush trains consistent keystroke cadence and eliminates the common burst-and-stall habit. Because maintaining the multiplier requires uninterrupted output without pauses, it trains your brain to pipeline incoming words in parallel with motor execution, expanding your eye-hand cognitive span. Eliminating pauses between words develops natural eye-hand pipelining, transforming discrete keystrokes into fluid language flow.",
-    "strategy": "Prioritize accuracy above raw speed: a slightly slower pace that maintains a 10x multiplier generates vastly higher scores than blazing fast bursts punctuated by combo-breaking typos. Keep your eyes scanning two words ahead of your active cursor and maintain relaxed, floating wrists to sustain speed over long sessions."
+    "strategy": "Prioritize accuracy above raw speed: a steady streak keeps both the score multiplier and the survival clock working for you. Use the look-ahead queue to prepare the next word, skip only when the current word is genuinely dangerous, and use the six-second Overdrive window to convert a clean burst into a score lead."
   },
   "ghost-racer": {
     "name": "Ghost Racer",

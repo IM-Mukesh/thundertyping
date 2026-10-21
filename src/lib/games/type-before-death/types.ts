@@ -6,6 +6,8 @@ export type DeathOutcome = "victory" | "defeat" | "abandoned";
 export type DeathEnemyKind = "walker" | "runner" | "brute" | "spitter" | "bomber" | "stalker" | "swarm" | "mutant" | "elite" | "boss";
 export type DeathWordTier = "short" | "medium" | "long" | "extreme";
 export type DeathBehavior = "advance" | "charge" | "armor" | "ranged" | "explode" | "ambush" | "pack" | "regenerate" | "enrage" | "commander";
+/** Visual/audio profile for the round fired by a completed typing sequence. */
+export type DeathShotType = "sidearm" | "burst" | "buckshot" | "precision" | "rifle" | "headshot";
 export type DeathUpgradeId = "hollow-point" | "longshot" | "quickload" | "coolant" | "reinforcement" | "field-medic" | "capacitor" | "precision" | "salvager";
 export type DeathUpgradeRanks = Record<DeathUpgradeId, number>;
 export type DeathWeaponId = "pistol" | "smg" | "shotgun" | "sniper" | "plasma";
@@ -15,6 +17,10 @@ export interface DeathWeaponDefinition {
   readonly id: DeathWeaponId;
   readonly name: string;
   readonly description: string;
+  readonly level: 1 | 2 | 3 | 4 | 5;
+  /** Campaign mission index that first makes this loadout available. */
+  readonly unlockMission: number;
+  readonly fireMode: "semi-auto" | "burst" | "pump" | "bolt-action" | "automatic";
   readonly damage: number;
   readonly heat: number;
   readonly shortWord: number;
@@ -91,6 +97,7 @@ export interface DeathEffect {
   enemyId?: number;
   enemyKind?: DeathEnemyKind;
   amount?: number;
+  shotType?: DeathShotType;
 }
 
 export interface DeathMission {
@@ -142,6 +149,7 @@ export interface DeathState {
   missed: number;
   damageDealt: number;
   damageTaken: number;
+  headshots: number;
   wavesCleared: number;
   overdrives: number;
   jams: number;
@@ -199,6 +207,7 @@ export interface DeathStats {
   cleanWords: number;
   damageDealt: number;
   damageTaken: number;
+  headshots: number;
   wavesCleared: number;
   overdrives: number;
   jams: number;

@@ -25,6 +25,7 @@ import type {
   DeathMode,
   DeathPhase,
   DeathRunStats,
+  DeathShotType,
   DeathState,
   DeathStats,
   DeathStartOptions,
@@ -131,6 +132,7 @@ export function createDeathState(): DeathState {
     missed: 0,
     damageDealt: 0,
     damageTaken: 0,
+    headshots: 0,
     wavesCleared: 0,
     overdrives: 0,
     jams: 0,
@@ -192,7 +194,15 @@ function enterPhase(state: DeathState, phase: DeathPhase, message: string): void
   state.message = message;
 }
 
-function addEffect(state: DeathState, kind: DeathEffect["kind"], lane: number, progress: number, enemy?: DeathEnemy, amount?: number): void {
+function addEffect(
+  state: DeathState,
+  kind: DeathEffect["kind"],
+  lane: number,
+  progress: number,
+  enemy?: DeathEnemy,
+  amount?: number,
+  shotType?: DeathShotType,
+): void {
   const effect: DeathEffect = {
     id: state.nextEffectId++,
     kind,
@@ -201,6 +211,7 @@ function addEffect(state: DeathState, kind: DeathEffect["kind"], lane: number, p
     progress: clamp(progress, 0, 1),
     ...(enemy ? { enemyId: enemy.id, enemyKind: enemy.kind } : {}),
     ...(amount != null ? { amount: finite(amount) } : {}),
+    ...(shotType ? { shotType } : {}),
   };
   state.effects.push(effect);
   if (state.effects.length > MAX_DEATH_EFFECTS) state.effects.splice(0, state.effects.length - MAX_DEATH_EFFECTS);
@@ -579,9 +590,11 @@ function setBossPhaseIfNeeded(state: DeathState): void {
 function completeBossWord(state: DeathState, boss: DeathBoss): void {
   const length = boss.word.length;
   const clean = boss.wordMistakes === 0;
+  const shotType = shotTypeFor(state, length, clean);
   const damage = wordDamage(state, boss, length, clean);
   boss.hp = Math.max(0, boss.hp - damage);
   state.damageDealt = counter(state.damageDealt + Math.round(damage));
+  if (shotType === "headshot") state.headshots = counter(state.headshots + 1);
   state.wordsCompleted = counter(state.wordsCompleted + 1);
   if (clean) state.cleanWords = counter(state.cleanWords + 1);
   state.combo = counter(state.combo + 1);
@@ -595,7 +608,8 @@ function completeBossWord(state: DeathState, boss: DeathBoss): void {
   boss.wordMistakes = 0;
   boss.chargeMs = Math.max(0, boss.chargeMs - 1200);
   gainEnergy(state, clean ? 13 : 8);
-  addEffect(state, "hit", 2, 0.5, boss, damage);
+  addEffect(state, "hit", 2, 0.5, boss, damage, shotType);
+  if (shotType === "headshot") state.message = "HEADSHOT. Patient Zero staggers; keep the lock moving.";
   setBossPhaseIfNeeded(state);
   if (boss.hp <= EPSILON) {
     boss.hp = 0;
@@ -618,12 +632,22 @@ function wordDamage(state: DeathState, enemy: DeathEnemy, length: number, clean:
   const lengthFactor = 0.8 + Math.min(length, 16) * 0.1;
   const base = 12 * length * lengthFactor;
   const weapon = weaponFor(state);
+  const shotType = shotTypeFor(state, length, clean);
   const shortBonus = length <= 4 ? (1 + state.upgrades.quickload * 0.2) * weapon.shortWord : 1;
   const longBonus = length >= 7 ? (1 + state.upgrades.longshot * 0.2) * weapon.longWord : 1;
   const cleanBonus = clean ? (1 + state.upgrades.precision * 0.1) * weapon.cleanWord : 1;
   const weaponBonus = 1 + state.upgrades["hollow-point"] * 0.12;
+  const headshotBonus = shotType === "headshot" ? 1.75 : 1;
   const overdriveBonus = state.overdriveMs > 0 ? 1.5 : 1;
-  return base * weapon.damage * survivorFor(state).damage * shortBonus * longBonus * cleanBonus * weaponBonus * overdriveBonus * (1 - definition.armor);
+  return base * weapon.damage * survivorFor(state).damage * shortBonus * longBonus * cleanBonus * weaponBonus * headshotBonus * overdriveBonus * (1 - definition.armor);
+}
+
+function shotTypeFor(state: DeathState, length: number, clean: boolean): DeathShotType {
+  if (state.weapon === "sniper") return clean && length >= 7 ? "headshot" : "precision";
+  if (state.weapon === "shotgun") return "buckshot";
+  if (state.weapon === "smg") return "burst";
+  if (state.weapon === "plasma") return "rifle";
+  return "sidearm";
 }
 
 /** Pure damage projection for HUD previews, balance tools and focused tests. */
@@ -691,18 +715,21 @@ function correctUniquePrefix(state: DeathState, enemy: DeathEnemy): void {
 function completeEnemyWord(state: DeathState, enemy: DeathEnemy): void {
   const length = enemy.word.length;
   const clean = enemy.wordMistakes === 0;
+  const shotType = shotTypeFor(state, length, clean);
   const damage = wordDamage(state, enemy, length, clean);
   enemy.hp = Math.max(0, enemy.hp - damage);
   enemy.lastHitAt = state.sceneMs;
   enemy.regenMs = 0;
   state.damageDealt = counter(state.damageDealt + Math.round(damage));
+  if (shotType === "headshot") state.headshots = counter(state.headshots + 1);
   state.wordsCompleted = counter(state.wordsCompleted + 1);
   if (clean) state.cleanWords = counter(state.cleanWords + 1);
   state.combo = counter(state.combo + 1);
   state.bestCombo = Math.max(state.bestCombo, state.combo);
   state.score = boundedScore(state.score + scoreForCompletion(state, enemy, length, clean));
   gainEnergy(state, clean ? 13 : 8);
-  addEffect(state, "hit", enemy.lane, enemy.progress, enemy, damage);
+  addEffect(state, "hit", enemy.lane, enemy.progress, enemy, damage, shotType);
+  if (shotType === "headshot") state.message = `HEADSHOT. ${DEATH_ENEMIES[enemy.kind].name} is reeling.`;
   if (enemy.hp <= EPSILON) {
     removeEnemy(state, enemy, true);
     return;
@@ -763,7 +790,7 @@ function typeCombatKey(state: DeathState, key: string): void {
   enemy.typed += 1;
   enemy.lastHitAt = state.sceneMs;
   heatForKey(state, false);
-  addEffect(state, "shot", enemy.lane, enemy.progress, enemy);
+  addEffect(state, "shot", enemy.lane, enemy.progress, enemy, undefined, shotTypeFor(state, enemy.word.length, false));
   correctUniquePrefix(state, enemy);
   if (enemy.typed < enemy.word.length) return;
   completeEnemyWord(state, enemy);
@@ -791,7 +818,7 @@ function typeBossKey(state: DeathState, key: string): void {
   boss.typed += 1;
   boss.lastHitAt = state.sceneMs;
   heatForKey(state, false);
-  addEffect(state, "shot", boss.lane, 0.5, boss);
+  addEffect(state, "shot", boss.lane, 0.5, boss, undefined, shotTypeFor(state, boss.word.length, false));
   correctUniquePrefix(state, boss);
   if (boss.typed === boss.word.length) completeBossWord(state, boss);
 }
@@ -1009,6 +1036,7 @@ export function deathStats(state: DeathState): DeathStats {
     cleanWords: counter(state.cleanWords),
     damageDealt: counter(state.damageDealt),
     damageTaken: counter(state.damageTaken),
+    headshots: counter(state.headshots),
     wavesCleared: counter(state.wavesCleared),
     overdrives: counter(state.overdrives),
     jams: counter(state.jams),

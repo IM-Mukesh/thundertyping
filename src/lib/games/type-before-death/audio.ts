@@ -15,13 +15,15 @@ import {
   stopMusic,
   type Bus,
 } from "@/lib/audio/audio-bus";
-import type { DeathState } from "@/lib/games/type-before-death/types";
+import type { DeathShotType, DeathState } from "@/lib/games/type-before-death/types";
 
 export const TYPE_BEFORE_DEATH_AUDIO = Object.freeze({
   music: "/audio/music/survivor-combat.opus",
   bossMusic: "/audio/music/survivor-boss.opus",
   cues: Object.freeze({
-    shot: "/audio/sfx/sfx-sword-hit.opus",
+    shot: "/audio/sfx/sfx-turret-fire.opus",
+    buckshot: "/audio/sfx/sfx-wb-explosion.opus",
+    headshot: "/audio/sfx/sfx-crit-hit.opus",
     kill: "/audio/sfx/sfx-enemy-death.opus",
     hurt: "/audio/sfx/sfx-player-hurt.opus",
     bossIntro: "/audio/sfx/sfx-boss-intro.opus",
@@ -37,6 +39,8 @@ export type TypeBeforeDeathAudioCue = keyof typeof TYPE_BEFORE_DEATH_AUDIO.cues;
 
 const CUE_VOLUME: Readonly<Record<TypeBeforeDeathAudioCue, number>> = {
   shot: 0.18,
+  buckshot: 0.24,
+  headshot: 0.34,
   kill: 0.42,
   hurt: 0.72,
   bossIntro: 0.8,
@@ -73,6 +77,12 @@ function cue(name: TypeBeforeDeathAudioCue, enabled: boolean): void {
   safe(() => { void play(TYPE_BEFORE_DEATH_AUDIO.cues[name], { bus: SFX_BUS, volume: CUE_VOLUME[name], signal }).catch(() => {}); });
 }
 
+function shotCue(shotType: DeathShotType | undefined): TypeBeforeDeathAudioCue {
+  if (shotType === "buckshot") return "buckshot";
+  if (shotType === "headshot") return "headshot";
+  return "shot";
+}
+
 export function deathAudioTrack(state: DeathState, enabled: boolean): void {
   if (!enabled || state.phase === "menu" || state.phase === "paused" || state.phase === "results" || state.phase === "upgrade") {
     safe(() => stopMusic());
@@ -92,7 +102,9 @@ export function deathAudioTransition(before: DeathState, after: DeathState, enab
   const beforeEffect = before.effects.at(-1)?.id ?? 0;
   const newEffects = after.effects.filter((effect) => effect.id > beforeEffect);
   const kinds = new Set(newEffects.map((effect) => effect.kind));
-  if (kinds.has("shot") || kinds.has("hit")) cue("shot", enabled);
+  const shotEffect = newEffects.find((effect) => effect.kind === "hit")
+    ?? newEffects.find((effect) => effect.kind === "shot");
+  if (shotEffect) cue(shotCue(shotEffect.shotType), enabled);
   if (kinds.has("kill")) cue("kill", enabled);
   if (kinds.has("hurt") || kinds.has("breach") || kinds.has("acid") || kinds.has("explosion")) cue("hurt", enabled);
   if (kinds.has("upgrade")) cue("upgrade", enabled);

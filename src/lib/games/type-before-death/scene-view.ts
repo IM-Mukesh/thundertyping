@@ -92,6 +92,7 @@ export function deathSceneView(
       intensity: effect.amount ? clamp(effect.amount / 160, 0.25, 1.4) : effect.kind === "overdrive" ? 1 : 0.8,
       seed: effect.id * 0.71,
       color: effect.kind === "overdrive" ? "#8feaff" : effect.kind === "hurt" || effect.kind === "breach" ? "#ff625d" : undefined,
+      shotType: effect.shotType,
     })),
     reducedMotion: reducedMotion || frozen,
     quality,

@@ -139,6 +139,20 @@ describe("Type Before Death deterministic engine", () => {
     assert.equal(retreated.damageDealt, shortDone.damageDealt);
   });
 
+  it("turns a clean long marksman word into a headshot event", () => {
+    const base = replaceEnemy(combat("headshot"), {
+      word: "barricade",
+      tier: "long",
+      hp: 10_000,
+      maxHp: 10_000,
+    });
+    const sniper = typeWord({ ...base, weapon: "sniper" }, "barricade");
+    const impact = sniper.effects.find((effect) => effect.kind === "hit");
+    assert.equal(impact?.shotType, "headshot");
+    assert.equal(sniper.headshots, 1);
+    assert.ok(sniper.damageDealt > base.damageDealt);
+  });
+
   it("handles heat jams, overdrive, pause and bounded stats", () => {
     let state = replaceEnemy(combat("heat"), { word: "aaaaaaaa", tier: "long", hp: 10_000, maxHp: 10_000 });
     // A wrong key adds heat without changing prefix progress.

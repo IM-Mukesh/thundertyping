@@ -98,6 +98,20 @@ const MAX_DRAIN = 2.4;
 /** Score per character, before the combo multiplier. */
 const POINTS_PER_CHAR = 10;
 
+// ---------------------------------------------------------------------------
+// Overdrive
+// ---------------------------------------------------------------------------
+
+/** The bounded charge meter fills in fixed steps on clean word clears. */
+export const OVERDRIVE_CHARGE_MAX = 100;
+export const OVERDRIVE_CHARGE_PER_CLEAR = 20;
+/** A short, fixed window keeps the reward readable without making it permanent. */
+export const OVERDRIVE_MS = 6_000;
+/** Overdrive halves the clock cost while it is active. */
+export const OVERDRIVE_DRAIN_MULTIPLIER = 0.5;
+/** Overdrive makes each clear worth 50% more points. */
+export const OVERDRIVE_SCORE_MULTIPLIER = 1.5;
+
 /** Current word plus the three queued behind it. */
 export const QUEUE_SIZE = 4;
 
@@ -143,6 +157,12 @@ export interface ComboRushState {
   lastGain: TimeGain | null;
   /** Game-time deadline for the mistake flash; 0 when there isn't one. */
   mistakeUntilMs: number;
+  /** Bounded clean-clear charge, spent when Overdrive starts. */
+  overdriveCharge: number;
+  /** Remaining active Overdrive time, frozen while paused. */
+  overdriveMs: number;
+  /** Number of times this run has entered Overdrive. */
+  overdriveActivations: number;
 }
 
 export type RushTier = "normal" | "bronze" | "silver" | "gold" | "hyper";
@@ -162,16 +182,18 @@ export function comboMultiplier(combo: number): number {
 }
 
 /** Clock-milliseconds burned per real millisecond, given words cleared. */
-export function drainRate(cleared: number): number {
-  return Math.min(MAX_DRAIN, BASE_DRAIN + cleared * DRAIN_PER_CLEAR);
+export function drainRate(cleared: number, overdriveActive = false): number {
+  const normalRate = Math.min(MAX_DRAIN, BASE_DRAIN + cleared * DRAIN_PER_CLEAR);
+  return overdriveActive ? normalRate * OVERDRIVE_DRAIN_MULTIPLIER : normalRate;
 }
 
 function timeAward(word: string, combo: number): number {
   return Math.round((BASE_GAIN_MS + PER_CHAR_GAIN_MS * word.length) * comboMultiplier(combo));
 }
 
-function scoreForWord(word: string, combo: number): number {
-  return Math.round(word.length * POINTS_PER_CHAR * comboMultiplier(combo));
+export function scoreForWord(word: string, combo: number, overdriveActive = false): number {
+  const base = word.length * POINTS_PER_CHAR * comboMultiplier(combo);
+  return Math.round(overdriveActive ? base * OVERDRIVE_SCORE_MULTIPLIER : base);
 }
 
 type ComboRushAction =
@@ -200,6 +222,9 @@ export function createInitialState(definition: GameDefinition): ComboRushState {
     elapsedMs: 0,
     lastGain: null,
     mistakeUntilMs: 0,
+    overdriveCharge: 0,
+    overdriveMs: 0,
+    overdriveActivations: 0,
   };
 }
 
@@ -237,11 +262,13 @@ export function reducer(state: ComboRushState, action: ComboRushAction): ComboRu
     case "TICK": {
       if (state.status !== "running") return state;
       const elapsedMs = state.elapsedMs + TICK_MS;
-      const timeLeftMs = state.timeLeftMs - TICK_MS * drainRate(state.cleared);
+      const overdriveActive = state.overdriveMs > 0;
+      const overdriveMs = Math.max(0, state.overdriveMs - TICK_MS);
+      const timeLeftMs = state.timeLeftMs - TICK_MS * drainRate(state.cleared, overdriveActive);
       if (timeLeftMs <= 0) {
-        return { ...state, elapsedMs, timeLeftMs: 0, status: "over" };
+        return { ...state, elapsedMs, timeLeftMs: 0, overdriveMs, status: "over" };
       }
-      return { ...state, elapsedMs, timeLeftMs };
+      return { ...state, elapsedMs, timeLeftMs, overdriveMs };
     }
 
     case "ENQUEUE": {
@@ -285,6 +312,14 @@ export function reducer(state: ComboRushState, action: ComboRushAction): ComboRu
       // games, and the whole point here is rhythm without a separator key.
       // The award uses the combo *before* this word, so the first clear of a
       // streak pays 1x and the multiplier is something you have earned.
+      const overdriveActive = state.overdriveMs > 0;
+      // Charge is deliberately earned from zero again after activation. This
+      // prevents a clean burst from chaining indefinitely and makes every
+      // Overdrive window a bounded reward rather than a permanent state.
+      const charged = overdriveActive
+        ? state.overdriveCharge
+        : Math.min(OVERDRIVE_CHARGE_MAX, state.overdriveCharge + OVERDRIVE_CHARGE_PER_CLEAR);
+      const enteringOverdrive = !overdriveActive && charged >= OVERDRIVE_CHARGE_MAX;
       const timeLeftMs = Math.min(MAX_TIME_MS, state.timeLeftMs + timeAward(word, state.combo));
       const combo = state.combo + 1;
       const cleared = state.cleared + 1;
@@ -293,11 +328,14 @@ export function reducer(state: ComboRushState, action: ComboRushAction): ComboRu
         queue: state.queue.slice(1),
         typed: "",
         timeLeftMs,
-        score: state.score + scoreForWord(word, state.combo),
+        score: state.score + scoreForWord(word, state.combo, overdriveActive),
         cleared,
         combo,
         bestCombo: Math.max(state.bestCombo, combo),
         correctKeystrokes,
+        overdriveCharge: enteringOverdrive ? 0 : charged,
+        overdriveMs: enteringOverdrive ? OVERDRIVE_MS : state.overdriveMs,
+        overdriveActivations: state.overdriveActivations + (enteringOverdrive ? 1 : 0),
         lastGain: {
           seq: cleared,
           ms: timeLeftMs - state.timeLeftMs,

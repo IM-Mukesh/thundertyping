@@ -11,6 +11,7 @@ import { getStorageItem, setStorageItem } from "@/lib/persistence/storage";
 import { calculateAccuracy, calculateLiveWpm, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { isSpeechSupported, speakExplanation, speakWord, stopSpeaking } from "@/lib/vocabulary/vocabulary-speech";
 import { cn } from "@/lib/utils/cn";
+import { CapsLockIndicator } from "@/components/typing-test/caps-lock-indicator";
 
 // A round only changes progress by finishing, which re-renders this
 // component anyway (the reducer's status flips to "over") — nothing to
@@ -300,6 +301,12 @@ export function VocabularyTest({ difficulty }: VocabularyTestProps) {
 
         {state.status === "over" && (
           <ResultsCard difficulty={difficulty} state={state} outcome={outcome} onRestart={handleStart} />
+        )}
+
+        {isRunning && (
+          <div className="flex min-h-7 items-center justify-center">
+            <CapsLockIndicator />
+          </div>
         )}
 
         <input

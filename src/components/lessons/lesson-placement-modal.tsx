@@ -12,6 +12,7 @@ import {
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
+import { CapsLockIndicator } from "@/components/typing-test/caps-lock-indicator";
 import { calculateAccuracy, calculateConsistency, calculateNetWpm, calculateRawWpm } from "@/lib/typing-engine/stats";
 import {
   evaluateComprehensivePlacement,
@@ -236,8 +237,9 @@ function PlacementDialogContent({ onClose }: { onClose: () => void }) {
               )}
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-sub">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] text-sub">
               <span>Start typing to begin assessment</span>
+              <CapsLockIndicator className="shrink-0" />
               <button
                 type="button"
                 onClick={handleRetry}

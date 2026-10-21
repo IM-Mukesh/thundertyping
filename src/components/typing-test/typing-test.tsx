@@ -27,6 +27,7 @@ import { TestConfigBar } from "@/components/typing-test/test-config-bar";
 import { CustomTextModal } from "@/components/typing-test/custom-text-modal";
 import { LanguageSelector } from "@/components/typing-test/language-selector";
 import { MobileTestSettingsModal } from "@/components/typing-test/mobile-test-settings-modal";
+import { CapsLockIndicator } from "@/components/typing-test/caps-lock-indicator";
 import { listenForTestReset } from "@/lib/typing-engine/reset-bus";
 import { setTestStatus } from "@/lib/typing-engine/test-status-store";
 import type { LocalizedContent, TestStatus } from "@/lib/typing-engine/engine-types";
@@ -478,7 +479,10 @@ export function TypingTest({
             isRunning ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         >
-          <LiveStatsBar state={engine.state} />
+          <div className="flex min-w-0 items-end gap-3">
+            <LiveStatsBar state={engine.state} />
+            <CapsLockIndicator className="mb-0.5 shrink-0" />
+          </div>
           {/* Mobile-only restart button during running test */}
           <button
             type="button"

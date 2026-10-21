@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GameDefinition, GameId } from "@/lib/games/game-types";
 import { GameSaveStatus } from "@/components/games/ui/game-save-status";
+import { CapsLockIndicator } from "@/components/typing-test/caps-lock-indicator";
 
 // Every game is loaded with ssr:false for the same reason the typing test is:
 // word spawning is randomised, so server-rendering a board would guarantee a
@@ -105,6 +106,12 @@ export function GameClient({
   if (!Game) return null;
   return (
     <div className="flex w-full flex-col items-center gap-3">
+      {/* Reserve a small, non-overlapping HUD slot above every game. The status
+          is contextual to keyboard play, but it must never sit on top of a
+          canvas, enemy label, or game control. */}
+      <div className="flex min-h-7 w-full items-center justify-end px-1">
+        <CapsLockIndicator />
+      </div>
       <Game definition={definition} art={art} />
       <GameSaveStatus gameId={definition.id} />
     </div>

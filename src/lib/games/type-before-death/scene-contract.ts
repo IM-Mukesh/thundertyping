@@ -4,6 +4,8 @@
  * view model without making the renderer know about game rules.
  */
 
+import type { DeathShotType } from "@/lib/games/type-before-death/types";
+
 export type TypeBeforeDeathRenderMode = "webgl" | "fallback";
 export type TypeBeforeDeathRenderQuality = "auto" | "low" | "high";
 
@@ -74,6 +76,7 @@ export interface TypeBeforeDeathEffectView {
   readonly intensity?: number;
   readonly seed?: number;
   readonly color?: string;
+  readonly shotType?: DeathShotType;
 }
 
 export interface TypeBeforeDeathSceneView {

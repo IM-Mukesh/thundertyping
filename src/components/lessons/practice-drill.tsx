@@ -16,6 +16,7 @@ import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import { calculateAccuracy, calculateConsistency, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
+import { CapsLockIndicator } from "@/components/typing-test/caps-lock-indicator";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { VirtualKeyboard } from "@/components/lessons/virtual-keyboard";
 import {
@@ -343,7 +344,7 @@ export function PracticeDrill({ defaultMode }: PracticeDrillProps = {}) {
       )}
 
       {/* Target Summary Banner */}
-      <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 font-mono text-xs">
+      <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="text-accent font-bold">FOCUS:</span>
           {mode === "weak-keys" && (
@@ -375,14 +376,17 @@ export function PracticeDrill({ defaultMode }: PracticeDrillProps = {}) {
             <span>High-frequency flow sequences for motor burst velocity</span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleRetry}
-          className="flex items-center gap-1 text-[11px] text-sub transition-colors hover:text-accent"
-        >
-          <RotateCcw size={11} aria-hidden="true" />
-          Fresh variation
-        </button>
+        <div className="flex items-center gap-3">
+          <CapsLockIndicator className="shrink-0" />
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="flex items-center gap-1 text-[11px] text-sub transition-colors hover:text-accent"
+          >
+            <RotateCcw size={11} aria-hidden="true" />
+            Fresh variation
+          </button>
+        </div>
       </div>
 
       {/* Typing Surface */}

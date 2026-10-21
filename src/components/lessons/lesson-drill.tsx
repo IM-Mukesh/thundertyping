@@ -15,6 +15,7 @@ import type { TestConfig } from "@/lib/typing-engine/engine-types";
 import { useTypingEngine } from "@/lib/typing-engine/use-typing-engine";
 import { calculateAccuracy, calculateNetWpm, round } from "@/lib/typing-engine/stats";
 import { HiddenInput } from "@/components/typing-test/hidden-input";
+import { CapsLockIndicator } from "@/components/typing-test/caps-lock-indicator";
 import { WordStream } from "@/components/typing-test/word-stream";
 import { VirtualKeyboard } from "@/components/lessons/virtual-keyboard";
 import { LessonCompletionModal } from "@/components/lessons/lesson-completion-modal";
@@ -332,6 +333,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
 
           <div className="flex items-center gap-3">
             <span className="text-[10px] text-sub">Min: 60% acc</span>
+            <CapsLockIndicator className="shrink-0" />
             <button
               type="button"
               onClick={toggleSound}

@@ -301,11 +301,13 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
       "A short clock drains continuously. At zero the run ends.",
       "Every cleared word refunds time; longer words refund more.",
       "Build streaks to ascend 5 Rush Tiers (Warmup, Bronze, Silver, Gold, Hyper).",
+      "Clean clears charge Overdrive; fill the meter to halve clock drain and earn 1.5x score for 6 seconds.",
       "One wrong letter resets your multiplier and Rush Tier. Space skips a word for 0.75 seconds.",
     ],
     about: [
       "Combo Rush is an adrenaline-fueled trading game: you trade typing accuracy for survival clock, and the drain accelerates as you progress.",
       "Climb through five streak milestones from Warmup to Hyper. Each clean word builds the same multiplier for points and time refunds, rising from 1x to a 1.6x cap. Later tier badges celebrate longer streaks rather than adding a hidden bonus.",
+      "Five clean clears charge Overdrive. When it ignites, the clock drain is halved and clean clears score 1.5x for six seconds, creating a brief window to press the advantage rather than coast.",
       "A wrong letter resets your combo and tier without directly subtracting time. The clock continues draining while you recover. Skipping with Space resets the combo and costs 0.75 seconds.",
     ],
     lives: 1,
@@ -317,8 +319,8 @@ export const GAME_DEFINITIONS: Record<GameId, GameDefinition> = {
     duration: "2-4 min",
     replayability: "High",
     pitch:
-      "Ascend 5 Rush Tiers from Warmup to Hyper. The clock drains, your combo saves you.",
-    highlights: ["5 Rush tiers", "Time refund mechanics", "Score attack frenzy", "Instant pace test"],
+      "Ascend 5 Rush Tiers, ignite Overdrive, and turn clean typing into extra time.",
+    highlights: ["5 Rush tiers", "Overdrive windows", "Time refund mechanics", "Score attack frenzy"],
   },
   spellbound: {
     id: "spellbound",

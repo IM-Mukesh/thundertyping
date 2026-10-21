@@ -168,6 +168,9 @@ function createTypingTestHarness(
     "@/components/typing-test/mobile-test-settings-modal": {
       MobileTestSettingsModal: stub("MobileTestSettingsModal"),
     },
+    "@/components/typing-test/caps-lock-indicator": {
+      CapsLockIndicator: stub("CapsLockIndicator"),
+    },
     "@/lib/typing-engine/reset-bus": {
       listenForTestReset: () => () => {},
     },

@@ -63,6 +63,11 @@ const SAFEHOUSE_COLOR: Color = [0.18, 0.27, 0.3];
 const SAFEHOUSE_GLOW: Color = [0.28, 0.9, 0.78];
 const EMBER_COLOR: Color = [1, 0.36, 0.12];
 const RAIN_COLOR: Color = [0.32, 0.56, 0.7];
+const MUZZLE_FLASH: Color = [1, 0.72, 0.28];
+const IMPACT_FLASH: Color = [1, 0.42, 0.2];
+const BLOOD_RED: Color = [0.76, 0.08, 0.055];
+const BLOOD_DARK: Color = [0.38, 0.025, 0.02];
+const BLOOD_HIGHLIGHT: Color = [1, 0.24, 0.12];
 
 function finite(value: number | undefined, fallback = 0): number {
   return Number.isFinite(value) ? value as number : fallback;
@@ -273,26 +278,40 @@ interface CharacterStyle {
   width: number;
   height: number;
   lean: number;
-  weapon: "none" | "claws" | "gun" | "blade" | "hammer";
+  weapon: "none" | "gun";
   hood: boolean;
-  horns: boolean;
-  wings: boolean;
+  undead: boolean;
+  ragged: number;
+  hunched: number;
   crouch: number;
 }
 
 const PLAYER_STYLE: CharacterStyle = {
-  body: color("#10151c"), cloth: color("#1a2730"), accent: color("#db4f55"), glow: color("#ffd394"), width: 0.95, height: 2.28, lean: 0, weapon: "gun", hood: false, horns: false, wings: false, crouch: 0,
+  body: color("#10151c"), cloth: color("#1a2730"), accent: color("#db4f55"), glow: color("#ffd394"), width: 0.95, height: 2.28, lean: 0, weapon: "gun", hood: false, undead: false, ragged: 0.08, hunched: 0.02, crouch: 0,
 };
 
 function characterStyle(kind: string, boss = false): CharacterStyle {
   const normalized = kind.toLowerCase();
-  if (boss || normalized.includes("boss") || normalized.includes("overlord")) return { body: color("#24151e"), cloth: color("#401d2d"), accent: color("#f0525b"), glow: color("#ffad62"), width: 1.65, height: 3.5, lean: 0.02, weapon: "hammer", hood: false, horns: true, wings: true, crouch: 0 };
-  if (normalized.includes("brute") || normalized.includes("tank") || normalized.includes("heavy")) return { body: color("#242630"), cloth: color("#3d2934"), accent: color("#ff8b4c"), glow: color("#ffb168"), width: 1.46, height: 2.68, lean: 0.04, weapon: "hammer", hood: false, horns: false, wings: false, crouch: 0 };
-  if (normalized.includes("shooter") || normalized.includes("sniper") || normalized.includes("gunner")) return { body: color("#15232d"), cloth: color("#253945"), accent: color("#f2b45b"), glow: color("#fbe0a0"), width: 0.82, height: 2.22, lean: -0.08, weapon: "gun", hood: true, horns: false, wings: false, crouch: 0.03 };
-  if (normalized.includes("stalker") || normalized.includes("assassin") || normalized.includes("shadow")) return { body: color("#19162c"), cloth: color("#292044"), accent: color("#b177f2"), glow: color("#d2a5ff"), width: 0.76, height: 1.92, lean: 0.22, weapon: "claws", hood: true, horns: false, wings: false, crouch: 0.22 };
-  if (normalized.includes("swarm") || normalized.includes("drone") || normalized.includes("crawler")) return { body: color("#1b2b2a"), cloth: color("#243d3a"), accent: color("#73d2a4"), glow: color("#b7f6ad"), width: 0.52, height: 1.15, lean: 0.25, weapon: "claws", hood: false, horns: false, wings: true, crouch: 0.1 };
-  if (normalized.includes("runner") || normalized.includes("hound") || normalized.includes("infected")) return { body: color("#142733"), cloth: color("#1f3e4a"), accent: color("#44cbd2"), glow: color("#a4fff4"), width: 0.72, height: 2.03, lean: -0.2, weapon: "claws", hood: false, horns: false, wings: false, crouch: 0.08 };
-  return { body: color("#1e242b"), cloth: color("#293642"), accent: color("#9db6c7"), glow: color("#d6edf6"), width: 0.9, height: 2.12, lean: 0.04, weapon: "blade", hood: false, horns: false, wings: false, crouch: 0 };
+  if (boss || normalized.includes("boss") || normalized.includes("overlord")) return { body: color("#24151e"), cloth: color("#401d2d"), accent: color("#f0525b"), glow: color("#ffad62"), width: 1.65, height: 3.5, lean: 0.02, weapon: "none", hood: false, undead: true, ragged: 1, hunched: 0.2, crouch: 0 };
+  if (normalized.includes("brute") || normalized.includes("tank") || normalized.includes("heavy")) return { body: color("#242630"), cloth: color("#3d2934"), accent: color("#d65c45"), glow: color("#ffb168"), width: 1.46, height: 2.68, lean: 0.04, weapon: "none", hood: false, undead: true, ragged: 0.95, hunched: 0.28, crouch: 0 };
+  if (normalized.includes("shooter") || normalized.includes("sniper") || normalized.includes("gunner")) return { body: color("#15232d"), cloth: color("#253945"), accent: color("#d28a4d"), glow: color("#fbe0a0"), width: 0.82, height: 2.22, lean: -0.08, weapon: "gun", hood: true, undead: true, ragged: 0.62, hunched: 0.2, crouch: 0.03 };
+  if (normalized.includes("stalker") || normalized.includes("assassin") || normalized.includes("shadow")) return { body: color("#191b22"), cloth: color("#292d35"), accent: color("#a94c4f"), glow: color("#b9e08d"), width: 0.76, height: 1.92, lean: 0.16, weapon: "none", hood: false, undead: true, ragged: 0.86, hunched: 0.34, crouch: 0.22 };
+  if (normalized.includes("swarm") || normalized.includes("drone") || normalized.includes("crawler")) return { body: color("#1b2b2a"), cloth: color("#243d3a"), accent: color("#9a5544"), glow: color("#b7f6ad"), width: 0.52, height: 1.15, lean: 0.18, weapon: "none", hood: false, undead: true, ragged: 1, hunched: 0.4, crouch: 0.1 };
+  if (normalized.includes("runner") || normalized.includes("hound") || normalized.includes("infected")) return { body: color("#142733"), cloth: color("#1f3e4a"), accent: color("#bd554f"), glow: color("#a4fff4"), width: 0.72, height: 2.03, lean: -0.12, weapon: "none", hood: false, undead: true, ragged: 0.74, hunched: 0.29, crouch: 0.08 };
+  return { body: color("#1e242b"), cloth: color("#293642"), accent: color("#a65b52"), glow: color("#d6edf6"), width: 0.9, height: 2.12, lean: 0.04, weapon: "none", hood: false, undead: true, ragged: 0.78, hunched: 0.24, crouch: 0 };
+}
+
+function drawFirearm3D(batch: Geometry, matrix: Mat4, body: Color, cloth: Color, accent: Color, alpha: number, low: boolean): void {
+  const box = (center: Vec3, size: Vec3, tint: Color, emission = 0): void => batch.box(matrix, center, size, tint, emission, alpha);
+  // A compact carbine silhouette: stock, receiver, magazine, barrel, and a low sight.
+  const stock = transform(matrix, [0, -0.2, 0], 0, 0, -0.08);
+  batch.box(stock, [0, 0, 0], [0.16, 0.3, 0.14], cloth, 0, alpha);
+  box([0, 0.035, 0], [0.23, 0.28, 0.16], body);
+  box([0, -0.055, -0.105], [0.11, 0.16, 0.075], accent, 0.12);
+  box([0, 0.35, 0], [0.09, 0.53, 0.085], body);
+  box([0, 0.64, 0], [0.12, 0.1, 0.12], accent, 0.18);
+  box([0, 0.25, 0.095], [0.045, 0.13, 0.035], accent, 0.2);
+  if (!low) box([0, 0.19, -0.09], [0.045, 0.1, 0.035], cloth, 0.08);
 }
 
 function drawCharacter(batch: Geometry, position: Vec3, style: CharacterStyle, time: number, seed: number, options: { player?: boolean; boss?: boolean; low?: boolean; still?: boolean; hitFlash?: number; alpha?: number }): void {
@@ -304,22 +323,31 @@ function drawCharacter(batch: Geometry, position: Vec3, style: CharacterStyle, t
   const scale = options.boss ? 1 : 1;
   const stride = options.still ? 0 : Math.sin(time * 0.004 + seed * 1.77) * 0.22;
   const crouch = style.crouch;
-  const root = transform(identity(), [position[0], position[1] + crouch * 0.18, position[2]], style.lean + (options.player ? 0 : stride * 0.04), 0, 0, scale);
+  const root = transform(identity(), [position[0], position[1] + crouch * 0.18, position[2]], style.lean + style.hunched * 0.45 + (options.player ? 0 : stride * 0.04), 0, 0, scale);
   const box = (matrix: Mat4, center: Vec3, size: Vec3, tint: Color, emission = 0): void => batch.box(matrix, center, size, tint, emission, alpha);
   const torso = transform(root, [0, style.height * 0.51, 0]);
   box(torso, [0, 0, 0], [style.width * 0.62, style.height * 0.53, 0.38], body);
-  box(torso, [0, -style.height * 0.13, -0.21], [style.width * 0.36, style.height * 0.28, 0.055], cloth);
-  box(torso, [0, style.height * 0.2, -0.2], [style.width * 0.48, 0.065, 0.04], accent, 0.18);
+  box(torso, [0, -style.height * 0.13, 0.21], [style.width * 0.36, style.height * 0.28, 0.055], cloth);
+  box(torso, [0, style.height * 0.2, 0.2], [style.width * 0.48, 0.065, 0.04], accent, 0.18);
+  if (style.undead) {
+    for (const side of [-1, 1]) {
+      const shoulder = transform(torso, [side * style.width * 0.24, style.height * 0.08, -0.03], 0, 0, side * 0.1);
+      batch.triangle(point(shoulder, [-style.width * 0.17, 0.12, 0.2]), point(shoulder, [style.width * 0.17, 0.12, 0.2]), point(shoulder, [side * style.width * 0.21, -style.height * (0.2 + style.ragged * 0.12), 0.2]), mix(cloth, body, 0.24), 0.02, alpha);
+    }
+    const tornHem = transform(torso, [0, -style.height * 0.18, 0.2], 0, 0, style.lean * 0.18);
+    batch.triangle(point(tornHem, [-style.width * 0.25, 0.18, 0]), point(tornHem, [0, 0.18, 0]), point(tornHem, [-style.width * 0.12, -style.height * (0.16 + style.ragged * 0.1), 0]), cloth, 0.01, alpha);
+    batch.triangle(point(tornHem, [0, 0.18, 0]), point(tornHem, [style.width * 0.25, 0.18, 0]), point(tornHem, [style.width * 0.1, -style.height * (0.13 + style.ragged * 0.14), 0]), mix(cloth, body, 0.18), 0.01, alpha);
+  }
   if (style.hood) {
     box(torso, [0, style.height * 0.18, 0.09], [style.width * 0.76, style.height * 0.28, 0.34], cloth);
   }
   const head = transform(torso, [0, style.height * 0.39, 0], options.player ? 0 : stride * 0.1);
   box(head, [0, 0, 0], [style.width * 0.42, style.height * 0.22, 0.34], style.hood ? cloth : body);
-  box(head, [0, -style.height * 0.04, -0.19], [style.width * 0.13, style.height * 0.06, 0.035], style.glow, 0.9);
-  if (style.horns) for (const side of [-1, 1]) batch.pyramid(head, [side * style.width * 0.22, style.height * 0.16, 0], style.width * 0.16, style.height * 0.24, 0.15, accent, 0.2, alpha);
-  if (style.wings && !options.low) for (const side of [-1, 1]) {
-    const wing = transform(torso, [side * style.width * 0.34, style.height * 0.16, 0.12], 0, side * 0.12, side * -0.08);
-    batch.triangle(point(wing, [0, 0.1, 0]), point(wing, [side * 0.95, -0.2, 0.1]), point(wing, [side * 0.62, -style.height * 0.42, 0.2]), cloth, 0.15, alpha * 0.72);
+  if (style.undead) {
+    box(head, [0, -style.height * 0.08, 0.17], [style.width * 0.3, style.height * 0.1, 0.055], mix(body, [0.03, 0.04, 0.045], 0.35));
+    for (const side of [-1, 1]) box(head, [side * style.width * 0.1, -style.height * 0.015, 0.2], [style.width * 0.075, style.height * 0.045, 0.035], style.glow, 0.92);
+  } else {
+    box(head, [0, -style.height * 0.04, -0.19], [style.width * 0.13, style.height * 0.06, 0.035], style.glow, 0.55);
   }
   for (const side of [-1, 1]) {
     const leg = transform(root, [side * style.width * 0.19, style.height * 0.25, 0], (options.player ? side * 0.12 : stride * side));
@@ -327,31 +355,17 @@ function drawCharacter(batch: Geometry, position: Vec3, style: CharacterStyle, t
     box(leg, [0, -style.height * 0.35, 0], [style.width * 0.24, style.height * 0.26, 0.29], body);
   }
   for (const side of [-1, 1]) {
-    const arm = transform(torso, [side * style.width * 0.42, style.height * 0.11, 0], options.player && side > 0 ? -0.45 : side * 0.12);
+    const armRotation = options.player ? (side > 0 ? -0.45 : 0.2) : style.hunched * 0.72 + side * 0.12;
+    const arm = transform(torso, [side * style.width * 0.42, style.height * 0.11, 0], armRotation);
     box(arm, [0, -style.height * 0.12, 0], [style.width * 0.2, style.height * 0.32, 0.25], body);
     const hand = transform(arm, [0, -style.height * 0.28, 0]);
     box(hand, [0, -0.03, 0], [style.width * 0.16, style.height * 0.12, 0.18], cloth);
     if (side > 0 && style.weapon !== "none") {
-      const weapon = transform(hand, [0, -style.height * 0.1, -0.08], style.weapon === "gun" ? Math.PI / 2 : 0, 0, style.weapon === "gun" ? -0.04 : -0.14);
-      if (style.weapon === "gun") {
-        box(weapon, [0, 0.09, 0], [0.17, 0.58, 0.13], body);
-        box(weapon, [0, 0.38, -0.01], [0.14, 0.25, 0.14], accent, 0.18);
-      } else if (style.weapon === "hammer") {
-        box(weapon, [0, 0.37, 0], [0.1, 0.92, 0.1], cloth);
-        box(weapon, [0, 0.84, 0], [0.45, 0.26, 0.22], accent, 0.12);
-      } else if (style.weapon === "blade") {
-        box(weapon, [0, 0.43, 0], [0.07, 0.85, 0.055], accent, 0.2);
-        batch.pyramid(weapon, [0, 0.9, 0], 0.1, 0.28, 0.06, accent, 0.25, alpha);
-      } else {
-        for (const claw of [-1, 0, 1]) box(weapon, [claw * 0.08, 0.29, -0.04], [0.035, 0.32, 0.035], accent, 0.45);
-      }
+      const weapon = transform(hand, [0, -style.height * 0.1, -0.08], -Math.PI / 2.15, 0, options.player ? -0.08 : -0.04);
+      drawFirearm3D(batch, weapon, body, cloth, accent, alpha, Boolean(options.low));
     }
   }
   if (style.hood) box(head, [0, style.height * 0.08, 0.16], [style.width * 0.58, style.height * 0.12, 0.15], cloth);
-  if (options.boss && !options.low) {
-    const cape = transform(torso, [0, 0.16, 0.24], -0.1);
-    batch.triangle(point(cape, [-style.width * 0.32, style.height * 0.12, 0]), point(cape, [style.width * 0.32, style.height * 0.12, 0]), point(cape, [style.width * 0.52, -style.height * 0.82, 0.17]), cloth, 0.06, alpha);
-  }
 }
 
 function buildScenery(batch: Geometry, low: boolean): void {
@@ -436,29 +450,49 @@ function drawEffects(batch: Geometry, frame: SceneFrame): void {
     const progress = effectProgress(effect, frame.reducedMotion);
     const position = effectWorldPosition(effect, view, fallback);
     const intensity = clampTypeBeforeDeath(finite(effect.intensity, 1), 0, 2);
-    const tint: Color = effect.color ? color(effect.color) : effect.kind === "overdrive" ? [0.3, 0.82, 1] : effect.kind === "death" ? [1, 0.45, 0.22] : [1, 0.82, 0.48];
+    const customTint = Boolean(effect.color);
+    const tint: Color = effect.color ? color(effect.color) : effect.kind === "overdrive" ? [0.3, 0.82, 1] : effect.kind === "death" ? BLOOD_RED : MUZZLE_FLASH;
     if (effect.kind === "muzzle") {
+      const flash = 1 - progress;
       const muzzle = [position[0] + 0.5, 1.45, position[2] - 0.2] as Vec3;
-      batch.pyramid(identity(), muzzle, 0.48 * intensity * (1 - progress), 0.42 * intensity * (1 - progress), 0.48, tint, 1, 0.85 * (1 - progress));
-      batch.ring(muzzle, 0.42 * (1 - progress), 0.09, tint, 0.8 * (1 - progress), 12);
+      const flashTint = customTint ? tint : MUZZLE_FLASH;
+      const spread = effect.shotType === "buckshot" ? 1.35 : effect.shotType === "headshot" ? 0.7 : 1;
+      batch.pyramid(identity(), muzzle, 0.48 * intensity * flash * spread, 0.42 * intensity * flash * spread, 0.48, flashTint, 1, 0.85 * flash);
+      batch.box(transform(identity(), muzzle, 0, 0, Math.PI / 4), [0, 0, 0], [0.16 * intensity * flash, 0.16 * intensity * flash, 0.16], [1, 0.9, 0.62], 1, 0.7 * flash);
+      batch.ring(muzzle, 0.42 * flash, 0.09, flashTint, 0.8 * flash, 12);
+      if (effect.shotType === "buckshot") {
+        for (const pellet of [-1, 0, 1]) {
+          batch.pyramid(identity(), [muzzle[0] + pellet * 0.18 * flash, muzzle[1] + Math.abs(pellet) * 0.08, muzzle[2] - 0.22], 0.12 * flash, 0.14 * flash, 0.12, flashTint, 0.9, 0.75 * flash);
+        }
+      }
     } else if (effect.kind === "impact") {
-      appendRingEffect(batch, position, 1.35 * intensity, progress, tint, 0.9);
+      const impactTint = customTint ? tint : effect.shotType === "headshot" ? BLOOD_HIGHLIGHT : BLOOD_RED;
+      const flash = 1 - progress;
+      const impactScale = effect.shotType === "headshot" ? 1.35 : effect.shotType === "buckshot" ? 1.15 : 1;
+      appendRingEffect(batch, position, 1.35 * intensity * impactScale, progress, impactTint, 0.9);
+      batch.box(transform(identity(), [position[0], 0.16, position[2]], 0, 0, Math.PI / 4), [0, 0, 0], [0.16 * intensity * flash, 0.1 * intensity * flash, 0.16 * intensity * flash], customTint ? impactTint : IMPACT_FLASH, 0.85, 0.72 * flash);
+      batch.ring([position[0], 0.15, position[2]], 0.2 + 0.35 * flash, 0.055, customTint ? impactTint : IMPACT_FLASH, 0.72 * flash, frame.low ? 12 : 18);
       for (let index = 0; index < (frame.low ? 5 : 10); index++) {
         if (particles >= MAX_DYNAMIC_PARTICLES) break;
         const angle = index * TAU / 10 + finite(effect.seed, 0) * 0.7;
         const radius = 0.26 + progress * 1.15;
-        batch.pyramid(identity(), [position[0] + Math.cos(angle) * radius, 0.08 + (1 - progress) * 0.6, position[2] + Math.sin(angle) * radius], 0.09, 0.2 * (1 - progress), 0.09, tint, 0.75, 1 - progress);
+        const sparkTint = !customTint && index % 3 === 0 ? IMPACT_FLASH : impactTint;
+        batch.pyramid(identity(), [position[0] + Math.cos(angle) * radius, 0.08 + flash * 0.6, position[2] + Math.sin(angle) * radius], 0.09, 0.2 * flash, 0.09, sparkTint, 0.75, flash);
         particles++;
       }
     } else if (effect.kind === "overdrive") {
       appendRingEffect(batch, position, 3.2 * intensity, progress, tint, 0.95);
       batch.ring([position[0], 1.4, position[2]], 1.25 * (1 - progress), 0.06, [0.72, 0.95, 1] as Color, 0.8 * (1 - progress), 18);
     } else if (effect.kind === "death") {
-      for (let index = 0; index < (frame.low ? 7 : 15); index++) {
+      const bloodTint = customTint ? tint : BLOOD_RED;
+      const flash = 1 - progress;
+      appendRingEffect(batch, position, 0.78 * intensity, progress, customTint ? bloodTint : BLOOD_DARK, 0.42);
+      for (let index = 0; index < (frame.low ? 6 : 12); index++) {
         if (particles >= MAX_DYNAMIC_PARTICLES) break;
-        const angle = index * TAU / 15 + finite(effect.seed, 0);
-        const radius = 0.18 + progress * (0.7 + noise(index + finite(effect.seed, 0)) * 1.8);
-        batch.pyramid(identity(), [position[0] + Math.cos(angle) * radius, 0.45 + (1 - progress) * (0.4 + noise(index) * 1.2), position[2] + Math.sin(angle) * radius], 0.11, 0.24 * (1 - progress), 0.11, tint, 0.7, 1 - progress);
+        const angle = index * TAU / 12 + finite(effect.seed, 0);
+        const radius = 0.14 + progress * (0.62 + noise(index + finite(effect.seed, 0)) * 1.35);
+        const particleTint = !customTint && index % 4 === 0 ? BLOOD_HIGHLIGHT : bloodTint;
+        batch.pyramid(identity(), [position[0] + Math.cos(angle) * radius, 0.18 + flash * (0.42 + noise(index) * 1.05), position[2] + Math.sin(angle) * radius], 0.075, 0.17 * flash, 0.075, particleTint, 0.62, flash);
         particles++;
       }
     }
@@ -837,6 +871,19 @@ function backdrop2D(ctx: Context2D, frame: SceneFrame): void {
   }
 }
 
+function drawFirearm2D(frame: SceneFrame, rect: (x: number, y: number, width: number, height: number, fill: string) => void, body: string, cloth: string, accent: string, h: number, w: number): void {
+  const receiverX = w * 0.3;
+  const receiverY = h * 0.23;
+  // Keep the fallback's firearm legible at a glance without adding a texture asset.
+  rect(receiverX - w * 0.17, receiverY - h * 0.01, w * 0.2, h * 0.1, cloth);
+  rect(receiverX, receiverY, w * 0.24, h * 0.14, body);
+  rect(receiverX + w * 0.05, receiverY - h * 0.1, w * 0.11, h * 0.11, accent);
+  rect(receiverX + w * 0.2, receiverY + h * 0.035, w * 0.49, h * 0.065, body);
+  rect(receiverX + w * 0.67, receiverY + h * 0.02, w * 0.1, h * 0.08, accent);
+  rect(receiverX + w * 0.08, receiverY + h * 0.14, w * 0.055, h * 0.09, accent);
+  if (!frame.low) rect(receiverX + w * 0.18, receiverY + h * 0.15, w * 0.05, h * 0.055, cloth);
+}
+
 function character2D(ctx: Context2D, frame: SceneFrame, position: Vec3, style: CharacterStyle, options: { boss?: boolean; player?: boolean; hitFlash?: number; alpha?: number }): void {
   const projection = frame.project([position[0], 0, position[2]]);
   if (!projection.visible || projection.scale <= 0) return;
@@ -850,31 +897,33 @@ function character2D(ctx: Context2D, frame: SceneFrame, position: Vec3, style: C
   ctx.globalAlpha = alpha;
   ctx.translate(projection.x, projection.y);
   ctx.scale(scale, -scale);
-  ctx.rotate(style.lean * 0.45);
+  ctx.rotate((style.lean + style.hunched * 0.35) * 0.45);
   const rect = (x: number, y: number, width: number, height: number, fill: string): void => { ctx.fillStyle = fill; ctx.fillRect(x, y, width, height); };
   const h = style.height;
   const w = style.width;
-  if (style.wings) for (const side of [-1, 1]) polygon2D(ctx, [[side * 0.2, h * 0.75], [side * 1.15, h * 0.52], [side * 0.62, h * 0.04]], cloth);
   rect(-w * 0.3, h * 0.34, w * 0.6, h * 0.5, body);
   rect(-w * 0.19, h * 0.02, w * 0.38, h * 0.34, cloth);
+  if (style.undead) {
+    polygon2D(ctx, [[-w * 0.31, h * 0.48], [w * 0.31, h * 0.48], [w * 0.27, h * 0.08], [w * 0.12, -h * 0.04], [0, h * 0.06], [-w * 0.12, -h * 0.03], [-w * 0.28, h * 0.1]], cloth);
+    for (const side of [-1, 1]) polygon2D(ctx, [[side * w * 0.2, h * 0.77], [side * w * 0.48, h * 0.63], [side * w * 0.32, h * 0.46]], css(mix(style.cloth, style.body, 0.22)));
+  }
   for (const side of [-1, 1]) {
     rect(side * w * 0.1 - w * 0.095, -h * 0.15, w * 0.19, h * 0.34, body);
     rect(side * w * 0.1 - w * 0.1, -h * 0.48, w * 0.2, h * 0.28, body);
     ctx.save();
     ctx.translate(side * w * 0.38, h * 0.59);
-    ctx.rotate(side * 0.12);
+    ctx.rotate(side * (0.12 + style.hunched * 0.16));
     rect(-w * 0.1, -h * 0.19, w * 0.2, h * 0.34, body);
     ctx.restore();
   }
   rect(-w * 0.2, h * 0.88, w * 0.4, h * 0.23, style.hood ? cloth : body);
   if (style.hood) rect(-w * 0.28, h * 0.92, w * 0.56, h * 0.16, cloth);
-  rect(-w * 0.08, h * 0.96, w * 0.16, h * 0.035, css(style.glow));
-  if (style.horns) for (const side of [-1, 1]) polygon2D(ctx, [[side * w * 0.12, h * 1.08], [side * w * 0.23, h * 1.08], [side * w * 0.16, h * 1.36]], accent);
+  if (style.undead) {
+    rect(-w * 0.17, h * 0.94, w * 0.34, h * 0.075, css(mix(style.body, [0.02, 0.03, 0.035], 0.62)));
+    for (const side of [-1, 1]) rect(side * w * 0.1 - w * 0.037, h * 0.955, w * 0.074, h * 0.038, css(style.glow));
+  } else rect(-w * 0.08, h * 0.96, w * 0.16, h * 0.035, css(style.glow));
   if (options.player) rect(-w * 0.22, h * 0.43, w * 0.44, h * 0.08, accent);
-  if (style.weapon === "gun") { rect(w * 0.28, h * 0.2, w * 0.15, h * 0.1, accent); rect(w * 0.39, h * 0.18, w * 0.5, h * 0.08, body); }
-  if (style.weapon === "hammer") { rect(w * 0.35, -h * 0.02, w * 0.08, h * 0.72, cloth); rect(w * 0.18, h * 0.56, w * 0.48, h * 0.18, accent); }
-  if (style.weapon === "blade") polygon2D(ctx, [[w * 0.38, h * 0.16], [w * 0.5, h * 0.2], [w * 0.56, h * 0.98], [w * 0.43, h * 0.78]], accent);
-  if (style.weapon === "claws") for (const claw of [-1, 0, 1]) rect(w * 0.36 + claw * 0.06, h * 0.12, 0.035, h * 0.3, accent);
+  if (style.weapon === "gun") drawFirearm2D(frame, rect, body, cloth, accent, h, w);
   ctx.restore();
 }
 
@@ -887,23 +936,56 @@ function fallbackEffects(ctx: Context2D, frame: SceneFrame): void {
     const position = projectEffect(effect);
     if (!position.visible) continue;
     const intensity = clampTypeBeforeDeath(finite(effect.intensity, 1), 0, 2);
-    const tint = effect.color ?? (effect.kind === "overdrive" ? "#8feaff" : effect.kind === "death" ? "#ff754d" : "#ffd18b");
+    const customTint = Boolean(effect.color);
+    const tint = effect.color ?? (effect.kind === "overdrive" ? "#8feaff" : effect.kind === "death" ? "#c73132" : "#ffd18b");
     ctx.save();
     ctx.globalAlpha = (1 - progress) * 0.86;
     ctx.strokeStyle = tint;
     ctx.fillStyle = tint;
     if (effect.kind === "muzzle") {
-      ctx.beginPath(); ctx.arc(position.x + position.scale * 0.45, position.y - position.scale * 0.22, position.scale * (0.3 + (1 - progress) * 0.45) * intensity, 0, TAU); ctx.fill();
+      const flash = 1 - progress;
+      const muzzleX = position.x + position.scale * 0.45;
+      const muzzleY = position.y - position.scale * 0.22;
+      const radius = position.scale * (0.3 + flash * 0.45) * intensity;
+      ctx.fillStyle = customTint ? tint : "#ffc35a";
+      ctx.beginPath(); ctx.arc(muzzleX, muzzleY, radius, 0, TAU); ctx.fill();
+      if (effect.shotType === "buckshot") {
+        for (const pellet of [-1, 0, 1]) {
+          ctx.beginPath();
+          ctx.arc(muzzleX + pellet * radius * 0.7, muzzleY + Math.abs(pellet) * radius * 0.25, radius * 0.28, 0, TAU);
+          ctx.fill();
+        }
+      }
+      ctx.strokeStyle = customTint ? tint : "#fff0bb";
+      ctx.lineWidth = Math.max(1, position.scale * 0.045);
+      for (let index = 0; index < (frame.low ? 4 : 7); index++) {
+        const angle = index * TAU / 7;
+        ctx.beginPath(); ctx.moveTo(muzzleX, muzzleY); ctx.lineTo(muzzleX + Math.cos(angle) * radius * 1.8, muzzleY + Math.sin(angle) * radius * 1.8); ctx.stroke();
+      }
     } else if (effect.kind === "impact" || effect.kind === "overdrive") {
-      const radius = position.scale * (effect.kind === "overdrive" ? 0.7 + (1 - progress) * 2.5 : 0.3 + (1 - progress) * 1.2) * intensity;
+      const flash = 1 - progress;
+      const impactTint = customTint || effect.kind === "overdrive" ? tint : "#d8443d";
+      const radius = position.scale * (effect.kind === "overdrive" ? 0.7 + flash * 2.5 : 0.3 + flash * 1.2) * intensity * (effect.shotType === "headshot" ? 1.35 : 1);
+      ctx.strokeStyle = impactTint;
       ctx.lineWidth = Math.max(1.5, position.scale * 0.06);
       ctx.beginPath(); ctx.ellipse(position.x, position.y, radius, radius * 0.3, 0, 0, TAU); ctx.stroke();
-      if (effect.kind === "impact") { ctx.beginPath(); ctx.moveTo(position.x - radius, position.y - radius * 0.5); ctx.lineTo(position.x + radius, position.y + radius * 0.4); ctx.stroke(); }
+      if (effect.kind === "impact") {
+        ctx.fillStyle = customTint ? tint : "#f05a43";
+        ctx.globalAlpha *= 0.35;
+        ctx.beginPath(); ctx.arc(position.x, position.y, Math.max(1.5, radius * 0.16), 0, TAU); ctx.fill();
+        ctx.globalAlpha *= 2.85;
+        for (let index = 0; index < (frame.low ? 4 : 7); index++) {
+          const angle = index * TAU / 7 + finite(effect.seed, 0);
+          ctx.beginPath(); ctx.moveTo(position.x, position.y); ctx.lineTo(position.x + Math.cos(angle) * radius * 0.9, position.y + Math.sin(angle) * radius * 0.45); ctx.stroke();
+        }
+      }
     } else if (effect.kind === "death") {
       for (let index = 0; index < (frame.low ? 5 : 10); index++) {
         const angle = index * TAU / 10 + finite(effect.seed, 0);
-        const radius = position.scale * (0.2 + (1 - progress) * 0.8) * intensity;
-        ctx.fillRect(position.x + Math.cos(angle) * radius, position.y + Math.sin(angle) * radius, Math.max(2, position.scale * 0.07), Math.max(2, position.scale * 0.07));
+        const radius = position.scale * (0.16 + (1 - progress) * 0.72) * intensity;
+        const size = Math.max(2, position.scale * 0.06);
+        ctx.fillStyle = !customTint && index % 4 === 0 ? "#ff4f39" : tint;
+        ctx.fillRect(position.x + Math.cos(angle) * radius, position.y + Math.sin(angle) * radius, size, size * 0.72);
       }
     }
     ctx.restore();

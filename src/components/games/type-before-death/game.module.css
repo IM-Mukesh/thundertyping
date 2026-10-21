@@ -65,10 +65,13 @@
 .iconButton { display: inline-flex; height: 34px; width: 34px; align-items: center; justify-content: center; border: 1px solid #92adba55; border-radius: 7px; color: #cee4e3; background: #0b1b25; cursor: pointer; }
 .iconButton:hover, .iconButton:focus-visible { border-color: var(--amber); color: var(--amber); outline: none; }
 
-.hud { display: grid; grid-template-columns: 1.1fr 1.1fr repeat(3, .8fr); gap: 1px; padding: 7px; border-radius: 0; border-bottom: 0; background: #07121be8; }
-.hudMeter, .hudStat { min-width: 0; padding: 5px 8px; }
-.hudMeter > span, .hudStat > span { display: flex; align-items: center; gap: 5px; color: #94adb7; font: 700 9px/1.2 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
-.hudMeter b, .hudStat b { display: block; overflow: hidden; margin-top: 4px; color: #f2f6e9; font: 800 14px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.hud { display: grid; grid-template-columns: 1.1fr 1.1fr repeat(4, .8fr); gap: 1px; padding: 7px; border-radius: 0; border-bottom: 0; background: #07121be8; }
+.hudMeter, .hudStat, .weaponStat { min-width: 0; padding: 5px 8px; }
+.hudMeter > span, .hudStat > span, .weaponStat > span { display: flex; align-items: center; gap: 5px; color: #94adb7; font: 700 9px/1.2 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.hudMeter b, .hudStat b, .weaponStat b { display: block; overflow: hidden; margin-top: 4px; color: #f2f6e9; font: 800 14px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.weaponStat { border-left: 1px solid #91b0b41f; }
+.weaponStat > span { color: var(--amber); }
+.weaponStat small { display: block; overflow: hidden; margin-top: 4px; color: #8ca8ae; font: 700 8px/1 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .hudMeter > span svg { color: var(--cyan); }
 .hudMeter.danger > span, .hudMeter.danger b { color: #ff8474; }
 .meter, .bar { height: 4px; overflow: hidden; margin-top: 5px; border-radius: 4px; background: #071018; }

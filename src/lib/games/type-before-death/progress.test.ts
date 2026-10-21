@@ -47,6 +47,21 @@ describe("Type Before Death progress", () => {
     assert.equal(unlockedDeathMission(defeated), 0);
   });
 
+  it("keeps weapons behind contiguous campaign unlocks", () => {
+    const locked = parseDeathProgress(JSON.stringify({
+      ...freshDeathProgress(),
+      weapon: "sniper",
+    }));
+    assert.equal(locked.weapon, "pistol");
+
+    const unlocked = parseDeathProgress(JSON.stringify({
+      ...freshDeathProgress(),
+      completed: [0, 1, 2],
+      weapon: "sniper",
+    }));
+    assert.equal(unlocked.weapon, "sniper");
+  });
+
   it("keeps progress pure and does not mutate the simulation snapshot", () => {
     const state = tickDeath(startDeath({ seed: "pure" }), 1500);
     const before = JSON.stringify(state);

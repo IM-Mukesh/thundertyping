@@ -21,16 +21,16 @@ export const DEATH_DIFFICULTIES: Readonly<Record<DeathDifficulty, { travel: numb
 };
 
 export const DEATH_ENEMIES: Readonly<Record<DeathEnemyKind, DeathEnemyDefinition>> = {
-  walker: { name: "Walker", description: "A steady approach; one short word usually stops it.", speed: 1, damage: 12, hp: 28, tier: "short", behavior: "advance", armor: 0, reward: 20, color: "#a3b18a" },
-  runner: { name: "Runner", description: "Accelerates after crossing half the approach.", speed: 1.65, damage: 9, hp: 34, tier: "medium", behavior: "charge", armor: 0, reward: 30, color: "#fbbf24" },
-  brute: { name: "Brute", description: "Slow armored pressure. Long words pierce its plating.", speed: 0.56, damage: 30, hp: 150, tier: "long", behavior: "armor", armor: 0.24, reward: 60, color: "#b45309" },
-  spitter: { name: "Spitter", description: "Stops at range and repeatedly spits acid through part of the barricade.", speed: 0.78, damage: 11, hp: 65, tier: "medium", behavior: "ranged", armor: 0, reward: 45, color: "#a3e635" },
-  bomber: { name: "Bomber", description: "Detonates before contact, dealing heavy barricade damage. Typing disarms it.", speed: 1.18, damage: 36, hp: 45, tier: "medium", behavior: "explode", armor: 0, reward: 50, color: "#fb7185" },
-  stalker: { name: "Stalker", description: "Untargetable in the mist, then reveals itself and rushes the line.", speed: 1.05, damage: 18, hp: 54, tier: "medium", behavior: "ambush", armor: 0, reward: 50, color: "#c4b5fd" },
-  swarm: { name: "Swarm", description: "Fragile short-word threats move faster with three or more packmates.", speed: 1.45, damage: 6, hp: 14, tier: "short", behavior: "pack", armor: 0, reward: 15, color: "#38bdf8" },
-  mutant: { name: "Mutant", description: "Regenerates three health per second after three seconds without a completed hit.", speed: 0.83, damage: 23, hp: 135, tier: "long", behavior: "regenerate", armor: 0, reward: 65, color: "#2dd4bf" },
-  elite: { name: "Elite", description: "Armored extreme words; enrages below half health.", speed: 1.12, damage: 27, hp: 240, tier: "extreme", behavior: "enrage", armor: 0.16, reward: 100, color: "#f97316" },
-  boss: { name: "Commander", description: "Three health phases, charged strikes, minions and a two-word guard break.", speed: 0, damage: 25, hp: 700, tier: "long", behavior: "commander", armor: 0.08, reward: 350, color: "#ef4444" },
+  walker: { name: "Shambler", description: "A slow-moving infected; a short word usually stops it before it reaches the barricade.", speed: 1, damage: 12, hp: 28, tier: "short", behavior: "advance", armor: 0, reward: 20, color: "#a3b18a" },
+  runner: { name: "Sprinter", description: "A fast infected that accelerates after crossing half the approach.", speed: 1.65, damage: 9, hp: 34, tier: "medium", behavior: "charge", armor: 0, reward: 30, color: "#fbbf24" },
+  brute: { name: "Armored Dead", description: "A slow, plated infected that shrugs off light fire; long words punch through its armor.", speed: 0.56, damage: 30, hp: 150, tier: "long", behavior: "armor", armor: 0.24, reward: 60, color: "#b45309" },
+  spitter: { name: "Acid Spitter", description: "Stops at range and hurls corrosive bile that eats through part of the barricade.", speed: 0.78, damage: 11, hp: 65, tier: "medium", behavior: "ranged", armor: 0, reward: 45, color: "#a3e635" },
+  bomber: { name: "Bloater", description: "An unstable infected that bursts near the line for heavy barricade damage; typing disarms it.", speed: 1.18, damage: 36, hp: 45, tier: "medium", behavior: "explode", armor: 0, reward: 50, color: "#fb7185" },
+  stalker: { name: "Lurker", description: "A concealed infected that emerges from the mist and rushes the defense line.", speed: 1.05, damage: 18, hp: 54, tier: "medium", behavior: "ambush", armor: 0, reward: 50, color: "#c4b5fd" },
+  swarm: { name: "Horde", description: "Fragile infected that move faster when three or more press together.", speed: 1.45, damage: 6, hp: 14, tier: "short", behavior: "pack", armor: 0, reward: 15, color: "#38bdf8" },
+  mutant: { name: "Regenerator", description: "A lab-altered infected that restores three health per second after three seconds without a completed hit.", speed: 0.83, damage: 23, hp: 135, tier: "long", behavior: "regenerate", armor: 0, reward: 65, color: "#2dd4bf" },
+  elite: { name: "Alpha Infected", description: "A hardened infected with extreme words that enrages below half health.", speed: 1.12, damage: 27, hp: 240, tier: "extreme", behavior: "enrage", armor: 0.16, reward: 100, color: "#f97316" },
+  boss: { name: "Patient Zero", description: "The outbreak source: three health phases, charged strikes, reinforcements and a two-word guard break.", speed: 0, damage: 25, hp: 700, tier: "long", behavior: "commander", armor: 0.08, reward: 350, color: "#ef4444" },
 };
 
 // At least 24 different initial letters per tier. With ten active targets,
@@ -68,11 +68,11 @@ export const DEATH_UPGRADE_REGISTRY: Readonly<Record<DeathUpgradeId, DeathUpgrad
 ) as Record<DeathUpgradeId, DeathUpgradeDefinition>;
 
 export const DEATH_WEAPONS: Readonly<Record<DeathWeaponId, DeathWeaponDefinition>> = {
-  pistol: { id: "pistol", name: "Pistol", description: "Balanced sidearm. Reliable heat and damage for learning the line.", damage: 1, heat: 1, shortWord: 1, longWord: 1, cleanWord: 1, energy: 1 },
-  smg: { id: "smg", name: "SMG", description: "Short words fire faster and build pressure, but long words lose some stopping power.", damage: 0.88, heat: 0.74, shortWord: 1.28, longWord: 0.82, cleanWord: 1, energy: 1.1 },
-  shotgun: { id: "shotgun", name: "Shotgun", description: "Heavy words hit brutally hard, at the cost of heat and a slower rhythm.", damage: 1.22, heat: 1.32, shortWord: 0.88, longWord: 1.34, cleanWord: 1, energy: 0.95 },
-  sniper: { id: "sniper", name: "Sniper", description: "Clean long words become precision shots. Errors waste the weapon's advantage.", damage: 0.86, heat: 0.62, shortWord: 0.62, longWord: 1.55, cleanWord: 1.28, energy: 0.92 },
-  plasma: { id: "plasma", name: "Plasma", description: "Late-game energy weapon. Strong baseline damage and explosive Overdrive conversion.", damage: 1.1, heat: 0.9, shortWord: 1, longWord: 1.12, cleanWord: 1.08, energy: 1.3 },
+  pistol: { id: "pistol", name: "Glock 17", description: "Level 1 semi-auto sidearm with dependable stopping power and forgiving heat for a first deployment.", level: 1, unlockMission: 0, fireMode: "semi-auto", damage: 1, heat: 1, shortWord: 1, longWord: 1, cleanWord: 1, energy: 1 },
+  smg: { id: "smg", name: "MP5A3", description: "Level 2 burst weapon. Short words cycle quickly and build pressure, while long words lose some force.", level: 2, unlockMission: 1, fireMode: "burst", damage: 0.88, heat: 0.74, shortWord: 1.28, longWord: 0.82, cleanWord: 1, energy: 1.1 },
+  shotgun: { id: "shotgun", name: "Remington 870", description: "Level 3 pump shotgun. Long words release a hard buckshot hit, but every mistake adds serious heat.", level: 3, unlockMission: 2, fireMode: "pump", damage: 1.22, heat: 1.32, shortWord: 0.88, longWord: 1.34, cleanWord: 1, energy: 0.95 },
+  sniper: { id: "sniper", name: "M24 SWS", description: "Level 4 bolt-action marksman rifle. Clean long words become precision rounds and can earn a headshot.", level: 4, unlockMission: 3, fireMode: "bolt-action", damage: 0.86, heat: 0.62, shortWord: 0.62, longWord: 1.55, cleanWord: 1.28, energy: 0.92 },
+  plasma: { id: "plasma", name: "M4A1 Carbine", description: "Level 5 automatic rifle. A strong all-rounder that converts clean fire into extra Overdrive charge.", level: 5, unlockMission: 4, fireMode: "automatic", damage: 1.1, heat: 0.9, shortWord: 1, longWord: 1.12, cleanWord: 1.08, energy: 1.3 },
 };
 
 export const DEATH_SURVIVORS: Readonly<Record<DeathSurvivorId, DeathSurvivorDefinition>> = {
