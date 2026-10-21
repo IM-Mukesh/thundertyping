@@ -287,7 +287,12 @@ export default function AverageTypingSpeedPage() {
           <li>
             <strong>Test length.</strong> Short bursts (15&ndash;30s) tend to read higher than
             sustained multi-minute tests, since fatigue and error-correction haven&apos;t caught
-            up yet. See <Link href="/guides/typing-test-duration-guide">which test duration to use</Link>.
+            up yet. See <Link href="/guides/typing-test-duration-guide">which test duration to use</Link>{" "}
+            or compare your endurance across our dedicated{" "}
+            <Link href="/typing-test/30-seconds">30-second</Link>,{" "}
+            <Link href="/typing-test/1-minute">1-minute</Link>,{" "}
+            <Link href="/typing-test/3-minute">3-minute</Link>, and{" "}
+            <Link href="/typing-test/5-minute">5-minute typing tests</Link>.
           </li>
           <li>
             <strong>Text difficulty.</strong> Common English words are faster to type than

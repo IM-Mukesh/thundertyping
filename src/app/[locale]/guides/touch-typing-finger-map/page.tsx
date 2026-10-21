@@ -201,7 +201,17 @@ export default function TouchTypingFingerMapPage() {
               height={941}
               className="w-full rounded-xl border border-border"
             />
-            <figcaption className="text-xs text-sub">Home row starting position.</figcaption>
+            <div className="flex items-center justify-between text-xs text-sub">
+              <figcaption>Home row starting position.</figcaption>
+              <a
+                href="/guides/shared/home-row-finger-placement.webp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline underline-offset-2 hover:text-foreground"
+              >
+                View full size &rarr;
+              </a>
+            </div>
           </figure>
           <figure className="flex flex-col gap-2">
             <Image
@@ -211,7 +221,17 @@ export default function TouchTypingFingerMapPage() {
               height={941}
               className="w-full rounded-xl border border-border"
             />
-            <figcaption className="text-xs text-sub">The complete finger-zone map.</figcaption>
+            <div className="flex items-center justify-between text-xs text-sub">
+              <figcaption>The complete finger-zone map.</figcaption>
+              <a
+                href="/guides/shared/keyboard-finger-zones-map.webp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline underline-offset-2 hover:text-foreground"
+              >
+                View full size &rarr;
+              </a>
+            </div>
           </figure>
         </div>
 
@@ -246,10 +266,50 @@ export default function TouchTypingFingerMapPage() {
           ))}
         </div>
 
-        <p>
-          Ready to put it into practice? <Link href="/lessons">Start with lesson one</Link>, or{" "}
-          <Link href="/">take a typing test</Link> to see where you stand today.
-        </p>
+        <div className="rounded-2xl border border-border bg-sub-alt/20 p-6 flex flex-col gap-4">
+          <h3 className="font-display text-base font-bold uppercase tracking-wider text-foreground">
+            Put Your Finger Map into Practice
+          </h3>
+          <p className="text-sm leading-relaxed text-sub">
+            Memorizing the keyboard map is step one; making the movements automatic is what builds speed.
+            Choose your next training step based on your current comfort level:
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link
+              href="/lessons"
+              className="flex flex-col gap-1 rounded-xl border border-border bg-background p-4 transition-colors hover:border-accent"
+            >
+              <span className="font-display text-xs font-bold uppercase text-foreground">
+                Structured Lessons &rarr;
+              </span>
+              <span className="text-xs text-sub">
+                Step-by-step 28-unit curriculum introducing home row, top row, and bottom row in order.
+              </span>
+            </Link>
+            <Link
+              href="/practice/accuracy"
+              className="flex flex-col gap-1 rounded-xl border border-border bg-background p-4 transition-colors hover:border-accent"
+            >
+              <span className="font-display text-xs font-bold uppercase text-foreground">
+                Accuracy Practice &rarr;
+              </span>
+              <span className="text-xs text-sub">
+                Train clean finger coordination without rushing to eliminate reach errors early.
+              </span>
+            </Link>
+            <Link
+              href="/typing-test/1-minute"
+              className="flex flex-col gap-1 rounded-xl border border-border bg-background p-4 transition-colors hover:border-accent"
+            >
+              <span className="font-display text-xs font-bold uppercase text-foreground">
+                1-Minute Speed Test &rarr;
+              </span>
+              <span className="text-xs text-sub">
+                Benchmark your WPM and accuracy over a standardized 60-second test.
+              </span>
+            </Link>
+          </div>
+        </div>
 
         <FaqSection items={FAQ_ITEMS} />
 

@@ -288,11 +288,19 @@ export default async function OneMinuteTypingTestPage({ params }: { params?: Pro
                 </h3>
                 <p className="mt-1 text-xs sm:text-sm leading-relaxed text-sub">
                   Yes. You can switch to any custom duration from 1 to 7,200 seconds using the custom time control
-                  in the toolbar or by navigating with duration parameters such as{" "}
-                  <Link href="/?duration=180" className="text-accent hover:underline">
-                    ?duration=180
-                  </Link>{" "}
-                  for a 3-minute test.
+                  in the toolbar or by navigating directly to our dedicated{" "}
+                  <Link href="/typing-test/30-seconds" className="text-accent hover:underline">
+                    30-second
+                  </Link>
+                  ,{" "}
+                  <Link href="/typing-test/3-minute" className="text-accent hover:underline">
+                    3-minute
+                  </Link>
+                  , and{" "}
+                  <Link href="/typing-test/5-minute" className="text-accent hover:underline">
+                    5-minute typing tests
+                  </Link>
+                  .
                 </p>
               </div>
             </div>

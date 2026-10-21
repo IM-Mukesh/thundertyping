@@ -57,6 +57,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: title,
       description: SITE_DESCRIPTION,
     },
+    ...((process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION)
+      ? {
+          verification: {
+            google:
+              process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+              process.env.GOOGLE_SITE_VERIFICATION,
+          },
+        }
+      : {}),
     ...(IS_PREVIEW ? { robots: { index: false, follow: false } } : {}),
   };
 }

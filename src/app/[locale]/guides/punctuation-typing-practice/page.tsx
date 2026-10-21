@@ -269,6 +269,12 @@ export default function PunctuationTypingPracticePage() {
           <Link href="/lessons">HeroTyping Curriculum</Link>, or toggle Punctuation mode on the{" "}
           <Link href="/">HeroTyping Speed Test</Link> to practice live sentences.
         </p>
+        <p>
+          To drill your own custom dialogue passages, programming syntax, or book excerpts filled with quotes and semicolons, paste your text into the{" "}
+          <Link href="/typing-test/custom-text">Custom Text Typing Test</Link>. If specific symbols or punctuation reaches consistently cause typos, run targeted calibration drills in the{" "}
+          <Link href="/practice/accuracy">Typing Accuracy Lab</Link> or isolate your troublesome reach in{" "}
+          <Link href="/practice/weak-keys">Weak Keys Practice</Link>.
+        </p>
 
         <FaqSection items={FAQ_ITEMS} />
         <SourceList sources={SOURCES} />

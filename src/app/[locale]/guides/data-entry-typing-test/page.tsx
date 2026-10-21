@@ -233,6 +233,14 @@ export default function DataEntryTypingTestPage() {
             for data entry than short-burst peak speed. See{" "}
             <Link href="/guides/typing-test-duration-guide">which test duration to use</Link>.
           </li>
+          <li>
+            <strong>Practice formatted text and address lines.</strong> Real workplace entry involves
+            switching between alphanumeric codes, product SKUs, and numerical amounts. Paste sample
+            data or invoice batches into the{" "}
+            <Link href="/typing-test/custom-text">Custom Text Typing Test</Link> to practice realistic
+            formatting without artificial word frequency aids, and calibrate precision in{" "}
+            <Link href="/practice/accuracy">Accuracy Focus Practice</Link>.
+          </li>
         </ol>
 
         <p className="rounded-xl border border-border bg-sub-alt/20 p-4 text-xs text-sub leading-relaxed">
