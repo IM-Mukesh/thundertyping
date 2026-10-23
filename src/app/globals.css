@@ -460,3 +460,18 @@ button:disabled,
 .text-glow {
   text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 65%, transparent);
 }
+
+
+/* HeroTyping lesson finger tap: brief feedback only on the active SVG finger. */
+@keyframes hero-lesson-finger-tap {
+  0%, 100% { transform: translateY(0); }
+  42% { transform: translateY(2.5px); }
+}
+.hero-lesson-finger-tap {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: hero-lesson-finger-tap 135ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-lesson-finger-tap { animation: none !important; }
+}
