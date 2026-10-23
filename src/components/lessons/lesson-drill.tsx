@@ -24,7 +24,6 @@ import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-p
 import { LESSON_LIST, type LessonDefinition } from "@/lib/lessons/lesson-types";
 import { evaluateLessonStars } from "@/lib/lessons/star-system";
 import { useKeyPerformanceStore } from "@/lib/lessons/key-performance-store";
-import { fingerForKey, handForKey, isShiftRequired, shiftKeyFor } from "@/lib/lessons/keyboard-layout";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { playSound } from "@/lib/games/game-audio";
 import { awardXp, bumpStat } from "@/lib/profile/player-profile";
