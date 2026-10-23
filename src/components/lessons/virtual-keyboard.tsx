@@ -459,3 +459,111 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
     </section>
   );
 }
+
+
+/**
+ * Compact, hands-only companion used by the interactive finger-map explorer.
+ * It deliberately shares the same SVG silhouettes and finger colors as the
+ * lesson keyboard while remaining a separate view for that existing consumer.
+ */
+export function HandDiagram({
+  activeFinger,
+  shiftFinger = null,
+}: {
+  activeFinger: FingerId | null;
+  shiftFinger?: FingerId | null;
+}) {
+  return (
+    <svg
+      viewBox="0 0 1000 360"
+      className="block h-auto w-full max-w-[280px] overflow-visible"
+      role="img"
+      aria-label="Top-down hand-placement illustration showing touch-typing finger positions"
+    >
+      <g aria-hidden="true">
+        <path
+          d={palmPath()}
+          fill="color-mix(in srgb, var(--foreground) 8%, transparent)"
+          stroke="var(--foreground)"
+          strokeOpacity="0.3"
+          strokeWidth="3"
+        />
+        <path
+          d={palmPath()}
+          transform="translate(1000 0) scale(-1 1)"
+          fill="color-mix(in srgb, var(--foreground) 8%, transparent)"
+          stroke="var(--foreground)"
+          strokeOpacity="0.3"
+          strokeWidth="3"
+        />
+        <path
+          d="M 192 345 Q 320 329 446 347 L 452 360 L 184 360 Z"
+          fill="var(--sub-alt)"
+          stroke="var(--border)"
+          strokeWidth="2"
+        />
+        <path
+          d="M 192 345 Q 320 329 446 347 L 452 360 L 184 360 Z"
+          transform="translate(1000 0) scale(-1 1)"
+          fill="var(--sub-alt)"
+          stroke="var(--border)"
+          strokeWidth="2"
+        />
+        {HOME_FINGER_BASES.map(({ finger, x, side }) => {
+          const active = finger === activeFinger || finger === shiftFinger;
+          const color = FINGER_VAR[finger];
+          return (
+            <g
+              key={finger}
+              transform={side === "right" ? "translate(1000 0) scale(-1 1)" : undefined}
+            >
+              <path
+                d={fingerPath(x, 112, x, 268, 31)}
+                fill={color}
+                fillOpacity={active ? 0.3 : 0.13}
+                stroke={color}
+                strokeOpacity={active ? 0.98 : 0.6}
+                strokeWidth={active ? 3 : 2}
+                strokeLinejoin="round"
+                style={active ? { filter: "drop-shadow(0 0 8px " + color + ")" } : undefined}
+              />
+              {active && (
+                <ellipse
+                  cx={x}
+                  cy="120"
+                  rx="13"
+                  ry="6"
+                  fill="var(--accent)"
+                  fillOpacity="0.55"
+                  stroke="var(--accent)"
+                  strokeWidth="2"
+                />
+              )}
+            </g>
+          );
+        })}
+        {[{ side: "left" as const }, { side: "right" as const }].map(({ side }) => {
+          const active = activeFinger === "thumb";
+          const color = FINGER_VAR.thumb;
+          return (
+            <g
+              key={side}
+              transform={side === "right" ? "translate(1000 0) scale(-1 1)" : undefined}
+            >
+              <path
+                d={thumbPath(438, 415)}
+                fill={color}
+                fillOpacity={active ? 0.3 : 0.15}
+                stroke={color}
+                strokeOpacity={active ? 0.98 : 0.62}
+                strokeWidth={active ? 3 : 2}
+                strokeLinejoin="round"
+                style={active ? { filter: "drop-shadow(0 0 8px " + color + ")" } : undefined}
+              />
+            </g>
+          );
+        })}
+      </g>
+    </svg>
+  );
+}
