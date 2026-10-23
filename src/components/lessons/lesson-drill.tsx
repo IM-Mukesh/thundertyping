@@ -317,9 +317,9 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     (stepSpec.phase === "warmup" || stepSpec.phase === "patterns");
 
   return (
-    <div className="flex w-full max-w-3xl flex-col items-center gap-6">
+    <div className="mx-auto flex min-h-0 w-full max-w-[1120px] flex-col items-stretch gap-2 px-3 sm:px-5 md:gap-2.5">
       {/* Step Progress & Controls Header */}
-      <div className="flex w-full flex-col gap-2 rounded-xl border border-border/80 bg-sub-alt/20 p-3 sm:p-4">
+      <div className="flex w-full flex-col gap-1 rounded-xl border border-border/80 bg-sub-alt/20 px-3 py-2 sm:px-3 sm:py-2.5">
         <div className="flex items-center justify-between gap-3 font-mono text-[11px] text-sub">
           <div className="flex items-center gap-2 min-w-0">
             <span className="font-bold text-foreground">
@@ -357,7 +357,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
 
       {/* Pedagogical Objective / Step Notice */}
       {!isFinished && (
-        <div className="flex w-full flex-col gap-2 rounded-xl border border-accent/30 bg-accent/5 p-3.5 sm:p-4">
+        <div className="flex w-full flex-col gap-1.5 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="flex h-5 w-5 items-center justify-center rounded bg-accent/20 text-accent font-display text-[10px] font-bold">
               🎯
@@ -369,10 +369,15 @@ export function LessonDrill({ definition }: LessonDrillProps) {
           <p className="text-xs text-sub leading-relaxed">{stepSpec.objective}</p>
 
           {isSyntheticEarlyDrill && (
-            <p className="mt-1 border-t border-accent/20 pt-1.5 text-[11px] text-sub/80 italic flex items-center gap-1.5">
-              <HelpCircle size={12} className="shrink-0 text-accent" aria-hidden="true" />
-              Finger Warm-up: This step intentionally uses short key combinations to build muscle memory before full English words become possible.
-            </p>
+            <details className="mt-1 border-t border-accent/20 pt-1.5 text-[11px] text-sub/80">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5">
+                <HelpCircle size={12} className="shrink-0 text-accent" aria-hidden="true" />
+                Finger warm-up details
+              </summary>
+              <p className="pt-1.5 leading-snug">
+                This step intentionally uses short key combinations to build muscle memory before full English words become possible.
+              </p>
+            </details>
           )}
         </div>
       )}
@@ -380,7 +385,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       {/* Typing Surface */}
       {!isFinished && (
         <div
-          className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 p-4 transition-colors hover:border-accent/40"
+          className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 px-3 py-2.5 transition-colors hover:border-accent/40 sm:px-4 sm:py-3"
           onClick={() => setFocusToken((t) => t + 1)}
         >
           <WordStream wordStates={engine.displayWordStates} activeWordIndex={engine.state.activeWordIndex} />
@@ -409,29 +414,8 @@ export function LessonDrill({ definition }: LessonDrillProps) {
         </div>
       )}
 
-      {/* Real-time tactile guide */}
-      {!isFinished && nextKey && (
-        <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border/60 bg-sub-alt/30 px-3.5 py-1 font-mono text-[11px] text-sub">
-          <span>Key: <strong className="font-bold text-accent">{nextKey === " " ? "SPACE" : nextKey}</strong></span>
-          <span>&middot;</span>
-          <span>{handForKey(nextKey) === "left" ? "Left Hand" : handForKey(nextKey) === "right" ? "Right Hand" : "Thumb"}</span>
-          {fingerForKey(nextKey) && (
-            <>
-              <span>&middot;</span>
-              <span className="capitalize">{fingerForKey(nextKey)?.replace("-", " ")}</span>
-            </>
-          )}
-          {isShiftRequired(nextKey) && (
-            <>
-              <span>&middot;</span>
-              <span className="font-semibold text-accent">Hold {shiftKeyFor(nextKey) === "left-shift" ? "Left" : "Right"} Shift</span>
-            </>
-          )}
-        </div>
-      )}
-
       {/* Virtual Keyboard & Hand Guide */}
-      <VirtualKeyboard nextKey={nextKey} />
+      <VirtualKeyboard nextKey={nextKey} keyPressToken={engine.state.correctKeystrokes + engine.state.incorrectKeystrokes} />
 
       {/* Lesson Completion Modal Overlay */}
       {result && (
