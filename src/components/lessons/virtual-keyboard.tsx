@@ -180,7 +180,8 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
     };
   }
   if (shiftFinger && requiredShift) {
-    const shiftVisual = VISUAL_KEYS.find((item) => item.kind === requiredShift);
+    const shiftKind = requiredShift === "left-shift" ? "shift-left" : "shift-right";
+    const shiftVisual = VISUAL_KEYS.find((item) => item.kind === shiftKind);
     if (shiftVisual) {
       targetPoints[shiftFinger] = {
         x: shiftVisual.x + shiftVisual.w / 2,
@@ -198,7 +199,7 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
     <section className="mx-auto flex w-full min-w-0 flex-col items-center gap-1.5 select-none" aria-label="Touch typing finger guide">
       <div
         className="mx-auto hidden w-full max-w-[980px] min-[560px]:block"
-        style={{ width: "min(100%, calc(min(46dvh, 330px) * 2.777778))" }}
+        style={{ width: "min(100%, calc(min(44dvh, 315px) * 2.777778))" }}
       >
         <svg
           viewBox="0 0 1000 360"
@@ -378,7 +379,7 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
 
       <div
         className={cn(
-          "flex min-h-5 items-center justify-center gap-2 px-2 text-center font-mono text-[10px] font-medium text-sub sm:text-[11px]",
+          "hidden min-h-5 items-center justify-center gap-2 px-2 text-center font-mono text-[10px] font-medium text-sub sm:text-[11px] min-[560px]:flex",
           requiredShift && "text-foreground",
         )}
         aria-live="polite"
