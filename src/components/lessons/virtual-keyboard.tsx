@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils/cn";
 interface VirtualKeyboardProps {
   /** Next target from the real lesson engine. */
   nextKey: string | null;
-  /** Changes on each attempted keystroke so the active finger can give brief feedback. */
+  /** The last recently entered character, used only for transient tap feedback. */
+  lastPressedKey?: string | null;
+  /** Changes when a new input arrives so the pressed finger animation can restart. */
   keyPressToken?: number;
 }
 
@@ -167,12 +169,23 @@ function activeKeyFor(keys: KeyVisual[], key: string | null) {
   return key ? keys.find((item) => item.key === key) ?? null : null;
 }
 
-export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardProps) {
+export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken = 0 }: VirtualKeyboardProps) {
   const activePhysicalKey = physicalKeyFor(nextKey);
   const activeKey = activeKeyFor(VISUAL_KEYS, activePhysicalKey);
   const mappedFinger = fingerForKey(nextKey);
   const activeFinger = mappedFinger ?? activeKey?.finger ?? null;
   const requiredShift = shiftKeyFor(nextKey);
+
+  const pressedPhysicalKey = physicalKeyFor(lastPressedKey);
+  const pressedKey = activeKeyFor(VISUAL_KEYS, pressedPhysicalKey);
+  const pressedFinger = fingerForKey(lastPressedKey);
+  const pressedShiftKey = shiftKeyFor(lastPressedKey);
+  const pressedShiftFinger: FingerId | null =
+    pressedShiftKey === "left-shift"
+      ? "left-pinky"
+      : pressedShiftKey === "right-shift"
+        ? "right-pinky"
+        : null;
   const shiftFinger: FingerId | null =
     requiredShift === "left-shift"
       ? "left-pinky"
@@ -212,6 +225,25 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
       targetPoints[shiftFinger] = {
         x: shiftVisual.x + shiftVisual.w / 2,
         y: shiftVisual.y + shiftVisual.h / 2,
+      };
+    }
+  }
+
+  // Briefly animate the finger that actually received the previous input.
+  // Do not let that transient target override the next expected finger.
+  if (pressedFinger && pressedKey && pressedFinger !== activeFinger && pressedFinger !== shiftFinger) {
+    targetPoints[pressedFinger] = {
+      x: pressedKey.x + pressedKey.w / 2,
+      y: pressedKey.y + pressedKey.h / 2,
+    };
+  }
+  if (pressedShiftFinger && pressedShiftFinger !== activeFinger && pressedShiftFinger !== shiftFinger) {
+    const pressedShiftKind = pressedShiftKey === "left-shift" ? "shift-left" : "shift-right";
+    const pressedShiftVisual = VISUAL_KEYS.find((item) => item.kind === pressedShiftKind);
+    if (pressedShiftVisual) {
+      targetPoints[pressedShiftFinger] = {
+        x: pressedShiftVisual.x + pressedShiftVisual.w / 2,
+        y: pressedShiftVisual.y + pressedShiftVisual.h / 2,
       };
     }
   }
@@ -294,12 +326,14 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
           <g aria-hidden="true">
             {HOME_FINGER_BASES.map(({ finger, x, side }) => {
               const active = finger === activeFinger || finger === shiftFinger;
+              const pressed = finger === pressedFinger || finger === pressedShiftFinger;
+              const tapping = pressed && keyPressToken > 0;
               const target = targetPoints[finger];
               const actualTargetX = target?.x ?? (side === "left" ? x : 1000 - x);
               const localTargetX = side === "left" ? actualTargetX : 1000 - actualTargetX;
               const targetY = target?.y ?? 112;
               const color = FINGER_VAR[finger];
-              const groupKey = active ? finger + "-" + keyPressToken : finger;
+              const groupKey = tapping ? finger + "-" + keyPressToken : finger;
               return (
                 <g
                   key={finger}
@@ -307,15 +341,15 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
                 >
                   <g
                     key={groupKey}
-                    className={active && keyPressToken > 0 ? "hero-lesson-finger-tap" : undefined}
+                    className={tapping ? "hero-lesson-finger-tap" : undefined}
                   >
                   <path
                     d={fingerPath(localTargetX, targetY, x, 268, 31)}
                     fill={color}
-                    fillOpacity={active ? 0.29 : 0.15}
+                    fillOpacity={active ? 0.29 : pressed ? 0.23 : 0.15}
                     stroke={color}
-                    strokeOpacity={active ? 0.95 : 0.56}
-                    strokeWidth={active ? 2.2 : 1.35}
+                    strokeOpacity={active ? 0.95 : pressed ? 0.82 : 0.56}
+                    strokeWidth={active ? 2.2 : pressed ? 1.8 : 1.35}
                     strokeLinejoin="round"
                     style={active ? { filter: "drop-shadow(0 0 5px " + color + ")" } : undefined}
                   />
@@ -338,7 +372,9 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
 
             {[{ side: "left" as const }, { side: "right" as const }].map(({ side }) => {
               const active = activeFinger === "thumb";
-              const thumbX = active ? 480 : 438;
+              const pressed = pressedFinger === "thumb";
+              const tapping = pressed && keyPressToken > 0;
+              const thumbX = active || pressed ? 480 : 438;
               const color = FINGER_VAR.thumb;
               return (
                 <g
@@ -347,15 +383,15 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
                 >
                   <g
                     key={"thumb-shape-" + side + (active ? "-" + keyPressToken : "")}
-                    className={active && keyPressToken > 0 ? "hero-lesson-finger-tap" : undefined}
+                    className={tapping ? "hero-lesson-finger-tap" : undefined}
                   >
                   <path
                     d={thumbPath(thumbX, 415)}
                     fill={color}
-                    fillOpacity={active ? 0.28 : 0.15}
+                    fillOpacity={active ? 0.28 : pressed ? 0.23 : 0.15}
                     stroke={color}
-                    strokeOpacity={active ? 0.95 : 0.6}
-                    strokeWidth={active ? 2.2 : 1.35}
+                    strokeOpacity={active ? 0.95 : pressed ? 0.82 : 0.6}
+                    strokeWidth={active ? 2.2 : pressed ? 1.8 : 1.35}
                     strokeLinejoin="round"
                     style={active ? { filter: "drop-shadow(0 0 5px " + color + ")" } : undefined}
                   />
