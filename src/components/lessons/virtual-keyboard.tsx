@@ -257,7 +257,7 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
     <section className="mx-auto flex w-full min-w-0 flex-col items-center gap-1.5 select-none" aria-label="Touch typing finger guide">
       <div
         className="mx-auto hidden w-full max-w-[980px] min-[560px]:block"
-        style={{ width: "min(100%, calc(min(44dvh, 315px) * 2.777778))" }}
+        style={{ width: "min(100%, calc(min(35dvh, 230px) * 2.777778))" }}
       >
         <svg
           viewBox="0 0 1000 360"
@@ -283,22 +283,19 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
             strokeWidth="1.5"
           />
 
-          {VISUAL_KEYS.map((key) => {
-            const color = key.finger ? FINGER_VAR[key.finger] : "var(--border)";
-            return (
-              <rect
-                key={key.id}
-                x={key.x}
-                y={key.y}
-                width={key.w}
-                height={key.h}
-                rx={key.w > 75 ? 7 : 6}
-                fill={"color-mix(in srgb, " + color + " 11%, var(--sub-alt))"}
-                stroke={"color-mix(in srgb, " + color + " 38%, var(--border))"}
-                strokeWidth="1.15"
-              />
-            );
-          })}
+          {VISUAL_KEYS.map((key) => (
+            <rect
+              key={key.id}
+              x={key.x}
+              y={key.y}
+              width={key.w}
+              height={key.h}
+              rx={key.w > 75 ? 7 : 6}
+              fill="var(--background)"
+              stroke="var(--border)"
+              strokeWidth="1.15"
+            />
+          ))}
 
           {VISUAL_KEYS.filter(isVisualKeyActive).map((key) => (
             <rect
@@ -332,7 +329,6 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
               const actualTargetX = target?.x ?? (side === "left" ? x : 1000 - x);
               const localTargetX = side === "left" ? actualTargetX : 1000 - actualTargetX;
               const targetY = target?.y ?? 112;
-              const color = FINGER_VAR[finger];
               const groupKey = tapping ? finger + "-" + keyPressToken : finger;
               return (
                 <g
@@ -345,13 +341,13 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
                   >
                   <path
                     d={fingerPath(localTargetX, targetY, x, 268, 31)}
-                    fill={color}
-                    fillOpacity={active ? 0.29 : pressed ? 0.23 : 0.15}
-                    stroke={color}
-                    strokeOpacity={active ? 0.95 : pressed ? 0.82 : 0.56}
-                    strokeWidth={active ? 2.2 : pressed ? 1.8 : 1.35}
+                    fill={active ? "var(--accent)" : "var(--foreground)"}
+                    fillOpacity={active ? 0.48 : pressed ? 0.1 : 0.025}
+                    stroke={active ? "var(--accent)" : "var(--foreground)"}
+                    strokeOpacity={active ? 1 : pressed ? 0.42 : 0.22}
+                    strokeWidth={active ? 2.5 : pressed ? 1.6 : 1.1}
                     strokeLinejoin="round"
-                    style={active ? { filter: "drop-shadow(0 0 5px " + color + ")" } : undefined}
+                    style={active ? { filter: "drop-shadow(0 0 7px var(--accent))" } : undefined}
                   />
                   {active && (
                     <ellipse
@@ -375,7 +371,6 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
               const pressed = pressedFinger === "thumb";
               const tapping = pressed && keyPressToken > 0;
               const thumbX = active || pressed ? 480 : 438;
-              const color = FINGER_VAR.thumb;
               return (
                 <g
                   key={"thumb-" + side}
@@ -387,13 +382,13 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
                   >
                   <path
                     d={thumbPath(thumbX, 415)}
-                    fill={color}
-                    fillOpacity={active ? 0.28 : pressed ? 0.23 : 0.15}
-                    stroke={color}
-                    strokeOpacity={active ? 0.95 : pressed ? 0.82 : 0.6}
-                    strokeWidth={active ? 2.2 : pressed ? 1.8 : 1.35}
+                    fill={active ? "var(--accent)" : "var(--foreground)"}
+                    fillOpacity={active ? 0.48 : pressed ? 0.1 : 0.025}
+                    stroke={active ? "var(--accent)" : "var(--foreground)"}
+                    strokeOpacity={active ? 1 : pressed ? 0.42 : 0.22}
+                    strokeWidth={active ? 2.5 : pressed ? 1.6 : 1.1}
                     strokeLinejoin="round"
-                    style={active ? { filter: "drop-shadow(0 0 5px " + color + ")" } : undefined}
+                    style={active ? { filter: "drop-shadow(0 0 7px var(--accent))" } : undefined}
                   />
                   </g>
                 </g>
@@ -487,7 +482,7 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
       >
         <span
           className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: activeFinger ? FINGER_VAR[activeFinger] : "var(--accent)" }}
+          style={{ backgroundColor: "var(--accent)" }}
           aria-hidden="true"
         />
         <span>{guidanceLabel}</span>
