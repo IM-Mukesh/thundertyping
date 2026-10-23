@@ -66,6 +66,14 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   const [retryFocusKeys, setRetryFocusKeys] = useState<string[] | undefined>();
   const [focusToken, setFocusToken] = useState(0);
   const [isFocused, setIsFocused] = useState(true);
+  const [lastPressedKey, setLastPressedKey] = useState<string | null>(null);
+  const lastPressedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+    };
+  }, []);
 
   const stepSpec = subLessons[sessionStep - 1] ?? subLessons[0];
 
@@ -92,6 +100,9 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     lastAppliedConfigRef.current = config;
     engine.applyConfig(config);
     soundCountsRef.current = { correct: 0, incorrect: 0 };
+    if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+    lastPressedTimerRef.current = null;
+    setLastPressedKey(null);
     setFocusToken((t) => t + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
@@ -391,7 +402,26 @@ export function LessonDrill({ definition }: LessonDrillProps) {
           <HiddenInput
             value={activeWord?.typed ?? ""}
             status={engine.state.status}
-            onChange={engine.setTyped}
+            onChange={(value) => {
+              const previousValue = activeWord?.typed ?? "";
+              if (value.length > previousValue.length) {
+                const addedText = value.slice(previousValue.length);
+                const pressed = addedText.at(-1) ?? null;
+                if (pressed !== null) {
+                  setLastPressedKey(pressed);
+                  if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+                  lastPressedTimerRef.current = setTimeout(() => {
+                    setLastPressedKey(null);
+                    lastPressedTimerRef.current = null;
+                  }, 155);
+                }
+              } else if (value.length < previousValue.length) {
+                if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+                lastPressedTimerRef.current = null;
+                setLastPressedKey(null);
+              }
+              engine.setTyped(value);
+            }}
             onCompositionPreview={engine.previewComposition}
             resetKey={engine.state.inputRevision}
             onCommitWord={engine.commitWord}
@@ -414,7 +444,7 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       )}
 
       {/* Virtual Keyboard & Hand Guide */}
-      <VirtualKeyboard nextKey={nextKey} keyPressToken={engine.state.correctKeystrokes + engine.state.incorrectKeystrokes} />
+      <VirtualKeyboard nextKey={nextKey} lastPressedKey={lastPressedKey} keyPressToken={engine.state.correctKeystrokes + engine.state.incorrectKeystrokes} />
 
       {/* Lesson Completion Modal Overlay */}
       {result && (
