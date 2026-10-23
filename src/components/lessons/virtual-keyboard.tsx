@@ -276,10 +276,13 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
               const groupKey = active ? finger + "-" + keyPressToken : finger;
               return (
                 <g
-                  key={groupKey}
+                  key={finger}
                   transform={side === "right" ? "translate(1000 0) scale(-1 1)" : undefined}
-                  className={active && keyPressToken > 0 ? "hero-lesson-finger-tap" : undefined}
                 >
+                  <g
+                    key={groupKey}
+                    className={active && keyPressToken > 0 ? "hero-lesson-finger-tap" : undefined}
+                  >
                   <path
                     d={fingerPath(localTargetX, targetY, x, 268, 31)}
                     fill={color}
@@ -302,6 +305,7 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
                       strokeWidth="1.2"
                     />
                   )}
+                  </g>
                 </g>
               );
             })}
@@ -312,10 +316,13 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
               const color = FINGER_VAR.thumb;
               return (
                 <g
-                  key={"thumb-" + side + (active ? "-" + keyPressToken : "")}
+                  key={"thumb-" + side}
                   transform={side === "right" ? "translate(1000 0) scale(-1 1)" : undefined}
-                  className={active && keyPressToken > 0 ? "hero-lesson-finger-tap" : undefined}
                 >
+                  <g
+                    key={"thumb-shape-" + side + (active ? "-" + keyPressToken : "")}
+                    className={active && keyPressToken > 0 ? "hero-lesson-finger-tap" : undefined}
+                  >
                   <path
                     d={thumbPath(thumbX, 415)}
                     fill={color}
@@ -326,6 +333,7 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
                     strokeLinejoin="round"
                     style={active ? { filter: "drop-shadow(0 0 5px " + color + ")" } : undefined}
                   />
+                  </g>
                 </g>
               );
             })}
