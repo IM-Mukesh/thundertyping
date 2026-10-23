@@ -68,7 +68,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
           : [];
 
   return (
-    <div className="relative flex flex-1 flex-col items-center px-4 pb-16 pt-5 sm:px-8">
+    <div className="relative flex flex-1 flex-col items-center px-3 pb-12 pt-2 sm:px-6 lg:px-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -86,9 +86,9 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
       {/* Grid container keeping drill dead-centered while supporting desktop ad rail */}
       <div className="grid w-full grid-cols-1 min-[1760px]:grid-cols-[1fr_auto_1fr] min-[1760px]:items-start">
         <div aria-hidden="true" className="hidden min-[1760px]:block" />
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center">
           {/* Top Navigation & Breadcrumbs */}
-          <div className="flex w-full items-center justify-between gap-4 pb-6">
+          <div className="flex w-full items-center justify-between gap-3 pb-3">
             <Link
               href={locale === "en" ? "/lessons" : `/${locale}/lessons`}
               className="flex items-center gap-1 font-display text-xs font-bold uppercase tracking-wider text-sub transition-colors hover:text-accent"
@@ -107,11 +107,11 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonI
           </div>
 
           {/* Lesson Header */}
-          <div className="mb-6 flex w-full flex-col items-center gap-2 text-center">
-            <h1 className="font-display text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl">
+          <div className="mb-3 flex w-full flex-col items-start gap-1 text-left min-[900px]:mb-2 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
+            <h1 className="font-display text-xl font-black uppercase tracking-tight text-foreground sm:text-2xl xl:text-3xl">
               {lesson.name}
             </h1>
-            <p className="max-w-xl text-xs sm:text-sm text-sub leading-relaxed">
+            <p className="max-w-xl text-[11px] leading-relaxed text-sub sm:text-xs min-[900px]:max-w-sm min-[900px]:text-right xl:text-sm">
               {lesson.instructions[0]}
             </p>
           </div>
