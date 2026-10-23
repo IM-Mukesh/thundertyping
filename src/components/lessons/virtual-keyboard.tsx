@@ -32,12 +32,36 @@ interface KeyVisual {
   h: number;
   homeRow?: boolean;
   kind?: "shift-left" | "shift-right" | "space";
+  shiftLabel?: string;
 }
 
 const NUMBER_CENTERS = [198, 260, 322, 384, 446, 508, 570, 632, 694, 756];
 const TOP_CENTERS = [186, 251, 316, 381, 446, 511, 576, 641, 706, 771];
 const HOME_CENTERS = [210, 275, 340, 405, 470, 535, 600, 665, 730, 795];
 const BOTTOM_CENTERS = [235, 296, 357, 418, 479, 540, 601, 662, 723, 784];
+const SHIFTED_KEY_LABELS: Record<string, string> = {
+  "0": ")",
+  "1": "!",
+  "2": "@",
+  "3": "#",
+  "4": "$",
+  "5": "%",
+  "6": "^",
+  "7": "&",
+  "8": "*",
+  "9": "(",
+  "`": "~",
+  "-": "_",
+  "=": "+",
+  "[": "{",
+  "]": "}",
+  "\\": "|",
+  ";": ":",
+  "'": "\"",
+  ",": "<",
+  ".": ">",
+  "/": "?"
+};
 
 function letterLabel(key: string) {
   return key.length === 1 && key >= "a" && key <= "z" ? key.toUpperCase() : key;
@@ -54,6 +78,7 @@ function rowVisuals(
     id: key.key,
     key: key.key,
     label: letterLabel(key.key),
+    shiftLabel: SHIFTED_KEY_LABELS[key.key],
     finger: key.finger,
     homeRow: key.homeRow,
     x: centers[index] - width / 2,
@@ -69,21 +94,22 @@ function rowVisuals(
  * drifting away from the keys as the lesson changes size.
  */
 const VISUAL_KEYS: KeyVisual[] = [
-  { id: "grave", key: String.fromCharCode(96), label: "~", finger: "left-pinky", x: 108, y: 20, w: 44, h: 32 },
+  { id: "grave", key: String.fromCharCode(96), label: String.fromCharCode(96), shiftLabel: "~", finger: "left-pinky", x: 108, y: 20, w: 44, h: 32 },
   ...rowVisuals(KEY_ROWS[0], NUMBER_CENTERS, 20, 46, 32),
-  { id: "minus", key: "-", label: "-", finger: "right-pinky", x: 790, y: 20, w: 40, h: 32 },
-  { id: "equals", key: "=", label: "=", finger: "right-pinky", x: 832, y: 20, w: 40, h: 32 },
+  { id: "minus", key: "-", label: "-", shiftLabel: "_", finger: "right-pinky", x: 790, y: 20, w: 40, h: 32 },
+  { id: "equals", key: "=", label: "=", shiftLabel: "+", finger: "right-pinky", x: 832, y: 20, w: 40, h: 32 },
   { id: "backspace", key: "backspace", label: "Backspace", finger: "right-pinky", x: 877, y: 20, w: 76, h: 32 },
 
   { id: "tab", key: "tab", label: "Tab", finger: "left-pinky", x: 54, y: 58, w: 80, h: 32 },
   ...rowVisuals(KEY_ROWS[1], TOP_CENTERS, 58, 46, 32),
-  { id: "bracket-open", key: "[", label: "[", finger: "right-pinky", x: 805, y: 58, w: 40, h: 32 },
-  { id: "bracket-close", key: "]", label: "]", finger: "right-pinky", x: 849, y: 58, w: 40, h: 32 },
-  { id: "backslash", key: String.fromCharCode(92), label: String.fromCharCode(92), finger: "right-pinky", x: 893, y: 58, w: 40, h: 32 },
+  { id: "bracket-open", key: "[", label: "[", shiftLabel: "{", finger: "right-pinky", x: 805, y: 58, w: 40, h: 32 },
+  { id: "bracket-close", key: "]", label: "]", shiftLabel: "}", finger: "right-pinky", x: 849, y: 58, w: 40, h: 32 },
+  { id: "backslash", key: String.fromCharCode(92), label: String.fromCharCode(92), shiftLabel: "|", finger: "right-pinky", x: 893, y: 58, w: 40, h: 32 },
 
   { id: "caps-lock", key: "caps-lock", label: "Caps", finger: "left-pinky", x: 48, y: 96, w: 108, h: 32 },
   ...rowVisuals(KEY_ROWS[2], HOME_CENTERS, 96, 46, 32),
-  { id: "enter", key: "enter", label: "Enter", finger: "right-pinky", x: 844, y: 96, w: 104, h: 32 },
+  { id: "apostrophe", key: "'", label: "'", shiftLabel: "\"", finger: "right-pinky", x: 822, y: 96, w: 28, h: 32 },
+  { id: "enter", key: "enter", label: "Enter", finger: "right-pinky", x: 857, y: 96, w: 91, h: 32 },
 
   { id: "shift-left", key: "left-shift", label: "Shift", finger: "left-pinky", x: 46, y: 134, w: 126, h: 32, kind: "shift-left" },
   ...rowVisuals(KEY_ROWS[3], BOTTOM_CENTERS, 134, 45, 32),
@@ -345,19 +371,50 @@ export function VirtualKeyboard({ nextKey, keyPressToken = 0 }: VirtualKeyboardP
             const fontSize = longLabel ? 10.5 : key.label.length > 4 ? 12 : 14;
             return (
               <g key={"label-" + key.id} pointerEvents="none">
-                <text
-                  x={key.x + key.w / 2}
-                  y={key.y + key.h / 2 + 0.5}
-                  fill={isActive ? "var(--background)" : "var(--foreground)"}
-                  opacity={isActive ? 1 : 0.88}
-                  fontSize={fontSize}
-                  fontWeight={isActive ? 750 : 550}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontFamily="var(--font-mono, monospace)"
-                >
-                  {key.label}
-                </text>
+                {key.shiftLabel ? (
+                  <>
+                    <text
+                      x={key.x + key.w / 2}
+                      y={key.y + 9}
+                      fill={isActive ? "var(--background)" : "var(--foreground)"}
+                      opacity={isActive ? 0.9 : 0.65}
+                      fontSize="8.5"
+                      fontWeight="500"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontFamily="var(--font-mono, monospace)"
+                    >
+                      {key.shiftLabel}
+                    </text>
+                    <text
+                      x={key.x + key.w / 2}
+                      y={key.y + 23}
+                      fill={isActive ? "var(--background)" : "var(--foreground)"}
+                      opacity={isActive ? 1 : 0.9}
+                      fontSize={fontSize}
+                      fontWeight={isActive ? 750 : 550}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontFamily="var(--font-mono, monospace)"
+                    >
+                      {key.label}
+                    </text>
+                  </>
+                ) : (
+                  <text
+                    x={key.x + key.w / 2}
+                    y={key.y + key.h / 2 + 0.5}
+                    fill={isActive ? "var(--background)" : "var(--foreground)"}
+                    opacity={isActive ? 1 : 0.88}
+                    fontSize={fontSize}
+                    fontWeight={isActive ? 750 : 550}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontFamily="var(--font-mono, monospace)"
+                  >
+                    {key.label}
+                  </text>
+                )}
                 {key.homeRow && (
                   <line
                     x1={key.x + key.w / 2 - 6}
