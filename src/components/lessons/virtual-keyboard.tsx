@@ -367,8 +367,9 @@ export function VirtualKeyboard({ nextKey, lastPressedKey = null, keyPressToken 
             })}
 
             {[{ side: "left" as const }, { side: "right" as const }].map(({ side }) => {
-              const active = activeFinger === "thumb";
-              const pressed = pressedFinger === "thumb";
+              // Show one thumb at a time so the spacebar target is visually unambiguous.
+              const active = activeFinger === "thumb" && side === "left";
+              const pressed = pressedFinger === "thumb" && side === "left";
               const tapping = pressed && keyPressToken > 0;
               const thumbX = active || pressed ? 480 : 438;
               return (
