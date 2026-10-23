@@ -60,6 +60,8 @@ interface WordStreamProps {
   activeWordIndex: number;
   /** Where a ghost typist holding a target pace would be right now, or null to show no pace caret. */
   paceCaretPosition?: PaceCaretPosition | null;
+  /** Smaller type for compact lesson practice surfaces; default preserves test sizing. */
+  compact?: boolean;
 }
 
 export interface WordVisualUnit {
@@ -91,7 +93,7 @@ export function getWordCaretIndex(typed: string): number {
   return graphemeLength(typed);
 }
 
-export function WordStream({ wordStates, activeWordIndex, paceCaretPosition }: WordStreamProps) {
+export function WordStream({ wordStates, activeWordIndex, paceCaretPosition, compact = false }: WordStreamProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeWordElRef = useRef<HTMLSpanElement | null>(null);
   const linePitchRef = useRef(LINE_HEIGHT_FALLBACK);
@@ -132,7 +134,10 @@ export function WordStream({ wordStates, activeWordIndex, paceCaretPosition }: W
     <div className="relative w-full overflow-hidden" style={{ height: linePitch * VISIBLE_LINES }}>
       <div
         ref={containerRef}
-        className="typing-word-stream flex flex-wrap gap-x-3 gap-y-2 font-mono text-2xl font-normal leading-none transition-transform duration-150 ease-out sm:text-3xl"
+        className={cn(
+          "typing-word-stream flex flex-wrap gap-x-3 gap-y-2 font-mono font-normal leading-none transition-transform duration-150 ease-out",
+          compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl",
+        )}
         style={{ transform: `translateY(-${offset}px)` }}
       >
         {wordStates.map((word, index) => (

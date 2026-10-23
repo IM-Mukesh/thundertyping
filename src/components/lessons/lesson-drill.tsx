@@ -24,7 +24,6 @@ import { isLessonUnlocked, useLessonProgressStore } from "@/lib/lessons/lesson-p
 import { LESSON_LIST, type LessonDefinition } from "@/lib/lessons/lesson-types";
 import { evaluateLessonStars } from "@/lib/lessons/star-system";
 import { useKeyPerformanceStore } from "@/lib/lessons/key-performance-store";
-import { fingerForKey, handForKey, isShiftRequired, shiftKeyFor } from "@/lib/lessons/keyboard-layout";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import { playSound } from "@/lib/games/game-audio";
 import { awardXp, bumpStat } from "@/lib/profile/player-profile";
@@ -67,6 +66,14 @@ export function LessonDrill({ definition }: LessonDrillProps) {
   const [retryFocusKeys, setRetryFocusKeys] = useState<string[] | undefined>();
   const [focusToken, setFocusToken] = useState(0);
   const [isFocused, setIsFocused] = useState(true);
+  const [lastPressedKey, setLastPressedKey] = useState<string | null>(null);
+  const lastPressedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+    };
+  }, []);
 
   const stepSpec = subLessons[sessionStep - 1] ?? subLessons[0];
 
@@ -93,6 +100,9 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     lastAppliedConfigRef.current = config;
     engine.applyConfig(config);
     soundCountsRef.current = { correct: 0, incorrect: 0 };
+    if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+    lastPressedTimerRef.current = null;
+    setLastPressedKey(null);
     setFocusToken((t) => t + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
@@ -317,77 +327,90 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     (stepSpec.phase === "warmup" || stepSpec.phase === "patterns");
 
   return (
-    <div className="flex w-full max-w-3xl flex-col items-center gap-6">
-      {/* Step Progress & Controls Header */}
-      <div className="flex w-full flex-col gap-2 rounded-xl border border-border/80 bg-sub-alt/20 p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-3 font-mono text-[11px] text-sub">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-bold text-foreground">
-              Step {sessionStep} of {subLessons.length}
+    <div className="mx-auto flex min-h-0 w-full max-w-[1120px] flex-col items-stretch gap-2 px-2 sm:px-4 md:gap-2.5">
+      {/* Compact lesson controls: progress and objective share one clear panel. */}
+      <div className="flex w-full flex-col gap-2 rounded-xl border border-border/80 bg-sub-alt/20 px-3 py-2.5 sm:px-4">
+        <div className="flex w-full items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 font-mono text-[11px] font-bold text-foreground">
+              Step {sessionStep}/{subLessons.length}
             </span>
-            <span className="hidden sm:inline text-sub/60">&middot;</span>
-            <span className="hidden sm:inline font-display text-[10px] uppercase font-bold text-accent">
+            <span className="truncate font-display text-[10px] font-bold uppercase tracking-wider text-accent">
               {stepSpec.title}
             </span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] text-sub">Min: 60% acc</span>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <span className="hidden text-[10px] text-sub min-[420px]:inline">60% to pass</span>
             <CapsLockIndicator className="shrink-0" />
             <button
               type="button"
               onClick={toggleSound}
               aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
               title={soundEnabled ? "Mute sound" : "Unmute sound"}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
             >
-              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+              {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
             </button>
           </div>
         </div>
 
-        {/* Step Progress Bar */}
-        <div className="h-2 w-full overflow-hidden rounded-full border border-border/40 bg-sub-alt">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/70">
           <div
-            className="h-full bg-accent transition-[width] duration-300"
+            className="h-full rounded-full bg-accent transition-[width] duration-300"
             style={{ width: `${progressPct}%` }}
           />
         </div>
-      </div>
 
-      {/* Pedagogical Objective / Step Notice */}
-      {!isFinished && (
-        <div className="flex w-full flex-col gap-2 rounded-xl border border-accent/30 bg-accent/5 p-3.5 sm:p-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded bg-accent/20 text-accent font-display text-[10px] font-bold">
-              🎯
-            </span>
-            <span className="font-display text-xs font-bold uppercase tracking-wider text-accent">
-              {stepSpec.title}
-            </span>
-          </div>
-          <p className="text-xs text-sub leading-relaxed">{stepSpec.objective}</p>
-
-          {isSyntheticEarlyDrill && (
-            <p className="mt-1 border-t border-accent/20 pt-1.5 text-[11px] text-sub/80 italic flex items-center gap-1.5">
-              <HelpCircle size={12} className="shrink-0 text-accent" aria-hidden="true" />
-              Finger Warm-up: This step intentionally uses short key combinations to build muscle memory before full English words become possible.
+        {!isFinished && (
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+            <p className="min-w-0 flex-1 text-[11px] leading-snug text-sub sm:text-xs">
+              {stepSpec.objective}
             </p>
-          )}
-        </div>
-      )}
+            {isSyntheticEarlyDrill && (
+              <details className="shrink-0 text-[10px] text-sub/80">
+                <summary className="flex cursor-pointer list-none items-center gap-1 py-0.5">
+                  <HelpCircle size={11} className="shrink-0 text-accent" aria-hidden="true" />
+                  Warm-up details
+                </summary>
+                <p className="max-w-sm pt-1 leading-snug">
+                  This step intentionally uses short key combinations to build muscle memory before full English words become possible.
+                </p>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Typing Surface */}
       {!isFinished && (
         <div
-          className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 p-4 transition-colors hover:border-accent/40"
+          className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 px-3 py-2 transition-colors hover:border-accent/40 sm:px-4 sm:py-2.5"
           onClick={() => setFocusToken((t) => t + 1)}
         >
-          <WordStream wordStates={engine.displayWordStates} activeWordIndex={engine.state.activeWordIndex} />
+          <WordStream wordStates={engine.displayWordStates} activeWordIndex={engine.state.activeWordIndex} compact />
           <HiddenInput
             value={activeWord?.typed ?? ""}
             status={engine.state.status}
-            onChange={engine.setTyped}
+            onChange={(value) => {
+              const previousValue = activeWord?.typed ?? "";
+              if (value.length > previousValue.length) {
+                const addedText = value.slice(previousValue.length);
+                const pressed = addedText.at(-1) ?? null;
+                if (pressed !== null) {
+                  setLastPressedKey(pressed);
+                  if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+                  lastPressedTimerRef.current = setTimeout(() => {
+                    setLastPressedKey(null);
+                    lastPressedTimerRef.current = null;
+                  }, 155);
+                }
+              } else if (value.length < previousValue.length) {
+                if (lastPressedTimerRef.current) clearTimeout(lastPressedTimerRef.current);
+                lastPressedTimerRef.current = null;
+                setLastPressedKey(null);
+              }
+              engine.setTyped(value);
+            }}
             onCompositionPreview={engine.previewComposition}
             resetKey={engine.state.inputRevision}
             onCommitWord={engine.commitWord}
@@ -409,29 +432,8 @@ export function LessonDrill({ definition }: LessonDrillProps) {
         </div>
       )}
 
-      {/* Real-time tactile guide */}
-      {!isFinished && nextKey && (
-        <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border/60 bg-sub-alt/30 px-3.5 py-1 font-mono text-[11px] text-sub">
-          <span>Key: <strong className="font-bold text-accent">{nextKey === " " ? "SPACE" : nextKey}</strong></span>
-          <span>&middot;</span>
-          <span>{handForKey(nextKey) === "left" ? "Left Hand" : handForKey(nextKey) === "right" ? "Right Hand" : "Thumb"}</span>
-          {fingerForKey(nextKey) && (
-            <>
-              <span>&middot;</span>
-              <span className="capitalize">{fingerForKey(nextKey)?.replace("-", " ")}</span>
-            </>
-          )}
-          {isShiftRequired(nextKey) && (
-            <>
-              <span>&middot;</span>
-              <span className="font-semibold text-accent">Hold {shiftKeyFor(nextKey) === "left-shift" ? "Left" : "Right"} Shift</span>
-            </>
-          )}
-        </div>
-      )}
-
       {/* Virtual Keyboard & Hand Guide */}
-      <VirtualKeyboard nextKey={nextKey} />
+      <VirtualKeyboard nextKey={nextKey} lastPressedKey={lastPressedKey} keyPressToken={engine.state.correctKeystrokes + engine.state.incorrectKeystrokes} />
 
       {/* Lesson Completion Modal Overlay */}
       {result && (
