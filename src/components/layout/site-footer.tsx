@@ -25,7 +25,7 @@ export function SiteFooter({ locale = "en" }: { locale?: string }) {
         isRunning ? "opacity-0 pointer-events-none" : "opacity-100",
       )}
     >
-      <footer className="flex flex-col items-center gap-6 px-6 py-10 sm:px-10">
+      <footer className="flex flex-col items-center gap-3 sm:gap-3.5 px-6 py-3.5 sm:py-4 sm:px-10">
           <AdSlot placementId="footer-leaderboard" format="horizontal" />
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-sub/80 text-center">
             <span className="text-sub font-medium">Typing Tests:</span>

@@ -67,7 +67,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     // min-h-0 comment on <main> in layout.tsx), and justify-between then
     // gives the nav+footnote group whatever space is left at the bottom
     // instead of both groups drifting toward the middle.
-    <div className="flex flex-1 flex-col items-center justify-between px-4 py-3 sm:px-10 sm:py-6">
+    <div className="flex flex-1 flex-col items-center justify-between px-4 py-2 sm:px-8 sm:py-2.5">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
@@ -91,7 +91,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             rail itself renders nothing. The breakpoint (1760px) is chosen so
             the margin is wide enough to actually hold the rail rather than
             clipping it -- see AdRail. */}
-        <div className="mt-3 grid w-full grid-cols-1 min-[1760px]:grid-cols-[1fr_auto_1fr] min-[1760px]:items-start sm:mt-6">
+        <div className="mt-2 grid w-full grid-cols-1 min-[1760px]:grid-cols-[1fr_auto_1fr] min-[1760px]:items-start sm:mt-3">
           <div aria-hidden="true" className="hidden min-[1760px]:block" />
           <div className="mx-auto w-full max-w-6xl">
             <TypingTestClient

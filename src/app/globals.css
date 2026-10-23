@@ -475,3 +475,37 @@ button:disabled,
 @media (prefers-reduced-motion: reduce) {
   .hero-lesson-finger-tap { animation: none !important; }
 }
+
+/* Animated three-chevron disclosure wave */
+@keyframes chevron-wave {
+  0%, 100% {
+    opacity: 0.35;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2px);
+  }
+}
+
+.animate-chevron-wave-1 {
+  animation: chevron-wave 1.4s ease-in-out infinite 0s;
+}
+
+.animate-chevron-wave-2 {
+  animation: chevron-wave 1.4s ease-in-out infinite 0.2s;
+}
+
+.animate-chevron-wave-3 {
+  animation: chevron-wave 1.4s ease-in-out infinite 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-chevron-wave-1,
+  .animate-chevron-wave-2,
+  .animate-chevron-wave-3 {
+    animation: none !important;
+    opacity: 0.8 !important;
+    transform: none !important;
+  }
+}
