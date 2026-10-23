@@ -384,10 +384,10 @@ export function LessonDrill({ definition }: LessonDrillProps) {
       {/* Typing Surface */}
       {!isFinished && (
         <div
-          className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 px-3 py-2.5 transition-colors hover:border-accent/40 sm:px-4 sm:py-3"
+          className="relative w-full cursor-pointer rounded-xl border border-border bg-sub-alt/10 px-3 py-2 transition-colors hover:border-accent/40 sm:px-4 sm:py-2.5"
           onClick={() => setFocusToken((t) => t + 1)}
         >
-          <WordStream wordStates={engine.displayWordStates} activeWordIndex={engine.state.activeWordIndex} />
+          <WordStream wordStates={engine.displayWordStates} activeWordIndex={engine.state.activeWordIndex} compact />
           <HiddenInput
             value={activeWord?.typed ?? ""}
             status={engine.state.status}
