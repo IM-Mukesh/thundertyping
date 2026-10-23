@@ -327,70 +327,59 @@ export function LessonDrill({ definition }: LessonDrillProps) {
     (stepSpec.phase === "warmup" || stepSpec.phase === "patterns");
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-[1120px] flex-col items-stretch gap-2 px-3 sm:px-5 md:gap-2.5">
-      {/* Step Progress & Controls Header */}
-      <div className="flex w-full flex-col gap-1 rounded-xl border border-border/80 bg-sub-alt/20 px-3 py-2 sm:px-3 sm:py-2.5">
-        <div className="flex items-center justify-between gap-3 font-mono text-[11px] text-sub">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-bold text-foreground">
-              Step {sessionStep} of {subLessons.length}
+    <div className="mx-auto flex min-h-0 w-full max-w-[1120px] flex-col items-stretch gap-2 px-2 sm:px-4 md:gap-2.5">
+      {/* Compact lesson controls: progress and objective share one clear panel. */}
+      <div className="flex w-full flex-col gap-2 rounded-xl border border-border/80 bg-sub-alt/20 px-3 py-2.5 sm:px-4">
+        <div className="flex w-full items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 font-mono text-[11px] font-bold text-foreground">
+              Step {sessionStep}/{subLessons.length}
             </span>
-            <span className="hidden sm:inline text-sub/60">&middot;</span>
-            <span className="hidden sm:inline font-display text-[10px] uppercase font-bold text-accent">
+            <span className="truncate font-display text-[10px] font-bold uppercase tracking-wider text-accent">
               {stepSpec.title}
             </span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] text-sub">Min: 60% acc</span>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <span className="hidden text-[10px] text-sub min-[420px]:inline">60% to pass</span>
             <CapsLockIndicator className="shrink-0" />
             <button
               type="button"
               onClick={toggleSound}
               aria-label={soundEnabled ? "Mute sound" : "Unmute sound"}
               title={soundEnabled ? "Mute sound" : "Unmute sound"}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
             >
-              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+              {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
             </button>
           </div>
         </div>
 
-        {/* Step Progress Bar */}
-        <div className="h-2 w-full overflow-hidden rounded-full border border-border/40 bg-sub-alt">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/70">
           <div
-            className="h-full bg-accent transition-[width] duration-300"
+            className="h-full rounded-full bg-accent transition-[width] duration-300"
             style={{ width: `${progressPct}%` }}
           />
         </div>
-      </div>
 
-      {/* Pedagogical Objective / Step Notice */}
-      {!isFinished && (
-        <div className="flex w-full flex-col gap-1.5 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded bg-accent/20 text-accent font-display text-[10px] font-bold">
-              🎯
-            </span>
-            <span className="font-display text-xs font-bold uppercase tracking-wider text-accent">
-              {stepSpec.title}
-            </span>
+        {!isFinished && (
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+            <p className="min-w-0 flex-1 text-[11px] leading-snug text-sub sm:text-xs">
+              {stepSpec.objective}
+            </p>
+            {isSyntheticEarlyDrill && (
+              <details className="shrink-0 text-[10px] text-sub/80">
+                <summary className="flex cursor-pointer list-none items-center gap-1 py-0.5">
+                  <HelpCircle size={11} className="shrink-0 text-accent" aria-hidden="true" />
+                  Warm-up details
+                </summary>
+                <p className="max-w-sm pt-1 leading-snug">
+                  This step intentionally uses short key combinations to build muscle memory before full English words become possible.
+                </p>
+              </details>
+            )}
           </div>
-          <p className="text-xs text-sub leading-relaxed">{stepSpec.objective}</p>
-
-          {isSyntheticEarlyDrill && (
-            <details className="mt-1 border-t border-accent/20 pt-1.5 text-[11px] text-sub/80">
-              <summary className="flex cursor-pointer list-none items-center gap-1.5">
-                <HelpCircle size={12} className="shrink-0 text-accent" aria-hidden="true" />
-                Finger warm-up details
-              </summary>
-              <p className="pt-1.5 leading-snug">
-                This step intentionally uses short key combinations to build muscle memory before full English words become possible.
-              </p>
-            </details>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Typing Surface */}
       {!isFinished && (
