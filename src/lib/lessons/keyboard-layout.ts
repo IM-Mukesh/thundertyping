@@ -101,9 +101,20 @@ export const SPACE_KEY: KeyboardKey = { key: " ", finger: "thumb" };
 
 export const KEY_ROWS: KeyboardKey[][] = [NUMBER_ROW, TOP_ROW, HOME_ROW, BOTTOM_ROW];
 
-const KEY_FINGER_MAP: Record<string, FingerId> = Object.fromEntries(
-  [...KEY_ROWS.flat(), SPACE_KEY].map((k) => [k.key, k.finger]),
-);
+const EXTENDED_KEY_FINGERS: Record<string, FingerId> = {
+  "`": "left-pinky",
+  "-": "right-pinky",
+  "=": "right-pinky",
+  "[": "right-pinky",
+  "]": "right-pinky",
+  "\\": "right-pinky",
+  "'": "right-pinky",
+};
+
+const KEY_FINGER_MAP: Record<string, FingerId> = {
+  ...Object.fromEntries([...KEY_ROWS.flat(), SPACE_KEY].map((k) => [k.key, k.finger])),
+  ...EXTENDED_KEY_FINGERS,
+};
 
 export const HOME_KEY_FOR_FINGER: Record<FingerId, string> = {
   "left-pinky": "a",
