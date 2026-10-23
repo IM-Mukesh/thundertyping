@@ -2,6 +2,7 @@ import "server-only";
 import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import { parseGameScorePayload, type GameScorePayload } from "@/lib/games/game-result-contract";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
+import { normalizeLanguageCode } from "@/lib/i18n/config";
 
 const VALID_LESSON_IDS = new Set<string>(LESSON_LIST.map((l) => l.id));
 const VALID_ACHIEVEMENT_IDS = new Set<string>(ACHIEVEMENT_LIST.map((a) => a.id));
@@ -277,7 +278,7 @@ export function validateLessonProgressInput(
       correctChars,
       incorrectChars,
       elapsedMs: (p.elapsedMs as number | undefined) ?? 0,
-      languageCode: p.languageCode !== undefined && p.languageCode !== null ? String(p.languageCode) : "en",
+      languageCode: normalizeLanguageCode(typeof p.languageCode === "string" ? p.languageCode : undefined),
     },
   };
 }

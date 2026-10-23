@@ -5,6 +5,7 @@ import type { ValidatedLessonProgressInput } from "@/lib/server/validation";
 import { withOptimisticRetry, UNIQUE_VIOLATION } from "@/lib/server/optimistic-retry";
 import { evaluateAndSyncAchievements } from "@/lib/server/progress";
 import type { Database } from "@/lib/supabase/database.types";
+import { normalizeLanguageCode } from "@/lib/i18n/config";
 
 type LessonAttemptInsert = Database["public"]["Tables"]["lesson_attempts"]["Insert"];
 
@@ -24,6 +25,7 @@ import {
 
 export async function saveLessonProgress(userId: string, input: ValidatedLessonProgressInput) {
   const supabase = createAdminClient();
+  const lang = normalizeLanguageCode(input.languageCode);
 
   // 1. Idempotency & Conflict Check (F03 & F06)
   const { data: existingAttempt } = await supabase
@@ -42,28 +44,32 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       accuracy: input.accuracy,
     });
 
-    if (receipt?.stage === "complete") {
-      const { data: currentProgress } = await supabase
-        .from("lesson_progress")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("lesson_id", input.lessonId)
-        .maybeSingle();
+    const { data: currentProgress } = await supabase
+      .from("lesson_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("lesson_id", input.lessonId)
+      .eq("language_code", lang)
+      .maybeSingle();
 
+    if (currentProgress) {
       const { data: streak } = await supabase
         .from("player_streaks")
         .select("total_xp")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (currentProgress) {
-        return {
-          progress: currentProgress,
-          earnedXp: 0,
-          totalXp: streak?.total_xp ?? 0,
-          idempotent: true,
-        };
+      if (receipt) {
+        receipt.stage = "complete";
+        await updateSettlementReceipt(receipt);
       }
+
+      return {
+        progress: currentProgress,
+        earnedXp: 0,
+        totalXp: streak?.total_xp ?? 0,
+        idempotent: true,
+      };
     }
   }
 
@@ -89,7 +95,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       accuracy: input.accuracy,
       stars: input.stars,
       completed: input.completed,
-      language_code: input.languageCode || "en",
+      language_code: lang,
     };
 
     const { error: attemptError } = await supabase
@@ -135,7 +141,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .select("*")
         .eq("user_id", userId)
         .eq("lesson_id", input.lessonId)
-        .eq("language_code", input.languageCode || "en")
+        .eq("language_code", lang)
         .maybeSingle();
 
       if (existing) {
@@ -178,7 +184,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           })
           .eq("user_id", userId)
           .eq("lesson_id", input.lessonId)
-          .eq("language_code", input.languageCode || "en")
+          .eq("language_code", lang)
           .eq("updated_at", existing.updated_at)
           .select()
           .maybeSingle();
@@ -198,7 +204,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           .insert({
             user_id: userId,
             lesson_id: input.lessonId,
-            language_code: input.languageCode || "en",
+            language_code: lang,
             completed: input.completed,
             stars: input.stars,
             best_wpm: input.wpm,
@@ -240,6 +246,7 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       .select("*")
       .eq("user_id", userId)
       .eq("lesson_id", input.lessonId)
+      .eq("language_code", lang)
       .maybeSingle();
     progressRecord = existingProgress;
   }
@@ -354,12 +361,13 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
 
 export async function getUserLessonProgress(userId: string, languageCode: string = "en") {
   const supabase = await getSupabaseForRead();
+  const lang = normalizeLanguageCode(languageCode);
 
   const { data, error } = await supabase
     .from("lesson_progress")
     .select("*")
     .eq("user_id", userId)
-    .eq("language_code", languageCode);
+    .eq("language_code", lang);
 
   if (error) {
     throw new Error(`Failed to fetch lesson progress: ${error.message}`);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Check, Gamepad2, GraduationCap, RotateCcw, Share2, Sparkles, Target } from "lucide-react";
+import { Check, RotateCcw, Share2, Sparkles, Target } from "lucide-react";
 import type { TestState } from "@/lib/typing-engine/engine-types";
 import {
   calculateAccuracy,
@@ -65,31 +65,6 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
     }
   };
 
-  // Determine smart recommended practice step
-  const recommendedAction = accuracy < 94
-    ? {
-        label: "Drill Weak Keys & Accuracy",
-        href: "/practice/weak-keys",
-        icon: Target,
-        action: "weak_keys" as const,
-        description: "Fix problem letters to boost overall consistency.",
-      }
-    : netWpm < 50
-    ? {
-        label: "Practice Touch Lessons",
-        href: "/lessons",
-        icon: GraduationCap,
-        action: "lessons" as const,
-        description: "Build clean finger muscle memory across the keyboard.",
-      }
-    : {
-        label: "Test Speed in Zombie Survival",
-        href: "/games/type-before-death",
-        icon: Gamepad2,
-        action: "games" as const,
-        description: "Push typing reflexes under arcade pressure.",
-      };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -141,26 +116,6 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
           {round(elapsedMs / 100) / 10}s elapsed &middot; the space between two
           words counts as a character
         </p>
-      </div>
-
-      {/* Recommended Next Step Card */}
-      <div className="w-full rounded-xl border border-accent/20 bg-accent/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <recommendedAction.icon size={20} />
-          </div>
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-accent">Recommended Next Step</div>
-            <p className="text-xs text-sub">{recommendedAction.description}</p>
-          </div>
-        </div>
-        <Link
-          href={recommendedAction.href}
-          onClick={() => trackEvent("results_action_clicked", { action: recommendedAction.action, wpm: netWpm, accuracy })}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow-sm transition-opacity hover:opacity-90 whitespace-nowrap"
-        >
-          {recommendedAction.label}
-        </Link>
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-3">

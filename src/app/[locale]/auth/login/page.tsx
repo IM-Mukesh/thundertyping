@@ -63,20 +63,26 @@ function LoginForm() {
     if (submitting || completedAuth) return;
     setSubmitting(true);
     setErrorMessage(null);
-    trackEvent("auth_started", { method: "google", source: "login_form" });
-    const { error, isNewUser } = await signInWithGoogleIdToken(idToken, nonce);
-    setSubmitting(false);
-    if (error) {
-      setErrorMessage(error);
-      return;
+    try {
+      trackEvent("auth_started", { method: "google", source: "login_form" });
+      const { error, isNewUser } = await signInWithGoogleIdToken(idToken, nonce);
+      if (error) {
+        setErrorMessage(error);
+        setSubmitting(false);
+        return;
+      }
+      setCompletedAuth(true);
+      if (isNewUser) {
+        trackEvent("signup_completed", { method: "google" });
+      } else {
+        trackEvent("login_completed", { method: "google" });
+      }
+      router.push(nextParam);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to sign in with Google";
+      setErrorMessage(msg);
+      setSubmitting(false);
     }
-    setCompletedAuth(true);
-    if (isNewUser) {
-      trackEvent("signup_completed", { method: "google" });
-    } else {
-      trackEvent("login_completed", { method: "google" });
-    }
-    router.push(nextParam);
   };
 
   return (

@@ -31,3 +31,14 @@ export function isValidLocale(locale: string): locale is RouteLocale {
 export function isValidTypingLocale(locale: string): locale is TypingLocale {
   return TYPING_LOCALES.includes(locale as TypingLocale);
 }
+
+export function normalizeLanguageCode(code?: string | null): RouteLocale {
+  if (!code) return "en";
+  const trimmed = code.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === "pt-br" || lower === "pt_br") return "pt-BR";
+  if (lower === "es") return "es";
+  if (lower === "de") return "de";
+  return "en";
+}
+

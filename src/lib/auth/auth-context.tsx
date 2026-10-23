@@ -197,7 +197,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const isNewUser = isNewAuthUser(data.user);
         return { error: null, isNewUser };
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Failed to sign in with Google";
+        let msg = "Failed to sign in with Google";
+        if (err instanceof Error) {
+          msg =
+            err.message === "Failed to fetch"
+              ? "Unable to reach the authentication server. Please check your network connection or try again."
+              : err.message;
+        }
         return { error: msg, isNewUser: false };
       }
     },
