@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest } from "next/server";
 import { requireAuthUser } from "@/lib/server/auth";
 import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
-import { saveLessonProgress, getUserLessonProgress } from "@/lib/server/lesson-progress";
+import { saveLessonProgress, getUserLessonProgress, resetUserLessonProgress } from "@/lib/server/lesson-progress";
 import { validateLessonProgressInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
 import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
@@ -59,5 +59,23 @@ export async function POST(request: NextRequest) {
       return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
     }
     return safeInternalError(error, "Failed to record lesson progress", requestId);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const requestId = createRequestId();
+  try {
+    if (!hasTrustedMutationOrigin(request)) {
+      return apiError("FORBIDDEN", "Invalid request origin", 403, undefined, undefined, requestId);
+    }
+    const { user } = await requireAuthUser();
+    await resetUserLessonProgress(user.id);
+    return apiSuccess({ reset: true });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Failed to reset lesson progress";
+    if (msg === "UNAUTHORIZED") {
+      return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
+    }
+    return safeInternalError(error, "Failed to reset lesson progress", requestId);
   }
 }

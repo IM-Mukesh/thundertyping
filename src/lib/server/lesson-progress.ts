@@ -382,3 +382,22 @@ export async function getUserLessonProgress(
 
   return data || [];
 }
+
+export async function resetUserLessonProgress(userId: string) {
+  const supabase = createAdminClient();
+
+  const [delAttempts, delProgress] = await Promise.all([
+    supabase.from("lesson_attempts").delete().eq("user_id", userId),
+    supabase.from("lesson_progress").delete().eq("user_id", userId),
+  ]);
+
+  if (delAttempts.error) {
+    console.warn("[lessons] failed to delete lesson_attempts on reset:", delAttempts.error);
+  }
+  if (delProgress.error) {
+    console.warn("[lessons] failed to delete lesson_progress on reset:", delProgress.error);
+    throw new Error(`Failed to reset lesson progress: ${delProgress.error.message}`);
+  }
+
+  return { success: true };
+}

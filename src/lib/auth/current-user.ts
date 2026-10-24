@@ -5,13 +5,26 @@
  */
 let currentUserId: string | null = null;
 let authGeneration = 0;
+let authLoading = true;
 const listeners = new Set<() => void>();
 
 export function setCurrentUserId(id: string | null): void {
   const changed = id !== currentUserId;
   if (changed) authGeneration += 1;
   currentUserId = id;
+  authLoading = false;
   if (changed) for (const listener of listeners) listener();
+}
+
+export function setAuthLoading(loading: boolean): void {
+  if (authLoading !== loading) {
+    authLoading = loading;
+    for (const listener of listeners) listener();
+  }
+}
+
+export function isAuthLoading(): boolean {
+  return authLoading;
 }
 
 export function subscribeCurrentUser(listener: () => void): () => void {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it, beforeEach, afterEach } from "node:test";
-import { setCurrentUserId } from "@/lib/auth/current-user";
+import { setCurrentUserId, getCurrentUserId } from "@/lib/auth/current-user";
 import {
   useLessonProgressStore,
   getLessonOutbox,
@@ -582,5 +582,224 @@ describe("Lesson Progress Persistence & Outbox Synchronization", () => {
 
     // 2. Laptop store preserves 4 steps
     assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.currentStep, 4);
+  });
+
+  it("Case B: empty account migrates guest data, then clears guest storage so subsequent account receives none", async () => {
+    const user1 = "empty-account-user-1";
+    const user2 = "empty-account-user-2";
+    const cloudDatabase1 = new Map<string, unknown>();
+    const cloudDatabase2 = new Map<string, unknown>();
+
+    globalThis.fetch = async (url, init) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/lessons/progress")) {
+        const activeUser = getCurrentUserId();
+        if (init?.method === "POST") {
+          const body = JSON.parse(String(init.body));
+          const dbRow = {
+            lesson_id: body.lessonId,
+            user_id: activeUser,
+            completed: body.completed,
+            current_step: body.step,
+            stars: body.stars,
+            best_wpm: body.wpm,
+            best_accuracy: body.accuracy,
+            pass_count: 1,
+          };
+          if (activeUser === user1) {
+            cloudDatabase1.set(body.lessonId, dbRow);
+          } else if (activeUser === user2) {
+            cloudDatabase2.set(body.lessonId, dbRow);
+          }
+          return { ok: true, status: 200, json: async () => ({ success: true, data: { totalXp: 100 } }) } as Response;
+        }
+        // GET returns target user's cloud DB
+        const targetDb = activeUser === user2 ? cloudDatabase2 : cloudDatabase1;
+        return { ok: true, status: 200, json: async () => ({ success: true, data: Array.from(targetDb.values()) }) } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({ success: true }) } as Response;
+    };
+
+    // 1. Guest practices home-row-left
+    setCurrentUserId(null);
+    useLessonProgressStore.getState().recordAttempt("home-row-left", {
+      step: 1,
+      totalSteps: 1,
+      accuracy: 95,
+      wpm: 40,
+      typedChars: 50,
+      correctChars: 48,
+      incorrectChars: 2,
+      elapsedMs: 15000,
+      minAccuracy: 60,
+      stars: 4,
+    });
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.bestStars, 4);
+
+    // 2. User 1 signs in (empty cloud)
+    setCurrentUserId(user1);
+    await primeCloudLessonProgress({ force: true });
+
+    // User 1 receives the migrated guest data and saves to cloud
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.bestStars, 4);
+    assert.equal(cloudDatabase1.size, 1);
+
+    // Guest storage was cleared and archived
+    assert.equal(window.localStorage.getItem("thundertyping-lesson-progress"), null);
+    assert.ok(window.localStorage.getItem("thundertyping-lesson-progress:archive"));
+
+    // 3. User 1 signs out
+    setCurrentUserId(null);
+    restoreLocalLessonProgress();
+    assert.deepEqual(useLessonProgressStore.getState().units, {});
+
+    // 4. User 2 signs in on the same browser (empty cloud)
+    setCurrentUserId(user2);
+    await primeCloudLessonProgress({ force: true });
+
+    // User 2 has ZERO lessons (never receives the already-migrated guest progress!)
+    assert.deepEqual(useLessonProgressStore.getState().units, {});
+    assert.equal(cloudDatabase2.size, 0);
+  });
+
+  it("Case C: account with existing cloud progress does not overwrite with guest data automatically; provides explicit merge / dismiss", async () => {
+    const testUserId = "case-c-user-existing";
+    const cloudRows = [
+      {
+        lesson_id: "home-row-left",
+        completed: true,
+        current_step: 7,
+        stars: 5,
+        best_wpm: 75,
+        best_accuracy: 100,
+        pass_count: 5,
+      },
+    ];
+
+    let postCount = 0;
+    globalThis.fetch = async (url, init) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/lessons/progress")) {
+        if (init?.method === "POST") {
+          postCount++;
+          return { ok: true, status: 200, json: async () => ({ success: true, data: { totalXp: 150 } }) } as Response;
+        }
+        return { ok: true, status: 200, json: async () => ({ success: true, data: cloudRows }) } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({ success: true }) } as Response;
+    };
+
+    // 1. Guest has home-row-right (3 stars) in local storage
+    setCurrentUserId(null);
+    useLessonProgressStore.getState().recordAttempt("home-row-right", {
+      step: 1,
+      totalSteps: 1,
+      accuracy: 90,
+      wpm: 35,
+      typedChars: 50,
+      correctChars: 45,
+      incorrectChars: 5,
+      elapsedMs: 15000,
+      minAccuracy: 60,
+      stars: 3,
+    });
+
+    // 2. User signs in with existing account (has home-row-left 5 stars in cloud)
+    setCurrentUserId(testUserId);
+    await primeCloudLessonProgress({ force: true });
+
+    // Confirmed cloud progress is the authoritative baseline
+    const units = useLessonProgressStore.getState().units;
+    assert.equal(units["home-row-left"]?.bestStars, 5);
+    assert.equal(units["home-row-left"]?.completed, true);
+    // Guest progress was NOT automatically merged or sent to cloud!
+    assert.equal(units["home-row-right"], undefined);
+    assert.equal(postCount, 0);
+
+    // Guest import banner is available with 1 unmerged lesson
+    const banner = useLessonProgressStore.getState().guestImportAvailable;
+    assert.ok(banner);
+    assert.equal(banner.count, 1);
+    assert.deepEqual(banner.lessons, ["home-row-right"]);
+
+    // 3. User chooses explicit merge
+    await useLessonProgressStore.getState().mergeGuestProgress?.();
+
+    // Now merged: home-row-right is present, home-row-left remains 5 stars (not downgraded)
+    const mergedUnits = useLessonProgressStore.getState().units;
+    assert.equal(mergedUnits["home-row-left"]?.bestStars, 5);
+    assert.equal(mergedUnits["home-row-right"]?.bestStars, 3);
+    assert.equal(postCount, 1);
+    assert.equal(useLessonProgressStore.getState().guestImportAvailable, null);
+  });
+
+  it("Case D: cloud outage preserves cached units and does NOT migrate guest data", async () => {
+    const testUserId = "case-d-user";
+
+    // 1. Account has cached unit in localStorage
+    const accountKey = getAccountStorageKey(testUserId);
+    window.localStorage.setItem(
+      accountKey,
+      JSON.stringify({
+        state: {
+          version: 2,
+          units: {
+            "home-row-left": {
+              completed: true,
+              currentStep: 7,
+              passCount: 2,
+              avgAccuracy: 95,
+              avgWpm: 50,
+              totalTimeMs: 20000,
+              completedAt: Date.now(),
+              bestWpm: 50,
+              bestAccuracy: 95,
+              attemptsCount: 2,
+              bestStars: 5,
+            },
+          },
+          totals: { typedChars: 100, correctChars: 95, incorrectChars: 5, timeMs: 20000 },
+        },
+      })
+    );
+
+    // Guest also has guest units
+    window.localStorage.setItem(
+      "thundertyping-lesson-progress",
+      JSON.stringify({
+        state: {
+          version: 2,
+          units: {
+            "top-row-left": {
+              completed: true,
+              currentStep: 7,
+              passCount: 1,
+              avgAccuracy: 90,
+              avgWpm: 30,
+              totalTimeMs: 15000,
+              completedAt: Date.now(),
+              bestStars: 3,
+            },
+          },
+        },
+      })
+    );
+
+    // Cloud fails with 500
+    globalThis.fetch = async () => {
+      return { ok: false, status: 500, json: async () => ({ error: "Internal Server Error" }) } as Response;
+    };
+
+    setCurrentUserId(testUserId);
+    await primeCloudLessonProgress({ force: true });
+
+    // Cache is NOT wiped
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.bestStars, 5);
+    // Guest data was NOT migrated
+    assert.equal(useLessonProgressStore.getState().units["top-row-left"], undefined);
+    assert.ok(window.localStorage.getItem("thundertyping-lesson-progress"));
+    // Status reflects error
+    assert.equal(useLessonProgressStore.getState().syncStatus, "error");
+    assert.equal(useLessonProgressStore.getState().lifecycleStatus, "sync-error");
   });
 });

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import { LESSON_LIST, type LessonId } from "@/lib/lessons/lesson-types";
-import { getCurrentUserId, subscribeCurrentUser } from "@/lib/auth/current-user";
+import { getCurrentUserId, subscribeCurrentUser, isAuthLoading } from "@/lib/auth/current-user";
 import { primeCloudXp } from "@/lib/profile/player-profile";
 import { mapCloudLessonRowToUnitProgress, type CloudLessonRowInput } from "@/lib/contracts/data-integrity";
 import { normalizeLanguageCode } from "@/lib/i18n/config";
@@ -61,13 +61,28 @@ export interface RecordAttemptInput {
   stars?: number;
 }
 
+export type ProgressLifecycle =
+  | "guest"
+  | "auth-loading"
+  | "account-loading"
+  | "account-ready"
+  | "syncing"
+  | "sync-error"
+  | "synced"
+  | "idle"
+  | "error";
+
 export interface LessonProgressState {
   version: number;
   learnerGoal: LearnerGoal;
   units: Partial<Record<LessonId, UnitProgress>>;
   totals: LessonTotals;
-  syncStatus?: "idle" | "syncing" | "synced" | "error";
+  syncStatus?: ProgressLifecycle;
+  lifecycleStatus?: ProgressLifecycle;
   lastSyncError?: string | null;
+  guestImportAvailable?: { count: number; lessons: LessonId[] } | null;
+  mergeGuestProgress?: () => Promise<void>;
+  dismissGuestImport?: () => void;
   setLearnerGoal: (goal: LearnerGoal) => void;
   recordAttempt: (unitId: LessonId, input: RecordAttemptInput) => {
     passed: boolean;
@@ -84,9 +99,11 @@ export interface LessonProgressState {
 }
 
 export const CURRENT_SCHEMA_VERSION = 2;
-const GUEST_STORAGE_KEY = "thundertyping-lesson-progress";
-const OUTBOX_STORAGE_PREFIX = "herotyping-lesson-outbox";
-const MIGRATED_FLAG_PREFIX = "herotyping-guest-migrated";
+export const GUEST_STORAGE_KEY = "thundertyping-lesson-progress";
+export const GUEST_ARCHIVE_KEY = "thundertyping-lesson-progress:archive";
+export const OUTBOX_STORAGE_PREFIX = "herotyping-lesson-outbox";
+export const MIGRATED_FLAG_PREFIX = "herotyping-guest-migrated";
+export const DISMISSED_FLAG_PREFIX = "herotyping-guest-dismissed";
 
 export interface LessonOutboxItem {
   runId: string;
@@ -297,7 +314,7 @@ function saveCurrentStoreSnapshot(
   }
 }
 
-function getGuestStoredUnits(): LessonProgressState["units"] | null {
+export function getGuestStoredUnits(): LessonProgressState["units"] | null {
   const storage = getLocalStorage();
   if (!storage) return null;
   try {
@@ -314,56 +331,37 @@ function getGuestStoredUnits(): LessonProgressState["units"] | null {
   }
 }
 
-async function syncGuestProgressIfEligible(
-  userId: string,
-  cloudRows: Array<CloudLessonRowInput>,
-  mergedUnitsTarget?: LessonProgressState["units"]
-): Promise<void> {
+export function archiveAndClearGuestProgress(guestUnits: LessonProgressState["units"]): void {
   const storage = getLocalStorage();
-  if (!storage || !userId) return;
-  const migratedKey = `${MIGRATED_FLAG_PREFIX}:${userId}`;
-  if (storage.getItem(migratedKey)) return;
-
-  const guestUnits = getGuestStoredUnits();
-  if (!guestUnits || Object.keys(guestUnits).length === 0) {
-    storage.setItem(migratedKey, "true");
-    return;
+  if (!storage) return;
+  try {
+    storage.setItem(
+      GUEST_ARCHIVE_KEY,
+      JSON.stringify({
+        archivedAt: Date.now(),
+        units: guestUnits,
+      })
+    );
+    storage.removeItem(GUEST_STORAGE_KEY);
+  } catch {
+    // Ignore storage quota / private browsing errors
   }
+}
 
-  const cloudMap = new Map<string, CloudLessonRowInput>();
-  for (const r of cloudRows) {
-    cloudMap.set(r.lesson_id, r);
-  }
-
-  const syncPromises: Promise<unknown>[] = [];
+export async function transferGuestUnitsToAccount(
+  userId: string,
+  guestUnits: LessonProgressState["units"],
+  cloudUnitsTarget?: LessonProgressState["units"]
+): Promise<number> {
+  const syncPromises: Promise<{ success: boolean; idempotent?: boolean }>[] = [];
 
   for (const [id, guestUnit] of Object.entries(guestUnits)) {
     if (!guestUnit) continue;
     const lessonId = id as LessonId;
-    const cloudEntry = cloudMap.get(lessonId);
 
-    const needsSync =
-      !cloudEntry ||
-      (!cloudEntry.completed && guestUnit.completed) ||
-      (guestUnit.currentStep > (cloudEntry.current_step ?? 0)) ||
-      ((guestUnit.bestStars ?? 0) > (cloudEntry.stars ?? 0));
-
-    if (needsSync && (guestUnit.completed || guestUnit.currentStep > 0 || guestUnit.passCount > 0)) {
-      if (mergedUnitsTarget) {
-        mergedUnitsTarget[lessonId] = {
-          completed: guestUnit.completed,
-          currentStep: guestUnit.currentStep,
-          passCount: guestUnit.passCount,
-          avgAccuracy: guestUnit.avgAccuracy,
-          avgWpm: guestUnit.avgWpm,
-          totalTimeMs: guestUnit.totalTimeMs,
-          completedAt: guestUnit.completedAt,
-          bestWpm: guestUnit.bestWpm,
-          bestAccuracy: guestUnit.bestAccuracy,
-          attemptsCount: guestUnit.attemptsCount,
-          bestStars: guestUnit.bestStars,
-          latestStars: guestUnit.latestStars,
-        };
+    if (guestUnit.completed || guestUnit.currentStep > 0 || guestUnit.passCount > 0) {
+      if (cloudUnitsTarget) {
+        cloudUnitsTarget[lessonId] = { ...guestUnit };
       }
 
       const lesson = LESSON_LIST.find((l) => l.id === lessonId);
@@ -380,9 +378,9 @@ async function syncGuestProgressIfEligible(
         attemptCount: Math.max(1, guestUnit.attemptsCount || 1),
         step: Math.min(totalSteps, Math.max(1, guestUnit.currentStep || (guestUnit.completed ? totalSteps : 1))),
         totalSteps,
-        typedChars: 50,
-        correctChars: 45,
-        incorrectChars: 5,
+        typedChars: Math.max(10, Math.round(guestUnit.avgWpm || 30) * 5),
+        correctChars: Math.max(9, Math.round(((guestUnit.avgWpm || 30) * 5 * (guestUnit.avgAccuracy || 90)) / 100)),
+        incorrectChars: Math.max(0, Math.round(((guestUnit.avgWpm || 30) * 5 * (100 - (guestUnit.avgAccuracy || 90))) / 100)),
         elapsedMs: Math.max(1000, Math.round(guestUnit.totalTimeMs || 15000)),
         createdAt: Date.now(),
         retryCount: 0,
@@ -394,8 +392,10 @@ async function syncGuestProgressIfEligible(
     }
   }
 
-  await Promise.allSettled(syncPromises);
-  storage.setItem(migratedKey, "true");
+  if (syncPromises.length === 0) return 0;
+  const results = await Promise.all(syncPromises);
+  const allSucceeded = results.every((r) => r.success);
+  return allSucceeded ? results.length : 0;
 }
 
 export async function reconcileLocalProgressWithCloud(
@@ -407,79 +407,53 @@ export async function reconcileLocalProgressWithCloud(
   const storage = getLocalStorage();
   if (!storage || !userId) return;
 
-  const cloudMap = new Map<string, CloudLessonRowInput>();
-  for (const r of cloudRows) {
-    cloudMap.set(r.lesson_id, r);
-  }
+  // Cloud rows are authoritative. If cloud has zero records (e.g. past server error or empty account),
+  // safely recover any unsynced local progress ahead of cloud into outbox.
+  if (cloudRows.length === 0) {
+    const existingOutbox = getLessonOutbox(userId);
+    const outboxLessonIds = new Set(existingOutbox.map((i) => i.lessonId));
+    const syncPromises: Promise<{ success: boolean; idempotent?: boolean }>[] = [];
 
-  const existingOutbox = getLessonOutbox(userId);
-  const outboxLessonIds = new Set(existingOutbox.map((i) => i.lessonId));
+    for (const [id, localUnit] of Object.entries(localUnits)) {
+      if (!localUnit) continue;
+      const lessonId = id as LessonId;
 
-  const syncPromises: Promise<{ success: boolean; idempotent?: boolean }>[] = [];
+      if ((localUnit.completed || localUnit.currentStep > 0 || localUnit.passCount > 0) && !outboxLessonIds.has(lessonId)) {
+        if (cloudUnitsTarget) {
+          cloudUnitsTarget[lessonId] = { ...localUnit };
+        }
 
-  for (const [id, localUnit] of Object.entries(localUnits)) {
-    if (!localUnit) continue;
-    const lessonId = id as LessonId;
-    const cloudEntry = cloudMap.get(lessonId);
-
-    // Is the local progress strictly ahead of cloud state?
-    const isAhead =
-      (!cloudEntry && (localUnit.completed || localUnit.currentStep > 0 || localUnit.passCount > 0)) ||
-      (cloudEntry !== undefined && (
-        (!cloudEntry.completed && localUnit.completed) ||
-        (localUnit.currentStep > (cloudEntry.current_step ?? 0)) ||
-        ((localUnit.bestStars ?? 0) > (cloudEntry.stars ?? 0))
-      ));
-
-    // Only create a reconciliation outbox item if one is not already queued for this lesson
-    if (isAhead && !outboxLessonIds.has(lessonId)) {
-      if (cloudUnitsTarget) {
-        cloudUnitsTarget[lessonId] = {
+        const lesson = LESSON_LIST.find((l) => l.id === lessonId);
+        const totalSteps = lesson?.subLessonCount || 1;
+        const runId = generateUuid();
+        const outboxItem: LessonOutboxItem = {
+          runId,
+          lessonId,
+          languageCode: "en",
           completed: localUnit.completed,
-          currentStep: localUnit.currentStep,
-          passCount: localUnit.passCount,
-          avgAccuracy: localUnit.avgAccuracy,
-          avgWpm: localUnit.avgWpm,
-          totalTimeMs: localUnit.totalTimeMs,
-          completedAt: localUnit.completedAt,
-          bestWpm: localUnit.bestWpm,
-          bestAccuracy: localUnit.bestAccuracy,
-          attemptsCount: localUnit.attemptsCount,
-          bestStars: localUnit.bestStars,
-          latestStars: localUnit.latestStars,
+          stars: localUnit.bestStars ?? (localUnit.completed ? 3 : 1),
+          wpm: Math.round(localUnit.bestWpm || localUnit.avgWpm || 30),
+          accuracy: Math.round(localUnit.bestAccuracy || localUnit.avgAccuracy || 90),
+          attemptCount: Math.max(1, localUnit.attemptsCount || 1),
+          step: Math.min(totalSteps, Math.max(1, localUnit.currentStep || (localUnit.completed ? totalSteps : 1))),
+          totalSteps,
+          typedChars: Math.max(10, Math.round(localUnit.avgWpm || 30) * 5),
+          correctChars: Math.max(9, Math.round(((localUnit.avgWpm || 30) * 5 * (localUnit.avgAccuracy || 90)) / 100)),
+          incorrectChars: Math.max(0, Math.round(((localUnit.avgWpm || 30) * 5 * (100 - (localUnit.avgAccuracy || 90))) / 100)),
+          elapsedMs: Math.max(1000, Math.round(localUnit.totalTimeMs || 15000)),
+          createdAt: Date.now(),
+          retryCount: 0,
+          userId,
         };
+
+        enqueueLessonOutbox(userId, outboxItem);
+        syncPromises.push(sendLessonOutboxItem(outboxItem));
       }
-
-      const lesson = LESSON_LIST.find((l) => l.id === lessonId);
-      const totalSteps = lesson?.subLessonCount || 1;
-      const runId = generateUuid();
-      const outboxItem: LessonOutboxItem = {
-        runId,
-        lessonId,
-        languageCode: "en",
-        completed: localUnit.completed,
-        stars: localUnit.bestStars ?? (localUnit.completed ? 3 : 1),
-        wpm: Math.round(localUnit.bestWpm || localUnit.avgWpm || 30),
-        accuracy: Math.round(localUnit.bestAccuracy || localUnit.avgAccuracy || 90),
-        attemptCount: Math.max(1, localUnit.attemptsCount || 1),
-        step: Math.min(totalSteps, Math.max(1, localUnit.currentStep || (localUnit.completed ? totalSteps : 1))),
-        totalSteps,
-        typedChars: 50,
-        correctChars: 45,
-        incorrectChars: 5,
-        elapsedMs: Math.max(1000, Math.round(localUnit.totalTimeMs || 15000)),
-        createdAt: Date.now(),
-        retryCount: 0,
-        userId,
-      };
-
-      enqueueLessonOutbox(userId, outboxItem);
-      syncPromises.push(sendLessonOutboxItem(outboxItem));
     }
-  }
 
-  if (syncPromises.length > 0) {
-    await Promise.allSettled(syncPromises);
+    if (syncPromises.length > 0) {
+      await Promise.allSettled(syncPromises);
+    }
   }
 }
 
@@ -616,8 +590,38 @@ export const useLessonProgressStore = create<LessonProgressState>()(
       learnerGoal: "touch-typing",
       units: {},
       totals: emptyTotals(),
-      syncStatus: "idle",
+      syncStatus: isAuthLoading() ? "auth-loading" : (getCurrentUserId() ? "account-loading" : "guest"),
+      lifecycleStatus: isAuthLoading() ? "auth-loading" : (getCurrentUserId() ? "account-loading" : "guest"),
       lastSyncError: null,
+      guestImportAvailable: null,
+      mergeGuestProgress: async () => {
+        const userId = getCurrentUserId();
+        if (!userId) return;
+        const guestUnits = getGuestStoredUnits();
+        if (!guestUnits) return;
+
+        const state = get();
+        const nextUnits = { ...state.units };
+        await transferGuestUnitsToAccount(userId, guestUnits, nextUnits);
+        archiveAndClearGuestProgress(guestUnits);
+
+        const storage = getLocalStorage();
+        storage?.setItem(`${MIGRATED_FLAG_PREFIX}:${userId}`, "true");
+
+        set({
+          units: nextUnits,
+          guestImportAvailable: null,
+        });
+        saveCurrentStoreSnapshot(nextUnits, state.totals, state.learnerGoal);
+      },
+      dismissGuestImport: () => {
+        const userId = getCurrentUserId();
+        if (userId) {
+          const storage = getLocalStorage();
+          storage?.setItem(`${DISMISSED_FLAG_PREFIX}:${userId}`, "true");
+        }
+        set({ guestImportAvailable: null });
+      },
       setLearnerGoal: (goal) => {
         set({ learnerGoal: goal });
         saveCurrentStoreSnapshot(get().units, get().totals, goal);
@@ -676,8 +680,24 @@ export const useLessonProgressStore = create<LessonProgressState>()(
         return { passed, unitCompleted, savePromise };
       },
       resetProgress: () => {
-        set({ units: {}, totals: emptyTotals(), learnerGoal: "touch-typing" });
+        primeGeneration++;
+        primedUserId = null;
+        primeInFlight = null;
+        const userId = getCurrentUserId();
+        set({
+          units: {},
+          totals: emptyTotals(),
+          learnerGoal: "touch-typing",
+          guestImportAvailable: null,
+        });
         saveCurrentStoreSnapshot({}, emptyTotals(), "touch-typing");
+        if (userId) {
+          const storage = getLocalStorage();
+          storage?.removeItem(`${OUTBOX_STORAGE_PREFIX}:${userId}`);
+          fetch("/api/lessons/progress", { method: "DELETE" }).catch((err) => {
+            console.warn("[lessons] failed to delete remote lesson progress:", err);
+          });
+        }
       },
       unlockUpToLesson: (targetLessonId: LessonId) => {
         const targetIndex = LESSON_LIST.findIndex((l) => l.id === targetLessonId);
@@ -811,22 +831,40 @@ export const useLessonProgressStore = create<LessonProgressState>()(
 
 let primeInFlight: Promise<void> | null = null;
 let primedUserId: string | null = null;
+let primeGeneration = 0;
 
 export async function primeCloudLessonProgress(options?: { force?: boolean }): Promise<void> {
   const userId = getCurrentUserId();
-  if (!userId) return;
+  if (!userId) {
+    useLessonProgressStore.setState({
+      syncStatus: "guest",
+      lifecycleStatus: "guest",
+    });
+    return;
+  }
 
   if (!options?.force && primedUserId === userId && !primeInFlight) {
     return;
   }
 
-  if (primeInFlight) {
-    return primeInFlight;
+  while (primeInFlight) {
+    await primeInFlight;
+    if (!options?.force && primedUserId === userId) {
+      return;
+    }
   }
+
+  const currentGen = primeGeneration;
 
   primeInFlight = (async () => {
     try {
-      useLessonProgressStore.setState({ syncStatus: "syncing" });
+      useLessonProgressStore.setState({
+        syncStatus: "syncing",
+        lifecycleStatus: "syncing",
+      });
+
+      // Capture store units snapshot at the start before network calls
+      const snapshotUnitsAtStart = { ...useLessonProgressStore.getState().units };
 
       // 1. Flush any pending outbox items first
       await flushLessonOutbox(userId);
@@ -844,12 +882,12 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
         throw new Error("Invalid response payload from /api/lessons/progress");
       }
 
-      // Ensure user hasn't signed out or changed during fetch
-      if (userId !== getCurrentUserId()) return;
+      // Ensure user hasn't signed out, reset, or changed during fetch
+      if (userId !== getCurrentUserId() || currentGen !== primeGeneration) return;
 
       const rows: Array<CloudLessonRowInput & { typed_chars?: number; correct_chars?: number; incorrect_chars?: number }> = json.data;
 
-      // 3. Map cloud rows
+      // 3. Map cloud rows as the authoritative baseline
       const cloudUnits: LessonProgressState["units"] = {};
       for (const row of rows) {
         const lesson = LESSON_LIST.find((item) => item.id === row.lesson_id);
@@ -857,14 +895,53 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
         cloudUnits[lesson.id] = mapCloudLessonRowToUnitProgress(row, lesson.subLessonCount);
       }
 
-      // 4. Migrate any guest progress if eligible and merge into cloud units
-      await syncGuestProgressIfEligible(userId, rows, cloudUnits);
+      const storage = getLocalStorage();
+      const isMigrated = storage ? storage.getItem(`${MIGRATED_FLAG_PREFIX}:${userId}`) === "true" : true;
+      const isDismissed = storage ? storage.getItem(`${DISMISSED_FLAG_PREFIX}:${userId}`) === "true" : false;
+      const guestUnits = getGuestStoredUnits();
+      const hasGuestUnits = Boolean(
+        guestUnits &&
+          Object.values(guestUnits).some(
+            (u) => u && (u.completed || u.currentStep > 0 || u.passCount > 0)
+          )
+      );
 
-      // 5. Safe recovery: if local snapshot on this device is ahead of the database, reconcile and push to cloud
-      const current = useLessonProgressStore.getState();
-      await reconcileLocalProgressWithCloud(userId, rows, current.units, cloudUnits);
+      // CASE B: User signs in and account has NO cloud progress
+      if (rows.length === 0 && hasGuestUnits && !isMigrated) {
+        const migratedCount = await transferGuestUnitsToAccount(userId, guestUnits!, cloudUnits);
+        if (migratedCount > 0) {
+          archiveAndClearGuestProgress(guestUnits!);
+          storage?.setItem(`${MIGRATED_FLAG_PREFIX}:${userId}`, "true");
+        }
+      }
+      // CASE C: User signs in and account ALREADY has progress
+      else if (rows.length > 0 && hasGuestUnits && !isMigrated && !isDismissed) {
+        const unmergedLessons: LessonId[] = [];
+        for (const [id, gu] of Object.entries(guestUnits!)) {
+          if (!gu) continue;
+          const lessonId = id as LessonId;
+          const cu = cloudUnits[lessonId];
+          const hasNewProgress =
+            !cu || (!cu.completed && gu.completed) || (gu.currentStep > (cu.currentStep ?? 0));
+          if (hasNewProgress && (gu.completed || gu.currentStep > 0)) {
+            unmergedLessons.push(lessonId);
+          }
+        }
 
-      // 6. Merge any still-unconfirmed outbox items that remain pending (in-flight or offline retry)
+        if (unmergedLessons.length > 0) {
+          useLessonProgressStore.setState({
+            guestImportAvailable: {
+              count: unmergedLessons.length,
+              lessons: unmergedLessons,
+            },
+          });
+        }
+      }
+
+      // Safe recovery: if cloud is empty and local units were ahead before prime, reconcile and push to cloud
+      await reconcileLocalProgressWithCloud(userId, rows, snapshotUnitsAtStart, cloudUnits);
+
+      // 4. Merge any still-unconfirmed genuine outbox items that remain pending (in-flight or offline retry)
       const pendingItems = getLessonOutbox(userId);
       for (const pending of pendingItems) {
         const existing = cloudUnits[pending.lessonId];
@@ -883,12 +960,13 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
         cloudUnits[pending.lessonId] = unit;
       }
 
-      // 7. Authoritative cloud baseline + confirmed reconciliations & pending items becomes state
+      // 5. Authoritative cloud baseline + confirmed reconciliations & pending items becomes state
       const totalTyped = rows.reduce((acc, r) => acc + Number(r.typed_chars ?? 0), 0);
       const totalCorrect = rows.reduce((acc, r) => acc + Number(r.correct_chars ?? 0), 0);
       const totalIncorrect = rows.reduce((acc, r) => acc + Number(r.incorrect_chars ?? 0), 0);
       const totalTime = rows.reduce((acc, r) => acc + Number(r.total_time_ms ?? 0), 0);
 
+      const current = useLessonProgressStore.getState();
       const nextTotals: LessonTotals = {
         typedChars: Math.max(current.totals.typedChars, totalTyped),
         correctChars: Math.max(current.totals.correctChars, totalCorrect),
@@ -896,10 +974,13 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
         timeMs: Math.max(current.totals.timeMs, totalTime),
       };
 
+      if (userId !== getCurrentUserId() || currentGen !== primeGeneration) return;
+
       useLessonProgressStore.setState({
         units: cloudUnits,
         totals: nextTotals,
-        syncStatus: "synced",
+        syncStatus: "account-ready",
+        lifecycleStatus: "account-ready",
         lastSyncError: null,
       });
 
@@ -909,6 +990,7 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
       console.warn("[lessons] failed to load cloud progress:", err);
       useLessonProgressStore.setState({
         syncStatus: "error",
+        lifecycleStatus: "sync-error",
         lastSyncError: err instanceof Error ? err.message : "Network error",
       });
       // NOTE: We do NOT wipe units! The user's account-cached progress remains visible!
@@ -922,66 +1004,95 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
 
 subscribeCurrentUser(() => {
   const userId = getCurrentUserId();
+  const loading = isAuthLoading();
   primedUserId = null;
   primeInFlight = null;
 
-  const targetKey = getAccountStorageKey(userId);
-  useLessonProgressStore.persist.setOptions({ name: targetKey });
-
-  // Synchronously seed state from local cache to prevent flashing or leaking previous user's data
-  const storage = getLocalStorage();
-  const raw = storage?.getItem(targetKey);
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      const data = parsed?.state ?? parsed;
-      if (data && typeof data.units === "object" && data.units !== null) {
-        useLessonProgressStore.setState({
-          units: sanitizeUnits(data.units),
-          totals: isValidTotals(data.totals) ? data.totals : emptyTotals(),
-          learnerGoal: data.learnerGoal ?? "touch-typing",
-        });
-      }
-    } catch {
-      // Ignore
-    }
-  } else {
+  if (loading) {
     useLessonProgressStore.setState({
-      units: {},
-      totals: emptyTotals(),
+      syncStatus: "auth-loading",
+      lifecycleStatus: "auth-loading",
+      guestImportAvailable: null,
     });
+    return;
   }
 
-  void useLessonProgressStore.persist.rehydrate();
+  const targetKey = getAccountStorageKey(userId);
+  const storage = getLocalStorage();
 
   if (userId) {
+    // 1. Read cached state BEFORE pointing persist to targetKey, to prevent persist overwriting it
+    const raw = storage?.getItem(targetKey);
+    let seededUnits: LessonProgressState["units"] = {};
+    let seededTotals = emptyTotals();
+    let seededGoal: LearnerGoal = "touch-typing";
+
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        const data = parsed?.state ?? parsed;
+        if (data && typeof data.units === "object" && data.units !== null) {
+          seededUnits = sanitizeUnits(data.units);
+          seededTotals = isValidTotals(data.totals) ? data.totals : emptyTotals();
+          seededGoal = data.learnerGoal ?? "touch-typing";
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    useLessonProgressStore.setState({
+      units: seededUnits,
+      totals: seededTotals,
+      learnerGoal: seededGoal,
+      syncStatus: "account-loading",
+      lifecycleStatus: "account-loading",
+      guestImportAvailable: null,
+    });
+
+    useLessonProgressStore.persist.setOptions({ name: targetKey });
+    void useLessonProgressStore.persist.rehydrate();
     void primeCloudLessonProgress();
+  } else {
+    restoreLocalLessonProgress();
   }
 });
 
 export function restoreLocalLessonProgress(): void {
   primedUserId = null;
   primeInFlight = null;
-  useLessonProgressStore.persist.setOptions({ name: GUEST_STORAGE_KEY });
 
   const storage = getLocalStorage();
   const raw = storage?.getItem(GUEST_STORAGE_KEY);
+  let cleanUnits: LessonProgressState["units"] = {};
+  let cleanTotals = emptyTotals();
+  let cleanGoal: LearnerGoal = "touch-typing";
+
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
       const data = parsed?.state ?? parsed;
       if (data && typeof data.units === "object" && data.units !== null) {
-        useLessonProgressStore.setState({
-          units: sanitizeUnits(data.units),
-          totals: isValidTotals(data.totals) ? data.totals : emptyTotals(),
-          learnerGoal: data.learnerGoal ?? "touch-typing",
-        });
+        cleanUnits = sanitizeUnits(data.units);
+        cleanTotals = isValidTotals(data.totals) ? data.totals : emptyTotals();
+        cleanGoal = data.learnerGoal ?? "touch-typing";
       }
     } catch {
       // Ignore
     }
   }
 
+  // Set clean guest state into memory before pointing persist back to GUEST_STORAGE_KEY
+  useLessonProgressStore.setState({
+    units: cleanUnits,
+    totals: cleanTotals,
+    learnerGoal: cleanGoal,
+    syncStatus: "guest",
+    lifecycleStatus: "guest",
+    guestImportAvailable: null,
+  });
+
+  useLessonProgressStore.persist.setOptions({ name: GUEST_STORAGE_KEY });
   void useLessonProgressStore.persist.rehydrate();
 }
 

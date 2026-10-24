@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
-import { GET, POST } from "@/app/api/lessons/progress/route";
+import { GET, POST, DELETE } from "@/app/api/lessons/progress/route";
 import { isPlaceholderSecretKey } from "@/lib/supabase/admin";
 
 describe("Lesson Progress API Route & Persistence Hardening", () => {
@@ -77,6 +77,36 @@ describe("Lesson Progress API Route & Persistence Hardening", () => {
         elapsedMs: 12000,
       });
       const res = await POST(req);
+      assert.equal(res.status, 401);
+      const json = await res.json();
+      assert.equal(json.error.code, "UNAUTHORIZED");
+    });
+  });
+
+  describe("DELETE /api/lessons/progress", () => {
+    it("rejects untrusted cross-origin requests with 403", async () => {
+      const req = new NextRequest("https://www.herotyping.com/api/lessons/progress", {
+        method: "DELETE",
+        headers: {
+          origin: "https://malicious-site.example.com",
+          "x-forwarded-host": "www.herotyping.com",
+        },
+      });
+      const res = await DELETE(req);
+      assert.equal(res.status, 403);
+      const json = await res.json();
+      assert.equal(json.error.code, "FORBIDDEN");
+    });
+
+    it("rejects unauthenticated requests with 401 UNAUTHORIZED", async () => {
+      const req = new NextRequest("https://www.herotyping.com/api/lessons/progress", {
+        method: "DELETE",
+        headers: {
+          origin: "https://www.herotyping.com",
+          "x-forwarded-host": "www.herotyping.com",
+        },
+      });
+      const res = await DELETE(req);
       assert.equal(res.status, 401);
       const json = await res.json();
       assert.equal(json.error.code, "UNAUTHORIZED");

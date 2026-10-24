@@ -25,6 +25,7 @@ import {
   useLessonProgressStore,
   type LearnerGoal,
 } from "@/lib/lessons/lesson-progress-store";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useKeyPerformanceStore, getKeyStats } from "@/lib/lessons/key-performance-store";
 import { evaluateDetailedMastery } from "@/lib/lessons/mastery-engine";
 import { LessonStatsBar } from "@/components/lessons/lesson-stats-bar";
@@ -43,12 +44,23 @@ const GOAL_OPTIONS: { id: LearnerGoal; label: string; desc: string }[] = [
 ];
 
 export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonList?: LessonDefinition[], locale?: string }) {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const units = useLessonProgressStore((s) => s.units);
   const learnerGoal = useLessonProgressStore((s) => s.learnerGoal);
   const setLearnerGoal = useLessonProgressStore((s) => s.setLearnerGoal);
   const exportProgress = useLessonProgressStore((s) => s.exportProgress);
   const importProgress = useLessonProgressStore((s) => s.importProgress);
   const resetProgress = useLessonProgressStore((s) => s.resetProgress);
+  const syncStatus = useLessonProgressStore((s) => s.syncStatus);
+  const lifecycleStatus = useLessonProgressStore((s) => s.lifecycleStatus);
+  const guestImportAvailable = useLessonProgressStore((s) => s.guestImportAvailable);
+  const mergeGuestProgress = useLessonProgressStore((s) => s.mergeGuestProgress);
+  const dismissGuestImport = useLessonProgressStore((s) => s.dismissGuestImport);
+
+  const isHydrating =
+    isAuthLoading ||
+    lifecycleStatus === "auth-loading" ||
+    (Boolean(user) && (lifecycleStatus === "account-loading" || syncStatus === "syncing"));
 
   const keys = useKeyPerformanceStore((s) => s.keys);
   const transitions = useKeyPerformanceStore((s) => s.transitions);
@@ -176,8 +188,50 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
 
   return (
     <div className="flex w-full flex-col gap-10">
+      {/* GUEST PROGRESS IMPORT BANNER (Case C) */}
+      {guestImportAvailable && guestImportAvailable.count > 0 && (
+        <section
+          aria-label="Guest progress import banner"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-accent/40 bg-accent/10 p-4 shadow-sm"
+        >
+          <div className="flex flex-col gap-1">
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+              <Sparkles size={14} aria-hidden="true" /> Guest progress found
+            </span>
+            <p className="text-xs text-sub leading-relaxed">
+              Guest progress was found on this device ({guestImportAvailable.count} lesson{guestImportAvailable.count > 1 ? "s" : ""}). Would you like to merge it into this account?
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => mergeGuestProgress?.()}
+              className="flex h-9 items-center justify-center rounded-lg bg-accent px-4 font-display text-xs font-bold uppercase tracking-wider text-background transition-colors hover:brightness-110 shadow-sm"
+            >
+              Merge into account
+            </button>
+            <button
+              type="button"
+              onClick={() => dismissGuestImport?.()}
+              className="flex h-9 items-center justify-center rounded-lg border border-border bg-sub-alt/40 px-3 font-display text-xs font-semibold text-sub transition-colors hover:text-foreground"
+            >
+              Keep separate
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* 1. HERO & ORIENTATION */}
-      {isNewUser ? (
+      {isHydrating ? (
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-sub-alt/10 p-6 sm:p-8 animate-pulse">
+          <div className="flex flex-col gap-4 max-w-xl">
+            <div className="h-4 w-32 rounded bg-sub-alt" />
+            <div className="h-8 w-64 rounded bg-sub-alt" />
+            <div className="h-4 w-full rounded bg-sub-alt" />
+            <div className="h-2 w-48 rounded bg-sub-alt mt-2" />
+          </div>
+        </section>
+      ) : isNewUser ? (
         <section className="relative overflow-hidden rounded-2xl border border-accent/40 bg-sub-alt/20 p-6 sm:p-10 text-center sm:text-left">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex max-w-xl flex-col gap-3">

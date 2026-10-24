@@ -45,6 +45,7 @@ const GOAL_LABELS: Record<LearnerGoal, string> = {
 export function TodaysTrainingCard() {
   const units = useLessonProgressStore((s) => s.units);
   const learnerGoal = useLessonProgressStore((s) => s.learnerGoal);
+  const lifecycleStatus = useLessonProgressStore((s) => s.lifecycleStatus);
   const keys = useKeyPerformanceStore((s) => s.keys);
   const transitions = useKeyPerformanceStore((s) => s.transitions);
 
@@ -85,6 +86,17 @@ export function TodaysTrainingCard() {
     0,
   );
   const primary = recommendations[0];
+
+  if (lifecycleStatus === "auth-loading" || lifecycleStatus === "account-loading") {
+    return (
+      <div className="flex w-full flex-col gap-3 rounded-xl border border-border/60 bg-sub-alt/10 p-5 animate-pulse">
+        <div className="h-4 w-28 rounded bg-sub-alt" />
+        <div className="h-5 w-48 rounded bg-sub-alt" />
+        <div className="h-3 w-full rounded bg-sub-alt" />
+        <div className="h-10 w-32 rounded bg-sub-alt mt-2" />
+      </div>
+    );
+  }
 
   if (!hasProgress) {
     return (

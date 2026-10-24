@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/supabase/database.types";
-import { getAuthGeneration, getCurrentUserId, setCurrentUserId } from "@/lib/auth/current-user";
+import { getAuthGeneration, getCurrentUserId, setCurrentUserId, setAuthLoading } from "@/lib/auth/current-user";
 import { primeCloudGameBests, clearCloudGameBests } from "@/lib/games/game-scores";
 import { primeCloudLessonProgress, restoreLocalLessonProgress } from "@/lib/lessons/lesson-progress-store";
 import { primeCloudPersonalBests, clearCloudPersonalBests } from "@/lib/persistence/results-store";
@@ -105,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     async function initAuth() {
+      setAuthLoading(true);
       try {
         const verifiedUser = await refreshProfile();
         if (!mounted) return;
@@ -123,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } finally {
         if (mounted) {
           setIsLoading(false);
+          setAuthLoading(false);
         }
       }
     }
@@ -149,12 +151,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             primeCloudPersonalBests(u.id);
             primeCloudAchievements();
           }
+          setAuthLoading(false);
         } else if (event === "SIGNED_OUT") {
           setUser(null);
           setProfile(null);
           setPreferences(null);
           setStreak(null);
           setCurrentUserId(null);
+          setAuthLoading(false);
           clearCloudGameBests();
           restoreLocalLessonProgress();
           clearCloudPersonalBests();
