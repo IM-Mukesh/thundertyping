@@ -124,6 +124,8 @@ export interface GameAcknowledgement {
   earnedXp: number;
   isNewBest: boolean;
   idempotent: boolean;
+  verified?: boolean;
+  trustTier?: "verified" | "self_reported";
 }
 
 export function parseGameAcknowledgement(value: unknown, payload: GameScorePayload): GameAcknowledgement {
@@ -138,7 +140,16 @@ export function parseGameAcknowledgement(value: unknown, payload: GameScorePaylo
       typeof ack.idempotent !== "boolean" || typeof ack.isNewBest !== "boolean" || (ack.idempotent && (ack.earnedXp !== 0 || ack.isNewBest))) {
     throw new Error("Save acknowledgement did not match this run");
   }
-  return { record, best, totalXp: ack.totalXp, earnedXp: ack.earnedXp, isNewBest: ack.isNewBest, idempotent: ack.idempotent };
+  return {
+    record,
+    best,
+    totalXp: ack.totalXp,
+    earnedXp: ack.earnedXp,
+    isNewBest: ack.isNewBest,
+    idempotent: ack.idempotent,
+    ...(typeof ack.verified === "boolean" ? { verified: ack.verified } : {}),
+    ...(ack.trustTier === "verified" || ack.trustTier === "self_reported" ? { trustTier: ack.trustTier } : {}),
+  };
 }
 
 export async function readGameApiResponse(response: Response): Promise<unknown> {

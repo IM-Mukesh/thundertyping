@@ -3,6 +3,11 @@ import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { DEATH_MISSIONS, DEATH_ENEMIES, DEATH_WORDS } from "@/lib/games/type-before-death/content";
 import { createRng } from "@/lib/rng/seeded-rng";
 import { dailyChallengeSeed } from "@/lib/games/type-before-death/engine";
+import {
+  createSignedChallengeToken,
+  parseAndVerifySignedToken,
+  consumeDurableChallenge,
+} from "@/lib/server/durable-challenge";
 
 export type GameAchievementEvent = "boss-defeated" | "overdrive-activated" | "100-wpm";
 
@@ -14,6 +19,18 @@ export interface ServerGameRunProof {
   readonly wavesCleared?: number;
   readonly overdrives?: number;
   readonly signature: string;
+}
+
+export interface GameRunChallengePayload extends Record<string, unknown> {
+  readonly v: 1;
+  readonly cid: string;
+  readonly uid?: string;
+  readonly rid: string;
+  readonly gid: string;
+  readonly s: string;
+  readonly m: string;
+  readonly mis: number;
+  readonly iat: number;
 }
 
 export interface GameRunChallenge {
@@ -74,6 +91,40 @@ const SERVER_RUN_CHALLENGES = new Map<string, GameRunChallenge>();
 const MAX_CHALLENGES = 5000;
 const CHALLENGE_TTL_MS = 3600_000; // 1 hour
 
+/**
+ * In-memory registry of verified server proofs for completed runs.
+ * Used for server-side achievement evaluation without requiring database schema changes.
+ */
+const VERIFIED_GAME_RUN_PROOFS = new Map<string, ServerGameRunProof>();
+const MAX_VERIFIED_PROOFS = 5000;
+
+export function storeVerifiedGameRunProof(proof: ServerGameRunProof): void {
+  if (VERIFIED_GAME_RUN_PROOFS.size >= MAX_VERIFIED_PROOFS) {
+    const firstKey = VERIFIED_GAME_RUN_PROOFS.keys().next().value;
+    if (firstKey) VERIFIED_GAME_RUN_PROOFS.delete(firstKey);
+  }
+  VERIFIED_GAME_RUN_PROOFS.set(proof.runId, proof);
+}
+
+export function getVerifiedGameRunProof(runId: string): ServerGameRunProof | undefined {
+  return VERIFIED_GAME_RUN_PROOFS.get(runId);
+}
+
+export function clearVerifiedGameRunProofs(): void {
+  VERIFIED_GAME_RUN_PROOFS.clear();
+}
+
+/**
+ * Consumes and invalidates a server-issued run challenge (single-use replay prevention).
+ */
+export function consumeServerRunChallenge(runId: string): GameRunChallenge | undefined {
+  const challenge = getServerRunChallenge(runId);
+  if (challenge) {
+    SERVER_RUN_CHALLENGES.delete(runId);
+  }
+  return challenge;
+}
+
 export function computeChallengeToken(
   challengeId: string,
   runId: string,
@@ -91,12 +142,13 @@ export function computeChallengeToken(
 
 /**
  * Issues an authoritative server game run challenge.
- * Binds the runId, mode, mission, and deterministic seed before gameplay begins.
+ * Binds the runId, mode, mission, deterministic seed, and optional user ownership
+ * before gameplay begins.
  */
 export function issueGameRunChallenge(
   gameId: string,
   runId: string,
-  options?: { mode?: string; mission?: number; day?: string },
+  options?: { mode?: string; mission?: number; day?: string; userId?: string },
 ): GameRunChallenge {
   const challengeId = `chal-${randomUUID()}`;
   const mode = options?.mode || "campaign";
@@ -116,7 +168,19 @@ export function issueGameRunChallenge(
       .slice(0, 16);
   }
 
-  const token = computeChallengeToken(challengeId, runId, gameId, seed, mode, mission, issuedAt, secret);
+  const payload: GameRunChallengePayload = {
+    v: 1,
+    cid: challengeId,
+    uid: options?.userId,
+    rid: runId,
+    gid: gameId,
+    s: seed,
+    m: mode,
+    mis: mission,
+    iat: issuedAt,
+  };
+
+  const token = createSignedChallengeToken(payload, secret);
 
   const challenge: GameRunChallenge = {
     challengeId,
@@ -136,6 +200,79 @@ export function issueGameRunChallenge(
   SERVER_RUN_CHALLENGES.set(runId, challenge);
 
   return challenge;
+}
+
+/**
+ * Durably verifies and consumes a single-use game run challenge.
+ * Enforces ownership, game identity, expiry, and replay prevention across serverless instances.
+ */
+export async function verifyAndConsumeGameRunChallenge(
+  userId: string,
+  runId: string,
+  gameId: string,
+  evidence: GameplayEvidence
+): Promise<{ valid: boolean; challenge?: GameRunChallenge; reason?: string }> {
+  // 1. Try stateless cryptographic token verification first
+  if (evidence.challengeToken && evidence.challengeToken.startsWith("v1.")) {
+    const payload = parseAndVerifySignedToken<GameRunChallengePayload>(evidence.challengeToken);
+    if (!payload) {
+      return { valid: false, reason: "invalid_challenge_signature" };
+    }
+    if (payload.uid && payload.uid !== userId) {
+      return { valid: false, reason: "challenge_ownership_mismatch" };
+    }
+    if (payload.rid !== runId) {
+      return { valid: false, reason: "challenge_run_id_mismatch" };
+    }
+    if (payload.gid !== gameId) {
+      return { valid: false, reason: "challenge_game_id_mismatch" };
+    }
+    if (Date.now() - payload.iat > CHALLENGE_TTL_MS) {
+      return { valid: false, reason: "challenge_expired" };
+    }
+    if (payload.iat > Date.now() + 60_000) {
+      return { valid: false, reason: "challenge_future_timestamp" };
+    }
+
+    const consumption = await consumeDurableChallenge(payload.cid, userId, runId, "game");
+    if (!consumption.success) {
+      return { valid: false, reason: "challenge_already_consumed" };
+    }
+
+    consumeServerRunChallenge(runId);
+
+    return {
+      valid: true,
+      challenge: {
+        challengeId: payload.cid,
+        runId: payload.rid,
+        gameId: payload.gid,
+        seed: payload.s,
+        mode: payload.m,
+        mission: payload.mis,
+        issuedAt: payload.iat,
+        token: evidence.challengeToken,
+      },
+    };
+  }
+
+  // 2. Fallback to in-memory registry (for backward compatibility and test mocks)
+  const challenge = getServerRunChallenge(runId);
+  if (!challenge || challenge.gameId !== gameId) {
+    return { valid: false, reason: "challenge_not_found" };
+  }
+
+  if (evidence.challengeToken && evidence.challengeToken !== challenge.token) {
+    return { valid: false, reason: "challenge_token_mismatch" };
+  }
+
+  const consumption = await consumeDurableChallenge(challenge.challengeId, userId, runId, "game");
+  if (!consumption.success) {
+    return { valid: false, reason: "challenge_already_consumed" };
+  }
+
+  consumeServerRunChallenge(runId);
+  return { valid: true, challenge };
 }
 
 /**

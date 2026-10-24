@@ -13,10 +13,8 @@ import {
 } from "@/lib/contracts/data-integrity";
 import {
   RunConflictError,
-  // getSettlementReceipt,
-  // updateSettlementReceipt,
-  // assertTypingPayloadMatch,
 } from "@/lib/server/settlement";
+import { verifyTypingRunChallenge } from "@/lib/server/typing-proof";
 
 async function getSupabaseForRead() {
   try {
@@ -29,9 +27,31 @@ async function getSupabaseForRead() {
 export async function saveTypingResult(userId: string, input: ValidatedTypingResultInput) {
   const supabase = createAdminClient();
 
+  // 1. Timing and Replay Protection Verification:
+  // Verifies that a server challenge was issued, elapsed time matches the duration,
+  // and the challenge has not been previously consumed.
+  const isTimingVerified = await verifyTypingRunChallenge(
+    userId,
+    input.runId,
+    input.duration,
+    input.challengeToken
+  );
+
+  // 2. Conservative Progression Trust Policy:
+  // A timing challenge and physical throughput checks (<= 40 CPS) prove wall-clock duration
+  // and discard physically impossible rates, but DO NOT prove that genuine keystrokes occurred
+  // (a script or user could wait 60s and submit fabricated, mathematically consistent metrics).
+  // Without an interactive keystroke proof transcript, the result cannot be proven genuine.
+  // Therefore:
+  // - verified is FALSE (genuine typing is unverified)
+  // - trustTier is "timing_verified" if timing check passed, else "self_reported"
+  // - earnedXp is STRICTLY 0 (unverified results must NOT grant trusted cloud XP or trigger XP-based achievements)
+  const isVerified = false;
+  const trustTier = isTimingVerified ? "timing_verified" : "self_reported";
+  const earnedXp = 0;
+
   const authoritativeWpm = input.duration > 0 ? deriveAuthoritativeNetWpm(input.scoringChars, input.duration) : input.wpm;
   const authoritativeAccuracy = deriveAuthoritativeAccuracy(input.correctChars, input.incorrectChars, input.missedChars);
-  const earnedXp = Math.max(5, Math.min(150, Math.round(authoritativeWpm / 2)));
 
   try {
     const { data, error } = // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +68,10 @@ export async function saveTypingResult(userId: string, input: ValidatedTypingRes
         result: data.record,
         earnedXp: data.earnedXp,
         totalXp: data.totalXp,
-        idempotent: data.idempotent
+        idempotent: data.idempotent,
+        verified: isVerified,
+        timingVerified: isTimingVerified,
+        trustTier,
       };
     }
     

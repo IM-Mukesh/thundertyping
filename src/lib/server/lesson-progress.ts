@@ -4,7 +4,22 @@ import { createClient } from "@/lib/supabase/server";
 import type { ValidatedLessonProgressInput } from "@/lib/server/validation";
 import { withOptimisticRetry, UNIQUE_VIOLATION } from "@/lib/server/optimistic-retry";
 import { evaluateAndSyncAchievements } from "@/lib/server/progress";
+import { LESSON_LIST } from "@/lib/lessons/lesson-types";
 import type { Database } from "@/lib/supabase/database.types";
+
+export class LessonPrerequisiteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LessonPrerequisiteError";
+  }
+}
+
+export class LessonStepSequenceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LessonStepSequenceError";
+  }
+}
 
 type LessonAttemptInsert = Database["public"]["Tables"]["lesson_attempts"]["Insert"];
 
@@ -90,6 +105,48 @@ export async function saveLessonProgress(
 
   // 2. Primary Save: Record individual attempt if not already recorded
   if (!existingAttempt) {
+    // 2a. Verify Lesson Exists in Curriculum
+    const lessonIndex = LESSON_LIST.findIndex((l) => l.id === input.lessonId);
+    if (lessonIndex < 0) {
+      throw new LessonPrerequisiteError(`Unknown lesson ID: ${input.lessonId}`);
+    }
+
+    // 2b. Verify Curriculum Prerequisite (Lesson N requires Lesson N-1 to be completed in verified account state)
+    if (lessonIndex > 0) {
+      const prevLesson = LESSON_LIST[lessonIndex - 1];
+      const { data: prevProgress } = await supabase
+        .from("lesson_progress")
+        .select("completed")
+        .eq("user_id", userId)
+        .eq("lesson_id", prevLesson.id)
+        .maybeSingle();
+
+      if (!prevProgress || !prevProgress.completed) {
+        throw new LessonPrerequisiteError(
+          `Curriculum prerequisite not met: you must complete ${prevLesson.name} before starting ${LESSON_LIST[lessonIndex].name}`
+        );
+      }
+    }
+
+    // 2c. Verify Step Sequence within Lesson (Step K requires Step K-1 to have been passed or completed)
+    if (input.step > 1) {
+      const { data: currentProgressRow } = await supabase
+        .from("lesson_progress")
+        .select("current_step, completed")
+        .eq("user_id", userId)
+        .eq("lesson_id", input.lessonId)
+        .maybeSingle();
+
+      const recordedStep = currentProgressRow?.current_step ?? 0;
+      const isAlreadyCompleted = currentProgressRow?.completed ?? false;
+
+      if (!isAlreadyCompleted && recordedStep < input.step - 1) {
+        throw new LessonStepSequenceError(
+          `Step prerequisite not met: step ${input.step} cannot be submitted before completing step ${input.step - 1}`
+        );
+      }
+    }
+
     const attemptPayload: LessonAttemptInsert = {
       id: input.runId,
       user_id: userId,
@@ -234,8 +291,10 @@ export async function saveLessonProgress(
     });
 
     receipt.stage = "aggregate_saved";
-    if (isFirstTimeCompletion) {
+    if (isFirstTimeCompletion && !input.isGuestImport) {
       receipt.earnedXp = 50 + Math.min(100, Math.round(input.wpm));
+    } else {
+      receipt.earnedXp = 0;
     }
     await updateSettlementReceipt(receipt);
   } else {
@@ -348,10 +407,12 @@ export async function saveLessonProgress(
     finalTotalXp = streak?.total_xp ?? 0;
   }
 
-  // Evaluate achievements
-  await evaluateAndSyncAchievements(userId).catch((err) =>
-    console.warn("[lessons] achievement sync non-fatal error:", err)
-  );
+  // Evaluate achievements (strictly only for authenticated verified runs, never for guest imports)
+  if (!input.isGuestImport) {
+    await evaluateAndSyncAchievements(userId).catch((err) =>
+      console.warn("[lessons] achievement sync non-fatal error:", err)
+    );
+  }
 
   // Settlement complete
   receipt.stage = "complete";
@@ -362,6 +423,8 @@ export async function saveLessonProgress(
     earnedXp: existingAttempt ? 0 : earnedXp,
     totalXp: finalTotalXp,
     idempotent: Boolean(existingAttempt),
+    verified: !input.isGuestImport,
+    trustTier: input.isGuestImport ? "imported" : "verified",
   };
 }
 

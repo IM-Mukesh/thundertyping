@@ -48,6 +48,7 @@ export interface ValidatedTypingResultInput {
   numbers: boolean;
   runId: string;
   languageCode?: string;
+  challengeToken?: string;
 }
 
 export function validateTypingResultInput(
@@ -170,6 +171,7 @@ export function validateTypingResultInput(
       numbers,
       runId,
       languageCode: p.languageCode !== undefined && p.languageCode !== null ? String(p.languageCode) : "en",
+      challengeToken: typeof p.challengeToken === "string" ? p.challengeToken : undefined,
     },
   };
 }
@@ -189,6 +191,7 @@ export interface ValidatedLessonProgressInput {
   incorrectChars: number;
   elapsedMs: number;
   languageCode?: string;
+  isGuestImport?: boolean;
 }
 
 export function validateLessonProgressInput(
@@ -255,8 +258,29 @@ export function validateLessonProgressInput(
   const typedChars = (p.typedChars as number | undefined) ?? 0;
   const correctChars = (p.correctChars as number | undefined) ?? 0;
   const incorrectChars = (p.incorrectChars as number | undefined) ?? 0;
+  const elapsedMs = (p.elapsedMs as number | undefined) ?? 0;
+
   if (p.typedChars !== undefined && typedChars < correctChars + incorrectChars) {
     return { valid: false, message: "typedChars must include correctChars and incorrectChars" };
+  }
+
+  // Physical and Timing Verification
+  // 1. Elapsed time must be realistic (minimum 1 second for a step)
+  if (p.elapsedMs !== undefined && elapsedMs < 1000) {
+    return { valid: false, message: "elapsedMs must be at least 1000ms" };
+  }
+
+  // 2. Minimum character count for practice
+  if (p.typedChars !== undefined && typedChars < 5) {
+    return { valid: false, message: "typedChars must be at least 5" };
+  }
+
+  // 3. Human maximum typing throughput: > 40 chars/sec is physically impossible
+  if (elapsedMs > 0 && typedChars > 0) {
+    const cps = typedChars / (elapsedMs / 1000);
+    if (cps > 40) {
+      return { valid: false, message: "Typing speed exceeds maximum possible human keystroke rate" };
+    }
   }
 
   // Authoritative completion rule: only true if unitCompleted (reached final step AND passed)
@@ -277,8 +301,9 @@ export function validateLessonProgressInput(
       typedChars,
       correctChars,
       incorrectChars,
-      elapsedMs: (p.elapsedMs as number | undefined) ?? 0,
+      elapsedMs,
       languageCode: normalizeLanguageCode(typeof p.languageCode === "string" ? p.languageCode : undefined),
+      isGuestImport: Boolean(p.isGuestImport ?? p.guestImport),
     },
   };
 }

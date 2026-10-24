@@ -4,7 +4,12 @@ import { withOptimisticRetry, UNIQUE_VIOLATION } from "@/lib/server/optimistic-r
 import { PLAYABLE_GAME_LIST } from "@/lib/games/game-types";
 import { levelForXp } from "@/lib/profile/player-profile";
 import { ACHIEVEMENT_LIST } from "@/lib/profile/achievements";
-import { verifyServerGameRunProof, type ServerGameRunProof } from "@/lib/server/game-proof";
+import {
+  verifyServerGameRunProof,
+  getVerifiedGameRunProof,
+  storeVerifiedGameRunProof,
+  type ServerGameRunProof,
+} from "@/lib/server/game-proof";
 
 const VALID_ACHIEVEMENT_IDS = new Set<string>(ACHIEVEMENT_LIST.map((a) => a.id));
 
@@ -323,26 +328,14 @@ async function checkGameAchievementEligibility(
       return data !== null;
     }
     case "ghost-racer:legend": {
-      const { data } = await supabase
-        .from("game_scores")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("game_id", "ghost-racer")
-        .gte("wpm", 100)
-        .limit(1)
-        .maybeSingle();
-      return data !== null;
+      // Competitive achievement: cannot be securely verified until Ghost Racer implements
+      // server-authoritative replay. Self-reported metrics are strictly refused.
+      return false;
     }
     case "ghost-racer:flawless": {
-      const { data } = await supabase
-        .from("game_scores")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("game_id", "ghost-racer")
-        .gte("accuracy", 100)
-        .limit(1)
-        .maybeSingle();
-      return data !== null;
+      // Competitive achievement: cannot be securely verified until Ghost Racer implements
+      // server-authoritative replay. Self-reported metrics are strictly refused.
+      return false;
     }
     case "fruit-fury:first-slice": {
       const { data } = await supabase
@@ -426,18 +419,22 @@ async function checkGameAchievementEligibility(
       return data !== null;
     }
     case "type-before-death:100-wpm": {
+      // Must require verified server proof!
       const { data } = await supabase
         .from("game_scores")
-        .select("id")
+        .select("id, wpm, cleared, survived_ms")
         .eq("user_id", userId)
         .eq("game_id", "type-before-death")
         .gte("wpm", 100)
         .lte("wpm", 350)
         .gte("cleared", 10)
         .gte("survived_ms", 5000)
-        .limit(1)
-        .maybeSingle();
-      return data !== null;
+        .limit(10);
+      if (!Array.isArray(data) || data.length === 0) return false;
+      return data.some((r) => {
+        const proof = getVerifiedGameRunProof(r.id);
+        return proof ? verifyServerGameRunProof(proof, "type-before-death", { runId: r.id, wpm: r.wpm, cleared: r.cleared, survived_ms: r.survived_ms }, "100-wpm") : false;
+      });
     }
     case "type-before-death:daily": {
       const { data } = await supabase
@@ -454,9 +451,10 @@ async function checkGameAchievementEligibility(
       return data !== null;
     }
     case "type-before-death:boss": {
+      // Must require verified server proof!
       const { data } = await supabase
         .from("game_scores")
-        .select("id")
+        .select("id, score, cleared, survived_ms, accuracy, variant")
         .eq("user_id", userId)
         .eq("game_id", "type-before-death")
         .like("variant", "campaign:%")
@@ -464,22 +462,30 @@ async function checkGameAchievementEligibility(
         .gte("cleared", 28)
         .gte("survived_ms", 45000)
         .gte("accuracy", 80)
-        .limit(1)
-        .maybeSingle();
-      return data !== null;
+        .limit(10);
+      if (!Array.isArray(data) || data.length === 0) return false;
+      return data.some((r) => {
+        const proof = getVerifiedGameRunProof(r.id);
+        return proof ? verifyServerGameRunProof(proof, "type-before-death", { runId: r.id, score: r.score, cleared: r.cleared, survived_ms: r.survived_ms, accuracy: r.accuracy, variant: r.variant }, "boss-defeated") : false;
+      });
     }
     case "type-before-death:overdrive": {
+      // Must require verified server proof!
       const { data } = await supabase
         .from("game_scores")
-        .select("id, score, cleared")
+        .select("id, score, cleared, survived_ms")
         .eq("user_id", userId)
         .eq("game_id", "type-before-death")
         .gte("cleared", 15)
         .gte("score", 600)
         .gte("survived_ms", 15000)
-        .limit(5);
-      if (!data || data.length === 0) return false;
-      return data.some((r) => (r.score ?? 0) / (r.cleared ?? 1) >= 35);
+        .limit(10);
+      if (!Array.isArray(data) || data.length === 0) return false;
+      return data.some((r) => {
+        if ((r.score ?? 0) / (r.cleared ?? 1) < 35) return false;
+        const proof = getVerifiedGameRunProof(r.id);
+        return proof ? verifyServerGameRunProof(proof, "type-before-death", { runId: r.id, score: r.score, cleared: r.cleared, survived_ms: r.survived_ms }, "overdrive-activated") : false;
+      });
     }
     default:
       return false;
@@ -496,7 +502,8 @@ async function checkGameAchievementEligibility(
  * client-reported; storing them does not verify that gameplay occurred.
  */
 export async function evaluateAndSyncAchievements(
-  userId: string
+  userId: string,
+  verifiedRun?: GameScoreRecord
 ): Promise<{ newlyUnlocked: string[]; allUnlocked: string[] }> {
   const supabase = createAdminClient();
 
@@ -511,6 +518,18 @@ export async function evaluateAndSyncAchievements(
 
   const existingUnlocked = new Set<string>((achievementsRes.data || []).map((r) => r.achievement_id));
   const newlyUnlocked: string[] = [];
+
+  // 0. Verified Run Direct Evaluation (if an authentic verified proof was provided)
+  if (verifiedRun) {
+    if (verifiedRun.proof) {
+      storeVerifiedGameRunProof(verifiedRun.proof);
+    }
+    const runNewlyUnlocked = evaluateGameRunAchievements(existingUnlocked, [verifiedRun]);
+    for (const ach of runNewlyUnlocked) {
+      newlyUnlocked.push(ach);
+      existingUnlocked.add(ach);
+    }
+  }
 
   const streak = streakRes.data;
 

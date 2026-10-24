@@ -123,6 +123,7 @@ export interface LessonOutboxItem {
   createdAt: number;
   retryCount: number;
   userId: string;
+  isGuestImport?: boolean;
 }
 
 function getLocalStorage(): Storage | null {
@@ -228,6 +229,7 @@ export async function sendLessonOutboxItem(
         correctChars: item.correctChars,
         incorrectChars: item.incorrectChars,
         elapsedMs: item.elapsedMs,
+        isGuestImport: item.isGuestImport,
       }),
     });
 
@@ -444,6 +446,7 @@ export async function reconcileLocalProgressWithCloud(
           createdAt: Date.now(),
           retryCount: 0,
           userId,
+          isGuestImport: true,
         };
 
         enqueueLessonOutbox(userId, outboxItem);

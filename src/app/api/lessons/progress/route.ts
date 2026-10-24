@@ -2,7 +2,13 @@ import "server-only";
 import { NextRequest } from "next/server";
 import { requireAuthUser } from "@/lib/server/auth";
 import { apiSuccess, apiError, safeInternalError } from "@/lib/server/errors";
-import { saveLessonProgress, getUserLessonProgress, resetUserLessonProgress } from "@/lib/server/lesson-progress";
+import {
+  saveLessonProgress,
+  getUserLessonProgress,
+  resetUserLessonProgress,
+  LessonPrerequisiteError,
+  LessonStepSequenceError,
+} from "@/lib/server/lesson-progress";
 import { validateLessonProgressInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
 import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
@@ -54,6 +60,9 @@ export async function POST(request: NextRequest) {
     const saved = await saveLessonProgress(user.id, validation.data);
     return apiSuccess(saved);
   } catch (error: unknown) {
+    if (error instanceof LessonPrerequisiteError || error instanceof LessonStepSequenceError) {
+      return apiError("INVALID_INPUT", error.message, 400, undefined, undefined, requestId);
+    }
     const msg = error instanceof Error ? error.message : "Failed to record lesson progress";
     if (msg === "UNAUTHORIZED") {
       return apiError("UNAUTHORIZED", "Authentication required", 401, undefined, undefined, requestId);
