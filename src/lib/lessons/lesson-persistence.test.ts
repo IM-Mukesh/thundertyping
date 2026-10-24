@@ -365,4 +365,222 @@ describe("Lesson Progress Persistence & Outbox Synchronization", () => {
     assert.equal(guestUnits["home-row-left"]?.bestStars, 3);
     assert.equal(guestUnits["home-row-right"], undefined);
   });
+
+  it("cross-device convergence: device A and device B converge on the authoritative cloud state", async () => {
+    const testUserId = "cross-device-user-999";
+    const cloudDatabase = new Map<string, Record<string, unknown>>();
+
+    // Cloud backend mock representing Supabase
+    globalThis.fetch = async (url, init) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/lessons/progress")) {
+        if (init?.method === "POST") {
+          const body = JSON.parse(String(init.body));
+          const existing = cloudDatabase.get(body.lessonId) || {};
+          const updated = {
+            lesson_id: body.lessonId,
+            user_id: testUserId,
+            completed: Boolean(existing.completed || body.completed),
+            current_step: Math.max(Number(existing.current_step || 0), Number(body.step || 0)),
+            stars: Math.max(Number(existing.stars || 0), Number(body.stars || 0)),
+            best_wpm: Math.max(Number(existing.best_wpm || 0), Number(body.wpm || 0)),
+            best_accuracy: Math.max(Number(existing.best_accuracy || 0), Number(body.accuracy || 0)),
+            pass_count: (Number(existing.pass_count || 0)) + 1,
+            attempt_count: (Number(existing.attempt_count || 0)) + 1,
+            typed_chars: (Number(existing.typed_chars || 0)) + Number(body.typedChars || 0),
+            correct_chars: (Number(existing.correct_chars || 0)) + Number(body.correctChars || 0),
+            incorrect_chars: (Number(existing.incorrect_chars || 0)) + Number(body.incorrectChars || 0),
+            total_time_ms: (Number(existing.total_time_ms || 0)) + Number(body.elapsedMs || 0),
+          };
+          cloudDatabase.set(body.lessonId, updated);
+          return { ok: true, status: 200, json: async () => ({ success: true, data: { totalXp: 120 } }) } as Response;
+        }
+
+        // GET: Return all rows in cloud database
+        const rows = Array.from(cloudDatabase.values());
+        return { ok: true, status: 200, json: async () => ({ success: true, data: rows }) } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({ success: true }) } as Response;
+    };
+
+    // --- SIMULATE DEVICE A (Desktop) ---
+    setCurrentUserId(testUserId);
+    useLessonProgressStore.getState().resetProgress();
+
+    // 1. Desktop completes 4 steps of home-row-f-j (lessonId: home-row-left)
+    for (let step = 1; step <= 4; step++) {
+      const outcome = useLessonProgressStore.getState().recordAttempt("home-row-left", {
+        step,
+        totalSteps: 7,
+        accuracy: 97,
+        wpm: 45,
+        typedChars: 60,
+        correctChars: 58,
+        incorrectChars: 2,
+        elapsedMs: 14000,
+        minAccuracy: 60,
+        stars: 4,
+      });
+      await outcome.savePromise;
+    }
+
+    // Confirm Device A shows 4 steps
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.currentStep, 4);
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.bestWpm, 45);
+
+    // Save Device A's storage snapshot
+    const deviceAStorage = window.localStorage.getItem(getAccountStorageKey(testUserId));
+
+    // Confirm Cloud Database has 4 steps
+    const cloudRecord = cloudDatabase.get("home-row-left");
+    assert.ok(cloudRecord);
+    assert.equal(cloudRecord.current_step, 4);
+    assert.equal(cloudRecord.best_wpm, 45);
+
+    // --- SIMULATE DEVICE B (Mobile) ---
+    // Clear in-memory store and simulate fresh mobile browser profile
+    useLessonProgressStore.getState().resetProgress();
+    window.localStorage.clear();
+
+    // 2. Device B logs into same account and calls primeCloudLessonProgress
+    await primeCloudLessonProgress({ force: true });
+
+    // Confirm Device B converges to 4 steps from cloud!
+    const deviceBUnits = useLessonProgressStore.getState().units;
+    assert.equal(deviceBUnits["home-row-left"]?.currentStep, 4);
+    assert.equal(deviceBUnits["home-row-left"]?.bestWpm, 45);
+    assert.equal(deviceBUnits["home-row-left"]?.bestStars, 4);
+
+    // 3. Device B completes step 5
+    const step5Outcome = useLessonProgressStore.getState().recordAttempt("home-row-left", {
+      step: 5,
+      totalSteps: 7,
+      accuracy: 98,
+      wpm: 48,
+      typedChars: 65,
+      correctChars: 64,
+      incorrectChars: 1,
+      elapsedMs: 13000,
+      minAccuracy: 60,
+      stars: 5,
+    });
+    await step5Outcome.savePromise;
+
+    // Confirm Device B now has step 5
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.currentStep, 5);
+    assert.equal(cloudDatabase.get("home-row-left")?.current_step, 5);
+
+    // --- SWITCH BACK TO DEVICE A ---
+    // Restore Device A's local storage (which only had step 4)
+    if (deviceAStorage) {
+      window.localStorage.setItem(getAccountStorageKey(testUserId), deviceAStorage);
+    }
+    useLessonProgressStore.getState().resetProgress();
+
+    // Device A reloads / re-hydrates from cloud
+    await primeCloudLessonProgress({ force: true });
+
+    // Confirm Device A now seamlessly updates to step 5!
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.currentStep, 5);
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.bestStars, 5);
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.bestWpm, 48);
+
+    // --- SIMULATE OFFLINE / FAILED POST ---
+    globalThis.fetch = async () => {
+      throw new Error("Simulated network outage");
+    };
+
+    // Completing step 6 while offline
+    const offlineOutcome = useLessonProgressStore.getState().recordAttempt("home-row-left", {
+      step: 6,
+      totalSteps: 7,
+      accuracy: 96,
+      wpm: 50,
+      typedChars: 70,
+      correctChars: 68,
+      incorrectChars: 2,
+      elapsedMs: 12000,
+      minAccuracy: 60,
+      stars: 4,
+    });
+    await offlineOutcome.savePromise;
+
+    // Local progress is NOT lost: step 6 is in units and pending in outbox
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.currentStep, 6);
+    const outbox = getLessonOutbox(testUserId);
+    assert.equal(outbox.length, 1);
+    assert.equal(outbox[0].step, 6);
+  });
+
+  it("safe recovery: unsynced local progress that is ahead of cloud is reconciled and synced, not discarded", async () => {
+    const testUserId = "reconcile-user-123";
+    const cloudDatabase = new Map<string, Record<string, unknown>>();
+
+    globalThis.fetch = async (url, init) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/lessons/progress")) {
+        if (init?.method === "POST") {
+          const body = JSON.parse(String(init.body));
+          cloudDatabase.set(body.lessonId, {
+            lesson_id: body.lessonId,
+            user_id: testUserId,
+            completed: body.completed,
+            current_step: body.step,
+            stars: body.stars,
+            best_wpm: body.wpm,
+            best_accuracy: body.accuracy,
+            pass_count: 1,
+          });
+          return { ok: true, status: 200, json: async () => ({ success: true, data: { totalXp: 150 } }) } as Response;
+        }
+
+        // GET: Return cloud records
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: Array.from(cloudDatabase.values()) }),
+        } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({ success: true }) } as Response;
+    };
+
+    setCurrentUserId(testUserId);
+    useLessonProgressStore.getState().resetProgress();
+
+    // Simulate Laptop having 4/7 steps locally in store snapshot, while cloud is empty (due to past 500 error)
+    useLessonProgressStore.setState({
+      units: {
+        "home-row-left": {
+          completed: false,
+          currentStep: 4,
+          passCount: 4,
+          avgAccuracy: 97,
+          avgWpm: 45,
+          totalTimeMs: 45000,
+          completedAt: 0,
+          bestWpm: 45,
+          bestAccuracy: 97,
+          attemptsCount: 4,
+          lastAttemptAt: Date.now(),
+          bestStars: 4,
+          latestStars: 4,
+        },
+      },
+    });
+
+    // Cloud is initially completely empty
+    assert.equal(cloudDatabase.size, 0);
+
+    // Call primeCloudLessonProgress
+    await primeCloudLessonProgress({ force: true });
+
+    // 1. Cloud was updated with the 4 steps via reconciliation!
+    const syncedCloud = cloudDatabase.get("home-row-left");
+    assert.ok(syncedCloud, "Unsynced progress must be reconciled to cloud");
+    assert.equal(syncedCloud.current_step, 4);
+    assert.equal(syncedCloud.best_wpm, 45);
+
+    // 2. Laptop store preserves 4 steps
+    assert.equal(useLessonProgressStore.getState().units["home-row-left"]?.currentStep, 4);
+  });
 });

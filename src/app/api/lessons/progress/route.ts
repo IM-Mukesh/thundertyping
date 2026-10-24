@@ -7,13 +7,11 @@ import { validateLessonProgressInput } from "@/lib/server/validation";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server/rate-limit";
 import { createRequestId, readBoundedJson, hasTrustedMutationOrigin } from "@/lib/server/security";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const requestId = createRequestId();
-  const searchParams = request.nextUrl.searchParams;
-  const languageCode = searchParams.get("languageCode") || "en";
   try {
-    const { user } = await requireAuthUser();
-    const progress = await getUserLessonProgress(user.id, languageCode);
+    const { user, supabase } = await requireAuthUser();
+    const progress = await getUserLessonProgress(user.id, supabase);
     return apiSuccess(progress);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Authentication required";

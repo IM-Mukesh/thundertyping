@@ -20,11 +20,16 @@ export async function getAuthenticatedUser(): Promise<{ user: User | null; supab
   // propagating, even though the session cookie itself is valid. Retry once,
   // but only when a session cookie is actually present: a genuine guest
   // request has none, and shouldn't pay this latency on every call.
-  const { cookies } = await import("next/headers");
-  const cookieStore = await cookies();
-  const hasSessionCookie = cookieStore
-    .getAll()
-    .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+  let hasSessionCookie = false;
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    hasSessionCookie = cookieStore
+      .getAll()
+      .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+  } catch {
+    hasSessionCookie = false;
+  }
 
   if (hasSessionCookie) {
     await new Promise((resolve) => setTimeout(resolve, 300));

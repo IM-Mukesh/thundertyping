@@ -398,6 +398,91 @@ async function syncGuestProgressIfEligible(
   storage.setItem(migratedKey, "true");
 }
 
+export async function reconcileLocalProgressWithCloud(
+  userId: string,
+  cloudRows: Array<CloudLessonRowInput>,
+  localUnits: LessonProgressState["units"],
+  cloudUnitsTarget?: LessonProgressState["units"]
+): Promise<void> {
+  const storage = getLocalStorage();
+  if (!storage || !userId) return;
+
+  const cloudMap = new Map<string, CloudLessonRowInput>();
+  for (const r of cloudRows) {
+    cloudMap.set(r.lesson_id, r);
+  }
+
+  const existingOutbox = getLessonOutbox(userId);
+  const outboxLessonIds = new Set(existingOutbox.map((i) => i.lessonId));
+
+  const syncPromises: Promise<{ success: boolean; idempotent?: boolean }>[] = [];
+
+  for (const [id, localUnit] of Object.entries(localUnits)) {
+    if (!localUnit) continue;
+    const lessonId = id as LessonId;
+    const cloudEntry = cloudMap.get(lessonId);
+
+    // Is the local progress strictly ahead of cloud state?
+    const isAhead =
+      (!cloudEntry && (localUnit.completed || localUnit.currentStep > 0 || localUnit.passCount > 0)) ||
+      (cloudEntry !== undefined && (
+        (!cloudEntry.completed && localUnit.completed) ||
+        (localUnit.currentStep > (cloudEntry.current_step ?? 0)) ||
+        ((localUnit.bestStars ?? 0) > (cloudEntry.stars ?? 0))
+      ));
+
+    // Only create a reconciliation outbox item if one is not already queued for this lesson
+    if (isAhead && !outboxLessonIds.has(lessonId)) {
+      if (cloudUnitsTarget) {
+        cloudUnitsTarget[lessonId] = {
+          completed: localUnit.completed,
+          currentStep: localUnit.currentStep,
+          passCount: localUnit.passCount,
+          avgAccuracy: localUnit.avgAccuracy,
+          avgWpm: localUnit.avgWpm,
+          totalTimeMs: localUnit.totalTimeMs,
+          completedAt: localUnit.completedAt,
+          bestWpm: localUnit.bestWpm,
+          bestAccuracy: localUnit.bestAccuracy,
+          attemptsCount: localUnit.attemptsCount,
+          bestStars: localUnit.bestStars,
+          latestStars: localUnit.latestStars,
+        };
+      }
+
+      const lesson = LESSON_LIST.find((l) => l.id === lessonId);
+      const totalSteps = lesson?.subLessonCount || 1;
+      const runId = generateUuid();
+      const outboxItem: LessonOutboxItem = {
+        runId,
+        lessonId,
+        languageCode: "en",
+        completed: localUnit.completed,
+        stars: localUnit.bestStars ?? (localUnit.completed ? 3 : 1),
+        wpm: Math.round(localUnit.bestWpm || localUnit.avgWpm || 30),
+        accuracy: Math.round(localUnit.bestAccuracy || localUnit.avgAccuracy || 90),
+        attemptCount: Math.max(1, localUnit.attemptsCount || 1),
+        step: Math.min(totalSteps, Math.max(1, localUnit.currentStep || (localUnit.completed ? totalSteps : 1))),
+        totalSteps,
+        typedChars: 50,
+        correctChars: 45,
+        incorrectChars: 5,
+        elapsedMs: Math.max(1000, Math.round(localUnit.totalTimeMs || 15000)),
+        createdAt: Date.now(),
+        retryCount: 0,
+        userId,
+      };
+
+      enqueueLessonOutbox(userId, outboxItem);
+      syncPromises.push(sendLessonOutboxItem(outboxItem));
+    }
+  }
+
+  if (syncPromises.length > 0) {
+    await Promise.allSettled(syncPromises);
+  }
+}
+
 const emptyTotals = (): LessonTotals => ({ typedChars: 0, correctChars: 0, incorrectChars: 0, timeMs: 0 });
 
 function isFiniteNonNegative(value: unknown): value is number {
@@ -775,7 +860,11 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
       // 4. Migrate any guest progress if eligible and merge into cloud units
       await syncGuestProgressIfEligible(userId, rows, cloudUnits);
 
-      // 5. Merge with any pending outbox items that haven't confirmed yet
+      // 5. Safe recovery: if local snapshot on this device is ahead of the database, reconcile and push to cloud
+      const current = useLessonProgressStore.getState();
+      await reconcileLocalProgressWithCloud(userId, rows, current.units, cloudUnits);
+
+      // 6. Merge any still-unconfirmed outbox items that remain pending (in-flight or offline retry)
       const pendingItems = getLessonOutbox(userId);
       for (const pending of pendingItems) {
         const existing = cloudUnits[pending.lessonId];
@@ -794,27 +883,7 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
         cloudUnits[pending.lessonId] = unit;
       }
 
-      // 6. Merge with active state (keeping best of cloud and cached)
-      const current = useLessonProgressStore.getState();
-      const mergedUnits = { ...cloudUnits };
-      for (const [lessonId, localUnit] of Object.entries(current.units)) {
-        if (!localUnit) continue;
-        const key = lessonId as LessonId;
-        const cUnit = mergedUnits[key];
-        if (!cUnit) {
-          mergedUnits[key] = localUnit;
-        } else {
-          mergedUnits[key] = {
-            ...cUnit,
-            completed: cUnit.completed || localUnit.completed,
-            currentStep: Math.max(cUnit.currentStep, localUnit.currentStep),
-            bestStars: Math.max(cUnit.bestStars ?? 0, localUnit.bestStars ?? 0),
-            bestWpm: Math.max(cUnit.bestWpm ?? 0, localUnit.bestWpm ?? 0),
-            bestAccuracy: Math.max(cUnit.bestAccuracy ?? 0, localUnit.bestAccuracy ?? 0),
-          };
-        }
-      }
-
+      // 7. Authoritative cloud baseline + confirmed reconciliations & pending items becomes state
       const totalTyped = rows.reduce((acc, r) => acc + Number(r.typed_chars ?? 0), 0);
       const totalCorrect = rows.reduce((acc, r) => acc + Number(r.correct_chars ?? 0), 0);
       const totalIncorrect = rows.reduce((acc, r) => acc + Number(r.incorrect_chars ?? 0), 0);
@@ -828,13 +897,13 @@ export async function primeCloudLessonProgress(options?: { force?: boolean }): P
       };
 
       useLessonProgressStore.setState({
-        units: mergedUnits,
+        units: cloudUnits,
         totals: nextTotals,
         syncStatus: "synced",
         lastSyncError: null,
       });
 
-      saveCurrentStoreSnapshot(mergedUnits, nextTotals, current.learnerGoal);
+      saveCurrentStoreSnapshot(cloudUnits, nextTotals, current.learnerGoal);
       primedUserId = userId;
     } catch (err) {
       console.warn("[lessons] failed to load cloud progress:", err);

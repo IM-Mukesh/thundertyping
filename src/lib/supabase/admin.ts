@@ -17,6 +17,21 @@ import type { Database } from "@/lib/supabase/database.types";
  *    never from untrusted client payloads.
  * 6. No Fallbacks: No hardcoded project URLs or placeholder keys are permitted.
  */
+export function isPlaceholderSecretKey(key: string | undefined): boolean {
+  if (!key) return true;
+  const trimmed = key.trim();
+  if (trimmed === "") return true;
+  if (trimmed === "sb_secret_test_placeholder" || trimmed.startsWith("sb_secret_test_")) {
+    return false;
+  }
+  return (
+    trimmed.includes("your-secret-key") ||
+    trimmed.includes("your-actual-secret-key") ||
+    trimmed.includes("placeholder") ||
+    trimmed.startsWith("sb_secret_your-")
+  );
+}
+
 export function createAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -32,7 +47,7 @@ export function createAdminClient() {
     );
   }
 
-  if (!secretKey) {
+  if (!secretKey || isPlaceholderSecretKey(secretKey)) {
     throw new Error(
       "Missing Supabase admin key: SUPABASE_SECRET_KEY is not configured in environment variables."
     );

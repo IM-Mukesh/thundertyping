@@ -5,11 +5,13 @@ import type { ValidatedLessonProgressInput } from "@/lib/server/validation";
 import { withOptimisticRetry, UNIQUE_VIOLATION } from "@/lib/server/optimistic-retry";
 import { evaluateAndSyncAchievements } from "@/lib/server/progress";
 import type { Database } from "@/lib/supabase/database.types";
-import { normalizeLanguageCode } from "@/lib/i18n/config";
 
 type LessonAttemptInsert = Database["public"]["Tables"]["lesson_attempts"]["Insert"];
 
-async function getSupabaseForRead() {
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function getSupabaseForRead(userSupabase?: SupabaseServerClient) {
+  if (userSupabase) return userSupabase;
   try {
     return createAdminClient();
   } catch {
@@ -23,9 +25,11 @@ import {
   assertLessonPayloadMatch,
 } from "@/lib/server/settlement";
 
-export async function saveLessonProgress(userId: string, input: ValidatedLessonProgressInput) {
+export async function saveLessonProgress(
+  userId: string,
+  input: ValidatedLessonProgressInput
+) {
   const supabase = createAdminClient();
-  const lang = normalizeLanguageCode(input.languageCode);
 
   // 1. Idempotency & Conflict Check (F03 & F06)
   const { data: existingAttempt } = await supabase
@@ -49,7 +53,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       .select("*")
       .eq("user_id", userId)
       .eq("lesson_id", input.lessonId)
-      .eq("language_code", lang)
       .maybeSingle();
 
     if (currentProgress) {
@@ -95,7 +98,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       accuracy: input.accuracy,
       stars: input.stars,
       completed: input.completed,
-      language_code: lang,
     };
 
     const { error: attemptError } = await supabase
@@ -141,7 +143,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
         .select("*")
         .eq("user_id", userId)
         .eq("lesson_id", input.lessonId)
-        .eq("language_code", lang)
         .maybeSingle();
 
       if (existing) {
@@ -184,7 +185,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           })
           .eq("user_id", userId)
           .eq("lesson_id", input.lessonId)
-          .eq("language_code", lang)
           .eq("updated_at", existing.updated_at)
           .select()
           .maybeSingle();
@@ -204,7 +204,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
           .insert({
             user_id: userId,
             lesson_id: input.lessonId,
-            language_code: lang,
             completed: input.completed,
             stars: input.stars,
             best_wpm: input.wpm,
@@ -246,7 +245,6 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       .select("*")
       .eq("user_id", userId)
       .eq("lesson_id", input.lessonId)
-      .eq("language_code", lang)
       .maybeSingle();
     progressRecord = existingProgress;
   }
@@ -260,72 +258,80 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
       earnedXp = receipt.earnedXp;
       const today = new Date().toISOString().split("T")[0];
 
-      // Daily stats update
-      await withOptimisticRetry(async () => {
-        const { data: existingDaily } = await supabase
-          .from("daily_stats")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("date", today)
-          .maybeSingle();
-
-        if (existingDaily) {
-          const { data: updatedRows, error } = await supabase
+      // Daily stats update (non-fatal if RLS restricts daily stats mutations)
+      try {
+        await withOptimisticRetry(async () => {
+          const { data: existingDaily } = await supabase
             .from("daily_stats")
-            .update({
-              lessons_completed: existingDaily.lessons_completed + 1,
-              updated_at: new Date().toISOString(),
-            })
+            .select("*")
             .eq("user_id", userId)
             .eq("date", today)
-            .eq("updated_at", existingDaily.updated_at)
-            .select();
+            .maybeSingle();
 
-          if (error) throw error;
-          if (!updatedRows || updatedRows.length === 0) {
-            throw new Error("CONFLICT: daily_stats row changed concurrently");
-          }
-        } else {
-          const { error } = await supabase.from("daily_stats").insert({
-            user_id: userId,
-            date: today,
-            lessons_completed: 1,
-          });
-          if (error) {
-            if (error.code === UNIQUE_VIOLATION) {
-              throw new Error("CONFLICT: daily_stats row created concurrently");
+          if (existingDaily) {
+            const { data: updatedRows, error } = await supabase
+              .from("daily_stats")
+              .update({
+                lessons_completed: existingDaily.lessons_completed + 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", userId)
+              .eq("date", today)
+              .eq("updated_at", existingDaily.updated_at)
+              .select();
+
+            if (error) throw error;
+            if (!updatedRows || updatedRows.length === 0) {
+              throw new Error("CONFLICT: daily_stats row changed concurrently");
             }
-            throw error;
+          } else {
+            const { error } = await supabase.from("daily_stats").insert({
+              user_id: userId,
+              date: today,
+              lessons_completed: 1,
+            });
+            if (error) {
+              if (error.code === UNIQUE_VIOLATION) {
+                throw new Error("CONFLICT: daily_stats row created concurrently");
+              }
+              throw error;
+            }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.warn("[lessons] daily_stats update non-fatal error:", err);
+      }
 
-      // Player streak & XP update
-      await withOptimisticRetry(async () => {
-        const { data: streak } = await supabase
-          .from("player_streaks")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (streak) {
-          finalTotalXp = streak.total_xp + earnedXp;
-          const { data: updatedRows, error } = await supabase
+      // Player streak & XP update (non-fatal if RLS restricts streak mutations)
+      try {
+        await withOptimisticRetry(async () => {
+          const { data: streak } = await supabase
             .from("player_streaks")
-            .update({
-              total_xp: finalTotalXp,
-              updated_at: new Date().toISOString(),
-            })
+            .select("*")
             .eq("user_id", userId)
-            .eq("updated_at", streak.updated_at)
-            .select();
+            .maybeSingle();
 
-          if (error) throw error;
-          if (!updatedRows || updatedRows.length === 0) {
-            throw new Error("CONFLICT: player_streaks row changed concurrently");
+          if (streak) {
+            finalTotalXp = streak.total_xp + earnedXp;
+            const { data: updatedRows, error } = await supabase
+              .from("player_streaks")
+              .update({
+                total_xp: finalTotalXp,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", userId)
+              .eq("updated_at", streak.updated_at)
+              .select();
+
+            if (error) throw error;
+            if (!updatedRows || updatedRows.length === 0) {
+              throw new Error("CONFLICT: player_streaks row changed concurrently");
+            }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.warn("[lessons] player_streaks update non-fatal error:", err);
+      }
 
       receipt.stage = "rewards_saved";
       receipt.earnedXp = earnedXp;
@@ -359,15 +365,16 @@ export async function saveLessonProgress(userId: string, input: ValidatedLessonP
   };
 }
 
-export async function getUserLessonProgress(userId: string, languageCode: string = "en") {
-  const supabase = await getSupabaseForRead();
-  const lang = normalizeLanguageCode(languageCode);
+export async function getUserLessonProgress(
+  userId: string,
+  userSupabase?: SupabaseServerClient
+) {
+  const supabase = await getSupabaseForRead(userSupabase);
 
   const { data, error } = await supabase
     .from("lesson_progress")
     .select("*")
-    .eq("user_id", userId)
-    .eq("language_code", lang);
+    .eq("user_id", userId);
 
   if (error) {
     throw new Error(`Failed to fetch lesson progress: ${error.message}`);

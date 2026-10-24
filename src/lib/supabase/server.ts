@@ -13,7 +13,12 @@ import type { Database } from "@/lib/supabase/database.types";
  * No hardcoded project URLs or placeholder fallbacks are permitted.
  */
 export async function createClient() {
-  const cookieStore = await cookies();
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null;
+  try {
+    cookieStore = await cookies();
+  } catch {
+    cookieStore = null;
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
@@ -35,12 +40,12 @@ export async function createClient() {
   return createServerClient<Database>(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
-        return cookieStore.getAll();
+        return cookieStore ? cookieStore.getAll() : [];
       },
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options),
+            cookieStore?.set(name, value, options),
           );
         } catch {
           // The `setAll` method was called from a Server Component.
