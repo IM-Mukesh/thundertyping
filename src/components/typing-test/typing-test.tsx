@@ -13,6 +13,7 @@ import type { TestConfig, TestMode } from "@/lib/typing-engine/engine-types";
 import { getPersonalBest, paramForConfig, recordResult } from "@/lib/persistence/results-store";
 import {
   calculateAccuracy,
+  calculateNetCpm,
   calculateNetWpm,
   calculateRawWpm,
 } from "@/lib/typing-engine/stats";
@@ -45,6 +46,12 @@ function resolveInitialTypingLanguage(initialLanguage: Locale, enabled: boolean,
 
   if (urlLanguage && isAvailableTypingLanguage(urlLanguage)) {
     return urlLanguage;
+  }
+
+  // If a dedicated page explicitly specifies a non-default language (e.g. /hindi-typing-test with initialLanguage="hi"),
+  // that explicit intent takes precedence over generic homepage localStorage!
+  if (initialLanguage !== DEFAULT_LOCALE && isAvailableTypingLanguage(initialLanguage)) {
+    return initialLanguage;
   }
 
   const storedLanguage = getStorageItem(TYPING_LANGUAGE_STORAGE_KEY);
@@ -209,6 +216,7 @@ export function TypingTest({
       setTypingContent(content);
       setTypingLanguage(nextLanguage);
       setStorageItem(TYPING_LANGUAGE_STORAGE_KEY, nextLanguage);
+      trackEvent("language_selected", { language: nextLanguage, source: "language_selector" });
     },
     [
       enableTypingLanguageSelection,
@@ -283,6 +291,7 @@ export function TypingTest({
           difficulty: config.mode === "vocabulary" ? config.vocabDifficulty : undefined,
           punctuation: config.punctuation,
           numbers: config.numbers,
+          typing_language: config.languageCode,
         });
       }
     } else if (engine.state.status === "idle") {
@@ -345,6 +354,8 @@ export function TypingTest({
       correct_chars: engine.state.correctKeystrokes,
       incorrect_chars: engine.state.incorrectKeystrokes,
       duration_ms: engine.state.elapsedMs,
+      typing_language: config.languageCode,
+      cpm: config.languageCode === "zh" ? Math.round(calculateNetCpm(engine.state.netWpmCharacters, engine.state.elapsedMs)) : undefined,
     });
     // intentionally narrow: only re-evaluate when the test transitions to "finished"
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -506,6 +517,8 @@ export function TypingTest({
               wordStates={engine.displayWordStates}
               activeWordIndex={engine.state.activeWordIndex}
               paceCaretPosition={paceCaretPosition}
+              languageCode={config.languageCode}
+              continuousText={config.mode === "quote" || config.mode === "custom"}
             />
             {engine.state.quoteSource && (
               <p className="mt-2 text-center text-xs text-sub">— {engine.state.quoteSource}</p>

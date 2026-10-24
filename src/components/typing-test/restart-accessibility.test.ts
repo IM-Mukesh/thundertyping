@@ -461,6 +461,8 @@ describe("F16 & F26: Real DOM/Component Restart Control Accessibility Verificati
         calculateConsistency: () => 85,
         calculateNetWpm: () => 75,
         calculateRawWpm: () => 78,
+        calculateNetCpm: () => 375,
+        calculateRawCpm: () => 390,
         round: (n: number) => Math.round(n),
       },
       "@/lib/analytics": {

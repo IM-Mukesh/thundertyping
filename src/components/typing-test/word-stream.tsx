@@ -62,6 +62,8 @@ interface WordStreamProps {
   paceCaretPosition?: PaceCaretPosition | null;
   /** Smaller type for compact lesson practice surfaces; default preserves test sizing. */
   compact?: boolean;
+  languageCode?: string;
+  continuousText?: boolean;
 }
 
 export interface WordVisualUnit {
@@ -93,12 +95,20 @@ export function getWordCaretIndex(typed: string): number {
   return graphemeLength(typed);
 }
 
-export function WordStream({ wordStates, activeWordIndex, paceCaretPosition, compact = false }: WordStreamProps) {
+export function WordStream({
+  wordStates,
+  activeWordIndex,
+  paceCaretPosition,
+  compact = false,
+  languageCode,
+  continuousText = false,
+}: WordStreamProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeWordElRef = useRef<HTMLSpanElement | null>(null);
   const linePitchRef = useRef(LINE_HEIGHT_FALLBACK);
   const [offset, setOffset] = useState(0);
   const [linePitch, setLinePitch] = useState(LINE_HEIGHT_FALLBACK);
+  const isChineseContinuous = languageCode === "zh" && continuousText;
 
   // Measure line pitch only when layout dimensions change or fonts load
   useLayoutEffect(() => {
@@ -135,7 +145,8 @@ export function WordStream({ wordStates, activeWordIndex, paceCaretPosition, com
       <div
         ref={containerRef}
         className={cn(
-          "typing-word-stream flex flex-wrap gap-x-3 gap-y-2 font-mono font-normal leading-none transition-transform duration-150 ease-out",
+          "typing-word-stream flex flex-wrap gap-y-2 font-mono font-normal leading-none transition-transform duration-150 ease-out",
+          isChineseContinuous ? "gap-x-0" : "gap-x-3",
           compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl",
         )}
         style={{ transform: `translateY(-${offset}px)` }}

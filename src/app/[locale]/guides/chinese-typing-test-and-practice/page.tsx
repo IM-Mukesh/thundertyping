@@ -387,7 +387,7 @@ export default function ChineseTypingTestPage() {
         <ol className="list-decimal space-y-2 pl-5 text-foreground/90">
           <li>
             <strong>一键启动在线中文打字测试：</strong> 点击访问{" "}
-            <Link href="/?language=zh">HeroTyping 中文在线打字测速页面</Link>，系统将自动载入高频常用汉字与句子题库。
+            <Link href="/chinese-typing-test">HeroTyping 中文在线打字测速页面</Link>，系统将自动载入高频常用汉字与句子题库。
           </li>
           <li>
             <strong>使用自定义文本模考：</strong> 将您要准备的公文、小说或工作汇报内容复制进{" "}

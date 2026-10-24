@@ -25,7 +25,7 @@ export function Breadcrumbs({ items, locale }: { items: BreadcrumbItem[]; locale
           {trail.map((item, i) => {
             const isLast = i === trail.length - 1;
             return (
-              <li key={item.path} className="flex items-center gap-1">
+              <li key={`${item.path}-${i}`} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight size={11} className="text-sub/50" aria-hidden="true" />}
                 {isLast ? (
                   <span aria-current="page" className="text-foreground">

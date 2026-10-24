@@ -29,6 +29,7 @@ export function buildWebApplicationSchema(input?: {
   path?: string;
   name?: string;
   description?: string;
+  inLanguage?: string;
 }) {
   const path = input?.path ?? "";
   const name = input?.name ?? SITE_NAME;
@@ -43,6 +44,7 @@ export function buildWebApplicationSchema(input?: {
     description,
     applicationCategory: "UtilityApplication",
     operatingSystem: "Any",
+    ...(input?.inLanguage ? { inLanguage: input.inLanguage } : {}),
     offers: {
       "@type": "Offer",
       price: "0",
@@ -161,10 +163,11 @@ interface FaqItem {
   answer: string;
 }
 
-export function buildFaqSchema(items: FaqItem[]) {
+export function buildFaqSchema(items: FaqItem[], inLanguage?: string) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
+    ...(inLanguage ? { inLanguage } : {}),
     mainEntity: items.map((item) => ({
       "@type": "Question",
       name: item.question,

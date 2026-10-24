@@ -27,7 +27,7 @@ function ChevronSvg({ className }: { className?: string }) {
   );
 }
 
-export function HomepageExploreSection() {
+export function HomepageExploreSection({ locale = "en" }: { locale?: string } = {}) {
   const isRunning = useIsTestRunning();
   const [isExpanded, setIsExpanded] = useState(false);
   const [prevIsRunning, setPrevIsRunning] = useState(isRunning);
@@ -104,7 +104,7 @@ export function HomepageExploreSection() {
         )}
       >
         <div className="overflow-hidden min-h-0">
-          <HomepageSeoContent />
+          <HomepageSeoContent locale={locale} />
         </div>
       </div>
     </div>

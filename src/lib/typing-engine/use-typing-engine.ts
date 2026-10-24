@@ -88,6 +88,37 @@ export function selectDisplayWordStates(state: TestState): WordState[] {
   return display;
 }
 
+export function segmentTypingPassage(text: string, languageCode?: string): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+
+  // Whitespace-separated languages (English, Spanish, German, Portuguese, Hindi)
+  if (/\s+/.test(trimmed)) {
+    return trimmed.split(/\s+/).filter(Boolean);
+  }
+
+  // Chinese continuous text without spaces (quotes or multi-word continuous custom passages)
+  const isChinesePassage =
+    languageCode === "zh"
+      ? trimmed.length > 5 || /[，。！？；：、]/.test(trimmed)
+      : /[\u4E00-\u9FFF]/.test(trimmed) && (trimmed.length > 5 || /[，。！？；：、]/.test(trimmed));
+
+  if (isChinesePassage) {
+    if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+      try {
+        const segmenter = new Intl.Segmenter("zh", { granularity: "word" });
+        const segments = [...segmenter.segment(trimmed)].map((s) => s.segment).filter(Boolean);
+        if (segments.length > 0) return segments;
+      } catch {
+        // Fallback below
+      }
+    }
+    return trimmed.split(/([，。！？；：、])/).filter(Boolean);
+  }
+
+  return [trimmed];
+}
+
 function buildWords(config: TestConfig): { words: string[]; quoteSource: string | null } {
   const options = {
     punctuation: config.punctuation,
@@ -105,10 +136,10 @@ function buildWords(config: TestConfig): { words: string[]; quoteSource: string 
       return { words: generateWords(config.wordCount, options), quoteSource: null };
     case "quote": {
       const quote = pickRandomQuote(config.quoteLength, config.localizedContent?.quotes);
-      return { words: quote.text.split(" ").filter(Boolean), quoteSource: quote.source };
+      return { words: segmentTypingPassage(quote.text, config.languageCode), quoteSource: quote.source };
     }
     case "custom": {
-      const parsed = config.customText.trim().split(/\s+/).filter(Boolean);
+      const parsed = segmentTypingPassage(config.customText, config.languageCode);
       const fallback = ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"];
       return { words: parsed.length > 0 ? parsed : fallback, quoteSource: null };
     }
@@ -365,6 +396,70 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         );
       }
 
+      if (state.config.languageCode === "zh" && !isLastWord) {
+        let curIndex = activeIndex;
+        let curTyped = newTyped;
+        let curCommittedNet = state.committedNetWpmChars;
+        let curTally = state.charTally;
+        let advanced = false;
+
+        while (curIndex < state.words.length - 1) {
+          const curTarget = state.words[curIndex];
+          if (curTyped.startsWith(curTarget)) {
+            const matchedWordState = {
+              target: curTarget,
+              typed: curTarget,
+              chars: computeCharStates(curTarget, curTarget),
+            };
+            nextWordStates[curIndex] = matchedWordState;
+            curTally = tallyWord(curTally, matchedWordState);
+            curCommittedNet += calculateCommittedWordNetWpmChars(matchedWordState, false, true);
+            curTyped = curTyped.slice(curTarget.length);
+            curIndex++;
+            advanced = true;
+          } else {
+            break;
+          }
+        }
+
+        if (advanced) {
+          const newActiveTarget = state.words[curIndex];
+          nextWordStates[curIndex] = {
+            target: newActiveTarget,
+            typed: curTyped,
+            chars: computeCharStates(newActiveTarget, curTyped),
+          };
+          const nextNetWpmCharacters =
+            curCommittedNet + calculateActiveWordNetWpmChars(newActiveTarget, curTyped);
+
+          const isNowLastWord = curIndex === state.words.length - 1;
+          const isNowExactMatch = graphemeEqual(curTyped, newActiveTarget);
+          if (state.config.mode !== "time" && isNowLastWord && isNowExactMatch) {
+            return finalize(
+              {
+                ...nextState,
+                activeWordIndex: curIndex,
+                wordStates: nextWordStates,
+                committedNetWpmChars: curCommittedNet,
+                netWpmCharacters: nextNetWpmCharacters,
+                charTally: curTally,
+              },
+              tallyWord(curTally, nextWordStates[curIndex]),
+              action.now,
+            );
+          }
+
+          return {
+            ...nextState,
+            activeWordIndex: curIndex,
+            wordStates: nextWordStates,
+            committedNetWpmChars: curCommittedNet,
+            netWpmCharacters: nextNetWpmCharacters,
+            charTally: curTally,
+          };
+        }
+      }
+
       return nextState;
     }
 
@@ -390,21 +485,12 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       const tally = tallyWord(state.charTally, wordState);
       const isLastWord = activeIndex === state.words.length - 1;
       const isWordCorrect = graphemeEqual(wordState.typed, wordState.target);
+      const isChinese = state.config.languageCode === "zh";
 
       // The space between two words is part of the target text and standard
-      // 5-character word normalization.
-      //
-      // HOWEVER, a space must NEVER receive correct-character credit merely
-      // because Space was pressed:
-      // 1. If the word was completed with 100% accuracy (no errors, not
-      //    incomplete, no extra characters), the space is a valid separator
-      //    attempt and is credited as a correct keystroke.
-      // 2. If the word had typos, extra characters, or was incomplete, the
-      //    space is an invalid separator attempt / skipping an erroneous word,
-      //    so it is counted as an incorrect keystroke.
-      // 3. The final word has no trailing separator in the target text and so is
-      //    not credited one either way.
-      const typedSeparator = !isLastWord;
+      // 5-character word normalization for Western / Hindi languages.
+      // In Chinese, words do not use spaces between them.
+      const typedSeparator = !isLastWord && !isChinese;
       const correctKeystrokes =
         state.correctKeystrokes + (typedSeparator && isWordCorrect ? 1 : 0);
       const incorrectKeystrokes =
@@ -421,7 +507,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
         // No lookahead refill ever runs outside time mode, so state.words is
         // final here -- isLastWord is safe to use as-is.
         const committedNetWpmChars =
-          state.committedNetWpmChars + calculateCommittedWordNetWpmChars(wordState, isLastWord);
+          state.committedNetWpmChars + calculateCommittedWordNetWpmChars(wordState, isLastWord, isChinese);
         return finalize(
           {
             ...state,
@@ -460,7 +546,7 @@ export function reducer(state: TestState, action: EngineAction): TestState {
       // longer actually last, and its separator must still be credited.
       const committedIsLastWord = activeIndex === words.length - 1;
       const committedNetWpmChars =
-        state.committedNetWpmChars + calculateCommittedWordNetWpmChars(wordState, committedIsLastWord);
+        state.committedNetWpmChars + calculateCommittedWordNetWpmChars(wordState, committedIsLastWord, isChinese);
 
       // The next active word starts empty, so its own contribution is 0 --
       // the running total is exactly committedNetWpmChars until it types.

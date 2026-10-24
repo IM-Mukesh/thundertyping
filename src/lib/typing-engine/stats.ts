@@ -20,9 +20,13 @@ export const CHARS_PER_WORD = 5;
 // word's share of the total can be added incrementally the moment it commits
 // instead of re-summed from every word on every later keystroke -- see
 // calculateNetWpmCharacters for why that incremental sum matters.
-export function calculateCommittedWordNetWpmChars(word: WordState, isLastWord: boolean): number {
+export function calculateCommittedWordNetWpmChars(
+  word: WordState,
+  isLastWord: boolean,
+  isChinese = false,
+): number {
   if (!graphemeEqual(word.typed, word.target)) return 0;
-  return graphemeLength(word.target) + (isLastWord ? 0 : 1); // +1 for the inter-word separator
+  return graphemeLength(word.target) + (isLastWord || isChinese ? 0 : 1); // +1 for the inter-word separator in non-Chinese
 }
 
 // The active (not yet committed) word's own contribution (rule 2 above).
@@ -79,6 +83,27 @@ export function calculateNetWpm(correct: number, elapsedMs: number): number {
   const minutes = elapsedMs / 60000;
   if (minutes <= 0) return 0;
   return correct / CHARS_PER_WORD / minutes;
+}
+
+/**
+ * Characters Per Minute (CPM, 字/分) for character-based languages like Chinese.
+ * Unlike Western languages where 5 characters represent one word, CPM measures
+ * the actual characters typed per minute.
+ */
+export function calculateNetCpm(correct: number, elapsedMs: number): number {
+  const minutes = elapsedMs / 60000;
+  if (minutes <= 0) return 0;
+  return correct / minutes;
+}
+
+export function calculateRawCpm(correct: number, incorrect: number, elapsedMs: number): number {
+  const minutes = elapsedMs / 60000;
+  if (minutes <= 0) return 0;
+  return (correct + incorrect) / minutes;
+}
+
+export function calculateLiveCpm(correct: number, elapsedMs: number): number {
+  return calculateNetCpm(correct, Math.max(elapsedMs, MIN_LIVE_WPM_WINDOW_MS));
 }
 
 /**

@@ -4,7 +4,7 @@ import { PageIntro } from "@/components/layout/page-intro";
 import { AdRail } from "@/components/layout/ad-rail";
 import { HomepageExploreSection } from "@/components/layout/homepage-explore-section";
 import { buildWebApplicationSchema, buildFaqSchema } from "@/lib/seo/json-ld";
-import { HOMEPAGE_FAQ_ITEMS } from "@/components/layout/homepage-seo-content";
+import { getHomepageFaqs } from "@/components/layout/homepage-seo-content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo/constants";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -49,7 +49,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     name: dict.home.title,
     description: homeDescription,
   });
-  const faqSchema = buildFaqSchema(HOMEPAGE_FAQ_ITEMS);
+  const faqSchema = buildFaqSchema(getHomepageFaqs(locale));
 
   const localizedContent = getBundledTypingContent(locale);
 
@@ -106,7 +106,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </div>
 
-      <HomepageExploreSection />
+      <HomepageExploreSection locale={locale} />
     </div>
   );
 }

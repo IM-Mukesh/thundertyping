@@ -20,6 +20,8 @@ export function getSitemapRoutes(): SitemapRouteEntry[] {
   return [
     { path: "", priority: 1, changeFrequency: "daily", lastModified: "2026-10-16" },
     { path: "/typing-test/1-minute", priority: 0.9, changeFrequency: "daily", lastModified: "2026-10-07" },
+    { path: "/hindi-typing-test", priority: 0.9, changeFrequency: "daily", lastModified: "2026-10-24" },
+    { path: "/chinese-typing-test", priority: 0.9, changeFrequency: "daily", lastModified: "2026-10-24" },
     { path: "/typing-test/30-seconds", priority: 0.85, changeFrequency: "daily", lastModified: "2026-10-16" },
     { path: "/typing-test/3-minute", priority: 0.85, changeFrequency: "daily", lastModified: "2026-10-16" },
     { path: "/typing-test/5-minute", priority: 0.85, changeFrequency: "daily", lastModified: "2026-10-16" },

@@ -6,6 +6,7 @@ export type AnalyticsEventName =
   | "typing_test_started"
   | "typing_test_completed"
   | "results_action_clicked"
+  | "language_selected"
   | "lesson_started"
   | "lesson_completed"
   | "practice_started"
@@ -20,6 +21,11 @@ export type AnalyticsEventName =
   | "auth_started"
   | "login_completed";
 
+export interface LanguageSelectedParams {
+  language: string;
+  source?: string;
+}
+
 export interface TypingTestStartedParams {
   test_mode: string;
   test_duration?: number;
@@ -28,6 +34,7 @@ export interface TypingTestStartedParams {
   difficulty?: string;
   punctuation: boolean;
   numbers: boolean;
+  typing_language?: string;
 }
 
 export interface TypingTestCompletedParams {
@@ -39,6 +46,8 @@ export interface TypingTestCompletedParams {
   correct_chars: number;
   incorrect_chars: number;
   duration_ms: number;
+  typing_language?: string;
+  cpm?: number;
 }
 
 export interface LessonStartedParams {
@@ -115,6 +124,7 @@ export interface ResultsActionClickedParams {
   wpm: number;
   accuracy: number;
   test_mode?: string;
+  cpm?: number;
 }
 
 export interface SignupStartedParams {
@@ -138,6 +148,7 @@ export interface AnalyticsEventParamsMap {
   typing_test_started: TypingTestStartedParams;
   typing_test_completed: TypingTestCompletedParams;
   results_action_clicked: ResultsActionClickedParams;
+  language_selected: LanguageSelectedParams;
   lesson_started: LessonStartedParams;
   lesson_completed: LessonCompletedParams;
   practice_started: PracticeStartedParams;

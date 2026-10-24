@@ -24,7 +24,98 @@ export const HOMEPAGE_FAQ_ITEMS = [
   },
 ];
 
-export function HomepageSeoContent() {
+export const HOMEPAGE_FAQS_BY_LOCALE: Record<string, typeof HOMEPAGE_FAQ_ITEMS> = {
+  en: HOMEPAGE_FAQ_ITEMS,
+  es: [
+    {
+      question: "¿Cuál es la diferencia entre PPM Netas y PPM Brutas?",
+      answer:
+        "Las PPM Brutas miden la velocidad total de escritura sin importar los errores. Las PPM Netas descuentan los errores no corregidos de tu total. Si escribes a 70 PPM brutas pero dejas 4 errores en 1 minuto, tus PPM netas son 66. Es el estándar internacional para evaluaciones profesionales.",
+    },
+    {
+      question: "¿Qué es una buena velocidad de mecanografía para adultos?",
+      answer:
+        "En un estudio a gran escala realizado por Dhakal et al. (ACM CHI 2018) con 168.000 participantes, la velocidad media observada fue de aproximadamente 52 PPM. Para trabajos de oficina, entre 40 y 55 PPM es adecuado, mientras que puestos especializados de transcripción suelen requerir más de 65 a 80 PPM con más del 95% de precisión.",
+    },
+    {
+      question: "¿Cómo calcula HeroTyping las palabras por minuto?",
+      answer:
+        "HeroTyping utiliza la definición estándar internacional: una palabra equivale exactamente a 5 pulsaciones (incluyendo letras, números, signos y espacios). Las PPM netas se calculan con precisión de milisegundos: ((Pulsaciones totales / 5) - Errores) / Minutos.",
+    },
+    {
+      question: "¿Es HeroTyping gratuito y necesito registrarme?",
+      answer:
+        "HeroTyping es 100% gratuito y no requiere registro ni suscripciones. Todas las pruebas contrarreloj, las 28 lecciones guiadas, los 9 juegos de mecanografía y el entrenador de vocabulario funcionan de inmediato como invitado, guardando tus marcas en tu navegador.",
+    },
+  ],
+  "pt-BR": [
+    {
+      question: "Qual é a diferença entre PPM Líquidas e PPM Brutas?",
+      answer:
+        "As PPM Brutas medem o volume total de digitação independentemente dos erros. As PPM Líquidas deduzem os erros não corrigidos da sua contagem total. Se você digita a 70 PPM brutas com 4 erros em 1 minuto, suas PPM líquidas são 66. As PPM líquidas são o padrão internacional utilizado em avaliações profissionais.",
+    },
+    {
+      question: "Qual é uma boa velocidade de digitação para adultos?",
+      answer:
+        "Em um estudo acadêmico com 168.000 pessoas conduzido por Dhakal et al. (ACM CHI 2018), a velocidade média observada foi de aproximadamente 52 PPM. Funções administrativas operam com conforto entre 40 e 55 PPM, enquanto posições que exigem digitação intensiva buscam 65 a 80+ PPM com mais de 95% de precisão.",
+    },
+    {
+      question: "Como o HeroTyping calcula as palavras por minuto?",
+      answer:
+        "O HeroTyping utiliza a convenção padrão internacional: 1 palavra equivale a exatamente 5 toques de teclas (incluindo letras, pontuação e espaços). Sua pontuação é calculada com precisão de milissegundos: ((Toques totais / 5) - Erros) / Minutos.",
+    },
+    {
+      question: "O HeroTyping é gratuito e preciso criar uma conta?",
+      answer:
+        "O HeroTyping é 100% gratuito, sem cadastro obrigatório ou paywalls. Todos os testes cronometrados, 28 lições de digitação, 9 jogos arcade e ferramentas de vocabulário funcionam instantaneamente como visitante, gravando seus recordes no navegador.",
+    },
+  ],
+  de: [
+    {
+      question: "Was ist der Unterschied zwischen Netto-WPM und Brutto-WPM?",
+      answer:
+        "Brutto-WPM misst die gesamte Tippgeschwindigkeit ohne Abzug von Fehlern. Netto-WPM zieht unkorrigierte Fehler von der Gesamtzahl ab. Wenn Sie 70 Brutto-WPM tippen, aber 4 Fehler in einem 1-Minuten-Test unkorrigiert lassen, beträgt Ihr Netto-Ergebnis 66 WPM. Netto-WPM ist der internationale Standard für berufliche Tests.",
+    },
+    {
+      question: "Was ist eine gute Tippgeschwindigkeit für Erwachsene?",
+      answer:
+        "In einer groß angelegten Tastenanschlagsstudie von Dhakal et al. (ACM CHI 2018) mit 168.000 Online-Teilnehmern lag der beobachtete Durchschnitt bei etwa 52 WPM. Für typische Büroarbeiten reichen 40 bis 55 WPM gut aus, während Datenerfassung oft 65 bis 80+ WPM bei über 95 % Genauigkeit voraussetzt.",
+    },
+    {
+      question: "Wie berechnet HeroTyping Wörter pro Minute?",
+      answer:
+        "HeroTyping verwendet die internationale Standarddefinition: Ein Wort entspricht exakt 5 Tastenanschlägen (einschließlich Buchstaben, Satzzeichen und Leerzeichen). Die Netto-WPM werden millisekundengenau berechnet: ((Tastenanschläge gesamt / 5) - Fehler) / Zeit in Minuten.",
+    },
+    {
+      question: "Ist HeroTyping kostenlos und muss ich ein Konto erstellen?",
+      answer:
+        "HeroTyping ist zu 100 % kostenlos und erfordert weder Registrierung noch Abonnements. Alle Zeittests, 28 strukturierte Lektionen, 9 Arcade-Tippspiele und der Wortschatz-Trainer funktionieren sofort als Gast und speichern Bestzeiten lokal in Ihrem Browser.",
+    },
+  ],
+};
+
+export function getHomepageFaqs(locale: string = "en") {
+  return HOMEPAGE_FAQS_BY_LOCALE[locale] || HOMEPAGE_FAQ_ITEMS;
+}
+
+export function HomepageSeoContent({ locale = "en" }: { locale?: string } = {}) {
+  const faqs = getHomepageFaqs(locale);
+  const isEs = locale === "es";
+  const isPt = locale === "pt-BR";
+  const isDe = locale === "de";
+
+  const titles = {
+    timed: isEs ? "Pruebas de Mecanografía Contrarreloj" : isPt ? "Testes Cronometrados de Digitação" : isDe ? "Tipptests mit Zeitmessung" : "Timed Typing Tests",
+    timedSubtitle: isEs
+      ? "Selecciona una duración estandarizada para calibrar tu velocidad, ritmo y precisión:"
+      : isPt
+      ? "Selecione uma duração padronizada para calibrar sua velocidade, ritmo e precisão:"
+      : isDe
+      ? "Wählen Sie eine standardisierte Testdauer, um Tempo, Rhythmus und Präzision zu messen:"
+      : "Select a standardized test duration to calibrate your typing speed, rhythm, and accuracy:",
+    benchmarks: isEs ? "Métricas de Velocidad y Telemetría" : isPt ? "Métricas de Velocidade e Telemetria" : isDe ? "Geschwindigkeits-Benchmarks & Telemetrie" : "Typing Speed Benchmarks & Telemetry",
+    faqs: isEs ? "Preguntas Frecuentes" : isPt ? "Perguntas Frequentes" : isDe ? "Häufig gestellte Fragen" : "Frequently Asked Questions",
+  };
   return (
     <article className="pt-6 pb-4 flex w-full max-w-4xl mx-auto flex-col gap-8 sm:gap-10 text-left">
       {/* Section A: Timed Typing Tests */}
@@ -32,11 +123,11 @@ export function HomepageSeoContent() {
         <div className="flex items-center gap-2">
           <Timer className="h-4 w-4 text-accent shrink-0" aria-hidden="true" />
           <h2 className="font-display text-sm sm:text-base font-bold uppercase tracking-wider text-foreground">
-            Timed Typing Tests
+            {titles.timed}
           </h2>
         </div>
         <p className="text-xs sm:text-[13px] leading-relaxed text-sub">
-          Select a standardized test duration to calibrate your typing speed, rhythm, and accuracy:
+          {titles.timedSubtitle}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
           <Link
@@ -194,11 +285,11 @@ export function HomepageSeoContent() {
         <div className="flex items-center gap-2">
           <HelpCircle className="h-4 w-4 text-accent shrink-0" aria-hidden="true" />
           <h2 className="font-display text-sm sm:text-base font-bold uppercase tracking-wider text-foreground">
-            Frequently Asked Questions
+            {titles.faqs}
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-          {HOMEPAGE_FAQ_ITEMS.map((item) => (
+          {faqs.map((item) => (
             <details
               key={item.question}
               className="group rounded-xl border border-border/70 bg-sub-alt/10 p-3.5 transition-colors open:bg-sub-alt/20 hover:border-border"

@@ -8,7 +8,9 @@ import type { TestState } from "@/lib/typing-engine/engine-types";
 import {
   calculateAccuracy,
   calculateConsistency,
+  calculateNetCpm,
   calculateNetWpm,
+  calculateRawCpm,
   calculateRawWpm,
   round,
 } from "@/lib/typing-engine/stats";
@@ -41,19 +43,33 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
     totalTyped,
     correctedErrors,
   } = state;
+  const isChinese = state.config?.languageCode === "zh";
   const netWpm = round(calculateNetWpm(netWpmCharacters, elapsedMs));
   const rawWpm = round(calculateRawWpm(correctKeystrokes, incorrectKeystrokes, elapsedMs));
+  const netCpm = isChinese ? round(calculateNetCpm(netWpmCharacters, elapsedMs)) : 0;
+  const rawCpm = isChinese ? round(calculateRawCpm(correctKeystrokes, incorrectKeystrokes, elapsedMs)) : 0;
   const accuracy = round(calculateAccuracy(correctKeystrokes, incorrectKeystrokes, charTally.missed));
   const consistency = round(calculateConsistency(wpmSamples));
 
   const handleRestart = () => {
-    trackEvent("results_action_clicked", { action: "restart", wpm: netWpm, accuracy });
+    trackEvent("results_action_clicked", {
+      action: "restart",
+      wpm: netWpm,
+      cpm: isChinese ? netCpm : undefined,
+      accuracy,
+    });
     onRestart();
   };
 
   const handleShare = async () => {
-    trackEvent("results_action_clicked", { action: "share", wpm: netWpm, accuracy });
-    const shareText = `HeroTyping Speed Test: ${netWpm} WPM | ${accuracy}% Accuracy https://www.herotyping.com`;
+    trackEvent("results_action_clicked", {
+      action: "share",
+      wpm: netWpm,
+      cpm: isChinese ? netCpm : undefined,
+      accuracy,
+    });
+    const speedText = isChinese ? `${netCpm} CPM (字/分)` : `${netWpm} WPM`;
+    const shareText = `HeroTyping Speed Test: ${speedText} | ${accuracy}% Accuracy https://www.herotyping.com`;
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(shareText);
@@ -84,9 +100,13 @@ export function ResultsPanel({ state, isNewBest, onRestart }: ResultsPanelProps)
       )}
 
       <div className="grid w-full grid-cols-2 gap-5 sm:grid-cols-4">
-        <Stat label={dict.test?.wpm || "wpm"} value={netWpm} highlight />
+        <Stat
+          label={isChinese ? "cpm (字/分)" : (dict.test?.wpm || "wpm")}
+          value={isChinese ? netCpm : netWpm}
+          highlight
+        />
         <Stat label={dict.test?.accuracy || "accuracy"} value={`${accuracy}%`} />
-        <Stat label="raw" value={rawWpm} />
+        <Stat label={isChinese ? "raw cpm" : "raw"} value={isChinese ? rawCpm : rawWpm} />
         <Stat label={dict.lesson?.consistency || "consistency"} value={`${consistency}%`} />
       </div>
 

@@ -190,11 +190,11 @@ describe("Canonical URL Safety & Localized Hreflang", () => {
 
   it("verifies exact sitemap inventory counts and per-locale distribution", async () => {
     const urls = await sitemap();
-    assert.equal(urls.length, 120, "Sitemap should emit exactly 120 <url> entries (117 + 3 dedicated test pages)");
+    assert.equal(urls.length, 122, "Sitemap should emit exactly 122 <url> entries (including Hindi and Chinese dedicated test pages)");
 
     // Verify all URLs are unique
     const uniqueUrls = new Set(urls.map((u) => u.url));
-    assert.equal(uniqueUrls.size, 120, "All 120 sitemap URLs must be unique");
+    assert.equal(uniqueUrls.size, 122, "All 122 sitemap URLs must be unique");
 
     // Verify locale distribution
     const enUrls = urls.filter((u) => !u.url.includes("/es/") && !u.url.endsWith("/es") && !u.url.includes("/pt-BR/") && !u.url.endsWith("/pt-BR") && !u.url.includes("/de/") && !u.url.endsWith("/de"));
@@ -202,10 +202,14 @@ describe("Canonical URL Safety & Localized Hreflang", () => {
     const ptUrls = urls.filter((u) => u.url.includes("/pt-BR/") || u.url.endsWith("/pt-BR"));
     const deUrls = urls.filter((u) => u.url.includes("/de/") || u.url.endsWith("/de"));
 
-    assert.equal(enUrls.length, 114, "English entries count must be 114 (2 localized + 112 canonical guides/site)");
+    assert.equal(enUrls.length, 116, "English/canonical entries count must be 116");
     assert.equal(esUrls.length, 2, "Spanish entries count must be exactly 2 genuinely localized apps");
-    assert.equal(ptUrls.length, 2, "Portuguese entries count must be exactly 2 genuinely localized apps");
+    assert.equal(ptUrls.length, 2, "Portuguese entries count must be practical 2 genuinely localized apps");
     assert.equal(deUrls.length, 2, "German entries count must be exactly 2 genuinely localized apps");
+
+    // Verify dedicated Hindi and Chinese product landing pages are in sitemap
+    assert.ok(urls.some((u) => u.url === "https://www.herotyping.com/hindi-typing-test"), "Sitemap must include /hindi-typing-test");
+    assert.ok(urls.some((u) => u.url === "https://www.herotyping.com/chinese-typing-test"), "Sitemap must include /chinese-typing-test");
   });
 
   it("verifies isLocalizedRoute contract distinguishes genuinely localized routes from English-only copy", async () => {

@@ -68,9 +68,9 @@ const FAQ_ITEMS = [
   {
     question: "क्या HeroTyping पर हिंदी टाइपिंग टेस्ट पूरी तरह निःशुल्क है?",
     answer:
-      "हाँ, HeroTyping पर हिंदी टाइपिंग टेस्ट, अभ्यास और शब्दावली पूरी तरह निःशुल्क और बिना किसी विज्ञापन या लॉगिन की बाध्यता के उपलब्ध है। आप सीधे https://www.herotyping.com/?language=hi पर जाकर तुरंत टेस्ट शुरू कर सकते हैं।",
+      "हाँ, HeroTyping पर हिंदी टाइपिंग टेस्ट, अभ्यास और शब्दावली पूरी तरह निःशुल्क और बिना किसी विज्ञापन या लॉगिन की बाध्यता के उपलब्ध है। आप सीधे https://www.herotyping.com/hindi-typing-test पर जाकर तुरंत टेस्ट शुरू कर सकते हैं।",
     plainAnswer:
-      "हाँ, HeroTyping पर हिंदी टाइपिंग टेस्ट पूरी तरह मुफ्त है। आप herotyping.com/?language=hi पर सीधे अभ्यास कर सकते हैं।",
+      "हाँ, HeroTyping पर हिंदी टाइपिंग टेस्ट पूरी तरह मुफ्त है। आप herotyping.com/hindi-typing-test पर सीधे अभ्यास कर सकते हैं।",
   },
 ];
 
@@ -282,7 +282,7 @@ export default function HindiTypingTestPage() {
         <ol className="list-decimal space-y-2 pl-5 text-foreground/90">
           <li>
             <strong>Launch the Live Hindi Test:</strong> Open the{" "}
-            <Link href="/?language=hi">HeroTyping Hindi Typing Test</Link> to start an instant 60-second test with native Devanagari words.
+            <Link href="/hindi-typing-test">HeroTyping Hindi Typing Test</Link> to start an instant 60-second test with native Devanagari words.
           </li>
           <li>
             <strong>Practice with Exam Paragraphs:</strong> Copy actual question papers into our{" "}
