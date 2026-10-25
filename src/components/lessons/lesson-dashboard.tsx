@@ -250,7 +250,7 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
 
             <div className="flex flex-col gap-3 sm:shrink-0 sm:items-end">
               <Link
-                href={locale ? `/${locale}/lessons/${lessonList[0].id}` : `/lessons/${lessonList[0].id}`}
+                href={locale && locale !== "en" ? `/${locale}/lessons/${lessonList[0].slug || lessonList[0].id}` : `/lessons/${lessonList[0].slug || lessonList[0].id}`}
                 className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-8 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] duration-200 hover:brightness-110 shadow-lg shadow-accent/10"
               >
                 Start from Home Row

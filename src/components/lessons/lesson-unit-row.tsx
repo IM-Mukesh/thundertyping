@@ -178,22 +178,12 @@ export function LessonUnitRow({ locale,
     </div>
   );
 
-  if (!unlocked) {
-    return (
-      <div
-        aria-disabled="true"
-        aria-label={lockedReason ?? "Locked unit"}
-        tabIndex={0}
-        className="focus-visible:outline-2 focus-visible:outline-accent rounded-xl"
-      >
-        {content}
-      </div>
-    );
-  }
+  const href = locale && locale !== "en" ? `/${locale}/lessons/${unit.slug || unit.id}` : `/lessons/${unit.slug || unit.id}`;
 
   return (
     <Link
-      href={locale ? `/${locale}/lessons/${unit.slug || unit.id}` : `/lessons/${unit.slug || unit.id}`}
+      href={href}
+      aria-label={!unlocked ? `${unit.name} (${lockedReason ?? "Locked unit"})` : unit.name}
       className="block rounded-xl focus-visible:outline-2 focus-visible:outline-accent"
     >
       {content}

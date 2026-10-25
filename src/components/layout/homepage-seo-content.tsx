@@ -199,7 +199,7 @@ export function HomepageSeoContent({ locale = "en" }: { locale?: string } = {}) 
         <p className="text-xs sm:text-[13px] leading-relaxed text-sub">
           Taking tests benchmarks your speed; deliberate practice accelerates it. Explore targeted training modes designed to break through speed plateaus:
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
           <Link
             href="/lessons"
             className="group p-3.5 sm:p-4 rounded-xl border border-border/70 bg-sub-alt/15 hover:border-accent hover:bg-sub-alt/25 transition-all block shadow-xs"
@@ -216,10 +216,21 @@ export function HomepageSeoContent({ locale = "en" }: { locale?: string } = {}) 
             className="group p-3.5 sm:p-4 rounded-xl border border-border/70 bg-sub-alt/15 hover:border-accent hover:bg-sub-alt/25 transition-all block shadow-xs"
           >
             <div className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors sm:text-sm">
-              Weak-Key &amp; Accuracy Labs
+              Weak Keys Practice
             </div>
             <div className="text-[11px] text-sub leading-relaxed mt-1">
-              Target awkward pinky reaches and error-prone key sequences identified during your live tests in our dedicated labs.
+              Target awkward pinky reaches and error-prone key sequences identified during your live tests in our dedicated lab.
+            </div>
+          </Link>
+          <Link
+            href="/practice/accuracy"
+            className="group p-3.5 sm:p-4 rounded-xl border border-border/70 bg-sub-alt/15 hover:border-accent hover:bg-sub-alt/25 transition-all block shadow-xs"
+          >
+            <div className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors sm:text-sm">
+              Accuracy Training Lab
+            </div>
+            <div className="text-[11px] text-sub leading-relaxed mt-1">
+              Stabilize 98%+ precision, eradicate burst-and-stall habits, and develop consistent typing cadence under pressure.
             </div>
           </Link>
           <Link
@@ -242,6 +253,17 @@ export function HomepageSeoContent({ locale = "en" }: { locale?: string } = {}) 
             </div>
             <div className="text-[11px] text-sub leading-relaxed mt-1">
               Expand vocabulary and finger dexterity simultaneously across Easy, Medium, and Hard tiers with definitions.
+            </div>
+          </Link>
+          <Link
+            href="/guides"
+            className="group p-3.5 sm:p-4 rounded-xl border border-border/70 bg-sub-alt/15 hover:border-accent hover:bg-sub-alt/25 transition-all block shadow-xs"
+          >
+            <div className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors sm:text-sm">
+              Curated Typing Guides
+            </div>
+            <div className="text-[11px] text-sub leading-relaxed mt-1">
+              52 comprehensive tutorials covering touch typing mechanics, ergonomic posture, and WPM percentile formulas.
             </div>
           </Link>
         </div>

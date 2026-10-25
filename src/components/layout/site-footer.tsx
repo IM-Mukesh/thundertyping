@@ -66,6 +66,12 @@ export function SiteFooter({ locale = "en" }: { locale?: string }) {
             <Link href={`${prefix}/lessons`} className="py-1 transition-colors hover:text-foreground">
               {dict.nav.lessons}
             </Link>
+            <Link href="/practice/weak-keys" className="py-1 transition-colors hover:text-foreground">
+              Weak Keys
+            </Link>
+            <Link href="/practice/accuracy" className="py-1 transition-colors hover:text-foreground">
+              Accuracy Lab
+            </Link>
             <Link href={`${prefix}/vocabulary`} className="py-1 transition-colors hover:text-foreground">
               {dict.nav.vocabulary}
             </Link>

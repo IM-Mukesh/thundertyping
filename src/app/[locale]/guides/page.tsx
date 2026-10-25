@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   Briefcase,
+  Clock,
   Compass,
   Gauge,
   Keyboard,
@@ -199,6 +200,78 @@ export default function GuidesIndexPage() {
                   />
                 </div>
               </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Comprehensive Directory of All Guides by Category */}
+      <section aria-labelledby="all-guides-heading" className="flex flex-col gap-8">
+        <div className="flex flex-col gap-1 border-b border-border pb-4">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
+            <BookOpen size={14} aria-hidden="true" />
+            <span>Complete Curriculum Library</span>
+          </div>
+          <h2 id="all-guides-heading" className="text-2xl font-bold tracking-tight text-foreground">
+            All Guides Directory
+          </h2>
+          <p className="text-sm text-sub">
+            Direct access to all 52 touch-typing guides, tutorials, diagnostic benchmarks, and practice methodologies.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-8">
+          {CATEGORY_HUBS.map(({ id, icon: Icon }) => {
+            const category = GUIDE_CATEGORIES[id];
+            const guides = getGuidesByCategory(id);
+
+            return (
+              <div key={id} className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-sub-alt/10 p-5 sm:p-6">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <Icon size={18} className="text-accent" aria-hidden="true" />
+                    <h3 className="text-base font-bold text-foreground sm:text-lg">
+                      {category.name}
+                    </h3>
+                  </div>
+                  <Link
+                    href={category.path}
+                    className="flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+                  >
+                    <span>View Hub</span>
+                    <ArrowRight size={12} aria-hidden="true" />
+                  </Link>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {guides.map((guide) => (
+                    <Link
+                      key={guide.slug}
+                      href={guide.href}
+                      className="group flex flex-col justify-between rounded-xl border border-border/60 bg-background/60 p-4 transition-all hover:border-accent hover:bg-sub-alt/25"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                          {guide.primaryTopic}
+                        </span>
+                        <h4 className="text-xs font-semibold leading-snug text-foreground transition-colors group-hover:text-accent">
+                          {guide.title}
+                        </h4>
+                        <p className="line-clamp-2 text-[11px] leading-relaxed text-sub">
+                          {guide.description}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-[10px] text-sub border-t border-border/30 pt-2">
+                        <span className="flex items-center gap-1">
+                          <Clock size={10} aria-hidden="true" />
+                          {guide.readingTimeMinutes} min read
+                        </span>
+                        <span className="text-accent group-hover:translate-x-0.5 transition-transform">Read &rarr;</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             );
           })}
         </div>
