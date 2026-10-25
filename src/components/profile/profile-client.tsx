@@ -149,7 +149,7 @@ export function ProfileClient() {
   return (
     <div className="flex flex-col gap-8">
       {/* Account & Cloud Sync Status Card */}
-      <section className="theme-transition rounded-2xl border border-border bg-sub-alt/25 p-5 sm:p-6">
+      <section className="theme-transition rounded-2xl border border-border-subtle bg-surface/85 p-5 sm:p-6 shadow-xs backdrop-blur-xs">
         {user ? (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -289,7 +289,7 @@ export function ProfileClient() {
         )}
       </section>
       {/* level */}
-      <section className="theme-transition rounded-2xl border border-border bg-sub-alt/20 p-5 sm:p-6">
+      <section className="theme-transition rounded-2xl border border-border-subtle bg-surface/85 p-5 sm:p-6 shadow-xs backdrop-blur-xs">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-mono text-lg font-bold text-foreground">
             Level {mounted ? level : 1}
@@ -339,10 +339,10 @@ export function ProfileClient() {
                 key={game.id}
                 href={`/games/${game.id}`}
                 className={cn(
-                  "flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors",
+                  "flex items-center justify-between gap-3 rounded-xl border p-3.5 transition-all duration-150",
                   played
-                    ? "border-border bg-sub-alt/30 hover:border-accent"
-                    : "border-border/50 opacity-60 hover:border-border",
+                    ? "border-border-subtle bg-surface hover:border-accent hover:bg-surface-elevated shadow-2xs"
+                    : "border-border-subtle/50 bg-surface/40 opacity-60 hover:border-border hover:opacity-80",
                 )}
                 style={{ ["--accent" as string]: game.accent }}
               >
@@ -358,7 +358,7 @@ export function ProfileClient() {
                       : "Not played yet"}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-xs tabular-nums text-accent">
+                <span className="shrink-0 font-mono text-xs tabular-nums text-accent font-semibold">
                   {best ? formatGameScore(game, best.score) : "—"}
                 </span>
               </Link>
@@ -370,7 +370,7 @@ export function ProfileClient() {
       {/* audio */}
       <section>
         <h2 className="mb-3 font-mono text-lg font-bold text-foreground">Audio</h2>
-        <div className="theme-transition rounded-2xl border border-border bg-sub-alt/20 p-5">
+        <div className="theme-transition rounded-2xl border border-border-subtle bg-surface/85 p-5 shadow-xs backdrop-blur-xs">
           <AudioSettings />
         </div>
       </section>

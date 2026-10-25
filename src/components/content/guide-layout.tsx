@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import type { BreadcrumbItem } from "@/lib/seo/json-ld";
 import { getGuideBySlug, getRelatedGuides, getCategoryMeta } from "@/lib/guides/guide-registry";
 import { AuthorBox } from "./author-box";
+import { DocumentLangSync } from "./document-lang-sync";
 
 export interface TocItem {
   id: string;
@@ -69,13 +70,7 @@ export function GuideLayout({
       dir={dir}
       className="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-8 px-4 py-8 sm:px-10 sm:py-12 min-[1150px]:grid-cols-[minmax(0,800px)_1fr]"
     >
-      {lang && (
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if(typeof document!=="undefined"){document.documentElement.lang=${JSON.stringify(lang)};}`,
-          }}
-        />
-      )}
+      {lang && <DocumentLangSync lang={lang} dir={dir} />}
       <div className="flex min-w-0 flex-col gap-6">
         <Breadcrumbs items={breadcrumbItems} />
         <div className="flex flex-col gap-2">

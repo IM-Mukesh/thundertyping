@@ -103,7 +103,7 @@ export function SortControl<T extends string>({
         )}
       >
         <ArrowUpDown size={13} aria-hidden="true" />
-        <span className="text-sub">{label}</span>
+        {label ? <span className="text-sub">{label}</span> : null}
         <span className="text-foreground">{current.label}</span>
         <ChevronDown
           size={13}

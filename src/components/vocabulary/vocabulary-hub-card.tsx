@@ -40,7 +40,7 @@ export function VocabularyHubCard({ difficulty, wordCount }: VocabularyHubCardPr
   return (
     <Link
       href={`/vocabulary/${difficulty}`}
-      className="arcade-edge-hover group flex flex-col gap-3 rounded-2xl border border-border bg-sub-alt/20 p-6 transition-colors hover:border-accent"
+      className="arcade-edge-hover group flex flex-col gap-3 rounded-2xl border border-border-subtle bg-surface/85 p-6 backdrop-blur-xs shadow-xs transition-all duration-200 hover:border-accent hover:bg-surface-elevated"
     >
       <span className="w-fit rounded-full border border-accent/40 bg-accent/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.3em] text-accent">
         {META[difficulty].label}

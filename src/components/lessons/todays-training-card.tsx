@@ -129,7 +129,7 @@ export function TodaysTrainingCard() {
   }
 
   return (
-    <div className="theme-transition flex w-full flex-col justify-between gap-4 rounded-xl border border-border bg-sub-alt/20 p-5">
+    <div className="theme-transition flex w-full flex-col justify-between gap-4 rounded-2xl border border-border-subtle bg-surface/85 p-5 shadow-xs backdrop-blur-xs">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">
           <h2 className="flex items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wider text-accent">

@@ -268,11 +268,11 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
           </div>
         </section>
       ) : (
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-sub-alt/20 p-6 sm:p-8">
+        <section className="relative overflow-hidden rounded-2xl border border-border-subtle bg-surface/85 p-6 sm:p-8 backdrop-blur-xs shadow-xs">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-0.5 font-display text-[10px] font-bold uppercase tracking-wider text-accent">
+                <span className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent-subtle px-3 py-0.5 font-display text-[10px] font-bold uppercase tracking-wider text-accent shadow-xs">
                   <Sparkles size={11} aria-hidden="true" /> Welcome back
                 </span>
                 <span className="font-mono text-xs text-sub">
@@ -294,9 +294,9 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
 
               {/* Progress Bar */}
               <div className="flex items-center gap-3 max-w-md">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-sub-alt border border-border/50">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-sub-alt border border-border-subtle">
                   <div
-                    className="h-full bg-accent transition-[width] duration-300"
+                    className="h-full bg-accent transition-[width] duration-300 shadow-[0_0_8px_var(--accent-glow)]"
                     style={{ width: `${journeyProgressPct}%` }}
                   />
                 </div>
@@ -307,7 +307,7 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
               <Link
                 href={`/lessons/${nextRecommendedUnit.slug || nextRecommendedUnit.id}`}
-                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-8 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-lg shadow-accent/10"
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-8 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-lg shadow-accent/15"
               >
                 {inProgressUnit ? "Resume Lesson" : "Continue Lesson"}
                 <ArrowRight size={14} aria-hidden="true" />
@@ -316,14 +316,14 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
                 <button
                   type="button"
                   onClick={() => setPlacementOpen(true)}
-                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-4 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
+                  className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface px-4 font-display text-xs font-semibold text-sub transition-all hover:border-accent hover:bg-surface-elevated hover:text-foreground"
                 >
                   <Compass size={13} aria-hidden="true" />
                   Placement test
                 </button>
                 <Link
                   href="/lessons/practice"
-                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-sub-alt/40 px-4 font-display text-xs font-semibold text-sub transition-colors hover:border-accent hover:text-foreground"
+                  className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface px-4 font-display text-xs font-semibold text-sub transition-all hover:border-accent hover:bg-surface-elevated hover:text-foreground"
                 >
                   <Target size={13} aria-hidden="true" />
                   Practice Lab
@@ -335,7 +335,7 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
       )}
 
       {/* 2. LEARNER GOAL SELECTOR */}
-      <div className="flex flex-col gap-2.5 rounded-xl border border-border/80 bg-sub-alt/10 p-4">
+      <div className="flex flex-col gap-2.5 rounded-2xl border border-border-subtle bg-surface/75 p-4 backdrop-blur-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-display text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
             <Target size={14} aria-hidden="true" /> Training Goal Focus
@@ -349,10 +349,10 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
               type="button"
               onClick={() => setLearnerGoal(g.id)}
               className={cn(
-                "rounded-lg px-3 py-1.5 transition-colors",
+                "rounded-lg px-3 py-1.5 transition-all duration-150",
                 learnerGoal === g.id
-                  ? "bg-accent font-bold text-background shadow-sm"
-                  : "border border-border/80 bg-background/50 text-sub hover:border-accent hover:text-foreground",
+                  ? "bg-accent font-bold text-background shadow-xs"
+                  : "border border-border-subtle bg-surface-elevated/40 text-sub hover:border-border hover:text-foreground",
               )}
             >
               {g.label}
@@ -366,8 +366,8 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
         <TodaysTrainingCard />
 
         {/* Skill Health Card */}
-        <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-sub-alt/20 p-5">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border-subtle bg-surface/85 p-5 shadow-xs backdrop-blur-xs">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
             <span className="flex items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wider text-accent">
               <Activity size={14} aria-hidden="true" /> Keyboard Skill Health
             </span>
@@ -377,19 +377,19 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center font-mono">
-            <div className="rounded-lg bg-background/60 p-2.5">
+            <div className="rounded-xl border border-border-subtle bg-surface p-2.5">
               <div className="text-lg font-bold text-correct">
                 {Object.values(mastery.keys).filter((k) => k.level === "mastered").length}
               </div>
               <div className="text-[10px] text-sub uppercase font-sans">Mastered</div>
             </div>
-            <div className="rounded-lg bg-background/60 p-2.5">
+            <div className="rounded-xl border border-border-subtle bg-surface p-2.5">
               <div className="text-lg font-bold text-foreground">
                 {Object.values(mastery.keys).filter((k) => k.level === "developing").length}
               </div>
               <div className="text-[10px] text-sub uppercase font-sans">Developing</div>
             </div>
-            <div className="rounded-lg bg-background/60 p-2.5">
+            <div className="rounded-xl border border-border-subtle bg-surface p-2.5">
               <div className="text-lg font-bold text-error">
                 {Object.values(mastery.keys).filter((k) => k.level === "struggling").length}
               </div>

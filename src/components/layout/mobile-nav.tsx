@@ -16,7 +16,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { THEMES } from "@/components/theme/themes";
+import { THEMES, type ThemeId } from "@/components/theme/themes";
 import { UserAccountMenu } from "@/components/auth/user-account-menu";
 import { useSettingsStore } from "@/lib/persistence/settings-store";
 import {
@@ -299,33 +299,41 @@ export function MobileNav({ open, onClose, triggerRef }: MobileNavProps) {
 
             {/* Theme Selector Section */}
             <div className="mt-6 border-t border-border pt-4">
-              <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
-                Theme
-              </span>
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-display text-[10px] font-bold uppercase tracking-widest text-sub">
+                  Theme Matrix
+                </span>
+                <span className="font-mono text-[10px] text-accent">
+                  {THEMES.length} Presets
+                </span>
+              </div>
+              <div className="mt-2.5 grid grid-cols-2 gap-1.5 max-h-64 overflow-y-auto pr-1 no-scrollbar">
                 {THEMES.map((t) => {
                   const isCurrent = theme === t.id;
                   return (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => setTheme(t.id)}
+                      onClick={() => setTheme(t.id as ThemeId)}
                       className={cn(
-                        "flex items-center justify-between rounded-lg border px-2.5 py-2 font-mono text-xs transition-colors",
+                        "flex items-center justify-between rounded-lg border px-2 py-1.5 font-mono text-[11px] transition-all",
                         isCurrent
-                          ? "border-accent bg-accent/10 text-accent font-bold"
+                          ? "border-accent bg-accent/15 text-accent font-bold shadow-sm"
                           : "border-border/60 bg-sub-alt/30 text-sub hover:border-border hover:text-foreground",
                       )}
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 truncate">
                         <span
-                          className="h-3 w-3 rounded-full border border-black/20"
-                          style={{ backgroundColor: t.swatch.accent }}
+                          className="h-3 w-3 shrink-0 rounded-full border-2 shadow-xs"
+                          style={{
+                            backgroundColor: t.swatch.background,
+                            borderColor: t.swatch.accent,
+                          }}
                           aria-hidden="true"
                         />
-                        {t.label}
+                        <span className="truncate">{t.label}</span>
                       </span>
-                      {isCurrent && <Check size={12} className="text-accent" aria-hidden="true" />}
+                      {isCurrent && <Check size={12} className="shrink-0 text-accent" aria-hidden="true" />}
                     </button>
                   );
                 })}

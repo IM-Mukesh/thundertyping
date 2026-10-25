@@ -77,7 +77,7 @@ export default async function VocabularyHubPage({ params }: { params?: Promise<{
         </div>
 
         {/* Server-Rendered Sample Word Previews */}
-        <div className="mt-16 flex flex-col gap-8 rounded-2xl border border-border bg-sub-alt/10 p-6 sm:p-8">
+        <div className="mt-16 flex flex-col gap-8 rounded-2xl border border-border-subtle bg-surface/85 p-6 sm:p-8 backdrop-blur-xs shadow-xs">
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-lg font-bold uppercase tracking-wider text-foreground sm:text-xl">
               Curated Vocabulary Previews by Difficulty
@@ -89,7 +89,7 @@ export default async function VocabularyHubPage({ params }: { params?: Promise<{
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {VOCAB_DIFFICULTIES.map((tier) => (
-              <div key={tier} className="flex flex-col gap-3 rounded-xl border border-border/80 bg-background/50 p-4">
+              <div key={tier} className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-surface p-4">
                 <div className="flex items-center justify-between border-b border-border/60 pb-2">
                   <span className="font-display text-xs font-bold uppercase tracking-wider text-accent">
                     {tier} Tier ({VOCAB_WORDS[tier].length} words)

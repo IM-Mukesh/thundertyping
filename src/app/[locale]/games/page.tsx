@@ -153,7 +153,7 @@ export default async function GamesHubPage({ params }: { params: Promise<{ local
         </div>
 
         <h2 id="all-games" className="sr-only scroll-mt-24">All typing games</h2>
-        <GameHubFilters games={[...GAME_LIST]} art={art} characters={characters} />
+        <GameHubFilters games={[...GAME_LIST]} art={art} characters={characters} locale={locale} />
 
         {/* Mobile Leaderboard Ad below games */}
         <div className="mt-8 block sm:hidden">

@@ -241,7 +241,7 @@ export function LessonCompletionModal({
     >
       <div
         ref={modalRef}
-        className="relative flex w-full max-w-[420px] sm:max-w-[450px] flex-col items-center gap-[clamp(0.45rem,1.2vh,0.8rem)] rounded-2xl sm:rounded-3xl border border-border/80 bg-background p-[clamp(0.8rem,2vh,1.375rem)] pb-[max(clamp(0.8rem,2vh,1.375rem),env(safe-area-inset-bottom))] text-center shadow-2xl shadow-black/50 transition-all max-h-[96dvh] box-border animate-in zoom-in-95 duration-200"
+        className="relative flex w-full max-w-[420px] sm:max-w-[450px] flex-col items-center gap-[clamp(0.45rem,1.2vh,0.8rem)] rounded-2xl sm:rounded-3xl border border-border-subtle bg-surface/95 backdrop-blur-md p-[clamp(0.8rem,2vh,1.375rem)] pb-[max(clamp(0.8rem,2vh,1.375rem),env(safe-area-inset-bottom))] text-center shadow-2xl transition-all max-h-[96dvh] box-border animate-in zoom-in-95 duration-200"
       >
         {/* Subtle Ambient Radial Highlight */}
         <div

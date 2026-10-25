@@ -12,11 +12,14 @@ import {
   Heart,
   Layers,
   Play,
+  Search,
   Sparkles,
   Trophy,
 } from "lucide-react";
 import type { GameDefinition } from "@/lib/games/game-types";
 import { GameBestBadge } from "@/components/games/game-best-badge";
+import { GameSearchBar } from "@/components/games/game-search-bar";
+import { SortControl } from "@/components/games/sort-control";
 import { cn } from "@/lib/utils/cn";
 
 interface MobileGamesHubProps {
@@ -27,6 +30,10 @@ interface MobileGamesHubProps {
   onSelectCategory: (category: GameDefinition["category"] | "all") => void;
   counts: Record<string, number>;
   searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  sort?: "featured" | "name" | "shortest";
+  onSelectSort?: (sort: "featured" | "name" | "shortest") => void;
+  searchPlaceholder?: string;
 }
 
 const CATEGORIES: { id: GameDefinition["category"] | "all"; label: string }[] = [
@@ -58,6 +65,10 @@ export function MobileGamesHub({
   onSelectCategory,
   counts,
   searchQuery,
+  onSearchChange,
+  sort = "featured",
+  onSelectSort,
+  searchPlaceholder,
 }: MobileGamesHubProps) {
   // Top showcase features marquee games with cut-out character art & signature mechanics
   const featuredGames = useMemo(() => {
@@ -91,12 +102,27 @@ export function MobileGamesHub({
     let list = selectedCategory === "all" ? games : games.filter((g) => g.category === selectedCategory);
     const q = (searchQuery ?? "").trim().toLowerCase();
     if (q) {
-      list = list.filter((g) => g.name.toLowerCase().includes(q) || g.tagline.toLowerCase().includes(q));
+      list = list.filter(
+        (g) =>
+          g.name.toLowerCase().includes(q) ||
+          g.tagline.toLowerCase().includes(q) ||
+          g.tags.some((t) => t.toLowerCase().includes(q)),
+      );
     }
     const filtered = [...list];
+    if (sort === "name") {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sort === "shortest") {
+      const mins = (g: GameDefinition) => parseInt(g.duration, 10) || 99;
+      filtered.sort((a, b) => mins(a) - mins(b));
+    } else {
+      filtered.sort(
+        (a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)),
+      );
+    }
     filtered.sort((a, b) => Number(Boolean(a.upcoming)) - Number(Boolean(b.upcoming)));
     return filtered;
-  }, [games, selectedCategory, searchQuery]);
+  }, [games, selectedCategory, searchQuery, sort]);
 
   // Clean trigger for complete swipe transition (left or right)
   const triggerSwipe = useCallback(
@@ -499,16 +525,38 @@ export function MobileGamesHub({
       {/* ============================================================== */}
       <section className="flex flex-col w-full gap-3">
         {/* Section Heading & Category Filter Strip */}
-        <div className="flex flex-col gap-2 px-4">
+        <div className="flex flex-col gap-2.5 px-4">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 font-display text-xs font-black uppercase tracking-[0.2em] text-foreground">
               <Gamepad2 size={13} className="text-accent" />
               Explore All Games
             </h2>
-            <span className="font-mono text-[10px] uppercase text-sub tracking-wider">
-              {bottomGames.length} Available
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] uppercase text-sub tracking-wider">
+                {bottomGames.length} Available
+              </span>
+              {onSelectSort && (
+                <SortControl
+                  value={sort}
+                  onChange={onSelectSort}
+                  options={[
+                    { id: "featured", label: "Featured" },
+                    { id: "name", label: "Name" },
+                    { id: "shortest", label: "Shortest" },
+                  ]}
+                  label=""
+                />
+              )}
+            </div>
           </div>
+
+          {/* Full-width Search Bar for Mobile */}
+          <GameSearchBar
+            value={searchQuery ?? ""}
+            onChange={(val) => onSearchChange?.(val)}
+            placeholder={searchPlaceholder}
+            className="w-full"
+          />
 
           {/* Category Filter Pills (Horizontal Scroll) */}
           <div
@@ -683,10 +731,38 @@ export function MobileGamesHub({
 
         {/* Empty Search Fallback */}
         {bottomGames.length === 0 && (
-          <div className="py-8 text-center px-4">
-            <p className="font-mono text-xs text-sub">
-              No games found in {selectedCategory}.
+          <div className="my-6 mx-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-border-subtle bg-sub-alt/25 p-6 text-center">
+            <Search size={20} className="text-sub mb-2" aria-hidden="true" />
+            <p className="font-display text-xs font-bold uppercase tracking-wider text-foreground">
+              No games found
             </p>
+            <p className="mt-1 font-sans text-[11px] text-sub">
+              {searchQuery?.trim() && selectedCategory !== "all"
+                ? `No games match "${searchQuery.trim()}" in ${selectedCategory}.`
+                : searchQuery?.trim()
+                  ? `No games match "${searchQuery.trim()}".`
+                  : `No games in ${selectedCategory} yet.`}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {searchQuery?.trim() && (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange?.("")}
+                  className="flex h-8 items-center gap-1 rounded-lg border border-accent/40 bg-accent/20 px-3 font-display text-[10px] font-bold uppercase tracking-wider text-accent active:scale-95"
+                >
+                  Clear search
+                </button>
+              )}
+              {selectedCategory !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => onSelectCategory("all")}
+                  className="flex h-8 items-center gap-1 rounded-lg border border-border bg-sub-alt/50 px-3 font-display text-[10px] font-bold uppercase tracking-wider text-sub active:scale-95"
+                >
+                  All games
+                </button>
+              )}
+            </div>
           </div>
         )}
       </section>
