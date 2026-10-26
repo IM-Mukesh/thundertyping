@@ -4,11 +4,16 @@ import { PageIntro } from "@/components/layout/page-intro";
 import { AdRail } from "@/components/layout/ad-rail";
 import { HomepageExploreSection } from "@/components/layout/homepage-explore-section";
 import { buildWebApplicationSchema, buildFaqSchema } from "@/lib/seo/json-ld";
-import { getHomepageFaqs } from "@/components/layout/homepage-seo-content";
+import { HomepageSeoContent, getHomepageFaqs } from "@/components/layout/homepage-seo-content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo/constants";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getBundledTypingContent } from "@/lib/typing-engine/typing-content";
+import { LOCALES } from "@/lib/i18n/config";
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -106,7 +111,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </div>
 
-      <HomepageExploreSection locale={locale} />
+      <HomepageExploreSection>
+        <HomepageSeoContent locale={locale} />
+      </HomepageExploreSection>
     </div>
   );
 }

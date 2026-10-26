@@ -84,21 +84,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // already valid. Only treat this as a real sign-out if the local
         // session agrees there's no one signed in; otherwise keep the user
         // signed in in the UI and let the next refresh retry the profile load.
-        const { data: recheck } = await supabase.auth.getSession();
-        if (generation !== getAuthGeneration()) return null;
-        if (!recheck.session?.user) {
-          setUser(null);
-          setProfile(null);
-          setPreferences(null);
-          setStreak(null);
+        try {
+          const { data: recheck } = await supabase.auth.getSession();
+          if (generation !== getAuthGeneration()) return null;
+          if (!recheck?.session?.user) {
+            setUser(null);
+            setProfile(null);
+            setPreferences(null);
+            setStreak(null);
+          }
+        } catch {
+          // Ignore session recheck errors
         }
       }
     } catch {
       // Falls through to the session check below.
     }
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (generation !== getAuthGeneration()) return null;
-    return sessionData.session?.user ?? null;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (generation !== getAuthGeneration()) return null;
+      return sessionData?.session?.user ?? null;
+    } catch {
+      return null;
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -134,35 +142,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let unsubscribe = () => {};
     try {
       const { data } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-        if (event === "SIGNED_IN" || (event === "INITIAL_SESSION" && session?.user)) {
-          if (!mounted) return;
-          const id = session?.user.id ?? null;
-          if (id !== getCurrentUserId()) {
-            setCurrentUserId(id);
+        try {
+          if (event === "SIGNED_IN" || (event === "INITIAL_SESSION" && session?.user)) {
+            if (!mounted) return;
+            const id = session?.user?.id ?? null;
+            if (id !== getCurrentUserId()) {
+              setCurrentUserId(id);
+              setProfile(null);
+              setPreferences(null);
+              setStreak(null);
+            }
+            setUser(session?.user ?? null);
+            const u = await refreshProfile().catch(() => null);
+            if (mounted && u && u.id === getCurrentUserId()) {
+              primeCloudGameBests(u.id);
+              primeCloudLessonProgress();
+              primeCloudPersonalBests(u.id);
+              primeCloudAchievements();
+            }
+            setAuthLoading(false);
+          } else if (event === "SIGNED_OUT") {
+            setUser(null);
             setProfile(null);
             setPreferences(null);
             setStreak(null);
+            setCurrentUserId(null);
+            setAuthLoading(false);
+            clearCloudGameBests();
+            restoreLocalLessonProgress();
+            clearCloudPersonalBests();
+            clearCloudProfile();
           }
-          setUser(session?.user ?? null);
-          const u = await refreshProfile();
-          if (mounted && u && u.id === getCurrentUserId()) {
-            primeCloudGameBests(u.id);
-            primeCloudLessonProgress();
-            primeCloudPersonalBests(u.id);
-            primeCloudAchievements();
-          }
-          setAuthLoading(false);
-        } else if (event === "SIGNED_OUT") {
-          setUser(null);
-          setProfile(null);
-          setPreferences(null);
-          setStreak(null);
-          setCurrentUserId(null);
-          setAuthLoading(false);
-          clearCloudGameBests();
-          restoreLocalLessonProgress();
-          clearCloudPersonalBests();
-          clearCloudProfile();
+        } catch (err) {
+          console.warn("[auth] onAuthStateChange handler error:", err);
         }
       });
       if (data?.subscription) {

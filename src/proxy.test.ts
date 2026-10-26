@@ -181,4 +181,22 @@ describe("Request Proxy & Locale Casing", () => {
       assert.equal(res.headers.get("location"), `https://www.herotyping.com${target}`);
     }
   });
+
+  it("bypasses session refresh on static assets and images directly", async () => {
+    const staticPaths = [
+      "/favicon.ico",
+      "/_next/static/chunks/app.js",
+      "/images/brand/logo.png",
+      "/robots.txt",
+      "/sitemap.xml",
+    ];
+
+    for (const path of staticPaths) {
+      const req = new NextRequest(`https://www.herotyping.com${path}`);
+      const res = await proxy(req);
+      assert.notEqual(res.status, 308);
+      // Status 200 next response without redirection
+      assert.equal(res.status, 200);
+    }
+  });
 });

@@ -12,6 +12,8 @@ import { AdSlot } from "@/components/layout/ad-slot";
 import { AdRail } from "@/components/layout/ad-rail";
 import { buildLearningResourceSchema } from "@/lib/seo/json-ld";
 import { cn } from "@/lib/utils/cn";
+import { getLocalizedLesson, getLocalizedLessonList } from "@/lib/server/lesson-mapper";
+import { LESSON_SEO_DATA } from "@/lib/lessons/lesson-seo-content";
 
 export function generateStaticParams() {
   return LESSON_LIST.map((lesson) => ({ lessonId: lesson.slug }));
@@ -19,7 +21,6 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ lessonId: string, locale: string }> }): Promise<Metadata> {
   const { lessonId, locale } = await params;
-  const { getLocalizedLesson } = await import("@/lib/server/lesson-mapper");
   const lesson = await getLocalizedLesson(locale, lessonId);
   if (!lesson) {
     return {
@@ -27,7 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lessonId:
       robots: { index: false, follow: false },
     };
   }
-  const { LESSON_SEO_DATA } = await import("@/lib/lessons/lesson-seo-content");
   const seo = LESSON_SEO_DATA[lesson.slug] || LESSON_SEO_DATA[lesson.id];
   const title = `${lesson.name} — Lesson`;
   const description = seo?.metaDescription || lesson.instructions[0];
@@ -43,11 +43,9 @@ export async function generateMetadata({ params }: { params: Promise<{ lessonId:
 
 export default async function LessonPage({ params }: { params: Promise<{ lessonId: string, locale: string }> }) {
   const { lessonId, locale } = await params;
-  const { getLocalizedLesson, getLocalizedLessonList } = await import("@/lib/server/lesson-mapper");
   const lesson = await getLocalizedLesson(locale, lessonId);
   if (!lesson) notFound();
 
-  const { LESSON_SEO_DATA } = await import("@/lib/lessons/lesson-seo-content");
   const seo = LESSON_SEO_DATA[lesson.slug] || LESSON_SEO_DATA[lesson.id];
 
   const lessonList = await getLocalizedLessonList(locale);

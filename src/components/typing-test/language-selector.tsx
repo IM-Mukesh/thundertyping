@@ -1,136 +1,105 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Check, Globe } from "lucide-react";
+import { useId, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, Globe } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { AVAILABLE_LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
+import { AVAILABLE_LOCALES, type Locale } from "@/lib/i18n/config";
+import { getLanguageMetadata } from "@/lib/i18n/typing-language-metadata";
+import { LanguageSelectorModal } from "@/components/typing-test/language-selector-modal";
 
-interface LanguageSelectorProps {
+export interface LanguageSelectorProps {
   language: Locale;
   onLanguageChange: (language: Locale) => void;
   disabled?: boolean;
   compact?: boolean;
 }
 
-// This control intentionally owns no route or persistence side effects. The
-// homepage typing test supplies its local value and applies the selected
-// content to the engine only when the test is idle.
-export function LanguageSelector({ language, onLanguageChange, disabled = false, compact }: LanguageSelectorProps) {
-  const [open, setOpen] = useState(false);
+/**
+ * HeroTyping Language Selector
+ *
+ * Provides a sleek, premium trigger button that opens the centered
+ * Language Command Center dialog. Strictly controls the language of the words
+ * and quotes in the typing test without modifying the website's interface language.
+ */
+export function LanguageSelector({
+  language,
+  onLanguageChange,
+  disabled = false,
+  compact = false,
+}: LanguageSelectorProps) {
+  const [modalOpen, setModalOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const itemRefs = useRef<Partial<Record<Locale, HTMLButtonElement | null>>>({});
+  const triggerId = useId();
 
-  const handleToggle = () => {
+  const currentMeta = useMemo(() => {
+    return getLanguageMetadata(language);
+  }, [language]);
+
+  const handleOpen = () => {
     if (disabled) return;
-    setOpen((prev) => {
-      const willOpen = !prev;
-      if (willOpen) {
-        requestAnimationFrame(() => {
-          const current = AVAILABLE_LOCALES.includes(language) ? language : AVAILABLE_LOCALES[0];
-          itemRefs.current[current]?.focus();
-        });
-      }
-      return willOpen;
-    });
+    setModalOpen(true);
   };
 
-  const handleMenuKeyDown = (e: React.KeyboardEvent) => {
-    const currentIndex = AVAILABLE_LOCALES.findIndex((locale) => itemRefs.current[locale] === document.activeElement);
-    const total = AVAILABLE_LOCALES.length;
-    if (e.key === "Escape") {
-      e.preventDefault();
-      setOpen(false);
-      triggerRef.current?.focus();
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = currentIndex >= 0 ? (currentIndex + 1) % total : 0;
-      itemRefs.current[AVAILABLE_LOCALES[next]]?.focus();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const next = currentIndex >= 0 ? (currentIndex - 1 + total) % total : total - 1;
-      itemRefs.current[AVAILABLE_LOCALES[next]]?.focus();
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      itemRefs.current[AVAILABLE_LOCALES[0]]?.focus();
-    } else if (e.key === "End") {
-      e.preventDefault();
-      itemRefs.current[AVAILABLE_LOCALES[total - 1]]?.focus();
-    }
-  };
-
-  const switchLanguage = (locale: Locale) => {
-    setOpen(false);
-    triggerRef.current?.focus();
-    if (!disabled && locale !== language && AVAILABLE_LOCALES.includes(locale)) {
-      onLanguageChange(locale);
+  const handleSelectLanguage = (nextLanguage: Locale) => {
+    if (!disabled && AVAILABLE_LOCALES.includes(nextLanguage)) {
+      onLanguageChange(nextLanguage);
     }
   };
 
   return (
-    <div className="relative">
+    <>
       <button
+        id={triggerId}
         ref={triggerRef}
         type="button"
-        onClick={handleToggle}
+        onClick={handleOpen}
         disabled={disabled}
-        aria-label={`Typing language: ${LOCALE_NAMES[language]}`}
-        aria-expanded={open && !disabled}
-        aria-haspopup="true"
+        aria-label={`Typing language: ${currentMeta.name}. Open language command center.`}
+        aria-expanded={modalOpen}
+        aria-haspopup="dialog"
         className={cn(
-          "flex items-center text-xs text-sub transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+          "group relative flex items-center transition-all duration-200 outline-none",
+          "disabled:cursor-not-allowed disabled:opacity-40",
           compact
-            ? "h-10 w-10 items-center justify-center rounded-lg border border-border bg-sub-alt/30 hover:border-accent active:scale-95"
-            : "min-h-11 gap-1.5 rounded-md px-2 py-1 sm:min-h-0",
+            ? "gap-1.5 rounded-lg border border-border/80 bg-sub-alt/40 px-2.5 py-1.5 text-xs text-foreground hover:border-border-accent hover:bg-sub-alt active:scale-95"
+            : "gap-2 rounded-lg border border-border/70 bg-surface/70 px-3 py-1.5 text-xs text-sub shadow-sm hover:border-border-accent hover:bg-surface-elevated hover:text-foreground active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent",
         )}
       >
-        <Globe size={compact ? 18 : 13} />
-        {!compact && <span>{LOCALE_NAMES[language]}</span>}
+        <Globe
+          size={compact ? 13 : 13}
+          className="shrink-0 text-accent transition-transform duration-200 group-hover:rotate-12"
+          aria-hidden="true"
+        />
+
+        <span className="font-mono text-xs font-medium text-foreground tracking-tight">
+          {currentMeta.name}
+        </span>
+
+        {/* Typographic character badge preview */}
+        <span
+          className={cn(
+            "rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold transition-colors",
+            compact
+              ? "bg-accent/10 text-accent text-[9px]"
+              : "border border-accent/20 bg-accent/10 text-accent",
+          )}
+        >
+          {currentMeta.characterBadge}
+        </span>
+
+        {compact ? (
+          <ChevronRight size={12} className="text-sub/70 transition-transform duration-200 group-hover:translate-x-0.5" />
+        ) : (
+          <ChevronDown size={12} className="text-sub/70 transition-transform duration-200 group-hover:translate-y-0.5" />
+        )}
       </button>
 
-      <AnimatePresence>
-        {open && !disabled && (
-          <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => {
-                setOpen(false);
-                triggerRef.current?.focus();
-              }}
-            />
-            <motion.div
-              role="menu"
-              aria-label="Typing language"
-              onKeyDown={handleMenuKeyDown}
-              initial={{ opacity: 0, y: -6, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.97 }}
-              transition={{ duration: 0.12 }}
-              className={cn(
-                "absolute z-50 flex w-36 flex-col gap-0.5 rounded-lg border border-border bg-background p-1.5 shadow-lg",
-                compact ? "right-0 top-12" : "left-1/2 top-9 -translate-x-1/2",
-              )}
-            >
-              {AVAILABLE_LOCALES.map((locale) => (
-                <button
-                  key={locale}
-                  ref={(el) => {
-                    itemRefs.current[locale] = el;
-                  }}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={locale === language}
-                  onClick={() => switchLanguage(locale)}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-sub-alt focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                >
-                  {LOCALE_NAMES[locale]}
-                  {locale === language && <Check size={14} className="ml-auto shrink-0" />}
-                </button>
-              ))}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+      <LanguageSelectorModal
+        open={modalOpen}
+        selectedLanguage={language}
+        onSelectLanguage={handleSelectLanguage}
+        onClose={() => setModalOpen(false)}
+      />
+    </>
   );
 }

@@ -14,7 +14,7 @@ function LessonSkeleton() {
       aria-label="Typing lesson interface"
       className="flex h-[420px] w-full max-w-3xl flex-col items-center justify-center rounded-2xl border border-border/60 bg-sub-alt/10 p-8"
     >
-      <div className="w-full max-w-xl space-y-4 animate-pulse">
+      <div className="w-full max-w-xl space-y-4 animate-pulse motion-reduce:animate-none">
         <div className="mx-auto h-4 w-32 rounded bg-sub-alt/40" />
         <div className="h-10 w-full rounded-xl bg-sub-alt/30" />
         <div className="h-24 w-full rounded-xl bg-sub-alt/20" />

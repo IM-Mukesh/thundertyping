@@ -179,10 +179,12 @@ export function LessonUnitRow({ locale,
   );
 
   const href = locale && locale !== "en" ? `/${locale}/lessons/${unit.slug || unit.id}` : `/lessons/${unit.slug || unit.id}`;
+  const prefetchPolicy = !unlocked ? false : isCurrent ? true : null;
 
   return (
     <Link
       href={href}
+      prefetch={prefetchPolicy}
       aria-label={!unlocked ? `${unit.name} (${lockedReason ?? "Locked unit"})` : unit.name}
       className="block rounded-xl focus-visible:outline-2 focus-visible:outline-accent"
     >

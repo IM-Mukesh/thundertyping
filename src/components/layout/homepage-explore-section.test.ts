@@ -113,7 +113,9 @@ function loadHomepageExploreSection(initialRunning = false) {
     }
     cursor = 0;
     effects.length = 0;
-    const tree = exports.HomepageExploreSection({});
+    const jsx = (require("react/jsx-runtime") as { jsx: (type: unknown, props: Record<string, unknown>) => ReactElement }).jsx;
+    const stubComponent = (modules["@/components/layout/homepage-seo-content"] as { HomepageSeoContent: Component }).HomepageSeoContent;
+    const tree = exports.HomepageExploreSection({ children: jsx(stubComponent, {}) });
     // Run queued effects
     for (const effect of effects) {
       effect();

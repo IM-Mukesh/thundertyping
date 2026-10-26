@@ -5,6 +5,11 @@ import { LessonDashboard } from "@/components/lessons/lesson-dashboard";
 import { AdSlot } from "@/components/layout/ad-slot";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { localizedPageMetadata } from "@/lib/seo/metadata";
+import { getLocalizedLessonList } from "@/lib/server/lesson-mapper";
+
+export function generateStaticParams() {
+  return [{ locale: "en" }];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -19,7 +24,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LessonsHubPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const { getLocalizedLessonList } = await import("@/lib/server/lesson-mapper");
   const lessons = await getLocalizedLessonList(locale);
 
   return (

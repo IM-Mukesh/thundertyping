@@ -307,6 +307,7 @@ export function LessonDashboard({ lessonList = LESSON_LIST, locale }: { lessonLi
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
               <Link
                 href={`/lessons/${nextRecommendedUnit.slug || nextRecommendedUnit.id}`}
+                prefetch={true}
                 className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-8 font-display text-xs font-bold uppercase tracking-wider text-background transition-[filter] hover:brightness-110 shadow-lg shadow-accent/15"
               >
                 {inProgressUnit ? "Resume Lesson" : "Continue Lesson"}

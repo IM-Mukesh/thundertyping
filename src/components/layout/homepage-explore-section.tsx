@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useIsTestRunning } from "@/lib/typing-engine/test-status-store";
 import { HomepageFeatureNav } from "@/components/layout/homepage-feature-nav";
-import { HomepageSeoContent } from "@/components/layout/homepage-seo-content";
 import { cn } from "@/lib/utils/cn";
 
 function ChevronSvg({ className }: { className?: string }) {
@@ -27,7 +26,11 @@ function ChevronSvg({ className }: { className?: string }) {
   );
 }
 
-export function HomepageExploreSection({ locale = "en" }: { locale?: string } = {}) {
+interface HomepageExploreSectionProps {
+  children?: React.ReactNode;
+}
+
+export function HomepageExploreSection({ children }: HomepageExploreSectionProps = {}) {
   const isRunning = useIsTestRunning();
   const [isExpanded, setIsExpanded] = useState(false);
   const [prevIsRunning, setPrevIsRunning] = useState(isRunning);
@@ -104,7 +107,7 @@ export function HomepageExploreSection({ locale = "en" }: { locale?: string } = 
         )}
       >
         <div className="overflow-hidden min-h-0">
-          <HomepageSeoContent locale={locale} />
+          {children}
         </div>
       </div>
     </div>

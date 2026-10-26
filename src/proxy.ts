@@ -42,33 +42,35 @@ async function handleProxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const search = request.nextUrl.search || '';
 
-  // Paths that shouldn't be rewritten/redirected
+  // Paths that shouldn't be rewritten/redirected:
+  // Static assets and internal Next.js requests bypass auth refresh entirely to eliminate proxy latency.
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/static') ||
-    pathname.match(/\.(.*)$/) // Has extension like .png, .xml, .txt
+    pathname.match(/\.(?:png|jpg|jpeg|gif|webp|svg|ico|xml|txt|json|webmanifest|map)$/i)
   ) {
+    return NextResponse.next();
+  }
+
+  // API routes handle their own auth or pass through
+  if (pathname.startsWith('/api')) {
     return await updateSession(request);
   }
 
   // 0. Permanent redirects (retired games, consolidated guides, migrated lesson slugs)
+  // Immediate 308 redirect with zero network or session-refresh overhead.
   const directRedirect = resolvePermanentRedirect(pathname);
   if (directRedirect) {
-    return await updateSession(request, () =>
-      NextResponse.redirect(new URL(`${directRedirect}${search}`, request.url), 308)
-    );
+    return NextResponse.redirect(new URL(`${directRedirect}${search}`, request.url), 308);
   }
 
   // 1. If a user visits /en or /en/... redirect them directly to the canonical prefix-less English URL
   if (pathname === `/${DEFAULT_LOCALE}` || pathname.startsWith(`/${DEFAULT_LOCALE}/`)) {
     const rawPath = pathname.replace(new RegExp(`^/${DEFAULT_LOCALE}`), '') || '/';
     const newPath = resolvePermanentRedirect(rawPath) || rawPath;
-    return await updateSession(request, () =>
-      NextResponse.redirect(new URL(`${newPath}${search}`, request.url), 308)
-    );
+    return NextResponse.redirect(new URL(`${newPath}${search}`, request.url), 308);
   }
 
   // 2. Portuguese case normalization (/pt-br or /pt-br/*)
@@ -84,15 +86,11 @@ async function handleProxy(request: NextRequest) {
     if (GENUINELY_LOCALIZED_SUBPATHS.has(suffix)) {
       // Localized route: redirect to canonical /pt-BR
       const canonicalPath = `/pt-BR${suffix}`;
-      return await updateSession(request, () =>
-        NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308)
-      );
+      return NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308);
     } else {
       // English-only route: single-hop redirect directly to clean unprefixed canonical URL
       const canonicalPath = resolvePermanentRedirect(suffix) || suffix || '/';
-      return await updateSession(request, () =>
-        NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308)
-      );
+      return NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308);
     }
   }
 
@@ -104,9 +102,7 @@ async function handleProxy(request: NextRequest) {
 
       // Trailing slash normalization on localized root (e.g. /es/ -> /es)
       if (rawSuffix === '/') {
-        return await updateSession(request, () =>
-          NextResponse.redirect(new URL(`/${locale}${search}`, request.url), 308)
-        );
+        return NextResponse.redirect(new URL(`/${locale}${search}`, request.url), 308);
       }
 
       if (GENUINELY_LOCALIZED_SUBPATHS.has(suffix)) {
@@ -116,9 +112,7 @@ async function handleProxy(request: NextRequest) {
         // English-only subpath visited under a locale prefix (e.g. /pt-BR/typing-test/1-minute):
         // Single-hop permanent redirect directly to the unprefixed canonical English URL!
         const canonicalPath = resolvePermanentRedirect(suffix) || suffix || '/';
-        return await updateSession(request, () =>
-          NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308)
-        );
+        return NextResponse.redirect(new URL(`${canonicalPath}${search}`, request.url), 308);
       }
     }
   }
@@ -127,9 +121,7 @@ async function handleProxy(request: NextRequest) {
   if (pathname !== '/' && pathname.endsWith('/')) {
     const unslashed = pathname.slice(0, -1);
     const targetPath = resolvePermanentRedirect(unslashed) || unslashed;
-    return await updateSession(request, () =>
-      NextResponse.redirect(new URL(`${targetPath}${search}`, request.url), 308)
-    );
+    return NextResponse.redirect(new URL(`${targetPath}${search}`, request.url), 308);
   }
 
   // 5. Default clean English URLs (unprefixed)
